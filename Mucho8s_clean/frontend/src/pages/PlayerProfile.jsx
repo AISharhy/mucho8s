@@ -7,6 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
@@ -57,6 +65,8 @@ export default function PlayerProfile() {
   });
   const [savingLinks, setSavingLinks] = useState(false);
   const [sendingChallenge, setSendingChallenge] = useState("");
+  const [challengePlatform, setChallengePlatform] = useState("");
+  const [challengeAmount, setChallengeAmount] = useState("5");
 
   useEffect(() => {
     setLinks({
@@ -106,18 +116,29 @@ export default function PlayerProfile() {
     if (ok) toast.success("Challenge links updated");
   };
 
-  const sendChallenge = async (platform) => {
+  const openChallengeAmount = (platform) => {
     if (!discordSession || !discordPlayer) {
       toast.error("Login with Discord and link your player before sending a challenge");
       return;
     }
+    setChallengePlatform(platform);
+    setChallengeAmount("5");
+  };
 
-    setSendingChallenge(platform);
-    const created = await createChallenge(player.id, platform);
+  const sendChallenge = async () => {
+    const amount = Number(String(challengeAmount).replace(",", "."));
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.error("Enter a valid amount");
+      return;
+    }
+
+    setSendingChallenge(challengePlatform);
+    const created = await createChallenge(player.id, challengePlatform, amount);
     setSendingChallenge("");
 
     if (created) {
-      toast.success(`Challenge sent to ${player.name} — waiting for acceptance`);
+      setChallengePlatform("");
+      toast.success(`€${amount.toFixed(2)} challenge sent to ${player.name}`);
     }
   };
 
@@ -141,6 +162,73 @@ export default function PlayerProfile() {
       <Link to="/players" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-white">
         <ArrowLeft size={16} /> Back to Players
       </Link>
+
+      <Dialog open={Boolean(challengePlatform)} onOpenChange={(open) => !open && !sendingChallenge && setChallengePlatform("")}>
+        <DialogContent
+          className="bg-[#101319] border-[#242A35] rounded-2xl sm:max-w-md"
+          data-testid="challenge-amount-dialog"
+        >
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl">CHALL {player.name}</DialogTitle>
+            <DialogDescription>
+              Choose how much you want to challenge for. The other player will see the amount before accepting.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="rounded-xl bg-[#0F1218] border border-[#222834] p-4">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <span className="text-sm text-muted-foreground">Platform</span>
+              <span className="text-sm font-bold uppercase">{challengePlatform || "—"}</span>
+            </div>
+
+            <Label className="text-xs text-muted-foreground">Challenge amount (€)</Label>
+            <div className="relative mt-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">€</span>
+              <Input
+                type="number"
+                min="0.01"
+                step="0.50"
+                value={challengeAmount}
+                onChange={(e) => setChallengeAmount(e.target.value)}
+                className="pl-8 bg-[#151923] border-[#2A303B] h-12 text-lg font-mono font-bold"
+                data-testid="challenge-amount-input"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2 mt-3">
+              {[1, 2, 5, 10, 20].map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setChallengeAmount(String(value))}
+                  className="px-3 py-1.5 rounded-lg bg-[#171B23] border border-[#2A303B] text-xs font-semibold text-[#C8CED8] hover:text-white"
+                >
+                  €{value}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="ghost"
+              onClick={() => setChallengePlatform("")}
+              disabled={Boolean(sendingChallenge)}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={sendChallenge}
+              disabled={Boolean(sendingChallenge)}
+              className="w-full sm:w-auto bg-magma hover:bg-[#ff3c4c] text-white rounded-xl font-bold"
+              data-testid="send-challenge-confirm"
+            >
+              <Swords size={16} className="mr-2" />
+              {sendingChallenge ? "Sending..." : "Send Challenge"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="brand-card rounded-2xl p-5 sm:p-7">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -185,7 +273,7 @@ export default function PlayerProfile() {
                   return (
                     <DropdownMenuItem
                       key={item.key}
-                      onSelect={() => sendChallenge(item.key)}
+                      onSelect={() => openChallengeAmount(item.key)}
                       disabled={Boolean(sendingChallenge)}
                       className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-[#D7DBE2] focus:bg-white/[0.05] focus:text-white cursor-pointer"
                       data-testid={`challenge-link-${item.key}`}
