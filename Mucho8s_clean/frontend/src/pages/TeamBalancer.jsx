@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RecordMatchDialog } from "@/components/RecordMatchDialog";
 import { GAMES } from "@/lib/demoData";
-import { Swords, Search, Sparkles, RotateCcw, Trophy, Check, MessageCircle } from "lucide-react";
+import { Swords, Search, Sparkles, RotateCcw, Trophy, Check, MessageCircle, WalletCards, Shuffle, ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 
 const TeamPanel = ({ label, team, strength, color, prob, isFavored }) => (
@@ -60,20 +60,25 @@ export default function TeamBalancer() {
   const [game, setGame] = useState("ALL");
   const [balancedGame, setBalancedGame] = useState("ALL");
   const [recordOpen, setRecordOpen] = useState(false);
+  const [moneyPairings, setMoneyPairings] = useState([]);
+  const [defaultStake, setDefaultStake] = useState("5");
 
   const changeFormat = (n) => {
     setRequired(n);
     setResult(null);
+    setMoneyPairings([]);
     setSelected((prev) => prev.slice(0, n));
   };
 
   const changeGame = (g) => {
     setGame(g);
     setResult(null);
+    setMoneyPairings([]);
   };
 
   const toggle = (id) => {
     setResult(null);
+    setMoneyPairings([]);
     setSelected((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
       if (prev.length >= required) {
@@ -101,6 +106,7 @@ export default function TeamBalancer() {
     }
     const r = balanceTeams(chosen);
     setResult(r);
+    setMoneyPairings([]);
     setBalancedGame(game);
     toast.success(
       game === "ALL"
@@ -113,13 +119,93 @@ export default function TeamBalancer() {
     const top = [...players].sort((a, b) => b.totalMatches - a.totalMatches).slice(0, required).map((p) => p.id);
     setSelected(top);
     setResult(null);
+    setMoneyPairings([]);
     toast.success(`Auto-picked ${required} most active players`);
   };
 
   const clear = () => {
     setSelected([]);
     setResult(null);
+    setMoneyPairings([]);
   };
+
+  const autoPairMoney = () => {
+    if (!result) return;
+
+    const stake = Math.max(0, Number(String(defaultStake).replace(",", ".")) || 0);
+    const teamA = [...result.teamA];
+    const teamB = [...result.teamB];
+    const permutations = (arr) => {
+      if (arr.length <= 1) return [arr];
+      const out = [];
+      arr.forEach((item, index) => {
+        const rest = [...arr.slice(0, index), ...arr.slice(index + 1)];
+        permutations(rest).forEach((perm) => out.push([item, ...perm]));
+      });
+      return out;
+    };
+
+    let best = null;
+    permutations(teamB).forEach((orderedB) => {
+      const pairs = teamA.map((a, index) => ({
+        playerAId: a.id,
+        playerBId: orderedB[index].id,
+        amount: stake,
+      }));
+      const totalGap = pairs.reduce((sum, pair) => {
+        const a = teamA.find((p) => p.id === pair.playerAId);
+        const b = teamB.find((p) => p.id === pair.playerBId);
+        return sum + Math.abs(playerRating(a) - playerRating(b));
+      }, 0);
+
+      if (!best || totalGap < best.totalGap) best = { pairs, totalGap };
+    });
+
+    setMoneyPairings(best?.pairs || []);
+    toast.success("Money chall pairings balanced automatically");
+  };
+
+  const setPairOpponent = (playerAId, playerBId) => {
+    setMoneyPairings((prev) => {
+      const withoutA = prev.filter((pair) => pair.playerAId !== playerAId);
+      const withoutB = withoutA.filter((pair) => pair.playerBId !== playerBId);
+
+      if (!playerBId) return withoutA;
+
+      const existing = prev.find((pair) => pair.playerAId === playerAId);
+      return [
+        ...withoutB,
+        {
+          playerAId,
+          playerBId,
+          amount: existing?.amount ?? Math.max(0, Number(String(defaultStake).replace(",", ".")) || 0),
+        },
+      ];
+    });
+  };
+
+  const setPairAmount = (playerAId, value) => {
+    const amount = Math.max(0, Number(String(value).replace(",", ".")) || 0);
+    setMoneyPairings((prev) =>
+      prev.map((pair) => pair.playerAId === playerAId ? { ...pair, amount } : pair)
+    );
+  };
+
+  const challBalance = useMemo(() => {
+    if (!result || moneyPairings.length === 0) return null;
+
+    const gaps = moneyPairings.map((pair) => {
+      const a = result.teamA.find((p) => p.id === pair.playerAId);
+      const b = result.teamB.find((p) => p.id === pair.playerBId);
+      if (!a || !b) return 0;
+      return Math.abs(playerRating(a) - playerRating(b));
+    });
+
+    const avgGap = gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length;
+    const score = Math.max(0, Math.min(100, Math.round(100 - (avgGap / 8))));
+    const totalStake = moneyPairings.reduce((sum, pair) => sum + Number(pair.amount || 0), 0);
+    return { score, avgGap: Math.round(avgGap), totalStake };
+  }, [moneyPairings, result]);
 
   const sendTeamsToDiscord = async () => {
     if (!result) return;
@@ -128,6 +214,11 @@ export default function TeamBalancer() {
       teamB: result.teamB.map((p) => p.name),
       game: balancedGame === "ALL" ? "All Games" : balancedGame,
       balanceScore: result.balanceScore,
+      pairings: moneyPairings.map((pair) => ({
+        playerA: result.teamA.find((p) => p.id === pair.playerAId)?.name || "Alpha",
+        playerB: result.teamB.find((p) => p.id === pair.playerBId)?.name || "Bravo",
+        amount: Number(pair.amount || 0),
+      })),
     });
     if (ok) toast.success("Teams sent to Discord");
   };
@@ -223,11 +314,11 @@ export default function TeamBalancer() {
                   onClick={() => toggle(p.id)}
                   className="w-full flex items-center gap-3 p-2 rounded-lg text-left transition-all"
                   style={{
-                    background: isSel ? "rgba(255,42,59,0.12)" : "#181B26",
-                    border: `1px solid ${isSel ? "rgba(255,42,59,0.5)" : "#222834"}`,
+                    background: isSel ? "rgba(244,63,94,0.12)" : "#1A202B",
+                    border: `1px solid ${isSel ? "rgba(244,63,94,0.5)" : "#2B3443"}`,
                   }}
                 >
-                  <div className="w-5 h-5 rounded flex items-center justify-center shrink-0" style={{ background: isSel ? "#FF2A3B" : "transparent", border: `1px solid ${isSel ? "#FF2A3B" : "#39414F"}` }}>
+                  <div className="w-5 h-5 rounded flex items-center justify-center shrink-0" style={{ background: isSel ? "#F43F5E" : "transparent", border: `1px solid ${isSel ? "#F43F5E" : "#465264"}` }}>
                     {isSel && <Check size={13} className="text-white" />}
                   </div>
                   <PlayerAvatar name={p.name} elo={p.currentElo} size={32} />
@@ -277,7 +368,7 @@ export default function TeamBalancer() {
                   </div>
                 </div>
                 <div className="h-2 rounded-full bg-[#242938] overflow-hidden">
-                  <div className="h-full rounded-full transition-all" style={{ width: `${result.balanceScore}%`, background: "linear-gradient(90deg,#FF2A3B,#FF5967)" }} />
+                  <div className="h-full rounded-full transition-all" style={{ width: `${result.balanceScore}%`, background: "linear-gradient(90deg,#F43F5E,#FB7185)" }} />
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-3 text-sm">
                   <span className="text-muted-foreground">Projected Winner</span>
@@ -290,8 +381,131 @@ export default function TeamBalancer() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <TeamPanel label="Alpha" team={result.teamA} strength={result.strengthA} color="#FF2A3B" prob={result.probA} isFavored={result.probA >= result.probB} />
-                <TeamPanel label="Bravo" team={result.teamB} strength={result.strengthB} color="#D5A33A" prob={result.probB} isFavored={result.probB > result.probA} />
+                <TeamPanel label="Alpha" team={result.teamA} strength={result.strengthA} color="#F43F5E" prob={result.probA} isFavored={result.probA >= result.probB} />
+                <TeamPanel label="Bravo" team={result.teamB} strength={result.strengthB} color="#C9A45C" prob={result.probB} isFavored={result.probB > result.probA} />
+              </div>
+
+              <div className="card-surface rounded-2xl p-5" data-testid="money-chall-pairings">
+                <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-4">
+                  <div>
+                    <div className="brand-kicker mb-1">Money Matchups</div>
+                    <h3 className="font-display font-bold text-lg flex items-center gap-2">
+                      <WalletCards size={18} className="text-[#C9A45C]" />
+                      Money Chall Pairings
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Decide who challenges who and for how much. Each Bravo player can be used only once.
+                    </p>
+                  </div>
+
+                  <div className="flex items-end gap-2">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Default €</div>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        value={defaultStake}
+                        onChange={(e) => setDefaultStake(e.target.value)}
+                        className="w-24 h-10 bg-[#0E1219] border-[#2B3443] rounded-xl font-mono"
+                        data-testid="money-default-stake"
+                      />
+                    </div>
+                    <Button
+                      onClick={autoPairMoney}
+                      className="h-10 rounded-xl bg-[#171D27] border border-[#35404F] text-white hover:bg-white/[0.05]"
+                      data-testid="money-auto-pair"
+                    >
+                      <Shuffle size={15} className="mr-1.5" /> Auto Pair
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {result.teamA.map((alpha) => {
+                    const pairing = moneyPairings.find((pair) => pair.playerAId === alpha.id);
+                    const usedBravoIds = moneyPairings
+                      .filter((pair) => pair.playerAId !== alpha.id)
+                      .map((pair) => pair.playerBId);
+
+                    return (
+                      <div
+                        key={alpha.id}
+                        className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr_120px] gap-2 sm:items-center rounded-xl bg-[#0E1219] border border-[#252C39] p-3"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <PlayerAvatar name={alpha.name} elo={alpha.currentElo} size={34} />
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold truncate">{alpha.name}</div>
+                            <div className="text-[10px] uppercase tracking-wider text-[#F43F5E]">Alpha</div>
+                          </div>
+                        </div>
+
+                        <ArrowRightLeft size={16} className="hidden sm:block text-[#697386]" />
+
+                        <select
+                          value={pairing?.playerBId || ""}
+                          onChange={(e) => setPairOpponent(alpha.id, e.target.value)}
+                          className="h-10 rounded-xl bg-[#171D27] border border-[#35404F] px-3 text-sm text-white"
+                          data-testid={`money-opponent-${alpha.id}`}
+                        >
+                          <option value="">Choose Bravo player</option>
+                          {result.teamB.map((bravo) => (
+                            <option
+                              key={bravo.id}
+                              value={bravo.id}
+                              disabled={usedBravoIds.includes(bravo.id)}
+                            >
+                              {bravo.name} · {Math.round(playerRating(bravo))}
+                            </option>
+                          ))}
+                        </select>
+
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#697386] text-sm">€</span>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            value={pairing?.amount ?? ""}
+                            disabled={!pairing}
+                            onChange={(e) => setPairAmount(alpha.id, e.target.value)}
+                            placeholder="0"
+                            className="h-10 pl-7 bg-[#171D27] border-[#35404F] rounded-xl font-mono"
+                            data-testid={`money-amount-${alpha.id}`}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
+                  <div className="rounded-xl bg-[#0E1219] border border-[#252C39] p-3">
+                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Pairings</div>
+                    <div className="font-mono font-bold text-lg mt-1">{moneyPairings.length}/{result.teamA.length}</div>
+                  </div>
+                  <div className="rounded-xl bg-[#0E1219] border border-[#252C39] p-3">
+                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Total €</div>
+                    <div className="font-mono font-bold text-lg mt-1">€{(challBalance?.totalStake || 0).toFixed(2)}</div>
+                  </div>
+                  <div className="rounded-xl bg-[#0E1219] border border-[#252C39] p-3">
+                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Avg Skill Gap</div>
+                    <div className="font-mono font-bold text-lg mt-1">{challBalance?.avgGap ?? "—"}</div>
+                  </div>
+                  <div className={`rounded-xl border p-3 ${
+                    (challBalance?.score || 0) >= 85
+                      ? "bg-emerald-500/[0.06] border-emerald-500/20"
+                      : "bg-[#0E1219] border-[#252C39]"
+                  }`}>
+                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Chall Balance</div>
+                    <div className={`font-mono font-bold text-lg mt-1 ${
+                      (challBalance?.score || 0) >= 85 ? "text-emerald-400" : "text-[#C9A45C]"
+                    }`}>
+                      {challBalance ? `${challBalance.score}%` : "—"}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {isAdmin ? (
