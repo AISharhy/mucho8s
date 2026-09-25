@@ -24,7 +24,7 @@ export const PlayerAvatar = ({ name, size = 40, elo, avatarUrl }) => {
   if (avatarUrl && !imageError) {
     return (
       <div
-        className="rounded-lg shrink-0 shadow-sm overflow-hidden bg-[#10151D]"
+        className="rounded-lg shrink-0 shadow-sm overflow-hidden bg-[#101319]"
         style={baseStyle}
         title={name}
       >
@@ -46,8 +46,8 @@ export const PlayerAvatar = ({ name, size = 40, elo, avatarUrl }) => {
       style={{
         ...baseStyle,
         fontSize: size * 0.38,
-        background: "linear-gradient(145deg, #1A202B, #10151D)",
-        color: "#F7F8FA",
+        background: "linear-gradient(145deg, #181B26, #101319)",
+        color: "#F3F4F6",
       }}
     >
       {initials}
@@ -60,7 +60,7 @@ export const EloBadge = ({ elo }) => {
   return (
     <span
       className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-mono font-bold"
-      style={{ background: "#0E1219", color: tier.color, border: `1px solid ${tier.color}32` }}
+      style={{ background: "#0F1218", color: tier.color, border: `1px solid ${tier.color}32` }}
     >
       {elo}
     </span>
@@ -112,15 +112,15 @@ export const StreakBadge = ({ streak }) => {
 };
 
 export const MvpBadge = ({ count }) => (
-  <span className="inline-flex items-center gap-1 text-[#C9A45C] font-mono font-bold">
-    <Crown size={14} className="text-[#C9A45C]" />
+  <span className="inline-flex items-center gap-1 text-[#D5A33A] font-mono font-bold">
+    <Crown size={14} className="text-[#D5A33A]" />
     {count}
   </span>
 );
 
 export const WinRatePill = ({ player }) => {
   const wr = winRate(player);
-  const color = wr >= 55 ? "#10B981" : wr >= 45 ? "#D6B15E" : "#EF4444";
+  const color = wr >= 55 ? "#10B981" : wr >= 45 ? "#FFB800" : "#EF4444";
   return (
     <span className="font-mono font-bold" style={{ color }}>
       {wr}%
