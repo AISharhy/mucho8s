@@ -45,11 +45,11 @@ export default function PlayerProfile() {
         <ArrowLeft size={16} /> Back to Players
       </Link>
 
-      <div className="card-surface rounded-2xl p-5 sm:p-7">
+      <div className="brand-card rounded-2xl p-5 sm:p-7">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <PlayerAvatar name={player.name} elo={player.currentElo} size={72} />
           <div className="min-w-0">
-            <h2 className="font-display text-3xl font-extrabold truncate">{player.name}</h2>
+            <div className="brand-kicker mb-1">Player Profile</div><h2 className="font-display text-3xl font-extrabold truncate">{player.name}</h2>
             <div className="mt-1 flex flex-wrap items-center gap-3">
               <span className="text-xs uppercase tracking-widest font-semibold" style={{ color: tier.color }}>{tier.name}</span>
               <EloBadge elo={player.currentElo} />
@@ -60,7 +60,7 @@ export default function PlayerProfile() {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mt-6">
           {stats.map((item) => (
-            <div key={item.label} className="rounded-lg bg-[#101219] border border-[#1C202E] p-3">
+            <div key={item.label} className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{item.label}</div>
               <div className="font-mono font-bold text-lg mt-1">{item.value}</div>
             </div>
@@ -74,16 +74,16 @@ export default function PlayerProfile() {
         </div>
       </div>
 
-      <div className="card-surface rounded-xl p-4 sm:p-5">
+      <div className="card-surface rounded-2xl p-4 sm:p-5">
         <h3 className="font-display font-bold text-lg mb-4">Elo History</h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={player.eloHistory || []}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1C202E" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#1D222C" vertical={false} />
               <XAxis dataKey="match" stroke="#4B5563" fontSize={11} />
               <YAxis domain={["dataMin - 30", "dataMax + 30"]} stroke="#4B5563" fontSize={11} width={45} />
               <Tooltip
-                contentStyle={{ background: "#12141C", border: "1px solid #242938", borderRadius: 8 }}
+                contentStyle={{ background: "#101319", border: "1px solid #242A35", borderRadius: 8 }}
                 labelStyle={{ color: "#9CA3AF" }}
               />
               <Line type="monotone" dataKey="elo" stroke="#FF2A3B" strokeWidth={2.5} dot={false} />
@@ -92,7 +92,7 @@ export default function PlayerProfile() {
         </div>
       </div>
 
-      <div className="card-surface rounded-xl p-4 sm:p-5">
+      <div className="card-surface rounded-2xl p-4 sm:p-5">
         <h3 className="font-display font-bold text-lg mb-4">Recent Matches</h3>
         <div className="space-y-2">
           {playerMatches.slice(0, 10).map((m) => {
@@ -104,7 +104,7 @@ export default function PlayerProfile() {
               .filter(Boolean);
             const delta = Number(m.eloChanges?.[player.id] || 0);
             return (
-              <div key={m.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 rounded-lg bg-[#101219] border border-[#1C202E] p-3">
+              <div key={m.id} className="interactive-row flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 rounded-xl p-3">
                 <div className={`font-bold text-sm ${won ? "text-emerald-400" : "text-red-400"}`}>
                   {won ? "WIN" : "LOSS"}
                 </div>
@@ -115,7 +115,7 @@ export default function PlayerProfile() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  {m.mvpId === player.id && <Crown size={15} className="text-gold" />}
+                  {m.mvpId === player.id && <Crown size={15} className="text-[#D5A33A]" />}
                   <span className={`font-mono text-sm ${delta >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                     {delta >= 0 ? "+" : ""}{delta} Elo
                   </span>
