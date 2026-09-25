@@ -18,7 +18,7 @@ const StatCard = ({ icon: Icon, label, value, sub, testid }) => (
 );
 
 export default function Dashboard() {
-  const { players, matches, playerMap } = useData();
+  const { players, matches, playerMap, playerAvatars } = useData();
 
   const stats = useMemo(() => {
     const highest = [...players].sort((a, b) => b.currentElo - a.currentElo)[0];
@@ -89,7 +89,7 @@ export default function Dashboard() {
                 <span className={`font-mono text-xs font-bold w-5 text-center ${i === 0 ? "text-[#D5A33A]" : "text-[#6F7786]"}`}>
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <PlayerAvatar name={p.name} elo={p.currentElo} size={34} />
+                <PlayerAvatar name={p.name} elo={p.currentElo} size={34} avatarUrl={playerAvatars[p.id]} />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm truncate">{p.name}</div>
                   <div className="text-[11px] text-muted-foreground">WR <WinRatePill player={p} /></div>
