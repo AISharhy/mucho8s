@@ -15,7 +15,7 @@ const TeamPanel = ({ label, team, strength, color, prob, isFavored }) => (
     style={{ background: `${color}0d`, border: `1px solid ${color}55`, boxShadow: `0 0 24px ${color}1a` }}
     data-testid={`team-panel-${label.toLowerCase()}`}
   >
-    <div className="flex items-center justify-between mb-4">
+    <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
       <div className="flex items-center gap-2">
         <span className="w-4 h-4 rounded-sm" style={{ background: color }} />
         <h3 className="font-display font-extrabold text-xl" style={{ color }}>{label}</h3>
@@ -179,7 +179,7 @@ export default function TeamBalancer() {
               ))}
             </div>
           </div>
-          <div className="flex gap-2 mb-3">
+          <div className="flex flex-wrap gap-2 mb-3">
             <Button variant="ghost" size="sm" onClick={autoPick} data-testid="balancer-autopick-btn" className="text-xs">
               <Sparkles size={14} className="mr-1" /> Auto-pick
             </Button>
@@ -216,7 +216,7 @@ export default function TeamBalancer() {
                   </div>
                   <PlayerAvatar name={p.name} elo={p.currentElo} size={32} />
                   <span className="flex-1 font-medium truncate">{p.name}</span>
-                  <span className="font-mono text-xs text-muted-foreground">{Math.round(playerRating(p))}</span>
+                  <span className="hidden sm:inline font-mono text-xs text-muted-foreground">{Math.round(playerRating(p))}</span>
                   <EloBadge elo={p.currentElo} />
                 </button>
               );
@@ -249,7 +249,7 @@ export default function TeamBalancer() {
             <div className="space-y-4 animate-fade-up" data-testid="balancer-result">
               {/* Balance score */}
               <div className="card-surface rounded-xl p-5">
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
                   <span className="text-xs uppercase tracking-widest text-muted-foreground">Match Balance</span>
                   <div className="flex items-center gap-2">
                     <span className="px-2 py-0.5 rounded bg-gold/15 text-xs border border-gold/40 text-gold font-bold" data-testid="balance-game-badge">
@@ -263,7 +263,7 @@ export default function TeamBalancer() {
                 <div className="h-2 rounded-full bg-[#242938] overflow-hidden">
                   <div className="h-full rounded-full transition-all" style={{ width: `${result.balanceScore}%`, background: "linear-gradient(90deg,#FF2A3B,#FFB800)" }} />
                 </div>
-                <div className="flex items-center justify-between mt-3 text-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-3 text-sm">
                   <span className="text-muted-foreground">Projected Winner</span>
                   <span className="font-mono">
                     <span className="text-magma font-bold">Alpha {result.probA}%</span>
