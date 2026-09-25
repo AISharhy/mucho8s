@@ -71,19 +71,18 @@ export default function Leaderboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-          <Medal size={22} className="text-gold" />
+          <Medal size={22} className="text-[#D5A33A]" />
           <h2 className="font-display text-2xl font-bold" data-testid="leaderboard-title">
             {game === "ALL" ? "Global Ranking" : `${game} Ranking`}
-          </h2>
-        </div>
+          </h3></div></div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <div className="relative w-full sm:w-auto">
-            <Gamepad2 size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gold pointer-events-none" />
+            <Gamepad2 size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#D5A33A] pointer-events-none" />
             <select
               data-testid="leaderboard-game-select"
               value={game}
               onChange={(e) => setGame(e.target.value)}
-              className="h-10 w-full sm:w-auto rounded-md bg-[#161924] border border-gold/40 text-gold font-semibold pl-8 pr-3 text-sm"
+              className="h-10 w-full sm:w-auto rounded-md bg-[#0F1218] border border-[#2B313E] text-[#D5A33A] font-semibold pl-8 pr-3 text-sm"
             >
               <option value="ALL">All Games (Total)</option>
               {GAMES.map((g) => (
@@ -91,17 +90,17 @@ export default function Leaderboard() {
               ))}
             </select>
           </div>
-          <Button onClick={exportCsv} data-testid="export-csv-btn" className="w-full sm:w-auto bg-[#181B26] border border-gold/40 text-gold hover:bg-gold/10">
+          <Button onClick={exportCsv} data-testid="export-csv-btn" className="w-full sm:w-auto rounded-xl bg-[#0F1218] border border-[#222834] text-[#C8CED8] hover:bg-white/[0.04]">
             <Download size={16} className="mr-1" /> Export CSV
           </Button>
         </div>
       </div>
 
-      <div className="card-surface rounded-xl overflow-hidden">
+      <div className="card-surface rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm" data-testid="leaderboard-table">
             <thead>
-              <tr className="border-b border-[#242938] bg-[#101219]">
+              <tr className="border-b border-[#222834] bg-[#0F1218]">
                 {COLUMNS.map((c) => (
                   <th
                     key={c.key}
@@ -136,7 +135,7 @@ export default function Leaderboard() {
                 <tr
                   key={p.id}
                   data-testid={`leaderboard-row-${p.id}`}
-                  className="border-b border-[#1C202E] hover:bg-white/[0.03] transition-colors"
+                  className="border-b border-[#1D222C] hover:bg-white/[0.03] transition-colors"
                 >
                   <td className="px-4 py-3 font-mono font-bold" style={{ color: rankColor(i) }}>
                     {i + 1}
@@ -148,7 +147,7 @@ export default function Leaderboard() {
                     </Link>
                   </td>
                   <td className="px-4 py-3"><EloBadge elo={p.currentElo} /></td>
-                  <td className="px-4 py-3 font-mono text-gold">{p.peakElo}</td>
+                  <td className="px-4 py-3 font-mono text-[#D5A33A]">{p.peakElo}</td>
                   <td className="px-4 py-3 font-mono">{winRate(p)}%</td>
                   <td className="px-4 py-3 font-mono text-emerald-400">{p.wins}</td>
                   <td className="px-4 py-3 font-mono text-red-400">{p.losses}</td>
