@@ -34,19 +34,18 @@ const Gate = () => {
   return (
     <div className="max-w-md mx-auto mt-10">
       <div className="card-surface rounded-2xl p-8 text-center relative overflow-hidden">
-        <div className="gradient-bar h-1 absolute top-0 left-0 right-0" />
-        <div className="w-16 h-16 rounded-full gradient-bar flex items-center justify-center mx-auto mb-5 magma-glow">
-          <Shield size={30} className="text-black" />
+        <div className="w-16 h-16 rounded-2xl bg-[#0B0D12] border border-[#282E39] flex items-center justify-center mx-auto mb-5">
+          <img src={`${process.env.PUBLIC_URL}/logo-mark.svg`} alt="MuchoMoney8s" className="w-14 h-14 object-contain" />
         </div>
-        <h2 className="font-display text-2xl font-bold">Admin Access</h2>
-        <p className="text-muted-foreground text-sm mt-2 mb-6">Restricted area — only the <span className="text-gold font-semibold">Admin</span> can enter.</p>
+        <div className="brand-kicker mb-1">Control Room</div><h2 className="font-display text-2xl font-extrabold">Admin Access</h2>
+        <p className="text-muted-foreground text-sm mt-2 mb-6">Restricted area for roster and match management.</p>
         <Input
           data-testid="admin-nickname-input"
           placeholder="Username..."
           value={nick}
           onChange={(e) => setNick(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && tryEnter()}
-          className="bg-[#181B26] border-[#242938] h-12 text-center"
+          className="bg-[#0F1218] border-[#222834] h-12 text-center"
         />
         <div className="relative mt-3">
           <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -57,7 +56,7 @@ const Gate = () => {
             value={pwd}
             onChange={(e) => setPwd(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && tryEnter()}
-            className="bg-[#181B26] border-[#242938] h-12 text-center px-9"
+            className="bg-[#0F1218] border-[#222834] h-12 text-center px-9"
           />
           <button
             type="button"
@@ -164,10 +163,10 @@ export default function AdminPanel() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
-          <Shield size={22} className="text-magma" />
-          <h2 className="font-display text-2xl font-bold">Control Room</h2>
+          <Shield size={20} className="text-magma" />
+          <div><div className="brand-kicker mb-1">Administration</div><h2 className="font-display text-2xl font-extrabold">Control Room</h2></div>
           <span className="text-sm text-muted-foreground">· {admin?.nickname}</span>
-          <span className="text-[10px] uppercase tracking-widest px-2 py-1 rounded bg-[#181B26] border border-[#242938] text-muted-foreground">{storageMode}</span>
+          <span className="text-[10px] uppercase tracking-widest px-2 py-1 rounded bg-[#0F1218] border border-[#222834] text-muted-foreground">{storageMode}</span>
         </div>
         <Button variant="ghost" onClick={() => setAdmin(null)} data-testid="admin-logout-btn" className="text-muted-foreground">
           <LogOut size={16} className="mr-1" /> Sign out
@@ -175,14 +174,14 @@ export default function AdminPanel() {
       </div>
 
       {storageMode === "local" && (
-        <div className="rounded-xl border border-gold/30 bg-gold/5 px-4 py-3 text-sm text-muted-foreground">
-          <span className="text-gold font-semibold">Local mode:</span> player e match sono salvati solo in questo browser. Collega Supabase per avere lo stesso database su PC e telefono.
+        <div className="rounded-xl border border-[#3A3320] bg-[#D5A33A]/5 px-4 py-3 text-sm text-muted-foreground">
+          <span className="text-[#D5A33A] font-semibold">Local mode:</span> player e match sono salvati solo in questo browser. Collega Supabase per avere lo stesso database su PC e telefono.
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Add player */}
-        <div className="card-surface rounded-xl p-5">
+        <div className="card-surface rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <UserPlus size={18} className="text-emerald-400" />
             <h3 className="font-display font-bold text-lg">Add Player</h3>
@@ -190,11 +189,11 @@ export default function AdminPanel() {
           <div className="space-y-3">
             <div>
               <Label className="text-xs text-muted-foreground">Nickname</Label>
-              <Input data-testid="admin-new-name" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Reaper" className="bg-[#181B26] border-[#242938] mt-1" />
+              <Input data-testid="admin-new-name" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Reaper" className="bg-[#0F1218] border-[#222834] mt-1" />
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Starting Elo</Label>
-              <Input data-testid="admin-new-elo" type="number" value={newElo} onChange={(e) => setNewElo(e.target.value)} className="bg-[#181B26] border-[#242938] mt-1" />
+              <Input data-testid="admin-new-elo" type="number" value={newElo} onChange={(e) => setNewElo(e.target.value)} className="bg-[#0F1218] border-[#222834] mt-1" />
             </div>
             <Button onClick={handleAdd} data-testid="admin-add-player-btn" className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold">
               <UserPlus size={16} className="mr-1" /> Add to Roster
@@ -203,17 +202,17 @@ export default function AdminPanel() {
         </div>
 
         {/* Data actions */}
-        <div className="card-surface rounded-xl p-5 lg:col-span-2">
+        <div className="card-surface rounded-2xl p-5 lg:col-span-2">
           <div className="flex items-center gap-2 mb-4">
-            <Database size={18} className="text-gold" />
+            <Database size={18} className="text-[#D5A33A]" />
             <h3 className="font-display font-bold text-lg">Data & Records</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Button onClick={handleExport} data-testid="admin-export-btn" className="justify-start bg-[#181B26] border border-[#242938] hover:bg-white/5 h-14">
+            <Button onClick={handleExport} data-testid="admin-export-btn" className="justify-start bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] h-14 rounded-xl">
               <Download size={18} className="mr-2 text-emerald-400" /> Export Full Database
             </Button>
 
-            <Button onClick={() => fileRef.current?.click()} data-testid="admin-import-btn" className="justify-start bg-[#181B26] border border-[#242938] hover:bg-white/5 h-14">
+            <Button onClick={() => fileRef.current?.click()} data-testid="admin-import-btn" className="justify-start bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] h-14 rounded-xl">
               <Upload size={18} className="mr-2 text-blue-400" /> Import Database Backup
             </Button>
             <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={handleImport} data-testid="admin-import-file" />
@@ -227,7 +226,7 @@ export default function AdminPanel() {
               onConfirm={() => { resetStats(); toast.success("Statistics reset"); }}
             />
 
-            <Button onClick={() => setHistOpen(true)} data-testid="admin-add-historical-btn" className="justify-start bg-[#181B26] border border-[#242938] hover:bg-white/5 h-14">
+            <Button onClick={() => setHistOpen(true)} data-testid="admin-add-historical-btn" className="justify-start bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] h-14 rounded-xl">
               <History size={18} className="mr-2 text-magma" /> Add Historical Match
             </Button>
           </div>
@@ -235,13 +234,13 @@ export default function AdminPanel() {
       </div>
 
       {/* Roster management */}
-      <div className="card-surface rounded-xl p-5" data-testid="admin-roster">
+      <div className="card-surface rounded-2xl p-5" data-testid="admin-roster">
         <h3 className="font-display font-bold text-lg mb-4">Manage Roster ({players.length})</h3>
         <div className="space-y-2">
           {players.map((p) => {
             const isEditing = editing[p.id] !== undefined;
             return (
-              <div key={p.id} className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-[#101219] border border-[#1C202E]" data-testid={`admin-player-${p.id}`}>
+              <div key={p.id} className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-[#0F1218] border border-[#1D222C]" data-testid={`admin-player-${p.id}`}>
                 <PlayerAvatar name={p.name} elo={p.currentElo} size={34} />
                 {isEditing ? (
                   <div className="flex-1 min-w-[220px] grid grid-cols-1 sm:grid-cols-[1fr_110px_auto] gap-2">
@@ -249,7 +248,7 @@ export default function AdminPanel() {
                       data-testid={`admin-edit-name-input-${p.id}`}
                       value={editing[p.id].name}
                       onChange={(e) => setEditing((prev) => ({ ...prev, [p.id]: { ...prev[p.id], name: e.target.value } }))}
-                      className="h-9 bg-[#181B26] border-[#242938]"
+                      className="h-9 bg-[#0F1218] border-[#222834]"
                       aria-label="Player nickname"
                     />
                     <Input
@@ -257,7 +256,7 @@ export default function AdminPanel() {
                       type="number"
                       value={editing[p.id].elo}
                       onChange={(e) => setEditing((prev) => ({ ...prev, [p.id]: { ...prev[p.id], elo: e.target.value } }))}
-                      className="h-9 bg-[#181B26] border-[#242938]"
+                      className="h-9 bg-[#0F1218] border-[#222834]"
                       aria-label="Player Elo"
                     />
                     <Button onClick={() => savePlayer(p.id)} data-testid={`admin-save-player-${p.id}`} className="h-9 bg-emerald-500 hover:bg-emerald-600">
@@ -306,18 +305,18 @@ const ConfirmButton = ({ label, icon, title, desc, onConfirm, testid, iconOnly }
           {icon}
         </Button>
       ) : (
-        <Button data-testid={testid} className="justify-start bg-[#181B26] border border-[#242938] hover:bg-white/5 h-14">
+        <Button data-testid={testid} className="justify-start bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] h-14 rounded-xl">
           {icon} {label}
         </Button>
       )}
     </AlertDialogTrigger>
-    <AlertDialogContent className="bg-[#12141C] border-[#242938]">
+    <AlertDialogContent className="bg-[#101319] border-[#222834]">
       <AlertDialogHeader>
         <AlertDialogTitle className="font-display">{title}</AlertDialogTitle>
         <AlertDialogDescription>{desc}</AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel className="bg-[#181B26] border-[#242938]">Cancel</AlertDialogCancel>
+        <AlertDialogCancel className="bg-[#0F1218] border-[#222834]">Cancel</AlertDialogCancel>
         <AlertDialogAction onClick={onConfirm} data-testid={`${testid}-confirm`} className="bg-magma hover:bg-magma/90 text-white">
           Confirm
         </AlertDialogAction>
