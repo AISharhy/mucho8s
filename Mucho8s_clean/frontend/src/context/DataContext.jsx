@@ -344,7 +344,7 @@ export const DataProvider = ({ children }) => {
       if (!silent) toast.error("Discord account service unavailable");
       return null;
     }
-  }, [admin]);
+  }, [admin, discordSession]);
 
   const syncDiscordSession = useCallback(async (session) => {
     setDiscordSession(session || null);
@@ -878,6 +878,9 @@ export const DataProvider = ({ children }) => {
         "Content-Type": "application/json",
         apikey: SUPABASE_ANON_KEY,
       };
+      if (discordSession?.access_token) {
+        headers.Authorization = `Bearer ${discordSession.access_token}`;
+      }
       const activeToken = token || admin?.sessionToken;
       if (activeToken) headers["X-Admin-Session"] = activeToken;
 
