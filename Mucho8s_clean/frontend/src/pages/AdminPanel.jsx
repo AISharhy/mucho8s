@@ -99,10 +99,18 @@ export default function AdminPanel() {
     setNewElo(1000);
   };
 
-  const saveElo = (id) => {
-    editElo(id, Number(editing[id]));
-    setEditing((p) => { const n = { ...p }; delete n[id]; return n; });
-    toast.success("Elo updated");
+  const savePlayer = async (id) => {
+    const draft = editing[id];
+    if (!draft?.name?.trim()) return toast.error("Nickname cannot be empty");
+    const okName = await editPlayerName(id, draft.name.trim());
+    const okElo = await editElo(id, Number(draft.elo));
+    if (!okName || !okElo) return;
+    setEditing((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    toast.success("Player updated");
   };
 
   const handleImport = (e) => {
@@ -159,7 +167,7 @@ export default function AdminPanel() {
         <div className="flex items-center gap-2">
           <Shield size={22} className="text-magma" />
           <h2 className="font-display text-2xl font-bold">Control Room</h2>
-          <span className="text-sm text-muted-foreground">· {admin?.nickname}</span>
+          <span className="text-sm text-muted-foreground">· {admin?.nickname}</span>\n          <span className="text-[10px] uppercase tracking-widest px-2 py-1 rounded bg-[#181B26] border border-[#242938] text-muted-foreground">{storageMode}</span>
         </div>
         <Button variant="ghost" onClick={() => setAdmin(null)} data-testid="admin-logout-btn" className="text-muted-foreground">
           <LogOut size={16} className="mr-1" /> Sign out
@@ -227,26 +235,40 @@ export default function AdminPanel() {
           {players.map((p) => {
             const isEditing = editing[p.id] !== undefined;
             return (
-              <div key={p.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-[#101219] border border-[#1C202E]" data-testid={`admin-player-${p.id}`}>
+              <div key={p.id} className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-[#101219] border border-[#1C202E]" data-testid={`admin-player-${p.id}`}>
                 <PlayerAvatar name={p.name} elo={p.currentElo} size={34} />
-                <span className="font-medium flex-1 truncate">{p.name}</span>
                 {isEditing ? (
-                  <div className="flex items-center gap-1">
+                  <div className="flex-1 min-w-[220px] grid grid-cols-1 sm:grid-cols-[1fr_110px_auto] gap-2">
+                    <Input
+                      data-testid={`admin-edit-name-input-${p.id}`}
+                      value={editing[p.id].name}
+                      onChange={(e) => setEditing((prev) => ({ ...prev, [p.id]: { ...prev[p.id], name: e.target.value } }))}
+                      className="h-9 bg-[#181B26] border-[#242938]"
+                      aria-label="Player nickname"
+                    />
                     <Input
                       data-testid={`admin-edit-elo-input-${p.id}`}
                       type="number"
-                      value={editing[p.id]}
-                      onChange={(e) => setEditing((prev) => ({ ...prev, [p.id]: e.target.value }))}
-                      className="w-24 h-9 bg-[#181B26] border-[#242938]"
+                      value={editing[p.id].elo}
+                      onChange={(e) => setEditing((prev) => ({ ...prev, [p.id]: { ...prev[p.id], elo: e.target.value } }))}
+                      className="h-9 bg-[#181B26] border-[#242938]"
+                      aria-label="Player Elo"
                     />
-                    <Button size="icon" onClick={() => saveElo(p.id)} data-testid={`admin-save-elo-${p.id}`} className="h-9 w-9 bg-emerald-500 hover:bg-emerald-600">
-                      <Check size={16} />
+                    <Button onClick={() => savePlayer(p.id)} data-testid={`admin-save-player-${p.id}`} className="h-9 bg-emerald-500 hover:bg-emerald-600">
+                      <Check size={16} className="mr-1" /> Save
                     </Button>
                   </div>
                 ) : (
                   <>
+                    <span className="font-medium flex-1 min-w-[100px] truncate">{p.name}</span>
                     <EloBadge elo={p.currentElo} />
-                    <Button size="icon" variant="ghost" onClick={() => setEditing((prev) => ({ ...prev, [p.id]: p.currentElo }))} data-testid={`admin-edit-elo-btn-${p.id}`} className="h-9 w-9">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => setEditing((prev) => ({ ...prev, [p.id]: { name: p.name, elo: p.currentElo } }))}
+                      data-testid={`admin-edit-player-btn-${p.id}`}
+                      className="h-9 w-9"
+                    >
                       <Pencil size={15} />
                     </Button>
                   </>
