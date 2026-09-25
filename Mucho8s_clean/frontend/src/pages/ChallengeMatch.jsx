@@ -14,6 +14,8 @@ import {
   Clock3,
   X,
   Banknote,
+  Image as ImageIcon,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -57,6 +59,8 @@ export default function ChallengeMatch() {
     respondToChallenge,
     markChallengePaymentSent,
     confirmChallengePaymentReceived,
+    disputeChallengePayout,
+    uploadChallengeEvidence,
     reportChallengeResult,
     verifyChallengeResult,
     markChallengeSeen,
@@ -65,6 +69,10 @@ export default function ChallengeMatch() {
   const [busy, setBusy] = useState("");
   const [showDispute, setShowDispute] = useState(false);
   const [disputeNote, setDisputeNote] = useState("");
+  const [disputeFile, setDisputeFile] = useState(null);
+  const [showPayoutDispute, setShowPayoutDispute] = useState(false);
+  const [payoutDisputeNote, setPayoutDisputeNote] = useState("");
+  const [payoutDisputeFile, setPayoutDisputeFile] = useState(null);
   const challenge = challenges.find((item) => item.id === id);
 
   useEffect(() => {
@@ -186,6 +194,16 @@ export default function ChallengeMatch() {
     }
 
     setBusy(decision);
+
+    if (decision === "dispute" && disputeFile) {
+      const evidence = await uploadChallengeEvidence(challenge.id, disputeFile, "result_dispute");
+      if (!evidence) {
+        setBusy("");
+        if (payoutTab) payoutTab.close();
+        return;
+      }
+    }
+
     const updated = await verifyChallengeResult(
       challenge.id,
       decision,
@@ -209,6 +227,7 @@ export default function ChallengeMatch() {
       toast.error("Result disputed — Admin can review it");
       setShowDispute(false);
       setDisputeNote("");
+      setDisputeFile(null);
     }
   };
 
@@ -224,6 +243,32 @@ export default function ChallengeMatch() {
     const updated = await confirmChallengePaymentReceived(challenge.id);
     setBusy("");
     if (updated) toast.success(`${money(challenge)} received and confirmed`);
+  };
+
+  const openPayoutDispute = async () => {
+    if (!payoutDisputeNote.trim()) {
+      toast.error("Explain that the payment was not received");
+      return;
+    }
+
+    setBusy("payout-dispute");
+
+    if (payoutDisputeFile) {
+      const evidence = await uploadChallengeEvidence(challenge.id, payoutDisputeFile, "payout_dispute");
+      if (!evidence) {
+        setBusy("");
+        return;
+      }
+    }
+
+    const updated = await disputeChallengePayout(challenge.id, payoutDisputeNote.trim());
+    setBusy("");
+    if (!updated) return;
+
+    setShowPayoutDispute(false);
+    setPayoutDisputeNote("");
+    setPayoutDisputeFile(null);
+    toast.error("Payment dispute sent to Admin");
   };
 
   return (
@@ -347,14 +392,14 @@ export default function ChallengeMatch() {
               disabled={Boolean(busy)}
               className="h-14 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold"
             >
-              <Trophy size={18} className="mr-2" /> I WON
+              <Trophy size={18} className="mr-2" /> VITTORIA
             </Button>
             <Button
               onClick={() => reportWinner(opponent?.id)}
               disabled={Boolean(busy) || !opponent?.id}
-              className="h-14 rounded-xl bg-[#181B26] border border-[#2A303B] text-white font-bold hover:bg-white/[0.05]"
+              className="h-14 rounded-xl bg-red-500 hover:bg-red-400 text-white font-extrabold"
             >
-              {opponent?.name || "Opponent"} WON
+              <X size={18} className="mr-2" /> SCONFITTA
             </Button>
           </div>
         </div>
@@ -399,6 +444,19 @@ export default function ChallengeMatch() {
                 placeholder="Example: I won the match, the reported result is incorrect."
                 className="mt-2 w-full min-h-24 rounded-xl bg-[#0F1218] border border-[#2A303B] px-3 py-2 text-sm outline-none focus:border-orange-500/40"
               />
+              <label
+                data-testid="result-dispute-evidence"
+                className="mt-3 min-h-11 px-3 rounded-xl bg-[#0F1218] border border-[#2A303B] flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-white"
+              >
+                <Upload size={15} />
+                {disputeFile ? disputeFile.name : "Add screenshot proof (optional)"}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={(e) => setDisputeFile(e.target.files?.[0] || null)}
+                />
+              </label>
               <div className="flex gap-2 mt-3">
                 <Button
                   variant="ghost"
@@ -453,16 +511,78 @@ export default function ChallengeMatch() {
             ) : completedWon ? (
               challenge.payment_sent_at ? (
                 <div className="mt-4">
-                  <div className="rounded-xl bg-[#D5A33A]/10 border border-[#D5A33A]/25 p-4 text-[#D5A33A] text-sm font-semibold">
-                    The losing player marked {money(challenge)} as paid.
-                  </div>
-                  <Button
-                    onClick={confirmPayoutReceived}
-                    disabled={Boolean(busy)}
-                    className="w-full h-12 mt-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold"
-                  >
-                    <ShieldCheck size={17} className="mr-2" /> CONFIRM PAYMENT RECEIVED
-                  </Button>
+                  {challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at ? (
+                    <div className="rounded-xl bg-orange-500/10 border border-orange-500/25 p-4">
+                      <div className="flex items-center gap-2 text-orange-400 font-bold">
+                        <AlertTriangle size={17} /> PAYMENT DISPUTE OPEN
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {challenge.payout_dispute_note || "Admin is reviewing this payout."}
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="rounded-xl bg-[#D5A33A]/10 border border-[#D5A33A]/25 p-4 text-[#D5A33A] text-sm font-semibold">
+                        The losing player marked {money(challenge)} as paid.
+                      </div>
+
+                      {!showPayoutDispute ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                          <Button
+                            onClick={() => setShowPayoutDispute(true)}
+                            disabled={Boolean(busy)}
+                            className="h-12 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 hover:bg-red-500/15"
+                          >
+                            <AlertTriangle size={16} className="mr-2" /> DISPUTA PAGAMENTO
+                          </Button>
+                          <Button
+                            onClick={confirmPayoutReceived}
+                            disabled={Boolean(busy)}
+                            className="h-12 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold"
+                          >
+                            <ShieldCheck size={17} className="mr-2" /> PAGAMENTO RICEVUTO
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="mt-3 rounded-xl bg-red-500/[0.04] border border-red-500/20 p-4">
+                          <div className="text-xs uppercase tracking-widest text-red-300">Pagamento non ricevuto</div>
+                          <textarea
+                            value={payoutDisputeNote}
+                            onChange={(e) => setPayoutDisputeNote(e.target.value)}
+                            maxLength={240}
+                            placeholder="Scrivi cosa è successo..."
+                            className="mt-2 w-full min-h-24 rounded-xl bg-[#0F1218] border border-[#2A303B] px-3 py-2 text-sm outline-none focus:border-red-500/40"
+                          />
+                          <label className="mt-3 min-h-11 px-3 rounded-xl bg-[#0F1218] border border-[#2A303B] flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-white">
+                            <ImageIcon size={15} />
+                            {payoutDisputeFile ? payoutDisputeFile.name : "Aggiungi screenshot prova (opzionale)"}
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg,image/webp"
+                              className="hidden"
+                              onChange={(e) => setPayoutDisputeFile(e.target.files?.[0] || null)}
+                            />
+                          </label>
+                          <div className="grid grid-cols-2 gap-2 mt-3">
+                            <Button
+                              variant="ghost"
+                              onClick={() => setShowPayoutDispute(false)}
+                              className="bg-[#181B26] border border-[#2A303B]"
+                            >
+                              Annulla
+                            </Button>
+                            <Button
+                              onClick={openPayoutDispute}
+                              disabled={Boolean(busy) || !payoutDisputeNote.trim()}
+                              className="bg-red-500 hover:bg-red-400 text-white font-bold"
+                            >
+                              Invia disputa
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               ) : (
                 <div className="mt-4 rounded-xl bg-[#0F1218] border border-[#1D222C] p-4 text-sm text-muted-foreground">
@@ -502,6 +622,29 @@ export default function ChallengeMatch() {
             )}
           </div>
         </>
+      )}
+
+      {Array.isArray(challenge.evidence) && challenge.evidence.length > 0 && (
+        <div className="card-surface rounded-2xl p-5" data-testid="challenge-evidence-gallery">
+          <div className="brand-kicker mb-1">Evidence</div>
+          <h3 className="font-display text-lg font-bold">Screenshots</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
+            {challenge.evidence.map((item) => (
+              <a
+                key={item.id || item.url}
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group rounded-xl overflow-hidden border border-[#242A35] bg-[#0F1218]"
+              >
+                <img src={item.url} alt="Challenge evidence" className="w-full aspect-video object-cover group-hover:opacity-90 transition-opacity" />
+                <div className="px-2.5 py-2 text-[10px] uppercase tracking-wider text-muted-foreground truncate">
+                  {String(item.kind || "evidence").replaceAll("_", " ")}
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
       )}
 
       {challenge.status === "disputed" && (
