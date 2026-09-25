@@ -365,11 +365,11 @@ export default function TeamBalancer() {
                   onClick={() => toggle(p.id)}
                   className="w-full flex items-center gap-3 p-2 rounded-lg text-left transition-all"
                   style={{
-                    background: isSel ? "rgba(244,63,94,0.12)" : "#1A202B",
-                    border: `1px solid ${isSel ? "rgba(244,63,94,0.5)" : "#2B3443"}`,
+                    background: isSel ? "rgba(244,63,94,0.12)" : "#181B26",
+                    border: `1px solid ${isSel ? "rgba(244,63,94,0.5)" : "#222834"}`,
                   }}
                 >
-                  <div className="w-5 h-5 rounded flex items-center justify-center shrink-0" style={{ background: isSel ? "#F43F5E" : "transparent", border: `1px solid ${isSel ? "#F43F5E" : "#465264"}` }}>
+                  <div className="w-5 h-5 rounded flex items-center justify-center shrink-0" style={{ background: isSel ? "#FF2A3B" : "transparent", border: `1px solid ${isSel ? "#FF2A3B" : "#343B48"}` }}>
                     {isSel && <Check size={13} className="text-white" />}
                   </div>
                   <PlayerAvatar name={p.name} elo={p.currentElo} size={32} />
@@ -419,7 +419,7 @@ export default function TeamBalancer() {
                   </div>
                 </div>
                 <div className="h-2 rounded-full bg-[#242938] overflow-hidden">
-                  <div className="h-full rounded-full transition-all" style={{ width: `${result.balanceScore}%`, background: "linear-gradient(90deg,#F43F5E,#FB7185)" }} />
+                  <div className="h-full rounded-full transition-all" style={{ width: `${result.balanceScore}%`, background: "linear-gradient(90deg,#FF2A3B,#FF5260)" }} />
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-3 text-sm">
                   <span className="text-muted-foreground">Projected Winner</span>
@@ -432,8 +432,8 @@ export default function TeamBalancer() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <TeamPanel label="Alpha" team={result.teamA} strength={result.strengthA} color="#F43F5E" prob={result.probA} isFavored={result.probA >= result.probB} />
-                <TeamPanel label="Bravo" team={result.teamB} strength={result.strengthB} color="#C9A45C" prob={result.probB} isFavored={result.probB > result.probA} />
+                <TeamPanel label="Alpha" team={result.teamA} strength={result.strengthA} color="#FF2A3B" prob={result.probA} isFavored={result.probA >= result.probB} />
+                <TeamPanel label="Bravo" team={result.teamB} strength={result.strengthB} color="#D5A33A" prob={result.probB} isFavored={result.probB > result.probA} />
               </div>
 
               <div className="card-surface rounded-2xl p-5" data-testid="money-chall-pairings">
@@ -441,7 +441,7 @@ export default function TeamBalancer() {
                   <div>
                     <div className="brand-kicker mb-1">Money Matchups</div>
                     <h3 className="font-display font-bold text-lg flex items-center gap-2">
-                      <WalletCards size={18} className="text-[#C9A45C]" />
+                      <WalletCards size={18} className="text-[#D5A33A]" />
                       Money Chall Pairings
                     </h3>
                     <p className="text-sm text-muted-foreground mt-1">
@@ -455,7 +455,7 @@ export default function TeamBalancer() {
                       <select
                         value={defaultPlatform}
                         onChange={(e) => setAllPairingPlatform(e.target.value)}
-                        className="w-28 h-10 rounded-xl bg-[#0E1219] border border-[#2B3443] px-3 text-sm font-semibold text-white"
+                        className="w-28 h-10 rounded-xl bg-[#0F1218] border border-[#222834] px-3 text-sm font-semibold text-white"
                         data-testid="money-default-platform"
                       >
                         <option value="cmg">CMG</option>
@@ -474,13 +474,13 @@ export default function TeamBalancer() {
                           setDefaultStake(e.target.value);
                           setPairingsSent(false);
                         }}
-                        className="w-24 h-10 bg-[#0E1219] border-[#2B3443] rounded-xl font-mono"
+                        className="w-24 h-10 bg-[#0F1218] border-[#222834] rounded-xl font-mono"
                         data-testid="money-default-stake"
                       />
                     </div>
                     <Button
                       onClick={autoPairMoney}
-                      className="h-10 rounded-xl bg-[#171D27] border border-[#35404F] text-white hover:bg-white/[0.05]"
+                      className="h-10 rounded-xl bg-[#151923] border border-[#2A303B] text-white hover:bg-white/[0.05]"
                       data-testid="money-auto-pair"
                     >
                       <Shuffle size={15} className="mr-1.5" /> Auto Pair
@@ -498,17 +498,17 @@ export default function TeamBalancer() {
                     return (
                       <div
                         key={alpha.id}
-                        className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr_120px] gap-2 sm:items-center rounded-xl bg-[#0E1219] border border-[#252C39] p-3"
+                        className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr_120px] gap-2 sm:items-center rounded-xl bg-[#0F1218] border border-[#1D222C] p-3"
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <PlayerAvatar name={alpha.name} elo={alpha.currentElo} size={34} />
                           <div className="min-w-0">
                             <div className="text-sm font-semibold truncate">{alpha.name}</div>
-                            <div className="text-[10px] uppercase tracking-wider text-[#F43F5E]">Alpha</div>
+                            <div className="text-[10px] uppercase tracking-wider text-[#FF2A3B]">Alpha</div>
                           </div>
                         </div>
 
-                        <ArrowRightLeft size={16} className="hidden sm:block text-[#697386]" />
+                        <ArrowRightLeft size={16} className="hidden sm:block text-[#697181]" />
 
                         <select
                           value={pairing?.playerBId || ""}
@@ -516,7 +516,7 @@ export default function TeamBalancer() {
                             setPairingsSent(false);
                             setPairOpponent(alpha.id, e.target.value);
                           }}
-                          className="h-10 rounded-xl bg-[#171D27] border border-[#35404F] px-3 text-sm text-white"
+                          className="h-10 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm text-white"
                           data-testid={`money-opponent-${alpha.id}`}
                         >
                           <option value="">Choose Bravo player</option>
@@ -532,7 +532,7 @@ export default function TeamBalancer() {
                         </select>
 
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#697386] text-sm">€</span>
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#697181] text-sm">€</span>
                           <Input
                             type="number"
                             min="0"
@@ -544,7 +544,7 @@ export default function TeamBalancer() {
                               setPairAmount(alpha.id, e.target.value);
                             }}
                             placeholder="0"
-                            className="h-10 pl-7 bg-[#171D27] border-[#35404F] rounded-xl font-mono"
+                            className="h-10 pl-7 bg-[#151923] border-[#2A303B] rounded-xl font-mono"
                             data-testid={`money-amount-${alpha.id}`}
                           />
                         </div>
@@ -554,26 +554,26 @@ export default function TeamBalancer() {
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
-                  <div className="rounded-xl bg-[#0E1219] border border-[#252C39] p-3">
+                  <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
                     <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Pairings</div>
                     <div className="font-mono font-bold text-lg mt-1">{moneyPairings.length}/{result.teamA.length}</div>
                   </div>
-                  <div className="rounded-xl bg-[#0E1219] border border-[#252C39] p-3">
+                  <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
                     <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Total €</div>
                     <div className="font-mono font-bold text-lg mt-1">€{(challBalance?.totalStake || 0).toFixed(2)}</div>
                   </div>
-                  <div className="rounded-xl bg-[#0E1219] border border-[#252C39] p-3">
+                  <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
                     <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Avg Skill Gap</div>
                     <div className="font-mono font-bold text-lg mt-1">{challBalance?.avgGap ?? "—"}</div>
                   </div>
                   <div className={`rounded-xl border p-3 ${
                     (challBalance?.score || 0) >= 85
                       ? "bg-emerald-500/[0.06] border-emerald-500/20"
-                      : "bg-[#0E1219] border-[#252C39]"
+                      : "bg-[#0F1218] border-[#1D222C]"
                   }`}>
                     <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Chall Balance</div>
                     <div className={`font-mono font-bold text-lg mt-1 ${
-                      (challBalance?.score || 0) >= 85 ? "text-emerald-400" : "text-[#C9A45C]"
+                      (challBalance?.score || 0) >= 85 ? "text-emerald-400" : "text-[#D5A33A]"
                     }`}>
                       {challBalance ? `${challBalance.score}%` : "—"}
                     </div>
@@ -592,7 +592,7 @@ export default function TeamBalancer() {
                     className={`w-full h-12 mt-4 rounded-xl font-extrabold ${
                       pairingsSent
                         ? "bg-emerald-500/15 border border-emerald-500/25 text-emerald-400"
-                        : "bg-[#F43F5E] hover:bg-[#FB5A76] text-white"
+                        : "bg-[#FF2A3B] hover:bg-[#ff3c4c] text-white"
                     }`}
                     data-testid="send-money-challs-all"
                   >
