@@ -7,6 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
   ArrowLeft,
   Crown,
   Gamepad2,
@@ -118,24 +126,48 @@ export default function PlayerProfile() {
             </div>
           </div>
 
-          {challengeLinks.length > 0 && (
-            <div className="flex flex-wrap gap-2 sm:justify-end">
-              {challengeLinks.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <a
-                    key={item.key}
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`inline-flex items-center gap-2 h-10 px-3 rounded-xl text-sm font-semibold transition-colors ${item.className}`}
-                    data-testid={`challenge-link-${item.key}`}
-                  >
-                    <Icon size={15} /> {item.label} <ExternalLink size={13} />
-                  </a>
-                );
-              })}
-            </div>
+          {!isOwnProfile && challengeLinks.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  className="h-11 px-5 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-extrabold tracking-wide magma-glow"
+                  data-testid="challenge-me-btn"
+                >
+                  <Swords size={17} className="mr-2" /> CHALL ME
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                sideOffset={8}
+                className="w-56 rounded-xl border-[#2A303B] bg-[#101319] p-2 shadow-2xl"
+              >
+                <DropdownMenuLabel className="px-2 py-2">
+                  <div className="brand-kicker mb-1">Challenge {player.name}</div>
+                  <div className="text-sm font-semibold text-white">Choose platform</div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-[#242A35]" />
+                {challengeLinks.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <DropdownMenuItem key={item.key} asChild className="p-0 focus:bg-transparent">
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-[#D7DBE2] hover:bg-white/[0.05] hover:text-white"
+                        data-testid={`challenge-link-${item.key}`}
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-[#171B23] border border-[#2A303B] flex items-center justify-center">
+                          <Icon size={15} />
+                        </div>
+                        <span className="flex-1">{item.label}</span>
+                        <ExternalLink size={13} className="text-[#697181]" />
+                      </a>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
 
@@ -155,23 +187,19 @@ export default function PlayerProfile() {
         </div>
       </div>
 
-      <div className="card-surface rounded-2xl p-4 sm:p-5">
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div>
-            <div className="brand-kicker mb-1">Challenge</div>
-            <h3 className="font-display font-bold text-lg">
-              {isOwnProfile ? "Your Challenge Links" : `Challenge ${player.name}`}
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {isOwnProfile
-                ? "Add the pages other players should use when they want to challenge you."
-                : "Choose one of the links configured by this player."}
-            </p>
+      {isOwnProfile && (
+        <div className="card-surface rounded-2xl p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <div className="brand-kicker mb-1">Challenge</div>
+              <h3 className="font-display font-bold text-lg">Your Challenge Links</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Add the pages other players should use when they press CHALL ME.
+              </p>
+            </div>
+            <Link2 size={18} className="text-[#697181] shrink-0 mt-1" />
           </div>
-          <Link2 size={18} className="text-[#697181] shrink-0 mt-1" />
-        </div>
 
-        {isOwnProfile ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
             <div>
               <Label className="text-xs text-muted-foreground">PayPal link</Label>
@@ -218,30 +246,8 @@ export default function PlayerProfile() {
               </Button>
             </div>
           </div>
-        ) : challengeLinks.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {challengeLinks.map((item) => {
-              const Icon = item.icon;
-              return (
-                <a
-                  key={item.key}
-                  href={item.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`min-h-14 rounded-xl px-4 flex items-center justify-between gap-3 font-semibold transition-colors ${item.className}`}
-                >
-                  <span className="inline-flex items-center gap-2"><Icon size={17} /> {item.label}</span>
-                  <ExternalLink size={15} />
-                </a>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-8 px-4 text-center text-sm text-muted-foreground">
-            This player has not added PayPal, Revolut or CMG links yet.
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="card-surface rounded-2xl p-4 sm:p-5">
         <h3 className="font-display font-bold text-lg mb-4">Elo History</h3>
