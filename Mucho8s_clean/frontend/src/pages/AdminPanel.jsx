@@ -174,6 +174,12 @@ export default function AdminPanel() {
         </Button>
       </div>
 
+      {storageMode === "local" && (
+        <div className="rounded-xl border border-gold/30 bg-gold/5 px-4 py-3 text-sm text-muted-foreground">
+          <span className="text-gold font-semibold">Local mode:</span> player e match sono salvati solo in questo browser. Collega Supabase per avere lo stesso database su PC e telefono.
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Add player */}
         <div className="card-surface rounded-xl p-5">
