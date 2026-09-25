@@ -236,7 +236,7 @@ export const DataProvider = ({ children }) => {
     }
 
     try {
-      const activeSession = session || discordSession;
+      const activeSession = session || null;
       const headers = {
         "Content-Type": "application/json",
         apikey: SUPABASE_ANON_KEY,
@@ -268,7 +268,7 @@ export const DataProvider = ({ children }) => {
       if (!silent) toast.error("Discord account service unavailable");
       return null;
     }
-  }, [admin, discordSession]);
+  }, [admin]);
 
   const syncDiscordSession = useCallback(async (session) => {
     setDiscordSession(session || null);
@@ -695,6 +695,15 @@ export const DataProvider = ({ children }) => {
     isAdmin,
     loaded,
     storageMode: STORAGE_MODE,
+    discordSession,
+    discordAccount,
+    discordPlayer,
+    discordLoading,
+    signInWithDiscord,
+    signOutDiscord,
+    refreshDiscordAccount,
+    listDiscordAccounts,
+    linkDiscordAccount,
     setAdmin,
     addPlayer,
     removePlayer,
