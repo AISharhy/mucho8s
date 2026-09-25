@@ -58,15 +58,19 @@ export default function ChallengeInbox() {
         : challenge.challenger_player_id;
       const opponent = playerMap[opponentId];
 
+      const iWon =
+        challenge.status === "completed" &&
+        challenge.reported_winner_player_id === discordAccount.player_id;
+
       const needsAction =
         (challenge.status === "pending" && !isChallenger) ||
         (challenge.status === "result_pending" && challenge.reporter_account_id !== discordAccount.id) ||
-        (challenge.status === "accepted" && !isChallenger && challenge.payment_sent_at && !challenge.payment_received_at) ||
-        (challenge.status === "accepted" &&
-          challenge.payment_received_at &&
-          !(isChallenger ? challenge.challenger_ready_at : challenge.challenged_ready_at));
+        (challenge.status === "completed" && !iWon && !challenge.payment_sent_at) ||
+        (challenge.status === "completed" && iWon && challenge.payment_sent_at && !challenge.payment_received_at);
 
-      const active = ["pending", "accepted", "result_pending", "disputed"].includes(challenge.status);
+      const active =
+        ["pending", "accepted", "result_pending", "disputed"].includes(challenge.status) ||
+        (challenge.status === "completed" && !challenge.payment_received_at);
 
       return { challenge, isChallenger, opponentId, opponent, needsAction, active };
     });
@@ -151,6 +155,7 @@ export default function ChallengeInbox() {
             const completed = challenge.status === "completed";
             const won = completed && challenge.reported_winner_player_id === discordPlayer.id;
             const lost = completed && challenge.reported_winner_player_id && !won;
+            const payoutPending = completed && !challenge.payment_received_at;
 
             return (
               <div
@@ -184,6 +189,11 @@ export default function ChallengeInbox() {
                     {lost && (
                       <span className="h-10 px-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs font-extrabold inline-flex items-center">
                         PERSA
+                      </span>
+                    )}
+                    {payoutPending && (
+                      <span className="h-10 px-3 rounded-xl bg-[#D5A33A]/10 border border-[#D5A33A]/25 text-[#D5A33A] text-[10px] font-bold inline-flex items-center">
+                        PAGAMENTO
                       </span>
                     )}
                     {!completed && (
