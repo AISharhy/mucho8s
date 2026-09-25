@@ -86,7 +86,7 @@ export default function ChallengeLeaderboard() {
         </div>
       ) : (
         <div className="card-surface rounded-2xl overflow-hidden">
-          <div className="hidden md:grid grid-cols-[70px_1fr_120px_120px_120px_120px] gap-3 px-4 py-3 border-b border-[#252C39] text-[10px] uppercase tracking-widest text-muted-foreground">
+          <div className="hidden md:grid grid-cols-[70px_1fr_120px_120px_120px_120px] gap-3 px-4 py-3 border-b border-[#1D222C] text-[10px] uppercase tracking-widest text-muted-foreground">
             <div>Rank</div>
             <div>Player</div>
             <div className="text-right">Record</div>
@@ -95,14 +95,14 @@ export default function ChallengeLeaderboard() {
             <div className="text-right">Profit</div>
           </div>
 
-          <div className="divide-y divide-[#252C39]">
+          <div className="divide-y divide-[#1D222C]">
             {rows.map((row, index) => (
               <div
                 key={row.player.id}
                 className="grid grid-cols-[44px_1fr] md:grid-cols-[70px_1fr_120px_120px_120px_120px] gap-3 items-center px-4 py-4"
               >
                 <div className="font-mono font-bold text-lg">
-                  {index === 0 ? <Trophy size={18} className="text-[#C9A45C]" /> : `#${index + 1}`}
+                  {index === 0 ? <Trophy size={18} className="text-[#D5A33A]" /> : `#${index + 1}`}
                 </div>
 
                 <div className="flex items-center gap-3 min-w-0">
@@ -130,11 +130,11 @@ export default function ChallengeLeaderboard() {
                 </div>
 
                 <div className="md:hidden col-start-2 grid grid-cols-2 gap-2 mt-1">
-                  <div className="rounded-lg bg-[#0E1219] border border-[#252C39] px-3 py-2">
+                  <div className="rounded-lg bg-[#0F1218] border border-[#1D222C] px-3 py-2">
                     <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Volume</div>
                     <div className="font-mono text-sm mt-0.5">{euro(row.volume)}</div>
                   </div>
-                  <div className="rounded-lg bg-[#0E1219] border border-[#252C39] px-3 py-2">
+                  <div className="rounded-lg bg-[#0F1218] border border-[#1D222C] px-3 py-2">
                     <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Profit</div>
                     <div className={`font-mono text-sm font-bold mt-0.5 ${row.profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                       {row.profit >= 0 ? "+" : ""}{euro(row.profit)}
@@ -154,7 +154,7 @@ export default function ChallengeLeaderboard() {
           <div className="font-display text-2xl font-extrabold mt-1">{publicChallenges.filter((item) => item.payment_received_at).length}</div>
         </div>
         <div className="card-surface rounded-2xl p-4">
-          <WalletCards size={18} className="text-[#C9A45C] mb-2" />
+          <WalletCards size={18} className="text-[#D5A33A] mb-2" />
           <div className="text-xs text-muted-foreground">Verified Volume</div>
           <div className="font-display text-2xl font-extrabold mt-1">
             {euro(publicChallenges.filter((item) => item.payment_received_at).reduce((sum, item) => sum + Number(item.amount_cents || 0) / 100, 0))}
