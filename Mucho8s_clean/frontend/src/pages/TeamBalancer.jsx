@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RecordMatchDialog } from "@/components/RecordMatchDialog";
 import { GAMES } from "@/lib/demoData";
-import { Swords, Search, Sparkles, RotateCcw, Trophy, Check } from "lucide-react";
+import { Swords, Search, Sparkles, RotateCcw, Trophy, Check, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 const TeamPanel = ({ label, team, strength, color, prob, isFavored }) => (
@@ -52,7 +52,7 @@ const FORMATS = [
 ];
 
 export default function TeamBalancer() {
-  const { players, matches, isAdmin } = useData();
+  const { players, matches, isAdmin, sendDiscordTeams } = useData();
   const [required, setRequired] = useState(8);
   const [selected, setSelected] = useState([]);
   const [query, setQuery] = useState("");
@@ -119,6 +119,17 @@ export default function TeamBalancer() {
   const clear = () => {
     setSelected([]);
     setResult(null);
+  };
+
+  const sendTeamsToDiscord = async () => {
+    if (!result) return;
+    const ok = await sendDiscordTeams({
+      teamA: result.teamA.map((p) => p.name),
+      teamB: result.teamB.map((p) => p.name),
+      game: balancedGame === "ALL" ? "All Games" : balancedGame,
+      balanceScore: result.balanceScore,
+    });
+    if (ok) toast.success("Teams sent to Discord");
   };
 
   const perTeam = required / 2;
@@ -284,16 +295,25 @@ export default function TeamBalancer() {
               </div>
 
               {isAdmin ? (
-                <Button
-                  onClick={() => setRecordOpen(true)}
-                  data-testid="balancer-report-result-btn"
-                  className="w-full h-12 rounded-xl bg-[#0F1218] border border-magma/30 text-magma hover:bg-magma/10 font-semibold"
-                >
-                  <Trophy size={18} className="mr-2" /> Report Result & Update Elo
-                </Button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <Button
+                    onClick={sendTeamsToDiscord}
+                    data-testid="balancer-send-discord-btn"
+                    className="w-full h-12 rounded-xl bg-[#5865F2] hover:bg-[#6875f5] text-white font-semibold"
+                  >
+                    <MessageCircle size={18} className="mr-2" /> Send to Discord
+                  </Button>
+                  <Button
+                    onClick={() => setRecordOpen(true)}
+                    data-testid="balancer-report-result-btn"
+                    className="w-full h-12 rounded-xl bg-[#0F1218] border border-magma/30 text-magma hover:bg-magma/10 font-semibold"
+                  >
+                    <Trophy size={18} className="mr-2" /> Report Result & Update Elo
+                  </Button>
+                </div>
               ) : (
                 <div className="w-full h-12 rounded-xl bg-[#0F1218] border border-[#222834] text-muted-foreground text-sm flex items-center justify-center" data-testid="balancer-readonly-note">
-                  Sign in as Admin to report the result
+                  Sign in as Admin to send teams or report the result
                 </div>
               )}
             </div>
