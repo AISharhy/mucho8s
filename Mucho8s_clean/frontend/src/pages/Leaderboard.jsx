@@ -69,20 +69,25 @@ export default function Leaderboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-          <Medal size={22} className="text-[#D5A33A]" />
-          <h2 className="font-display text-2xl font-bold" data-testid="leaderboard-title">
-            {game === "ALL" ? "Global Ranking" : `${game} Ranking`}
-          </h3></div></div>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <div className="brand-kicker mb-1">Standings</div>
+          <div className="flex items-center gap-2">
+            <Medal size={18} className="text-[#D5A33A]" />
+            <h3 className="font-display text-xl font-bold" data-testid="leaderboard-title">
+              {game === "ALL" ? "Global Ranking" : `${game} Ranking`}
+            </h3>
+          </div>
+        </div>
+
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <div className="relative w-full sm:w-auto">
-            <Gamepad2 size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#D5A33A] pointer-events-none" />
+            <Gamepad2 size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#697181] pointer-events-none" />
             <select
               data-testid="leaderboard-game-select"
               value={game}
               onChange={(e) => setGame(e.target.value)}
-              className="h-10 w-full sm:w-auto rounded-md bg-[#0F1218] border border-[#2B313E] text-[#D5A33A] font-semibold pl-8 pr-3 text-sm"
+              className="h-10 w-full sm:w-auto rounded-xl bg-[#0F1218] border border-[#222834] text-[#C8CED8] font-semibold pl-8 pr-3 text-sm"
             >
               <option value="ALL">All Games (Total)</option>
               {GAMES.map((g) => (
@@ -90,7 +95,12 @@ export default function Leaderboard() {
               ))}
             </select>
           </div>
-          <Button onClick={exportCsv} data-testid="export-csv-btn" className="w-full sm:w-auto rounded-xl bg-[#0F1218] border border-[#222834] text-[#C8CED8] hover:bg-white/[0.04]">
+
+          <Button
+            onClick={exportCsv}
+            data-testid="export-csv-btn"
+            className="w-full sm:w-auto rounded-xl bg-[#0F1218] border border-[#222834] text-[#C8CED8] hover:bg-white/[0.04]"
+          >
             <Download size={16} className="mr-1" /> Export CSV
           </Button>
         </div>
