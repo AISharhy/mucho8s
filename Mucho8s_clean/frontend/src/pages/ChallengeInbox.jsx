@@ -99,7 +99,7 @@ export default function ChallengeInbox() {
   if (!discordSession || !discordPlayer) {
     return (
       <div className="card-surface rounded-2xl p-10 text-center max-w-xl mx-auto">
-        <Bell size={34} className="text-[#697386] mx-auto mb-3" />
+        <Bell size={34} className="text-[#697181] mx-auto mb-3" />
         <h2 className="font-display text-2xl font-bold">Challenge Inbox</h2>
         <p className="text-sm text-muted-foreground mt-2">
           Login with Discord to see your challenges and notifications.
@@ -132,7 +132,7 @@ export default function ChallengeInbox() {
               className={`rounded-xl border ${
                 tab === key
                   ? "bg-white text-black border-white hover:bg-white"
-                  : "bg-[#0E1219] border-[#2B3443] text-[#AEB7C6] hover:text-white"
+                  : "bg-[#0F1218] border-[#222834] text-[#AAB1BE] hover:text-white"
               }`}
             >
               {label}
@@ -192,7 +192,7 @@ export default function ChallengeInbox() {
                       </span>
                     )}
                     {payoutPending && (
-                      <span className="h-10 px-3 rounded-xl bg-[#C9A45C]/10 border border-[#C9A45C]/25 text-[#C9A45C] text-[10px] font-bold inline-flex items-center">
+                      <span className="h-10 px-3 rounded-xl bg-[#D5A33A]/10 border border-[#D5A33A]/25 text-[#D5A33A] text-[10px] font-bold inline-flex items-center">
                         PAGAMENTO
                       </span>
                     )}
@@ -204,7 +204,7 @@ export default function ChallengeInbox() {
                             ? "text-red-400 border-red-500/20 bg-red-500/5"
                             : challenge.status === "accepted"
                               ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/5"
-                              : "text-[#C9A45C] border-[#C9A45C]/25 bg-[#C9A45C]/5"
+                              : "text-[#D5A33A] border-[#D5A33A]/25 bg-[#D5A33A]/5"
                       }`}>
                         {statusText[challenge.status] || challenge.status}
                       </span>
@@ -223,7 +223,7 @@ export default function ChallengeInbox() {
                         <Button
                           disabled={busyId === challenge.id}
                           onClick={() => respond(challenge, "accept")}
-                          className="h-10 rounded-xl bg-magma hover:bg-[#FB5A76] text-white"
+                          className="h-10 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white"
                         >
                           <Check size={15} className="mr-1.5" /> Accept
                         </Button>
@@ -231,9 +231,9 @@ export default function ChallengeInbox() {
                     ) : (
                       <Link
                         to={`/challenges/${challenge.id}`}
-                        className="h-10 px-4 rounded-xl bg-[#1A202B] border border-[#35404F] text-sm font-semibold text-white inline-flex items-center justify-center hover:bg-white/[0.05]"
+                        className="h-10 px-4 rounded-xl bg-[#181B26] border border-[#2A303B] text-sm font-semibold text-white inline-flex items-center justify-center hover:bg-white/[0.05]"
                       >
-                        {needsAction ? <AlertTriangle size={14} className="mr-1.5 text-[#C9A45C]" /> : <Swords size={14} className="mr-1.5" />}
+                        {needsAction ? <AlertTriangle size={14} className="mr-1.5 text-[#D5A33A]" /> : <Swords size={14} className="mr-1.5" />}
                         Open Match
                       </Link>
                     )}
