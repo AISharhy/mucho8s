@@ -15,9 +15,6 @@ const HAS_BACKEND = Boolean(BACKEND_URL);
 const STORAGE_MODE = HAS_SUPABASE ? "supabase" : HAS_BACKEND ? "backend" : "local";
 const POLL_MS = 3500;
 
-const ADMIN_NICKNAME = "Admin";
-const ADMIN_PASSWORD_SHA256 = "5275321e80637acbd0dc2a0d0e9b5120ab79618531edd49b189ff4b4ce4ec4ff";
-
 const makePlayer = (name, startElo = BASE_ELO) => {
   const elo = Math.max(MIN_ELO, Math.round(Number(startElo) || BASE_ELO));
   return {
@@ -150,7 +147,21 @@ const revertEffects = (byId, match) => {
 export const DataProvider = ({ children }) => {
   const [players, setPlayers] = useState(() => (load("players", []) || []).map(normalizePlayer));
   const [matches, setMatches] = useState(() => (load("matches", []) || []).map(normalizeMatch));
-  const [admin, setAdminState] = useState(null);
+  const [admin, setAdminState] = useState(() => {
+    try {
+      const raw = sessionStorage.getItem("mucho8s_admin_session");
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed?.sessionToken || !parsed?.expiresAt) return null;
+      if (new Date(parsed.expiresAt).getTime() <= Date.now()) {
+        sessionStorage.removeItem("mucho8s_admin_session");
+        return null;
+      }
+      return parsed;
+    } catch {
+      return null;
+    }
+  });
   const [discordSession, setDiscordSession] = useState(null);
   const [discordAccount, setDiscordAccount] = useState(null);
   const [discordLoading, setDiscordLoading] = useState(hasSupabaseAuth);
@@ -311,8 +322,8 @@ export const DataProvider = ({ children }) => {
         headers.Authorization = `Bearer ${activeSession.access_token}`;
       }
 
-      if (admin?.password) {
-        headers["X-Admin-Password"] = admin.password;
+      if (admin?.sessionToken) {
+        headers["X-Admin-Session"] = admin.sessionToken;
       }
 
       const res = await fetch(`${SUPABASE_URL}/functions/v1/mucho8s-account`, {
@@ -573,7 +584,7 @@ export const DataProvider = ({ children }) => {
   }, [challengeRequest, refreshChallenges]);
 
   const adminChallengeRequest = useCallback(async (payload, { silent = false } = {}) => {
-    if (!HAS_SUPABASE || !admin?.password) {
+    if (!HAS_SUPABASE || !admin?.sessionToken) {
       if (!silent) toast.error("Admin access required");
       return null;
     }
@@ -584,7 +595,7 @@ export const DataProvider = ({ children }) => {
         headers: {
           "Content-Type": "application/json",
           apikey: SUPABASE_ANON_KEY,
-          "X-Admin-Password": admin.password,
+          "X-Admin-Session": admin.sessionToken,
         },
         body: JSON.stringify(payload),
       });
@@ -674,7 +685,7 @@ export const DataProvider = ({ children }) => {
   }, [challenges, discordAccount]);
 
   const adminAuditRequest = useCallback(async (payload, { silent = false } = {}) => {
-    if (!HAS_SUPABASE || !admin?.password) {
+    if (!HAS_SUPABASE || !admin?.sessionToken) {
       if (!silent) toast.error("Admin access required");
       return null;
     }
@@ -685,7 +696,7 @@ export const DataProvider = ({ children }) => {
         headers: {
           "Content-Type": "application/json",
           apikey: SUPABASE_ANON_KEY,
-          "X-Admin-Password": admin.password,
+          "X-Admin-Session": admin.sessionToken,
         },
         body: JSON.stringify(payload),
       });
@@ -713,7 +724,7 @@ export const DataProvider = ({ children }) => {
     return Array.isArray(data?.logs) ? data.logs : null;
   }, [adminAuditRequest]);
 
-  const isAdmin = Boolean(admin?.password);
+  const isAdmin = Boolean(admin?.sessionToken);
   const discordPlayer = useMemo(
     () => (discordAccount?.player_id ? playerMap[discordAccount.player_id] || null : null),
     [discordAccount, playerMap],
@@ -725,7 +736,7 @@ export const DataProvider = ({ children }) => {
         method,
         headers: {
           "Content-Type": "application/json",
-          "X-Admin-Password": admin?.password || "",
+          "X-Admin-Session": admin?.sessionToken || "",
         },
         body: body ? JSON.stringify(body) : undefined,
       });
@@ -765,7 +776,7 @@ export const DataProvider = ({ children }) => {
           headers: {
             "Content-Type": "application/json",
             apikey: SUPABASE_ANON_KEY,
-            "X-Admin-Password": admin?.password || "",
+            "X-Admin-Session": admin?.sessionToken || "",
           },
           body: JSON.stringify({ players: normalizedPlayers, matches: normalizedMatches }),
         });
@@ -801,7 +812,7 @@ export const DataProvider = ({ children }) => {
         headers: {
           "Content-Type": "application/json",
           apikey: SUPABASE_ANON_KEY,
-          "X-Admin-Password": admin?.password || "",
+          "X-Admin-Session": admin?.sessionToken || "",
         },
         body: JSON.stringify(payload),
       });
@@ -856,25 +867,99 @@ export const DataProvider = ({ children }) => {
     return Boolean(data?.ok);
   }, [discordRequest]);
 
+  const adminAuthRequest = useCallback(async (payload, { token, silent = false } = {}) => {
+    if (!HAS_SUPABASE) {
+      if (!silent) toast.error("Admin security requires Supabase mode");
+      return null;
+    }
+
+    try {
+      const headers = {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_ANON_KEY,
+      };
+      const activeToken = token || admin?.sessionToken;
+      if (activeToken) headers["X-Admin-Session"] = activeToken;
+
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/mucho8s-admin-auth`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (!silent) toast.error(data?.error || "Admin authentication failed");
+        return null;
+      }
+      return data;
+    } catch {
+      if (!silent) toast.error("Admin authentication service unavailable");
+      return null;
+    }
+  }, [admin]);
+
+  useEffect(() => {
+    if (!admin?.sessionToken) return undefined;
+
+    const verify = async () => {
+      const data = await adminAuthRequest({ action: "status" }, { silent: true });
+      if (!data?.ok) {
+        sessionStorage.removeItem("mucho8s_admin_session");
+        setAdminState(null);
+      }
+    };
+
+    void verify();
+    const timer = setInterval(verify, 5 * 60 * 1000);
+    return () => clearInterval(timer);
+  }, [admin?.sessionToken, adminAuthRequest]);
+
   const setAdmin = useCallback(async (nickname, password) => {
     if (nickname === null) {
+      const token = admin?.sessionToken;
+      if (token) {
+        await adminAuthRequest({ action: "logout" }, { token, silent: true });
+      }
+      sessionStorage.removeItem("mucho8s_admin_session");
       setAdminState(null);
       return true;
     }
 
-    const normalizedNickname = nickname.trim().toLowerCase();
-    if (normalizedNickname !== ADMIN_NICKNAME.toLowerCase()) return false;
+    const data = await adminAuthRequest({
+      action: "login",
+      username: String(nickname || "").trim(),
+      password: String(password || ""),
+    });
 
-    const bytes = new TextEncoder().encode(password);
-    const digest = await crypto.subtle.digest("SHA-256", bytes);
-    const hash = Array.from(new Uint8Array(digest))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
+    if (!data?.ok || !data?.sessionToken) return false;
 
-    if (hash !== ADMIN_PASSWORD_SHA256) return false;
-    setAdminState({ nickname: ADMIN_NICKNAME, password });
+    const next = {
+      nickname: data.nickname || "Admin",
+      sessionToken: data.sessionToken,
+      expiresAt: data.expiresAt,
+    };
+
+    sessionStorage.setItem("mucho8s_admin_session", JSON.stringify(next));
+    setAdminState(next);
     return true;
-  }, []);
+  }, [admin?.sessionToken, adminAuthRequest]);
+
+  const changeAdminPassword = useCallback(async (newPassword) => {
+    const data = await adminAuthRequest({
+      action: "change-password",
+      newPassword: String(newPassword || ""),
+    });
+    return Boolean(data?.ok);
+  }, [adminAuthRequest]);
+
+  const logoutAllAdminSessions = useCallback(async () => {
+    const data = await adminAuthRequest({ action: "logout-all" });
+    if (!data?.ok) return false;
+    sessionStorage.removeItem("mucho8s_admin_session");
+    setAdminState(null);
+    return true;
+  }, [adminAuthRequest]);
 
   const addPlayer = useCallback(async (name, startElo = BASE_ELO) => {
     if (STORAGE_MODE === "backend") return backendWrite("/players", { body: { name, startElo } });
@@ -1096,6 +1181,8 @@ export const DataProvider = ({ children }) => {
     listDiscordAccounts,
     linkDiscordAccount,
     setAdmin,
+    changeAdminPassword,
+    logoutAllAdminSessions,
     addPlayer,
     removePlayer,
     editElo,
