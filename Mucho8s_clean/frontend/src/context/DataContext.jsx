@@ -149,7 +149,7 @@ const revertEffects = (byId, match) => {
 export const DataProvider = ({ children }) => {
   const [players, setPlayers] = useState(() => (load("players", []) || []).map(normalizePlayer));
   const [matches, setMatches] = useState(() => (load("matches", []) || []).map(normalizeMatch));
-  const [admin, setAdminState] = useState(() => load("admin", null));
+  const [admin, setAdminState] = useState(null);
   const [loaded, setLoaded] = useState(STORAGE_MODE === "local");
   const versionRef = useRef(-1);
 
@@ -204,10 +204,6 @@ export const DataProvider = ({ children }) => {
     save("players", players);
     save("matches", matches);
   }, [players, matches, loaded]);
-
-  useEffect(() => {
-    save("admin", admin);
-  }, [admin]);
 
   const playerMap = useMemo(() => {
     const result = {};
