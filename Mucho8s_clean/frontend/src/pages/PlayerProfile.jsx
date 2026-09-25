@@ -8,7 +8,7 @@ import { LineChart, Line, ResponsiveContainer, Tooltip, YAxis, XAxis, CartesianG
 
 export default function PlayerProfile() {
   const { id } = useParams();
-  const { players, matches, playerMap } = useData();
+  const { players, matches, playerMap, playerAvatars } = useData();
 
   const player = players.find((p) => p.id === id);
 
@@ -47,7 +47,7 @@ export default function PlayerProfile() {
 
       <div className="brand-card rounded-2xl p-5 sm:p-7">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <PlayerAvatar name={player.name} elo={player.currentElo} size={72} />
+          <PlayerAvatar name={player.name} elo={player.currentElo} size={82} avatarUrl={playerAvatars[player.id]} />
           <div className="min-w-0">
             <div className="brand-kicker mb-1">Player Profile</div><h2 className="font-display text-3xl font-extrabold truncate">{player.name}</h2>
             <div className="mt-1 flex flex-wrap items-center gap-3">
