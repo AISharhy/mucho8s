@@ -2,21 +2,51 @@ import React from "react";
 import { tierOf, winRate } from "@/lib/elo";
 import { Crown, Flame, TrendingUp, TrendingDown } from "lucide-react";
 
-export const PlayerAvatar = ({ name, size = 40, elo }) => {
+export const PlayerAvatar = ({ name, size = 40, elo, avatarUrl }) => {
   const tier = tierOf(elo ?? 1000);
+  const [imageError, setImageError] = React.useState(false);
+
+  React.useEffect(() => {
+    setImageError(false);
+  }, [avatarUrl]);
+
   const initials = (name || "?")
     .replace(/[^a-zA-Z0-9]/g, "")
     .slice(0, 2)
     .toUpperCase();
+
+  const baseStyle = {
+    width: size,
+    height: size,
+    border: `1px solid ${tier.color}38`,
+  };
+
+  if (avatarUrl && !imageError) {
+    return (
+      <div
+        className="rounded-lg shrink-0 shadow-sm overflow-hidden bg-[#101319]"
+        style={baseStyle}
+        title={name}
+      >
+        <img
+          src={avatarUrl}
+          alt={`${name || "Player"} Discord avatar`}
+          className="w-full h-full object-cover"
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={() => setImageError(true)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className="flex items-center justify-center rounded-lg font-display font-extrabold shrink-0 shadow-sm"
       style={{
-        width: size,
-        height: size,
+        ...baseStyle,
         fontSize: size * 0.38,
         background: "linear-gradient(145deg, #171B23, #101319)",
-        border: `1px solid ${tier.color}38`,
         color: "#F3F4F6",
       }}
     >
