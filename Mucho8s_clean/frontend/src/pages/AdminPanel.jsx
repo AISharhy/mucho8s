@@ -82,10 +82,10 @@ const Gate = () => {
 };
 
 export default function AdminPanel() {
-  const { admin, setAdmin, players, addPlayer, removePlayer, editElo, resetStats, importPlayers } = useData();
+  const { admin, setAdmin, players, matches, addPlayer, removePlayer, editElo, editPlayerName, resetStats, importPlayers, importFullBackup, storageMode } = useData();
   const [newName, setNewName] = useState("");
   const [newElo, setNewElo] = useState(1000);
-  const [editing, setEditing] = useState({}); // id -> value
+  const [editing, setEditing] = useState({}); // id -> { name, elo }
   const [histOpen, setHistOpen] = useState(false);
   const fileRef = useRef(null);
 
@@ -192,11 +192,11 @@ export default function AdminPanel() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Button onClick={handleExport} data-testid="admin-export-btn" className="justify-start bg-[#181B26] border border-[#242938] hover:bg-white/5 h-14">
-              <Download size={18} className="mr-2 text-emerald-400" /> Export Player Database
+              <Download size={18} className="mr-2 text-emerald-400" /> Export Full Database
             </Button>
 
             <Button onClick={() => fileRef.current?.click()} data-testid="admin-import-btn" className="justify-start bg-[#181B26] border border-[#242938] hover:bg-white/5 h-14">
-              <Upload size={18} className="mr-2 text-blue-400" /> Import Player Database
+              <Upload size={18} className="mr-2 text-blue-400" /> Import Database Backup
             </Button>
             <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={handleImport} data-testid="admin-import-file" />
 
