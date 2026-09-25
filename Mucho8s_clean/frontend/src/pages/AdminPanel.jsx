@@ -105,6 +105,7 @@ export default function AdminPanel() {
     listAdminChallenges,
     adminUpdateChallenge,
     adminDeleteChallenge,
+    listAdminAudit,
   } = useData();
   const [newName, setNewName] = useState("");
   const [newElo, setNewElo] = useState(1000);
@@ -121,6 +122,7 @@ export default function AdminPanel() {
   const [expandedChallengeId, setExpandedChallengeId] = useState("");
   const [editMatchData, setEditMatchData] = useState(null);
   const [reportMatchData, setReportMatchData] = useState(null);
+  const [auditLogs, setAuditLogs] = useState([]);
   const fileRef = useRef(null);
 
   const loadDiscordAccounts = useCallback(async () => {
@@ -144,6 +146,11 @@ export default function AdminPanel() {
     });
   }, [listAdminChallenges]);
 
+  const loadAuditLogs = useCallback(async () => {
+    const list = await listAdminAudit();
+    if (list) setAuditLogs(list);
+  }, [listAdminAudit]);
+
   useEffect(() => {
     let active = true;
     if (!admin) return undefined;
@@ -153,11 +160,12 @@ export default function AdminPanel() {
     });
     void loadDiscordAccounts();
     void loadAdminChallenges();
+    void loadAuditLogs();
 
     return () => {
       active = false;
     };
-  }, [admin, getDiscordStatus, loadDiscordAccounts, loadAdminChallenges]);
+  }, [admin, getDiscordStatus, loadDiscordAccounts, loadAdminChallenges, loadAuditLogs]);
 
   const challengeStats = useMemo(() => {
     const active = adminChallenges.filter((challenge) =>
@@ -168,6 +176,11 @@ export default function AdminPanel() {
     const totalStake = adminChallenges.reduce((sum, challenge) => sum + Number(challenge.amount_cents || 0), 0) / 100;
     return { active, disputed, completed, totalStake };
   }, [adminChallenges]);
+
+  const disputedChallenges = useMemo(
+    () => adminChallenges.filter((challenge) => challenge.status === "disputed"),
+    [adminChallenges],
+  );
 
   if (!admin) return <Gate />;
 
@@ -494,6 +507,92 @@ export default function AdminPanel() {
           )}
         </div>
       </div>
+
+      {disputedChallenges.length > 0 && (
+        <div className="card-surface rounded-2xl p-5 border-orange-500/20" data-testid="admin-dispute-center">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div>
+              <div className="brand-kicker mb-1">Priority Queue</div>
+              <h3 className="font-display font-bold text-lg">Disputes ({disputedChallenges.length})</h3>
+              <p className="text-sm text-muted-foreground mt-1">Review contested challenge results first.</p>
+            </div>
+            <AlertTriangle size={20} className="text-orange-400" />
+          </div>
+
+          <div className="space-y-3">
+            {disputedChallenges.map((challenge) => {
+              const challenger = playerMap[challenge.challenger_player_id];
+              const challenged = playerMap[challenge.challenged_player_id];
+              const busy = challengeBusyId === challenge.id;
+              const amount = (Number(challenge.amount_cents || 0) / 100).toFixed(2);
+
+              return (
+                <div key={challenge.id} className="rounded-xl bg-orange-500/[0.04] border border-orange-500/15 p-4">
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-display font-bold">
+                        {challenger?.name || "Unknown"} vs {challenged?.name || "Unknown"} · €{amount}
+                      </div>
+                      <div className="text-sm text-orange-200/80 mt-1">
+                        {challenge.dispute_note || "No dispute note supplied."}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        disabled={busy}
+                        onClick={() => updateAdminChallenge(
+                          challenge.id,
+                          {
+                            winnerPlayerId: challenge.challenger_player_id,
+                            status: "completed",
+                            paymentSent: true,
+                            paymentReceived: true,
+                          },
+                          `${challenger?.name || "Challenger"} set as winner`
+                        )}
+                        className="h-10 bg-emerald-500 hover:bg-emerald-400 text-black font-bold"
+                      >
+                        {challenger?.name || "Challenger"} won
+                      </Button>
+                      <Button
+                        disabled={busy}
+                        onClick={() => updateAdminChallenge(
+                          challenge.id,
+                          {
+                            winnerPlayerId: challenge.challenged_player_id,
+                            status: "completed",
+                            paymentSent: true,
+                            paymentReceived: true,
+                          },
+                          `${challenged?.name || "Challenged"} set as winner`
+                        )}
+                        className="h-10 bg-emerald-500 hover:bg-emerald-400 text-black font-bold"
+                      >
+                        {challenged?.name || "Challenged"} won
+                      </Button>
+                      <Button
+                        disabled={busy}
+                        onClick={() => updateAdminChallenge(challenge.id, { status: "cancelled" }, "Challenge cancelled")}
+                        variant="ghost"
+                        className="h-10 bg-[#151923] border border-[#2A303B]"
+                      >
+                        Cancel Chall
+                      </Button>
+                      <Link
+                        to={`/challenges/${challenge.id}`}
+                        className="h-10 px-3 rounded-xl bg-[#151923] border border-[#2A303B] inline-flex items-center justify-center"
+                      >
+                        <ExternalLink size={14} />
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="card-surface rounded-2xl p-5" data-testid="admin-challenge-management">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
@@ -840,6 +939,47 @@ export default function AdminPanel() {
                     <option key={player.id} value={player.id}>{player.name}</option>
                   ))}
                 </select>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="card-surface rounded-2xl p-5" data-testid="admin-audit-log">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div>
+            <div className="brand-kicker mb-1">Security & History</div>
+            <h3 className="font-display font-bold text-lg">Admin Audit Log</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Tracks important Admin changes to players, matches and challenges.
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            onClick={loadAuditLogs}
+            className="bg-[#0F1218] border border-[#222834]"
+          >
+            <RotateCcw size={14} className="mr-1.5" /> Refresh
+          </Button>
+        </div>
+
+        {auditLogs.length === 0 ? (
+          <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-8 text-center text-sm text-muted-foreground">
+            No Admin actions recorded yet.
+          </div>
+        ) : (
+          <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+            {auditLogs.map((log) => (
+              <div key={log.id} className="rounded-xl bg-[#0F1218] border border-[#1D222C] px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="font-mono text-sm font-semibold truncate">{log.action}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {log.entity_type}{log.entity_id ? ` · ${String(log.entity_id).slice(0, 12)}` : ""}
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground whitespace-nowrap">
+                  {new Date(log.created_at).toLocaleString()}
+                </div>
               </div>
             ))}
           </div>
