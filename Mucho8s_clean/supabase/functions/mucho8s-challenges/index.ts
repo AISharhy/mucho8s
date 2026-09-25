@@ -87,6 +87,16 @@ Deno.serve(async (req: Request) => {
     const action = String(body?.action || "");
     const adminRequest = await isAdminRequest(req, supabase);
 
+    const getCurrentSeason = async () => {
+      const { data, error } = await supabase
+        .from("competition_config")
+        .select("season_number")
+        .eq("id", "main")
+        .maybeSingle();
+      if (error) throw error;
+      return Math.max(1, Number(data?.season_number || 1));
+    };
+
     if (adminRequest && action === "admin-list") {
       const { data, error } = await supabase
         .from("player_challenges")
@@ -142,6 +152,7 @@ Deno.serve(async (req: Request) => {
       }
 
       const rows: any[] = [];
+      const seasonNumber = await getCurrentSeason();
 
       for (const pair of pairings) {
         const challenger = accountByPlayer[pair.challengerPlayerId];
@@ -184,6 +195,7 @@ Deno.serve(async (req: Request) => {
           amount_cents: Math.round(pair.amount * 100),
           currency: "EUR",
           status: "pending",
+          season_number: seasonNumber,
           challenger_seen_status: null,
           challenged_seen_status: null,
           last_event: "pairing_assigned",
@@ -398,6 +410,8 @@ Deno.serve(async (req: Request) => {
       if (activeError) throw activeError;
       if (active?.length) return json({ error: "There is already an active challenge between these players" }, 409);
 
+      const seasonNumber = await getCurrentSeason();
+
       const { data, error } = await supabase
         .from("player_challenges")
         .insert({
@@ -412,6 +426,7 @@ Deno.serve(async (req: Request) => {
           amount_cents: amountCents,
           currency: "EUR",
           status: "pending",
+          season_number: seasonNumber,
           challenger_seen_status: "pending",
           challenged_seen_status: null,
           last_event: "created",
