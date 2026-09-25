@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { NavLink, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Users, Swords, Gamepad2, Trophy, Shield, Menu, X,
+  LayoutDashboard, Users, Swords, Gamepad2, Trophy, Shield, Menu, X, MessageCircle, LogOut,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 
@@ -74,7 +74,19 @@ const Brand = () => (
 );
 
 const MenuContent = ({ onNavigate, mobile = false }) => {
-  const { admin } = useData();
+  const {
+    admin,
+    discordSession,
+    discordAccount,
+    discordPlayer,
+    discordLoading,
+    signInWithDiscord,
+    signOutDiscord,
+  } = useData();
+
+  const discordName = discordPlayer?.name || discordAccount?.display_name || discordAccount?.discord_username || "Discord";
+  const linked = Boolean(discordPlayer);
+
   return (
     <>
       <div className="py-5 flex-1 overflow-y-auto space-y-6">
@@ -87,13 +99,63 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
         <NavItem item={ADMIN_NAV} onNavigate={onNavigate} />
       </div>
 
-      <div className={`border-t border-[#1C202E] ${mobile ? "px-4 py-4" : "px-4 py-3"}`}>
-        <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${admin ? "bg-emerald-400" : "bg-[#555D6E]"}`} />
-          <span className="text-xs text-muted-foreground" data-testid="sidebar-signed-as">
-            {admin ? `Admin · ${admin.nickname}` : "Guest"}
-          </span>
-        </div>
+      <div className={`border-t border-[#1C202E] ${mobile ? "px-3 py-4" : "px-3 py-3"}`}>
+        {discordLoading ? (
+          <div className="h-11 rounded-xl bg-[#0F1218] border border-[#1D222C] flex items-center px-3 text-xs text-muted-foreground">
+            Checking Discord session...
+          </div>
+        ) : discordSession ? (
+          <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-2.5">
+            <div className="flex items-center gap-2.5">
+              {discordAccount?.avatar_url ? (
+                <img
+                  src={discordAccount.avatar_url}
+                  alt=""
+                  className="w-8 h-8 rounded-lg object-cover shrink-0"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-lg bg-[#5865F2]/15 border border-[#5865F2]/30 flex items-center justify-center shrink-0">
+                  <MessageCircle size={15} className="text-[#8E98FF]" />
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-semibold text-white truncate" data-testid="sidebar-player-account">
+                  {discordName}
+                </div>
+                <div className={`text-[10px] truncate ${linked ? "text-emerald-400" : "text-[#D5A33A]"}`}>
+                  {linked ? `Linked · ${discordPlayer.currentElo} Elo` : "Waiting for player link"}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={signOutDiscord}
+                className="w-8 h-8 rounded-lg text-[#697181] hover:text-white hover:bg-white/5 flex items-center justify-center"
+                aria-label="Logout Discord"
+                data-testid="discord-logout-btn"
+              >
+                <LogOut size={14} />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={signInWithDiscord}
+            className="w-full h-11 rounded-xl bg-[#5865F2] hover:bg-[#6875F5] text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+            data-testid="discord-login-btn"
+          >
+            <MessageCircle size={17} /> Login with Discord
+          </button>
+        )}
+
+        {admin && (
+          <div className="flex items-center gap-2 px-1 mt-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span className="text-[10px] text-muted-foreground" data-testid="sidebar-signed-as">
+              Admin mode active
+            </span>
+          </div>
+        )}
       </div>
     </>
   );
