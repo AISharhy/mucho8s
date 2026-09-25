@@ -41,6 +41,9 @@ export default function PlayerProfile() {
     discordPlayer,
     discordSession,
     saveMyChallengeLinks,
+    challenges,
+    createChallenge,
+    reportChallengeResult,
   } = useData();
 
   const player = players.find((p) => p.id === id);
@@ -53,6 +56,7 @@ export default function PlayerProfile() {
     cmgUrl: "",
   });
   const [savingLinks, setSavingLinks] = useState(false);
+  const [sendingChallenge, setSendingChallenge] = useState("");
 
   useEffect(() => {
     setLinks({
@@ -102,6 +106,36 @@ export default function PlayerProfile() {
     if (ok) toast.success("Challenge links updated");
   };
 
+  const sendChallenge = async (platform) => {
+    if (!discordSession || !discordPlayer) {
+      toast.error("Login with Discord and link your player before sending a challenge");
+      return;
+    }
+
+    setSendingChallenge(platform);
+    const created = await createChallenge(player.id, platform);
+    setSendingChallenge("");
+
+    if (created) {
+      toast.success(`Challenge sent to ${player.name} — waiting for acceptance`);
+    }
+  };
+
+  const myChallenges = isOwnProfile
+    ? challenges.filter(
+        (challenge) =>
+          challenge.challenger_player_id === player.id ||
+          challenge.challenged_player_id === player.id
+      )
+    : [];
+
+  const reportWinner = async (challenge, winnerPlayerId) => {
+    const updated = await reportChallengeResult(challenge.id, winnerPlayerId);
+    if (updated) {
+      toast.success("Result submitted — the other player must verify it");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Link to="/players" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-white">
@@ -149,20 +183,20 @@ export default function PlayerProfile() {
                 {challengeLinks.map((item) => {
                   const Icon = item.icon;
                   return (
-                    <DropdownMenuItem key={item.key} asChild className="p-0 focus:bg-transparent">
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-[#D7DBE2] hover:bg-white/[0.05] hover:text-white"
-                        data-testid={`challenge-link-${item.key}`}
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-[#171B23] border border-[#2A303B] flex items-center justify-center">
-                          <Icon size={15} />
-                        </div>
-                        <span className="flex-1">{item.label}</span>
-                        <ExternalLink size={13} className="text-[#697181]" />
-                      </a>
+                    <DropdownMenuItem
+                      key={item.key}
+                      onSelect={() => sendChallenge(item.key)}
+                      disabled={Boolean(sendingChallenge)}
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-[#D7DBE2] focus:bg-white/[0.05] focus:text-white cursor-pointer"
+                      data-testid={`challenge-link-${item.key}`}
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-[#171B23] border border-[#2A303B] flex items-center justify-center">
+                        <Icon size={15} />
+                      </div>
+                      <span className="flex-1">
+                        {sendingChallenge === item.key ? "Sending..." : item.label}
+                      </span>
+                      <Swords size={13} className="text-[#697181]" />
                     </DropdownMenuItem>
                   );
                 })}
@@ -246,6 +280,119 @@ export default function PlayerProfile() {
               </Button>
             </div>
           </div>
+        </div>
+      )}
+
+      {isOwnProfile && (
+        <div className="card-surface rounded-2xl p-4 sm:p-5" data-testid="my-challenges-panel">
+          <div className="mb-4">
+            <div className="brand-kicker mb-1">Challenge Center</div>
+            <h3 className="font-display font-bold text-lg">My Challenges</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Results become official only after the other player verifies them.
+            </p>
+          </div>
+
+          {myChallenges.length === 0 ? (
+            <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-8 px-4 text-center text-sm text-muted-foreground">
+              No challenges yet.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {myChallenges.slice(0, 12).map((challenge) => {
+                const opponentId =
+                  challenge.challenger_player_id === player.id
+                    ? challenge.challenged_player_id
+                    : challenge.challenger_player_id;
+                const opponent = playerMap[opponentId];
+                const winner = playerMap[challenge.reported_winner_player_id];
+                const iReported = challenge.reporter_account_id === discordSession?.user?.id;
+                const isChallenger = challenge.challenger_player_id === player.id;
+
+                return (
+                  <div key={challenge.id} className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      <PlayerAvatar
+                        name={opponent?.name || "Player"}
+                        elo={opponent?.currentElo || 1000}
+                        size={40}
+                        avatarUrl={playerAvatars[opponentId]}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold truncate">vs {opponent?.name || "Player"}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {String(challenge.platform || "").toUpperCase()} · {new Date(challenge.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+
+                      <div className="text-xs font-bold uppercase tracking-wider">
+                        {challenge.status === "pending" && <span className="text-[#D5A33A]">Pending</span>}
+                        {challenge.status === "accepted" && <span className="text-emerald-400">Accepted</span>}
+                        {challenge.status === "result_pending" && <span className="text-[#8E98FF]">Verification</span>}
+                        {challenge.status === "completed" && <span className="text-emerald-400">Verified</span>}
+                        {challenge.status === "declined" && <span className="text-red-400">Declined</span>}
+                        {challenge.status === "disputed" && <span className="text-orange-400">Disputed</span>}
+                        {challenge.status === "cancelled" && <span className="text-muted-foreground">Cancelled</span>}
+                      </div>
+                    </div>
+
+                    {challenge.status === "accepted" && (
+                      <div className="mt-3 pt-3 border-t border-[#1D222C]">
+                        <div className="text-xs text-muted-foreground mb-2">Report the result after the challenge is finished:</div>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button
+                            onClick={() => reportWinner(challenge, player.id)}
+                            className="flex-1 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold"
+                          >
+                            I WON
+                          </Button>
+                          <Button
+                            onClick={() => reportWinner(challenge, opponentId)}
+                            className="flex-1 rounded-xl bg-[#171B23] border border-[#2A303B] text-white hover:bg-white/[0.05]"
+                          >
+                            {opponent?.name || "Opponent"} WON
+                          </Button>
+                          {isChallenger && challenge.target_url && (
+                            <a
+                              href={challenge.target_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="h-10 px-4 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white text-sm font-semibold inline-flex items-center justify-center gap-2"
+                            >
+                              Open {String(challenge.platform || "").toUpperCase()} <ExternalLink size={13} />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {challenge.status === "result_pending" && (
+                      <div className="mt-3 pt-3 border-t border-[#1D222C] text-sm">
+                        <span className="text-muted-foreground">Reported winner: </span>
+                        <span className="font-semibold text-white">{winner?.name || "Unknown"}</span>
+                        <span className="text-muted-foreground">
+                          {iReported ? " · waiting for opponent verification" : " · verify the result in the popup"}
+                        </span>
+                      </div>
+                    )}
+
+                    {challenge.status === "completed" && (
+                      <div className="mt-3 pt-3 border-t border-[#1D222C] text-sm">
+                        <span className="text-muted-foreground">Verified winner: </span>
+                        <span className="font-bold text-emerald-400">{winner?.name || "Unknown"}</span>
+                      </div>
+                    )}
+
+                    {challenge.status === "disputed" && (
+                      <div className="mt-3 pt-3 border-t border-[#1D222C] text-sm text-orange-300">
+                        Result disputed. The challenge is not counted as completed.
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
