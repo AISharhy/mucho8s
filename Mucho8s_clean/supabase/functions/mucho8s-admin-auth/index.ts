@@ -16,7 +16,7 @@ const corsHeaders = (req: Request) => {
   const allowOrigin = ALLOWED_ORIGINS.has(origin) ? origin : "https://aisharhy.github.io";
   return {
     "Access-Control-Allow-Origin": allowOrigin,
-    "Access-Control-Allow-Headers": "content-type, apikey, x-admin-session",
+    "Access-Control-Allow-Headers": "content-type, apikey, authorization, x-admin-session",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Max-Age": "86400",
     "Vary": "Origin",
@@ -114,7 +114,7 @@ const validateSession = async (req: Request, supabase: any) => {
 
   const { data: session, error } = await supabase
     .from("admin_sessions")
-    .select("token_hash,username,user_agent_hash,expires_at,revoked_at")
+    .select("token_hash,username,account_id,user_agent_hash,expires_at,revoked_at")
     .eq("token_hash", tokenHash)
     .maybeSingle();
 
@@ -124,11 +124,12 @@ const validateSession = async (req: Request, supabase: any) => {
 
   const { data: credential, error: credentialError } = await supabase
     .from("admin_credentials")
-    .select("username,is_active")
+    .select("username,is_active,required_account_id")
     .eq("username", session.username)
     .maybeSingle();
 
   if (credentialError || !credential?.is_active) return null;
+  if (!credential?.required_account_id || credential.required_account_id !== session.account_id) return null;
 
   await supabase
     .from("admin_sessions")
@@ -173,6 +174,18 @@ Deno.serve(async (req: Request) => {
       const password = String(body?.password || "");
       if (!username || !password) return json(req, { error: "Missing credentials" }, 400);
 
+      const authHeader = req.headers.get("authorization") || "";
+      const discordToken = authHeader.replace(/^Bearer\s+/i, "").trim();
+      if (!discordToken) {
+        return json(req, { error: "Login with the authorized Discord account first" }, 401);
+      }
+
+      const { data: discordAuth, error: discordAuthError } = await supabase.auth.getUser(discordToken);
+      const discordUser = discordAuth?.user;
+      if (discordAuthError || !discordUser) {
+        return json(req, { error: "Discord session is invalid or expired" }, 401);
+      }
+
       const now = new Date();
       const cutoff = new Date(now.getTime() - RATE_WINDOW_MINUTES * 60 * 1000).toISOString();
       const clientKeyHash = await getClientKey(req);
@@ -203,11 +216,20 @@ Deno.serve(async (req: Request) => {
 
       const { data: credential, error: credentialError } = await supabase
         .from("admin_credentials")
-        .select("username,password_hash,password_scheme,password_salt,password_iterations,is_active")
+        .select("username,password_hash,password_scheme,password_salt,password_iterations,is_active,required_account_id")
         .eq("username", username)
         .maybeSingle();
 
       if (credentialError) throw credentialError;
+
+      if (!credential?.required_account_id || credential.required_account_id !== discordUser.id) {
+        await supabase.from("admin_login_attempts").insert({
+          username,
+          client_key_hash: clientKeyHash,
+          success: false,
+        });
+        return json(req, { error: "This Discord account is not authorized for Admin" }, 403);
+      }
 
       let valid = false;
       if (credential?.is_active) {
@@ -265,6 +287,7 @@ Deno.serve(async (req: Request) => {
       const { error: sessionError } = await supabase.from("admin_sessions").insert({
         token_hash: tokenHash,
         username,
+        account_id: discordUser.id,
         user_agent_hash: uaHash,
         expires_at: expiresAt,
       });
