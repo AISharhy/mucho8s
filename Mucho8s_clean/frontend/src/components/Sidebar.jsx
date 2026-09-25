@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { NavLink, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Users, Swords, Gamepad2, Trophy, Shield, Menu, X, MessageCircle, LogOut,
+  LayoutDashboard, Users, Swords, Gamepad2, Trophy, Shield, Menu, X, MessageCircle, LogOut, UserCircle,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 
@@ -86,12 +86,21 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
 
   const discordName = discordPlayer?.name || discordAccount?.display_name || discordAccount?.discord_username || "Discord";
   const linked = Boolean(discordPlayer);
+  const myProfileItem = linked
+    ? {
+        to: `/players/${discordPlayer.id}`,
+        label: "My Profile",
+        icon: UserCircle,
+        testid: "nav-my-profile-link",
+      }
+    : null;
 
   return (
     <>
       <div className="py-5 flex-1 overflow-y-auto space-y-6">
         <NavSection label="Main" items={MAIN_NAV} onNavigate={onNavigate} />
         <NavSection label="Competition" items={COMPETITION_NAV} onNavigate={onNavigate} />
+        {myProfileItem && <NavSection label="Account" items={[myProfileItem]} onNavigate={onNavigate} />}
       </div>
 
       <div className="px-2 pb-3">
