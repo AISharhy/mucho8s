@@ -78,9 +78,14 @@ Deno.serve(async (req: Request) => {
       const targetPlayerId = String(body?.targetPlayerId || "").trim();
       const platform = String(body?.platform || "").trim().toLowerCase();
       const linkColumn = PLATFORM_COLUMNS[platform];
+      const amount = Number(body?.amount);
+      const amountCents = Math.round(amount * 100);
 
       if (!targetPlayerId || !linkColumn) {
         return json({ error: "Invalid challenge target or platform" }, 400);
+      }
+      if (!Number.isFinite(amount) || amount <= 0 || amountCents <= 0) {
+        return json({ error: "Enter a valid challenge amount" }, 400);
       }
       if (targetPlayerId === me.player_id) {
         return json({ error: "You cannot challenge yourself" }, 400);
@@ -119,6 +124,8 @@ Deno.serve(async (req: Request) => {
           challenged_player_id: targetPlayerId,
           platform,
           target_url: targetUrl,
+          amount_cents: amountCents,
+          currency: "EUR",
           status: "pending",
           challenger_seen_status: "pending",
           challenged_seen_status: null,
@@ -160,6 +167,43 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, challenge: data });
     }
 
+    if (action === "payment-sent") {
+      const id = String(body?.id || "").trim();
+      const challenge = await getChallenge(id);
+      if (!challenge) return json({ error: "Challenge not found" }, 404);
+      if (challenge.challenger_account_id !== user.id) return json({ error: "Only the challenger can mark payment as sent" }, 403);
+      if (challenge.status !== "accepted") return json({ error: "Challenge must be accepted first" }, 409);
+
+      const { data, error } = await supabase
+        .from("player_challenges")
+        .update({ payment_sent_at: new Date().toISOString() })
+        .eq("id", id)
+        .select("*")
+        .single();
+
+      if (error) throw error;
+      return json({ ok: true, challenge: data });
+    }
+
+    if (action === "payment-received") {
+      const id = String(body?.id || "").trim();
+      const challenge = await getChallenge(id);
+      if (!challenge) return json({ error: "Challenge not found" }, 404);
+      if (challenge.challenged_account_id !== user.id) return json({ error: "Only the challenged player can confirm payment" }, 403);
+      if (challenge.status !== "accepted") return json({ error: "Challenge must be accepted first" }, 409);
+      if (!challenge.payment_sent_at) return json({ error: "The challenger has not marked payment as sent yet" }, 409);
+
+      const { data, error } = await supabase
+        .from("player_challenges")
+        .update({ payment_received_at: new Date().toISOString() })
+        .eq("id", id)
+        .select("*")
+        .single();
+
+      if (error) throw error;
+      return json({ ok: true, challenge: data });
+    }
+
     if (action === "report-result") {
       const id = String(body?.id || "").trim();
       const winnerPlayerId = String(body?.winnerPlayerId || "").trim();
@@ -168,6 +212,9 @@ Deno.serve(async (req: Request) => {
       if (!challenge) return json({ error: "Challenge not found" }, 404);
       if (!isParticipant(challenge)) return json({ error: "Not allowed" }, 403);
       if (challenge.status !== "accepted") return json({ error: "Challenge is not ready for a result" }, 409);
+      if (Number(challenge.amount_cents || 0) > 0 && !challenge.payment_received_at) {
+        return json({ error: "Payment must be confirmed before reporting the result" }, 409);
+      }
 
       const validWinners = [challenge.challenger_player_id, challenge.challenged_player_id];
       if (!validWinners.includes(winnerPlayerId)) return json({ error: "Invalid winner" }, 400);
