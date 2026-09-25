@@ -15,7 +15,7 @@ const TITLES = {
 
 export const Layout = () => {
   const loc = useLocation();
-  const title = TITLES[loc.pathname] || "MuchoMoney8s";
+  const title = TITLES[loc.pathname] || (loc.pathname.startsWith("/players/") ? "Player Profile" : "MuchoMoney8s");
   return (
     <div className="min-h-screen bg-[#090A0F]">
       <Sidebar />
@@ -30,7 +30,7 @@ export const Layout = () => {
             data-testid="header-quick-balance-btn"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-magma hover:bg-magma/90 text-white text-sm font-semibold transition-all magma-glow"
           >
-            <Swords size={16} /> Quick Balance
+            <Swords size={16} /> <span className="hidden sm:inline">Quick Balance</span>
           </Link>
         </header>
         <main className="p-4 sm:p-6 lg:p-8">
