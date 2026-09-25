@@ -82,23 +82,6 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const action = String(body?.action || "");
 
-    if (action === "public-avatars") {
-      const { data, error } = await supabase
-        .from("player_accounts")
-        .select("player_id,avatar_url")
-        .not("player_id", "is", null)
-        .not("avatar_url", "is", null);
-      if (error) throw error;
-
-      const avatars = Object.fromEntries(
-        (data || [])
-          .filter((row: any) => row?.player_id && row?.avatar_url)
-          .map((row: any) => [String(row.player_id), String(row.avatar_url)])
-      );
-
-      return json({ ok: true, avatars });
-    }
-
     if (action === "sync" || action === "me") {
       const authHeader = req.headers.get("authorization") || "";
       const token = authHeader.replace(/^Bearer\s+/i, "").trim();
