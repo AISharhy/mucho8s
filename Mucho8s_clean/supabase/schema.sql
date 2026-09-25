@@ -44,6 +44,9 @@ create table if not exists public.player_accounts (
   display_name text,
   avatar_url text,
   player_id text unique,
+  paypal_url text,
+  revolut_url text,
+  cmg_url text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
