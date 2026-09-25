@@ -170,7 +170,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: me, error: meError } = await supabase
       .from("player_accounts")
-      .select("id,player_id,display_name,discord_username")
+      .select("id,player_id,display_name,discord_username,paypal_url,revolut_url,cmg_url")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -228,7 +228,9 @@ Deno.serve(async (req: Request) => {
       if (!target) return json({ error: "This player has not connected Discord yet" }, 404);
 
       const targetUrl = String(target[linkColumn] || "").trim();
+      const challengerUrl = String(me[linkColumn] || "").trim();
       if (!targetUrl) return json({ error: "This player has not configured that challenge method" }, 409);
+      if (!challengerUrl) return json({ error: `Configure your ${platform.toUpperCase()} link before sending this challenge` }, 409);
 
       const { data: active, error: activeError } = await supabase
         .from("player_challenges")
@@ -251,6 +253,8 @@ Deno.serve(async (req: Request) => {
           challenged_player_id: targetPlayerId,
           platform,
           target_url: targetUrl,
+          challenger_payout_url: challengerUrl,
+          challenged_payout_url: targetUrl,
           amount_cents: amountCents,
           currency: "EUR",
           status: "pending",
@@ -304,16 +308,21 @@ Deno.serve(async (req: Request) => {
       const id = String(body?.id || "").trim();
       const challenge = await getChallenge(id);
       if (!challenge) return json({ error: "Challenge not found" }, 404);
-      if (challenge.challenger_account_id !== user.id) return json({ error: "Only the challenger can mark payment as sent" }, 403);
-      if (challenge.status !== "accepted") return json({ error: "Challenge must be accepted first" }, 409);
+      if (!isParticipant(challenge)) return json({ error: "Not allowed" }, 403);
+      if (challenge.status !== "completed") return json({ error: "The result must be verified before payout" }, 409);
+      if (!challenge.reported_winner_player_id) return json({ error: "Winner is missing" }, 409);
+      if (me.player_id === challenge.reported_winner_player_id) {
+        return json({ error: "Only the losing player can mark the payout as sent" }, 403);
+      }
 
       const { data, error } = await supabase
         .from("player_challenges")
         .update({
           payment_sent_at: new Date().toISOString(),
-          last_event: "payment_sent",
-          challenger_seen_event: "payment_sent",
-          challenged_seen_event: null,
+          payment_received_at: null,
+          last_event: "payout_sent",
+          challenger_seen_event: challenge.challenger_account_id === user.id ? "payout_sent" : null,
+          challenged_seen_event: challenge.challenged_account_id === user.id ? "payout_sent" : null,
         })
         .eq("id", id)
         .select("*")
@@ -327,17 +336,20 @@ Deno.serve(async (req: Request) => {
       const id = String(body?.id || "").trim();
       const challenge = await getChallenge(id);
       if (!challenge) return json({ error: "Challenge not found" }, 404);
-      if (challenge.challenged_account_id !== user.id) return json({ error: "Only the challenged player can confirm payment" }, 403);
-      if (challenge.status !== "accepted") return json({ error: "Challenge must be accepted first" }, 409);
-      if (!challenge.payment_sent_at) return json({ error: "The challenger has not marked payment as sent yet" }, 409);
+      if (!isParticipant(challenge)) return json({ error: "Not allowed" }, 403);
+      if (challenge.status !== "completed") return json({ error: "The result must be verified before payout" }, 409);
+      if (me.player_id !== challenge.reported_winner_player_id) {
+        return json({ error: "Only the winning player can confirm the payout" }, 403);
+      }
+      if (!challenge.payment_sent_at) return json({ error: "The losing player has not marked the payout as sent yet" }, 409);
 
       const { data, error } = await supabase
         .from("player_challenges")
         .update({
           payment_received_at: new Date().toISOString(),
-          last_event: "payment_received",
-          challenged_seen_event: "payment_received",
-          challenger_seen_event: null,
+          last_event: "payout_received",
+          challenger_seen_event: challenge.challenger_account_id === user.id ? "payout_received" : null,
+          challenged_seen_event: challenge.challenged_account_id === user.id ? "payout_received" : null,
         })
         .eq("id", id)
         .select("*")
@@ -394,13 +406,6 @@ Deno.serve(async (req: Request) => {
       if (!challenge) return json({ error: "Challenge not found" }, 404);
       if (!isParticipant(challenge)) return json({ error: "Not allowed" }, 403);
       if (challenge.status !== "accepted") return json({ error: "Challenge is not ready for a result" }, 409);
-      if (Number(challenge.amount_cents || 0) > 0 && !challenge.payment_received_at) {
-        return json({ error: "Payment must be confirmed before reporting the result" }, 409);
-      }
-      if (!challenge.challenger_ready_at || !challenge.challenged_ready_at) {
-        return json({ error: "Both players must be READY before reporting the result" }, 409);
-      }
-
       const validWinners = [challenge.challenger_player_id, challenge.challenged_player_id];
       if (!validWinners.includes(winnerPlayerId)) return json({ error: "Invalid winner" }, 400);
 
@@ -448,6 +453,8 @@ Deno.serve(async (req: Request) => {
           status: nextStatus,
           verifier_account_id: user.id,
           verified_at: decision === "confirm" ? new Date().toISOString() : null,
+          payment_sent_at: decision === "confirm" ? null : challenge.payment_sent_at,
+          payment_received_at: decision === "confirm" ? null : challenge.payment_received_at,
           dispute_note: decision === "dispute" ? String(body?.note || "").trim().slice(0, 240) || "Result disputed" : null,
           challenger_seen_status: challenge.challenger_account_id === user.id ? nextStatus : null,
           challenged_seen_status: challenge.challenged_account_id === user.id ? nextStatus : null,
