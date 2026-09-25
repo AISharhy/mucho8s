@@ -606,6 +606,20 @@ export const DataProvider = ({ children }) => {
     return Array.isArray(data?.challenges) ? data.challenges : null;
   }, [adminChallengeRequest]);
 
+  const adminCreateChallengePairings = useCallback(async (pairings) => {
+    const data = await adminChallengeRequest({
+      action: "admin-create-pairings",
+      pairings,
+    });
+    if (!Array.isArray(data?.challenges)) return null;
+
+    if (discordAccount?.player_id) {
+      await refreshChallenges();
+    }
+
+    return data.challenges;
+  }, [adminChallengeRequest, discordAccount, refreshChallenges]);
+
   const adminUpdateChallenge = useCallback(async (id, updates) => {
     const data = await adminChallengeRequest({ action: "admin-update", id, ...updates });
     if (!data?.challenge) return null;
@@ -1068,6 +1082,7 @@ export const DataProvider = ({ children }) => {
     verifyChallengeResult,
     cancelChallenge,
     listAdminChallenges,
+    adminCreateChallengePairings,
     adminUpdateChallenge,
     adminDeleteChallenge,
     listAdminAudit,
