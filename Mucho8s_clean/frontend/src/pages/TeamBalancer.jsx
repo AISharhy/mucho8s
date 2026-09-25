@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 const TeamPanel = ({ label, team, strength, color, prob, isFavored }) => (
   <div
-    className="rounded-xl p-5 relative overflow-hidden"
+    className="rounded-2xl p-5 relative overflow-hidden"
     style={{ background: `${color}0d`, border: `1px solid ${color}55`, boxShadow: `0 0 24px ${color}1a` }}
     data-testid={`team-panel-${label.toLowerCase()}`}
   >
@@ -125,15 +125,20 @@ export default function TeamBalancer() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div>
+        <div className="brand-kicker mb-1">Matchmaking</div>
+        <h2 className="font-display text-2xl font-extrabold">Team Balancer</h2>
+        <p className="text-sm text-[#7F8795] mt-1">Choose the lobby and generate the most balanced split.</p>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         {/* Selection */}
-        <div className="lg:col-span-5 card-surface rounded-xl p-5">
+        <div className="lg:col-span-5 card-surface rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Swords size={18} className="text-magma" />
               <h3 className="font-display font-bold text-lg">Select {required} Players</h3>
             </div>
-            <span className={`font-mono font-bold ${selected.length === required ? "text-emerald-400" : "text-gold"}`} data-testid="balancer-count">
+            <span className={`font-mono font-bold ${selected.length === required ? "text-emerald-400" : "text-[#D5A33A]"}`} data-testid="balancer-count">
               {selected.length}/{required}
             </span>
           </div>
@@ -145,7 +150,7 @@ export default function TeamBalancer() {
                 data-testid={`balancer-format-${f.label}`}
                 onClick={() => changeFormat(f.key)}
                 className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${
-                  required === f.key ? "bg-magma text-white magma-glow" : "bg-[#181B26] text-muted-foreground border border-[#242938] hover:text-white"
+                  required === f.key ? "bg-magma text-white magma-glow" : "bg-[#0F1218] text-muted-foreground border border-[#222834] hover:text-white"
                 }`}
               >
                 {f.label}
@@ -160,7 +165,7 @@ export default function TeamBalancer() {
                 data-testid="balancer-game-ALL"
                 onClick={() => changeGame("ALL")}
                 className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
-                  game === "ALL" ? "bg-gold text-black" : "bg-[#181B26] text-muted-foreground border border-[#242938] hover:text-white"
+                  game === "ALL" ? "bg-white text-black" : "bg-[#0F1218] text-muted-foreground border border-[#222834] hover:text-white"
                 }`}
               >
                 All Games
@@ -171,7 +176,7 @@ export default function TeamBalancer() {
                   data-testid={`balancer-game-${g}`}
                   onClick={() => changeGame(g)}
                   className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
-                    game === g ? "bg-gold text-black" : "bg-[#181B26] text-muted-foreground border border-[#242938] hover:text-white"
+                    game === g ? "bg-white text-black" : "bg-[#0F1218] text-muted-foreground border border-[#222834] hover:text-white"
                   }`}
                 >
                   {g}
@@ -194,7 +199,7 @@ export default function TeamBalancer() {
               placeholder="Search..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="pl-9 bg-[#181B26] border-[#242938]"
+              className="pl-9 bg-[#0F1218] border-[#222834] rounded-xl"
             />
           </div>
           <div className="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
@@ -208,10 +213,10 @@ export default function TeamBalancer() {
                   className="w-full flex items-center gap-3 p-2 rounded-lg text-left transition-all"
                   style={{
                     background: isSel ? "rgba(255,42,59,0.12)" : "#181B26",
-                    border: `1px solid ${isSel ? "rgba(255,42,59,0.5)" : "#242938"}`,
+                    border: `1px solid ${isSel ? "rgba(255,42,59,0.5)" : "#222834"}`,
                   }}
                 >
-                  <div className="w-5 h-5 rounded flex items-center justify-center shrink-0" style={{ background: isSel ? "#FF2A3B" : "transparent", border: `1px solid ${isSel ? "#FF2A3B" : "#3A4152"}` }}>
+                  <div className="w-5 h-5 rounded flex items-center justify-center shrink-0" style={{ background: isSel ? "#FF2A3B" : "transparent", border: `1px solid ${isSel ? "#FF2A3B" : "#39414F"}` }}>
                     {isSel && <Check size={13} className="text-white" />}
                   </div>
                   <PlayerAvatar name={p.name} elo={p.currentElo} size={32} />
@@ -226,7 +231,7 @@ export default function TeamBalancer() {
             onClick={generate}
             disabled={selected.length !== required}
             data-testid="generate-teams-button"
-            className="w-full mt-4 h-12 bg-magma hover:bg-magma/90 text-white font-bold text-base magma-glow"
+            className="w-full mt-4 h-12 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-bold text-base magma-glow"
           >
             <Swords size={18} className="mr-2" /> Generate Balanced Teams
           </Button>
@@ -236,8 +241,8 @@ export default function TeamBalancer() {
         <div className="lg:col-span-7">
           {!result ? (
             <div className="card-surface rounded-xl p-10 h-full flex flex-col items-center justify-center text-center min-h-[400px]">
-              <div className="w-16 h-16 rounded-full gradient-bar flex items-center justify-center mb-4 animate-pulse-glow">
-                <Swords size={28} className="text-black" />
+              <div className="w-16 h-16 rounded-2xl bg-[#0B0D12] border border-[#282E39] flex items-center justify-center mb-5">
+                <img src={`${process.env.PUBLIC_URL}/logo-mark.svg`} alt="" className="w-14 h-14 object-contain" />
               </div>
               <h3 className="font-display text-2xl font-bold">Balance Engine Ready</h3>
               <p className="text-muted-foreground mt-2 max-w-sm text-sm">
@@ -248,11 +253,11 @@ export default function TeamBalancer() {
           ) : (
             <div className="space-y-4 animate-fade-up" data-testid="balancer-result">
               {/* Balance score */}
-              <div className="card-surface rounded-xl p-5">
+              <div className="card-surface rounded-2xl p-5">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
                   <span className="text-xs uppercase tracking-widest text-muted-foreground">Match Balance</span>
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded bg-gold/15 text-xs border border-gold/40 text-gold font-bold" data-testid="balance-game-badge">
+                    <span className="px-2 py-0.5 rounded bg-[#171B23] text-xs border border-[#2B313E] text-[#D5A33A] font-bold" data-testid="balance-game-badge">
                       {balancedGame === "ALL" ? "All Games" : balancedGame}
                     </span>
                     <span className="font-mono text-3xl font-extrabold text-emerald-400" data-testid="balance-score">
@@ -261,33 +266,33 @@ export default function TeamBalancer() {
                   </div>
                 </div>
                 <div className="h-2 rounded-full bg-[#242938] overflow-hidden">
-                  <div className="h-full rounded-full transition-all" style={{ width: `${result.balanceScore}%`, background: "linear-gradient(90deg,#FF2A3B,#FFB800)" }} />
+                  <div className="h-full rounded-full transition-all" style={{ width: `${result.balanceScore}%`, background: "linear-gradient(90deg,#FF2A3B,#FF5967)" }} />
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-3 text-sm">
                   <span className="text-muted-foreground">Projected Winner</span>
                   <span className="font-mono">
                     <span className="text-magma font-bold">Alpha {result.probA}%</span>
                     <span className="text-muted-foreground mx-1">-</span>
-                    <span className="text-gold font-bold">{result.probB}% Bravo</span>
+                    <span className="text-[#D5A33A] font-bold">{result.probB}% Bravo</span>
                   </span>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <TeamPanel label="Alpha" team={result.teamA} strength={result.strengthA} color="#FF2A3B" prob={result.probA} isFavored={result.probA >= result.probB} />
-                <TeamPanel label="Bravo" team={result.teamB} strength={result.strengthB} color="#FFB800" prob={result.probB} isFavored={result.probB > result.probA} />
+                <TeamPanel label="Bravo" team={result.teamB} strength={result.strengthB} color="#D5A33A" prob={result.probB} isFavored={result.probB > result.probA} />
               </div>
 
               {isAdmin ? (
                 <Button
                   onClick={() => setRecordOpen(true)}
                   data-testid="balancer-report-result-btn"
-                  className="w-full h-12 bg-[#181B26] border border-magma/40 text-magma hover:bg-magma/10 font-semibold"
+                  className="w-full h-12 rounded-xl bg-[#0F1218] border border-magma/30 text-magma hover:bg-magma/10 font-semibold"
                 >
                   <Trophy size={18} className="mr-2" /> Report Result & Update Elo
                 </Button>
               ) : (
-                <div className="w-full h-12 rounded-md bg-[#181B26] border border-[#242938] text-muted-foreground text-sm flex items-center justify-center" data-testid="balancer-readonly-note">
+                <div className="w-full h-12 rounded-xl bg-[#0F1218] border border-[#222834] text-muted-foreground text-sm flex items-center justify-center" data-testid="balancer-readonly-note">
                   Sign in as Admin to report the result
                 </div>
               )}
