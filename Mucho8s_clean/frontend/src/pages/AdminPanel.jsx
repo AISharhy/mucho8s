@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useData } from "@/context/DataContext";
 import { EloBadge, PlayerAvatar } from "@/components/shared";
 import { Input } from "@/components/ui/input";
@@ -81,7 +81,7 @@ const Gate = () => {
 };
 
 export default function AdminPanel() {
-  const { admin, setAdmin, players, matches, addPlayer, removePlayer, editPlayer, resetStats, importPlayers, importFullBackup, storageMode, getDiscordStatus, configureDiscordWebhook, clearDiscordWebhook, testDiscordWebhook } = useData();
+  const { admin, setAdmin, players, matches, addPlayer, removePlayer, editPlayer, resetStats, importPlayers, importFullBackup, storageMode, getDiscordStatus, configureDiscordWebhook, clearDiscordWebhook, testDiscordWebhook, listDiscordAccounts, linkDiscordAccount } = useData();
   const [newName, setNewName] = useState("");
   const [newElo, setNewElo] = useState(1000);
   const [editing, setEditing] = useState({}); // id -> { name, elo }
@@ -89,7 +89,14 @@ export default function AdminPanel() {
   const [discordWebhook, setDiscordWebhook] = useState("");
   const [discordConfigured, setDiscordConfigured] = useState(false);
   const [discordBusy, setDiscordBusy] = useState(false);
+  const [discordAccounts, setDiscordAccounts] = useState([]);
+  const [accountBusyId, setAccountBusyId] = useState("");
   const fileRef = useRef(null);
+
+  const loadDiscordAccounts = useCallback(async () => {
+    const list = await listDiscordAccounts();
+    if (list) setDiscordAccounts(list);
+  }, [listDiscordAccounts]);
 
   useEffect(() => {
     let active = true;
@@ -98,11 +105,12 @@ export default function AdminPanel() {
     getDiscordStatus().then((configured) => {
       if (active) setDiscordConfigured(configured);
     });
+    void loadDiscordAccounts();
 
     return () => {
       active = false;
     };
-  }, [admin, getDiscordStatus]);
+  }, [admin, getDiscordStatus, loadDiscordAccounts]);
 
   if (!admin) return <Gate />;
 
@@ -205,6 +213,20 @@ export default function AdminPanel() {
       setDiscordWebhook("");
       toast.success("Discord disconnected");
     }
+  };
+
+  const handleAccountLink = async (accountId, playerId) => {
+    setAccountBusyId(accountId);
+    const ok = await linkDiscordAccount(accountId, playerId || null);
+    setAccountBusyId("");
+    if (!ok) return;
+
+    setDiscordAccounts((prev) =>
+      prev.map((account) =>
+        account.id === accountId ? { ...account, player_id: playerId || null } : account
+      )
+    );
+    toast.success(playerId ? "Discord account linked to player" : "Discord account unlinked");
   };
 
   return (
@@ -350,6 +372,70 @@ export default function AdminPanel() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="card-surface rounded-2xl p-5" data-testid="discord-player-accounts">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div>
+            <div className="brand-kicker mb-1">Player Login</div>
+            <h3 className="font-display font-bold text-lg">Discord Player Accounts</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              When a player logs in with Discord for the first time, link that Discord account to the correct MuchoMoney8s player.
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            onClick={loadDiscordAccounts}
+            className="bg-[#0F1218] border border-[#222834]"
+            data-testid="discord-accounts-refresh"
+          >
+            <RotateCcw size={14} className="mr-1.5" /> Refresh
+          </Button>
+        </div>
+
+        {discordAccounts.length === 0 ? (
+          <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] px-4 py-8 text-center text-sm text-muted-foreground">
+            No player has logged in with Discord yet.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {discordAccounts.map((account) => (
+              <div
+                key={account.id}
+                className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl bg-[#0F1218] border border-[#1D222C] p-3"
+              >
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  {account.avatar_url ? (
+                    <img src={account.avatar_url} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl bg-[#5865F2]/15 border border-[#5865F2]/30 flex items-center justify-center shrink-0">
+                      <MessageCircle size={17} className="text-[#8E98FF]" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <div className="font-medium text-sm truncate">{account.display_name || account.discord_username || "Discord User"}</div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {account.discord_username ? `@${account.discord_username}` : "Discord account"}
+                    </div>
+                  </div>
+                </div>
+
+                <select
+                  value={account.player_id || ""}
+                  onChange={(e) => handleAccountLink(account.id, e.target.value)}
+                  disabled={accountBusyId === account.id}
+                  className="h-10 w-full sm:w-64 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm text-[#D7DBE2]"
+                  data-testid={`discord-account-player-${account.id}`}
+                >
+                  <option value="">Not linked</option>
+                  {players.map((player) => (
+                    <option key={player.id} value={player.id}>{player.name}</option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Roster management */}
