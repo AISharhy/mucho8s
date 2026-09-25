@@ -154,6 +154,7 @@ export const DataProvider = ({ children }) => {
   const [discordSession, setDiscordSession] = useState(null);
   const [discordAccount, setDiscordAccount] = useState(null);
   const [discordLoading, setDiscordLoading] = useState(hasSupabaseAuth);
+  const [playerAvatars, setPlayerAvatars] = useState({});
   const [loaded, setLoaded] = useState(STORAGE_MODE === "local");
   const versionRef = useRef(-1);
 
@@ -229,6 +230,37 @@ export const DataProvider = ({ children }) => {
     return result;
   }, [players]);
 
+  const fetchPlayerAvatars = useCallback(async () => {
+    if (!HAS_SUPABASE) {
+      setPlayerAvatars({});
+      return {};
+    }
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/mucho8s-avatars`, {
+        method: "GET",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+        },
+      });
+
+      if (!res.ok) return null;
+      const data = await res.json();
+      const avatars = data?.avatars && typeof data.avatars === "object" ? data.avatars : {};
+      setPlayerAvatars(avatars);
+      return avatars;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!HAS_SUPABASE) return undefined;
+    void fetchPlayerAvatars();
+    const timer = setInterval(fetchPlayerAvatars, 15000);
+    return () => clearInterval(timer);
+  }, [fetchPlayerAvatars]);
+
   const accountRequest = useCallback(async (payload, { session, silent = false } = {}) => {
     if (!HAS_SUPABASE) {
       if (!silent) toast.error("Discord login requires Supabase");
@@ -282,7 +314,8 @@ export const DataProvider = ({ children }) => {
     const data = await accountRequest({ action: "sync" }, { session, silent: true });
     setDiscordAccount(data?.account || null);
     setDiscordLoading(false);
-  }, [accountRequest]);
+    void fetchPlayerAvatars();
+  }, [accountRequest, fetchPlayerAvatars]);
 
   useEffect(() => {
     if (!supabaseAuth) {
@@ -358,8 +391,9 @@ export const DataProvider = ({ children }) => {
       setDiscordAccount(data.account);
     }
 
+    void fetchPlayerAvatars();
     return true;
-  }, [accountRequest, discordAccount]);
+  }, [accountRequest, discordAccount, fetchPlayerAvatars]);
 
   const isAdmin = Boolean(admin?.password);
   const discordPlayer = useMemo(
@@ -699,6 +733,8 @@ export const DataProvider = ({ children }) => {
     discordAccount,
     discordPlayer,
     discordLoading,
+    playerAvatars,
+    refreshPlayerAvatars: fetchPlayerAvatars,
     signInWithDiscord,
     signOutDiscord,
     refreshDiscordAccount,
