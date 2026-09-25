@@ -76,8 +76,8 @@ export default function Leaderboard() {
             {game === "ALL" ? "Global Ranking" : `${game} Ranking`}
           </h2>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <div className="relative w-full sm:w-auto">
             <Gamepad2 size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gold pointer-events-none" />
             <select
               data-testid="leaderboard-game-select"
