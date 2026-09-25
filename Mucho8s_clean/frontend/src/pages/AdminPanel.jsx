@@ -701,7 +701,7 @@ export default function AdminPanel() {
                 )}
               </div>
             );
-          })}          })}
+          })}
 
           {adminChallenges.length === 0 && (
             <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-8 text-center text-sm text-muted-foreground">
