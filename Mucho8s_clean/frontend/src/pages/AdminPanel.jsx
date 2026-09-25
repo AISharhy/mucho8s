@@ -167,7 +167,8 @@ export default function AdminPanel() {
         <div className="flex items-center gap-2">
           <Shield size={22} className="text-magma" />
           <h2 className="font-display text-2xl font-bold">Control Room</h2>
-          <span className="text-sm text-muted-foreground">· {admin?.nickname}</span>\n          <span className="text-[10px] uppercase tracking-widest px-2 py-1 rounded bg-[#181B26] border border-[#242938] text-muted-foreground">{storageMode}</span>
+          <span className="text-sm text-muted-foreground">· {admin?.nickname}</span>
+          <span className="text-[10px] uppercase tracking-widest px-2 py-1 rounded bg-[#181B26] border border-[#242938] text-muted-foreground">{storageMode}</span>
         </div>
         <Button variant="ghost" onClick={() => setAdmin(null)} data-testid="admin-logout-btn" className="text-muted-foreground">
           <LogOut size={16} className="mr-1" /> Sign out
