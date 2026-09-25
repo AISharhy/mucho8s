@@ -28,6 +28,7 @@ export default function ChallengeLeaderboard() {
     });
 
     publicChallenges.forEach((challenge) => {
+      if (!challenge.payment_received_at) return;
       const amount = Number(challenge.amount_cents || 0) / 100;
       const ids = [challenge.challenger_player_id, challenge.challenged_player_id];
 
@@ -75,7 +76,7 @@ export default function ChallengeLeaderboard() {
         <div className="brand-kicker mb-1">Competition</div>
         <h2 className="font-display text-3xl font-extrabold">Challenge Leaderboard</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Verified challs only. Profit is calculated from the stake of completed challenges.
+          Settled challs only. Profit is calculated after the winner confirms the payout received.
         </p>
       </div>
 
@@ -149,14 +150,14 @@ export default function ChallengeLeaderboard() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="card-surface rounded-2xl p-4">
           <TrendingUp size={18} className="text-emerald-400 mb-2" />
-          <div className="text-xs text-muted-foreground">Verified Chall</div>
-          <div className="font-display text-2xl font-extrabold mt-1">{publicChallenges.length}</div>
+          <div className="text-xs text-muted-foreground">Settled Chall</div>
+          <div className="font-display text-2xl font-extrabold mt-1">{publicChallenges.filter((item) => item.payment_received_at).length}</div>
         </div>
         <div className="card-surface rounded-2xl p-4">
           <WalletCards size={18} className="text-[#D5A33A] mb-2" />
           <div className="text-xs text-muted-foreground">Verified Volume</div>
           <div className="font-display text-2xl font-extrabold mt-1">
-            {euro(publicChallenges.reduce((sum, item) => sum + Number(item.amount_cents || 0) / 100, 0))}
+            {euro(publicChallenges.filter((item) => item.payment_received_at).reduce((sum, item) => sum + Number(item.amount_cents || 0) / 100, 0))}
           </div>
         </div>
         <div className="card-surface rounded-2xl p-4">
