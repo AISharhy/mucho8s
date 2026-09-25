@@ -1,6 +1,7 @@
 import React from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { Sidebar, MobileNav } from "@/components/Sidebar";
+import ChallengeCenter from "@/components/ChallengeCenter";
 
 const TITLES = {
   "/": "Dashboard",
@@ -19,6 +20,7 @@ export const Layout = () => {
 
   return (
     <div className="min-h-screen bg-[#090A0F]">
+      <ChallengeCenter />
       <Sidebar />
       <div className="lg:pl-56">
         <header className="sticky top-0 z-20 h-16 flex items-center px-4 sm:px-6 bg-[#0D1016]/88 backdrop-blur-xl border-b border-[#1D222C]">
