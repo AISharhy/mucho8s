@@ -21,3 +21,15 @@ using (true);
 
 -- No anonymous INSERT/UPDATE/DELETE policy is created.
 -- Writes are performed only by the mucho8s-write Edge Function with the service role.
+
+
+-- Discord webhook configuration.
+-- The webhook URL is server-only: anonymous/authenticated clients have no table privileges.
+create table if not exists public.discord_config (
+  id text primary key,
+  webhook_url text not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.discord_config enable row level security;
+revoke all on table public.discord_config from anon, authenticated;
