@@ -1,10 +1,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const ADMIN_PASSWORD_SHA256 = "5275321e80637acbd0dc2a0d0e9b5120ab79618531edd49b189ff4b4ce4ec4ff";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type, apikey, authorization, x-admin-password",
+  "Access-Control-Allow-Headers": "content-type, apikey, authorization, x-admin-session",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -22,9 +20,37 @@ const sha256 = async (value: string) => {
     .join("");
 };
 
-const getAdmin = async (req: Request) => {
-  const supplied = req.headers.get("x-admin-password") || "";
-  return (await sha256(supplied)) === ADMIN_PASSWORD_SHA256;
+const validateAdminSession = async (req: Request, supabase: any) => {
+  const token = String(req.headers.get("x-admin-session") || "").trim();
+  if (!token) return false;
+
+  const tokenHash = await sha256(token);
+  const uaHash = await sha256(req.headers.get("user-agent") || "unknown");
+
+  const { data: session, error } = await supabase
+    .from("admin_sessions")
+    .select("username,user_agent_hash,expires_at,revoked_at")
+    .eq("token_hash", tokenHash)
+    .maybeSingle();
+
+  if (error || !session || session.revoked_at) return false;
+  if (new Date(session.expires_at).getTime() <= Date.now()) return false;
+  if (session.user_agent_hash !== uaHash) return false;
+
+  const { data: credential } = await supabase
+    .from("admin_credentials")
+    .select("is_active")
+    .eq("username", session.username)
+    .maybeSingle();
+
+  if (!credential?.is_active) return false;
+
+  await supabase
+    .from("admin_sessions")
+    .update({ last_seen_at: new Date().toISOString() })
+    .eq("token_hash", tokenHash);
+
+  return true;
 };
 
 const cleanPublicUrl = (value: unknown) => {
@@ -166,7 +192,7 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, account, user: { id: user.id, email: user.email || null } });
     }
 
-    if (!(await getAdmin(req))) return json({ error: "Unauthorized" }, 401);
+    if (!(await validateAdminSession(req, supabase))) return json({ error: "Admin session expired or invalid" }, 401);
 
     if (action === "admin-list") {
       const { data, error } = await supabase
