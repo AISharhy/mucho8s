@@ -93,7 +93,6 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
     discordLoading,
     signInWithDiscord,
     signOutDiscord,
-    challengeNotificationCount,
   } = useData();
 
   const discordName = discordPlayer?.name || discordAccount?.display_name || discordAccount?.discord_username || "Discord";
@@ -129,7 +128,6 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
             label="Account"
             items={accountItems}
             onNavigate={onNavigate}
-            badges={{ "/challenges": challengeNotificationCount }}
           />
         )}
       </div>
