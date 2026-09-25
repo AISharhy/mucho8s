@@ -7,6 +7,8 @@ export const useData = () => useContext(DataContext);
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const POLL_MS = 3500;
+const ADMIN_NICKNAME = "Admin";
+const ADMIN_PASSWORD_SHA256 = "5275321e80637acbd0dc2a0d0e9b5120ab79618531edd49b189ff4b4ce4ec4ff";
 
 export const DataProvider = ({ children }) => {
   const [players, setPlayers] = useState([]);
@@ -91,19 +93,20 @@ export const DataProvider = ({ children }) => {
       setAdminState(null);
       return true;
     }
-    try {
-      const res = await fetch(`${API}/admin/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nickname, password }),
-      });
-      if (!res.ok) return false;
-      const data = await res.json();
-      setAdminState({ nickname: data.nickname, password });
-      return true;
-    } catch (e) {
-      return false;
-    }
+
+    const normalizedNickname = nickname.trim().toLowerCase();
+    if (normalizedNickname !== ADMIN_NICKNAME.toLowerCase()) return false;
+
+    const bytes = new TextEncoder().encode(password);
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    const hash = Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    if (hash !== ADMIN_PASSWORD_SHA256) return false;
+
+    setAdminState({ nickname: ADMIN_NICKNAME, password });
+    return true;
   }, []);
 
   const addPlayer = useCallback((name, startElo = 1000) => write("/players", { body: { name, startElo } }), [write]);
