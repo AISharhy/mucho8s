@@ -1,5 +1,5 @@
 import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import { DataProvider } from "@/context/DataContext";
 import { Layout } from "@/components/Layout";
 import { Toaster } from "@/components/ui/sonner";
@@ -15,7 +15,7 @@ function App() {
   return (
     <div className="App">
       <DataProvider>
-        <BrowserRouter>
+        <HashRouter>
           <Routes>
             <Route element={<Layout />}>
               <Route index element={<Dashboard />} />
@@ -28,7 +28,7 @@ function App() {
             </Route>
           </Routes>
           <Toaster position="top-right" theme="dark" richColors />
-        </BrowserRouter>
+        </HashRouter>
       </DataProvider>
     </div>
   );
