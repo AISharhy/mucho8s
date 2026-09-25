@@ -60,7 +60,6 @@ Deno.serve(async (req: Request) => {
         "/ranking — Top ELO players\n" +
         "/player name:<nickname> — Player stats\n" +
         "/chall player:<Discord user> amount:<€> platform:<paypal|revolut|cmg> — Send a challenge\n" +
-        "/ready — Toggle Ready on your active challenge\n" +
         "/match — Show your active challenge"
       );
     }
@@ -119,7 +118,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: account, error: accountError } = await supabase
       .from("player_accounts")
-      .select("id,player_id,discord_id")
+      .select("id,player_id,discord_id,paypal_url,revolut_url,cmg_url")
       .eq("discord_id", userId)
       .maybeSingle();
 
@@ -128,7 +127,7 @@ Deno.serve(async (req: Request) => {
       return ephemeral("Link your Discord account to a MuchoMoney8s player on the website first.");
     }
 
-    if (command === "match" || command === "ready") {
+    if (command === "match") {
       const { data: active, error } = await supabase
         .from("player_challenges")
         .select("*")
@@ -154,37 +153,6 @@ Deno.serve(async (req: Request) => {
           `Status: **${active.status}**`
         );
       }
-
-      if (active.status !== "accepted") {
-        return ephemeral("Ready Check is only available before the result is reported.");
-      }
-      if (!active.payment_received_at) {
-        return ephemeral("Payment must be confirmed before Ready Check.");
-      }
-
-      const field =
-        active.challenger_account_id === account.id
-          ? "challenger_ready_at"
-          : "challenged_ready_at";
-      const currentlyReady = Boolean(active[field]);
-
-      const { data: updated, error: readyError } = await supabase
-        .from("player_challenges")
-        .update({ [field]: currentlyReady ? null : new Date().toISOString() })
-        .eq("id", active.id)
-        .select("challenger_ready_at,challenged_ready_at")
-        .single();
-
-      if (readyError) throw readyError;
-      const both = Boolean(updated.challenger_ready_at && updated.challenged_ready_at);
-
-      return ephemeral(
-        currentlyReady
-          ? "Ready removed."
-          : both
-            ? "✅ **READY!** Both players are ready. Play the challenge."
-            : "✅ You are READY. Waiting for the other player."
-      );
     }
 
     if (command === "chall") {
@@ -211,7 +179,9 @@ Deno.serve(async (req: Request) => {
         platform === "revolut" ? "revolut_url" :
         "cmg_url";
       const targetUrl = String(target[linkColumn] || "");
+      const challengerUrl = String(account[linkColumn] || "");
       if (!targetUrl) return ephemeral(`That player has not configured ${platform.toUpperCase()}.`);
+      if (!challengerUrl) return ephemeral(`Configure your ${platform.toUpperCase()} link on MuchoMoney8s first.`);
 
       const { data: existing, error: existingError } = await supabase
         .from("player_challenges")
@@ -233,11 +203,16 @@ Deno.serve(async (req: Request) => {
           challenged_player_id: target.player_id,
           platform,
           target_url: targetUrl,
+          challenger_payout_url: challengerUrl,
+          challenged_payout_url: targetUrl,
           amount_cents: Math.round(amount * 100),
           currency: "EUR",
           status: "pending",
           challenger_seen_status: "pending",
           challenged_seen_status: null,
+          last_event: "created",
+          challenger_seen_event: "created",
+          challenged_seen_event: null,
         });
       if (insertError) throw insertError;
 
