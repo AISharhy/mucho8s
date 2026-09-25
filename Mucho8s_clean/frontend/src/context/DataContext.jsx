@@ -344,7 +344,7 @@ export const DataProvider = ({ children }) => {
       if (!silent) toast.error("Discord account service unavailable");
       return null;
     }
-  }, [admin, discordSession]);
+  }, [admin]);
 
   const syncDiscordSession = useCallback(async (session) => {
     setDiscordSession(session || null);
@@ -900,7 +900,7 @@ export const DataProvider = ({ children }) => {
       if (!silent) toast.error("Admin authentication service unavailable");
       return null;
     }
-  }, [admin]);
+  }, [admin, discordSession]);
 
   useEffect(() => {
     if (!admin?.sessionToken) return undefined;
