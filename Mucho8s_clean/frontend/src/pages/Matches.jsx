@@ -70,14 +70,14 @@ export default function Matches() {
           data-testid="matches-game-filter"
           value={gameFilter}
           onChange={(e) => setGameFilter(e.target.value)}
-          className="h-11 rounded-md bg-[#161924] border border-gold/40 text-gold font-semibold px-3 text-sm"
+          className="h-11 w-full sm:w-auto rounded-md bg-[#161924] border border-gold/40 text-gold font-semibold px-3 text-sm"
         >
           <option value="ALL">All Games</option>
           {GAMES.map((g) => (
             <option key={g} value={g}>{g}</option>
           ))}
         </select>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Filter size={16} className="text-muted-foreground" />
           {[
             { k: "all", l: "All" },
@@ -96,7 +96,7 @@ export default function Matches() {
             </button>
           ))}
         </div>
-        <Button onClick={() => setOpen(true)} data-testid="new-match-btn" disabled={!isAdmin} title={isAdmin ? "" : "Admin only"} className="bg-magma hover:bg-magma/90 text-white font-semibold h-11 disabled:opacity-40">
+        <Button onClick={() => setOpen(true)} data-testid="new-match-btn" disabled={!isAdmin} title={isAdmin ? "" : "Admin only"} className="w-full sm:w-auto bg-magma hover:bg-magma/90 text-white font-semibold h-11 disabled:opacity-40">
           <Plus size={18} className="mr-1" /> New Match
         </Button>
       </div>
@@ -161,12 +161,12 @@ export default function Matches() {
                 )}
               </div>
             </div>
-            <div className="flex items-stretch gap-4">
+            <div className="flex flex-col sm:flex-row items-stretch gap-3 sm:gap-4">
               <div className="flex-1 p-3 rounded-lg" style={{ background: m.winner === "A" ? "rgba(255,42,59,0.06)" : "transparent", border: "1px solid #1C202E" }}>
                 <div className="text-xs font-bold uppercase tracking-widest text-magma mb-2">Alpha</div>
                 <TeamList ids={m.teamA} playerMap={playerMap} eloChanges={m.eloChanges} color="#FF2A3B" mvpId={m.mvpId} />
               </div>
-              <div className="flex items-center font-display font-bold text-muted-foreground">VS</div>
+              <div className="flex items-center justify-center font-display font-bold text-muted-foreground py-1 sm:py-0">VS</div>
               <div className="flex-1 p-3 rounded-lg" style={{ background: m.winner === "B" ? "rgba(255,184,0,0.06)" : "transparent", border: "1px solid #1C202E" }}>
                 <div className="text-xs font-bold uppercase tracking-widest text-gold mb-2">Bravo</div>
                 <TeamList ids={m.teamB} playerMap={playerMap} eloChanges={m.eloChanges} color="#FFB800" mvpId={m.mvpId} />
