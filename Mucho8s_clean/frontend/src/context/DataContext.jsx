@@ -475,11 +475,12 @@ export const DataProvider = ({ children }) => {
     return () => clearInterval(timer);
   }, [discordSession, discordAccount, refreshChallenges]);
 
-  const createChallenge = useCallback(async (targetPlayerId, platform) => {
+  const createChallenge = useCallback(async (targetPlayerId, platform, amount) => {
     const data = await challengeRequest({
       action: "create",
       targetPlayerId,
       platform,
+      amount,
     });
     if (!data?.challenge) return null;
     await refreshChallenges();
@@ -492,6 +493,27 @@ export const DataProvider = ({ children }) => {
     await refreshChallenges();
     return data.challenge;
   }, [challengeRequest, refreshChallenges]);
+
+  const markChallengePaymentSent = useCallback(async (id) => {
+    const data = await challengeRequest({ action: "payment-sent", id });
+    if (!data?.challenge) return null;
+    await refreshChallenges();
+    return data.challenge;
+  }, [challengeRequest, refreshChallenges]);
+
+  const confirmChallengePaymentReceived = useCallback(async (id) => {
+    const data = await challengeRequest({ action: "payment-received", id });
+    if (!data?.challenge) return null;
+    await refreshChallenges();
+    return data.challenge;
+  }, [challengeRequest, refreshChallenges]);
+
+  const markChallengeSeen = useCallback(async (id) => {
+    const data = await challengeRequest({ action: "mark-seen", id }, { silent: true });
+    if (!data?.challenge) return null;
+    setChallenges((prev) => prev.map((item) => (item.id === id ? data.challenge : item)));
+    return data.challenge;
+  }, [challengeRequest]);
 
   const reportChallengeResult = useCallback(async (id, winnerPlayerId) => {
     const data = await challengeRequest({ action: "report-result", id, winnerPlayerId });
@@ -858,6 +880,9 @@ export const DataProvider = ({ children }) => {
     refreshChallenges,
     createChallenge,
     respondToChallenge,
+    markChallengePaymentSent,
+    confirmChallengePaymentReceived,
+    markChallengeSeen,
     reportChallengeResult,
     verifyChallengeResult,
     cancelChallenge,
