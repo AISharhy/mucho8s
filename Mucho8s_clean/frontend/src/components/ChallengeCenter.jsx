@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { Button } from "@/components/ui/button";
 import { PlayerAvatar } from "@/components/shared";
-import { Check, X, Swords, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Check, X, Swords, ShieldCheck, AlertTriangle, Trophy } from "lucide-react";
 import { toast } from "sonner";
 
 const playChallengeTone = () => {
@@ -32,7 +33,15 @@ const playChallengeTone = () => {
   }
 };
 
+const money = (challenge) =>
+  new Intl.NumberFormat("it-IT", {
+    style: "currency",
+    currency: challenge?.currency || "EUR",
+  }).format(Number(challenge?.amount_cents || 0) / 100);
+
 export default function ChallengeCenter() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const {
     challenges,
     discordAccount,
@@ -41,12 +50,13 @@ export default function ChallengeCenter() {
     playerAvatars,
     respondToChallenge,
     verifyChallengeResult,
+    markChallengeSeen,
   } = useData();
 
   const [busy, setBusy] = useState(false);
   const lastAttentionRef = useRef("");
 
-  const incoming = useMemo(() => {
+  const attention = useMemo(() => {
     if (!discordAccount?.id) return null;
 
     const verification = challenges.find(
@@ -62,38 +72,62 @@ export default function ChallengeCenter() {
     );
     if (request) return { type: "incoming", challenge: request };
 
+    const acceptedForSender = challenges.find(
+      (c) =>
+        c.status === "accepted" &&
+        c.challenger_account_id === discordAccount.id &&
+        c.challenger_seen_status !== "accepted"
+    );
+    if (acceptedForSender) return { type: "accepted", challenge: acceptedForSender };
+
+    const statusNotice = challenges.find((c) => {
+      const isChallenger = c.challenger_account_id === discordAccount.id;
+      const isChallenged = c.challenged_account_id === discordAccount.id;
+      if (!isChallenger && !isChallenged) return false;
+      if (!["declined", "completed", "disputed"].includes(c.status)) return false;
+      const seen = isChallenger ? c.challenger_seen_status : c.challenged_seen_status;
+      return seen !== c.status;
+    });
+    if (statusNotice) return { type: "status", challenge: statusNotice };
+
     return null;
   }, [challenges, discordAccount]);
 
   useEffect(() => {
-    if (!incoming) return;
-    const key = `${incoming.type}:${incoming.challenge.id}:${incoming.challenge.status}`;
+    if (!attention) return;
+    const key = `${attention.type}:${attention.challenge.id}:${attention.challenge.status}`;
     if (lastAttentionRef.current === key) return;
     lastAttentionRef.current = key;
     playChallengeTone();
-  }, [incoming]);
 
-  if (!incoming || !discordPlayer) return null;
+    if (attention.type === "accepted") {
+      void markChallengeSeen(attention.challenge.id);
+      const target = `/challenges/${attention.challenge.id}`;
+      if (location.pathname !== target) navigate(target);
+    }
+  }, [attention, location.pathname, markChallengeSeen, navigate]);
 
-  const challenge = incoming.challenge;
-  const opponentId =
-    challenge.challenger_player_id === discordPlayer.id
-      ? challenge.challenged_player_id
-      : challenge.challenger_player_id;
-  const opponent = playerMap[opponentId];
+  if (!attention || !discordPlayer) return null;
+  if (attention.type === "accepted") return null;
+
+  const challenge = attention.challenge;
   const challenger = playerMap[challenge.challenger_player_id];
+  const challenged = playerMap[challenge.challenged_player_id];
   const reportedWinner = playerMap[challenge.reported_winner_player_id];
   const platform = String(challenge.platform || "").toUpperCase();
+  const currentWon =
+    challenge.status === "completed" &&
+    challenge.reported_winner_player_id === discordPlayer.id;
 
   const respond = async (decision) => {
     setBusy(true);
     const updated = await respondToChallenge(challenge.id, decision);
     setBusy(false);
-
     if (!updated) return;
 
     if (decision === "accept") {
-      toast.success("Challenge accepted — play it, then report the result.");
+      toast.success("Challenge accepted");
+      navigate(`/challenges/${challenge.id}`);
     } else {
       toast("Challenge declined");
     }
@@ -106,10 +140,18 @@ export default function ChallengeCenter() {
     if (!updated) return;
 
     if (decision === "confirm") {
-      toast.success("Result verified — challenge completed.");
+      toast.success("Result verified");
+      navigate(`/challenges/${challenge.id}`);
     } else {
-      toast.error("Result disputed — challenge needs review.");
+      toast.error("Result disputed");
+      navigate(`/challenges/${challenge.id}`);
     }
+  };
+
+  const closeStatus = async () => {
+    setBusy(true);
+    await markChallengeSeen(challenge.id);
+    setBusy(false);
   };
 
   return (
@@ -122,16 +164,20 @@ export default function ChallengeCenter() {
             <div className="relative">
               <div className="absolute inset-0 rounded-2xl bg-magma/20 blur-xl animate-pulse" />
               <div className="relative w-16 h-16 rounded-2xl bg-[#151923] border border-magma/30 flex items-center justify-center">
-                {incoming.type === "incoming" ? (
+                {attention.type === "incoming" ? (
                   <Swords size={30} className="text-magma" />
-                ) : (
+                ) : attention.type === "verify" ? (
                   <ShieldCheck size={30} className="text-emerald-400" />
+                ) : challenge.status === "completed" ? (
+                  <Trophy size={30} className={currentWon ? "text-emerald-400" : "text-red-400"} />
+                ) : (
+                  <AlertTriangle size={30} className="text-orange-400" />
                 )}
               </div>
             </div>
           </div>
 
-          {incoming.type === "incoming" ? (
+          {attention.type === "incoming" && (
             <>
               <div className="text-center">
                 <div className="brand-kicker mb-2">Incoming Challenge</div>
@@ -152,7 +198,10 @@ export default function ChallengeCenter() {
                   <div className="font-display font-bold text-lg truncate">{challenger?.name || "Player"}</div>
                   <div className="text-xs text-muted-foreground">{platform} challenge</div>
                 </div>
-                <Swords size={20} className="text-magma" />
+                <div className="text-right">
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Stake</div>
+                  <div className="font-display font-extrabold text-xl">{money(challenge)}</div>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 mt-5">
@@ -172,7 +221,9 @@ export default function ChallengeCenter() {
                 </Button>
               </div>
             </>
-          ) : (
+          )}
+
+          {attention.type === "verify" && (
             <>
               <div className="text-center">
                 <div className="brand-kicker mb-2">Result Verification</div>
@@ -214,9 +265,65 @@ export default function ChallengeCenter() {
             </>
           )}
 
-          <div className="mt-4 text-center text-[11px] text-[#596170]">
-            A win is official only after the other player verifies it.
-          </div>
+          {attention.type === "status" && (
+            <>
+              <div className="text-center">
+                <div className="brand-kicker mb-2">Challenge Update</div>
+                {challenge.status === "completed" ? (
+                  <>
+                    <h2 className={`font-display text-3xl font-black ${currentWon ? "text-emerald-400" : "text-red-400"}`}>
+                      {currentWon ? "YOU WON" : "YOU LOST"}
+                    </h2>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Final verified result vs {challenge.challenger_player_id === discordPlayer.id ? challenged?.name : challenger?.name}.
+                    </p>
+                  </>
+                ) : challenge.status === "declined" ? (
+                  <>
+                    <h2 className="font-display text-2xl font-extrabold text-red-400">CHALLENGE DECLINED</h2>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {challenged?.name || "The player"} declined your challenge.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="font-display text-2xl font-extrabold text-orange-400">RESULT DISPUTED</h2>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      The challenge needs review before it can be closed.
+                    </p>
+                  </>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 gap-2 mt-5">
+                {challenge.status !== "declined" && (
+                  <Button
+                    onClick={() => {
+                      void markChallengeSeen(challenge.id);
+                      navigate(`/challenges/${challenge.id}`);
+                    }}
+                    className="h-12 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-bold"
+                  >
+                    OPEN MATCH
+                  </Button>
+                )}
+                <Button
+                  disabled={busy}
+                  onClick={closeStatus}
+                  variant="ghost"
+                  className="h-11 rounded-xl bg-[#171B23] border border-[#2B313D] text-[#AAB1BE]"
+                >
+                  Close
+                </Button>
+              </div>
+            </>
+          )}
+
+          {attention.type !== "status" && (
+            <div className="mt-4 text-center text-[11px] text-[#596170]">
+              A win is official only after the other player verifies it.
+            </div>
+          )}
         </div>
       </div>
     </div>
