@@ -43,7 +43,10 @@ export const Layout = () => {
 
         let title = "Challenge updated";
         let tone = "neutral";
-        if (challenge.status === "pending" && !isChallenger) {
+        if (challenge.last_event === "pairing_assigned") {
+          title = `Money matchup vs ${opponent?.name || "player"}`;
+          tone = "magma";
+        } else if (challenge.status === "pending" && !isChallenger) {
           title = `New chall from ${opponent?.name || "player"}`;
           tone = "magma";
         } else if (challenge.last_event === "accepted") {
