@@ -106,17 +106,7 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
       }
     : null;
 
-  const accountItems = linked
-    ? [
-        {
-          to: "/challenges",
-          label: "Challenge Inbox",
-          icon: Bell,
-          testid: "nav-challenge-inbox-link",
-        },
-        myProfileItem,
-      ]
-    : [];
+  const accountItems = linked ? [myProfileItem] : [];
 
   return (
     <>
