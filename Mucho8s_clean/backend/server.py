@@ -18,7 +18,7 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'SYSMAFKKNGOD2001')
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', '')
 ADMIN_NICKNAME = os.environ.get('ADMIN_NICKNAME', 'Admin')
 
 app = FastAPI()
@@ -268,6 +268,10 @@ class EloIn(BaseModel):
     currentElo: int
 
 
+class NameIn(BaseModel):
+    name: str
+
+
 class ImportIn(BaseModel):
     players: List[dict]
 
@@ -405,6 +409,25 @@ async def set_elo(player_id: str, body: EloIn, x_admin_password: Optional[str] =
             p["currentElo"] = elo
             p["peakElo"] = max(p["peakElo"], elo)
             p["eloHistory"] = p["eloHistory"] + [{"match": len(p["eloHistory"]), "elo": elo}]
+    await save_players(players)
+    return {"ok": True}
+
+
+@api_router.put("/players/{player_id}/name")
+async def set_player_name(player_id: str, body: NameIn, x_admin_password: Optional[str] = Header(None)):
+    require_admin(x_admin_password)
+    clean_name = body.name.strip()
+    if not clean_name:
+        raise HTTPException(status_code=400, detail="Nickname cannot be empty")
+    players = await load_players()
+    found = False
+    for p in players:
+        if p["id"] == player_id:
+            p["name"] = clean_name
+            found = True
+            break
+    if not found:
+        raise HTTPException(status_code=404, detail="Player not found")
     await save_players(players)
     return {"ok": True}
 
