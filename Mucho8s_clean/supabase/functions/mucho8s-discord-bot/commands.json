@@ -1,0 +1,60 @@
+[
+  {
+    "name": "help",
+    "description": "Show MuchoMoney8s commands"
+  },
+  {
+    "name": "ranking",
+    "description": "Show the MuchoMoney8s ELO ranking"
+  },
+  {
+    "name": "player",
+    "description": "Show a player's stats",
+    "options": [
+      {
+        "type": 3,
+        "name": "name",
+        "description": "Player nickname",
+        "required": true
+      }
+    ]
+  },
+  {
+    "name": "chall",
+    "description": "Challenge another MuchoMoney8s player",
+    "options": [
+      {
+        "type": 6,
+        "name": "player",
+        "description": "Discord player to challenge",
+        "required": true
+      },
+      {
+        "type": 10,
+        "name": "amount",
+        "description": "Challenge amount in EUR",
+        "required": true,
+        "min_value": 0.01
+      },
+      {
+        "type": 3,
+        "name": "platform",
+        "description": "Challenge platform",
+        "required": true,
+        "choices": [
+          { "name": "PayPal", "value": "paypal" },
+          { "name": "Revolut", "value": "revolut" },
+          { "name": "CMG", "value": "cmg" }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ready",
+    "description": "Toggle Ready on your active challenge"
+  },
+  {
+    "name": "match",
+    "description": "Show your active challenge"
+  }
+]
