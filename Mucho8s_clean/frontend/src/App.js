@@ -1,4 +1,5 @@
 import "@/App.css";
+import React, { useEffect, useState } from "react";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import { DataProvider } from "@/context/DataContext";
 import { Layout } from "@/components/Layout";
@@ -14,7 +15,48 @@ import ChallengeMatch from "@/pages/ChallengeMatch";
 import ChallengeInbox from "@/pages/ChallengeInbox";
 import ChallengeLeaderboard from "@/pages/ChallengeLeaderboard";
 
+function IntroSplash({ onDone }) {
+  useEffect(() => {
+    const timer = setTimeout(onDone, 1350);
+    return () => clearTimeout(timer);
+  }, [onDone]);
+
+  return (
+    <div className="m8-intro" aria-label="MuchoMoney8s">
+      <div className="m8-intro-inner">
+        <div className="m8-intro-logo-wrap">
+          <img
+            src={`${process.env.PUBLIC_URL}/logo-mark.svg`}
+            alt="MuchoMoney8s"
+            className="m8-intro-logo"
+          />
+          <span className="m8-intro-slash" />
+        </div>
+        <div className="m8-intro-wordmark">
+          <span>MUCHO</span><strong>MONEY</strong><span>8s</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
+  const [showIntro, setShowIntro] = useState(() => {
+    try {
+      return sessionStorage.getItem("mucho8s_intro_seen") !== "1";
+    } catch {
+      return true;
+    }
+  });
+
+  const finishIntro = () => {
+    try {
+      sessionStorage.setItem("mucho8s_intro_seen", "1");
+    } catch {}
+    setShowIntro(false);
+  };
+  if (showIntro) return <IntroSplash onDone={finishIntro} />;
+
   return (
     <div className="App">
       <DataProvider>
