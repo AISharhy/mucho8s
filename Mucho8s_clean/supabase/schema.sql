@@ -69,6 +69,8 @@ create table if not exists public.player_challenges (
   currency text not null default 'EUR',
   payment_sent_at timestamptz,
   payment_received_at timestamptz,
+  challenger_ready_at timestamptz,
+  challenged_ready_at timestamptz,
   status text not null default 'pending' check (status in (
     'pending','accepted','declined','result_pending','completed','disputed','cancelled'
   )),
@@ -93,3 +95,20 @@ create index if not exists player_challenges_challenger_updates_idx
 
 alter table public.player_challenges enable row level security;
 revoke all on table public.player_challenges from anon, authenticated;
+
+
+-- Persistent admin audit trail.
+create table if not exists public.admin_audit_log (
+  id bigint generated always as identity primary key,
+  action text not null,
+  entity_type text not null,
+  entity_id text,
+  details jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists admin_audit_log_created_at_idx
+  on public.admin_audit_log (created_at desc);
+
+alter table public.admin_audit_log enable row level security;
+revoke all on table public.admin_audit_log from anon, authenticated;
