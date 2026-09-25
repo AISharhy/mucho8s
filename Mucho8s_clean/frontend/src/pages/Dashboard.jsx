@@ -8,12 +8,12 @@ const StatCard = ({ icon: Icon, label, value, sub, testid }) => (
   <div className="card-surface rounded-2xl p-5 animate-fade-up" data-testid={testid}>
     <div className="flex items-center justify-between mb-5">
       <span className="brand-kicker">{label}</span>
-      <div className="w-9 h-9 rounded-lg bg-[#0F1218] border border-[#232935] flex items-center justify-center text-[#AAB1BE]">
+      <div className="w-9 h-9 rounded-lg bg-[#0E1219] border border-[#2D3645] flex items-center justify-center text-[#AEB7C6]">
         <Icon size={17} />
       </div>
     </div>
     <div className="font-mono text-[30px] leading-none font-bold text-white">{value}</div>
-    {sub && <div className="text-xs text-[#7F8795] mt-2 truncate">{sub}</div>}
+    {sub && <div className="text-xs text-[#7E899B] mt-2 truncate">{sub}</div>}
   </div>
 );
 
@@ -38,7 +38,7 @@ export default function Dashboard() {
       <section className="brand-card rounded-2xl p-6 sm:p-8">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-7">
           <div className="flex items-start gap-4 sm:gap-5">
-            <div className="hidden sm:flex w-16 h-16 rounded-2xl bg-[#0B0D12] border border-[#282E39] items-center justify-center shrink-0">
+            <div className="hidden sm:flex w-16 h-16 rounded-2xl bg-[#080A0F] border border-[#333D4B] items-center justify-center shrink-0">
               <img src={`${process.env.PUBLIC_URL}/logo-mark.svg`} alt="" className="w-14 h-14 object-contain" />
             </div>
             <div>
@@ -46,7 +46,7 @@ export default function Dashboard() {
               <h2 className="font-display text-3xl sm:text-[40px] leading-tight font-extrabold tracking-tight">
                 Build a better <span className="text-magma">8s lobby.</span>
               </h2>
-              <p className="text-[#9199A7] mt-3 max-w-xl text-sm leading-6">
+              <p className="text-[#98A2B3] mt-3 max-w-xl text-sm leading-6">
                 Balance teams, track Elo and keep every match in one clean competitive hub.
               </p>
             </div>
@@ -55,7 +55,7 @@ export default function Dashboard() {
           <Link
             to="/balancer"
             data-testid="dashboard-balance-cta"
-            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-semibold transition-all magma-glow self-start md:self-center"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-magma hover:bg-[#FB5A76] text-white font-semibold transition-all magma-glow self-start md:self-center"
           >
             <Swords size={17} /> Balance Teams <ArrowUpRight size={15} />
           </Link>
@@ -76,7 +76,7 @@ export default function Dashboard() {
               <div className="brand-kicker mb-1">Competition</div>
               <h3 className="font-display font-bold text-lg">Top Ranked</h3>
             </div>
-            <Trophy size={18} className="text-[#D5A33A]" />
+            <Trophy size={18} className="text-[#C9A45C]" />
           </div>
 
           <div className="space-y-1">
@@ -86,7 +86,7 @@ export default function Dashboard() {
                 key={p.id}
                 className="interactive-row flex items-center gap-3 p-2.5 rounded-xl"
               >
-                <span className={`font-mono text-xs font-bold w-5 text-center ${i === 0 ? "text-[#D5A33A]" : "text-[#6F7786]"}`}>
+                <span className={`font-mono text-xs font-bold w-5 text-center ${i === 0 ? "text-[#C9A45C]" : "text-[#697386]"}`}>
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <PlayerAvatar name={p.name} elo={p.currentElo} size={34} avatarUrl={playerAvatars[p.id]} />
@@ -123,18 +123,18 @@ export default function Dashboard() {
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium">
                       <span className="text-white">{m.winner === "A" ? "Alpha" : "Bravo"}</span>
-                      <span className="text-[#717988]"> won · {m.mode || "Match"}</span>
+                      <span className="text-[#737E90]"> won · {m.mode || "Match"}</span>
                     </div>
                     <div className="text-xs text-muted-foreground truncate mt-0.5">
                       {winIds.map((id) => playerMap[id]?.name).filter(Boolean).join(", ")}
                     </div>
                   </div>
                   {mvp && (
-                    <div className="hidden sm:flex text-xs items-center gap-1 text-[#D5A33A] shrink-0">
+                    <div className="hidden sm:flex text-xs items-center gap-1 text-[#C9A45C] shrink-0">
                       <Crown size={12} /> {mvp.name}
                     </div>
                   )}
-                  <span className="text-[11px] text-[#697181] shrink-0">
+                  <span className="text-[11px] text-[#697386] shrink-0">
                     {new Date(m.date).toLocaleDateString()}
                   </span>
                 </div>
