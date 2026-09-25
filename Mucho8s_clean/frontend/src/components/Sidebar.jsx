@@ -19,7 +19,12 @@ const COMPETITION_NAV = [
 ];
 
 const ADMIN_NAV = { to: "/admin", label: "Admin Panel", icon: Shield, testid: "nav-admin-link" };
-const ALL_NAV = [...MAIN_NAV, ...COMPETITION_NAV, ADMIN_NAV];
+const ALL_NAV = [
+  ...MAIN_NAV,
+  ...COMPETITION_NAV,
+  { to: "/challenges", label: "Challenge Inbox", icon: Bell },
+  ADMIN_NAV,
+];
 
 const NavItem = ({ item, onNavigate, badge = 0 }) => {
   const Icon = item.icon;
