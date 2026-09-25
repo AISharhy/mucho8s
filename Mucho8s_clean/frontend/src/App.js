@@ -8,8 +8,7 @@ import Players from "@/pages/Players";
 import PlayerProfile from "@/pages/PlayerProfile";
 import TeamBalancer from "@/pages/TeamBalancer";
 import Matches from "@/pages/Matches";
-import Leaderboard from "@/pages/Leaderboard";
-import Statistics from "@/pages/Statistics";
+import Ranking from "@/pages/Ranking";
 import AdminPanel from "@/pages/AdminPanel";
 
 function App() {
@@ -24,8 +23,9 @@ function App() {
               <Route path="players/:id" element={<PlayerProfile />} />
               <Route path="balancer" element={<TeamBalancer />} />
               <Route path="matches" element={<Matches />} />
-              <Route path="leaderboard" element={<Leaderboard />} />
-              <Route path="statistics" element={<Statistics />} />
+              <Route path="ranking" element={<Ranking />} />
+              <Route path="leaderboard" element={<Ranking initialTab="leaderboard" />} />
+              <Route path="statistics" element={<Ranking initialTab="statistics" />} />
               <Route path="admin" element={<AdminPanel />} />
             </Route>
           </Routes>
