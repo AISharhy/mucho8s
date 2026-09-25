@@ -105,18 +105,24 @@ export default function AdminPanel() {
     toast.success("Elo updated");
   };
 
-  const handleImport = (e) => {    const file = e.target.files?.[0];
+  const handleImport = (e) => {
+    const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
         const data = JSON.parse(reader.result);
-        const list = Array.isArray(data) ? data : data.players;
-        if (!Array.isArray(list)) throw new Error("bad");
-        importPlayers(list);
-        toast.success(`Imported ${list.length} players`);
+        if (data && Array.isArray(data.players) && Array.isArray(data.matches)) {
+          const ok = await importFullBackup(data);
+          if (ok) toast.success(`Full backup restored: ${data.players.length} players, ${data.matches.length} matches`);
+        } else {
+          const list = Array.isArray(data) ? data : data.players;
+          if (!Array.isArray(list)) throw new Error("bad");
+          const ok = await importPlayers(list);
+          if (ok) toast.success(`Imported ${list.length} players`);
+        }
       } catch {
-        toast.error("Invalid JSON file");
+        toast.error("Invalid JSON backup file");
       }
     };
     reader.readAsText(file);
@@ -124,14 +130,12 @@ export default function AdminPanel() {
   };
 
   const handleExport = () => {
-    if (!players.length) {
-      toast.error("No players to export");
-      return;
-    }
-
     const payload = {
+      format: "mucho8s-full-backup",
+      version: 1,
       exportedAt: new Date().toISOString(),
       players,
+      matches,
     };
 
     const blob = new Blob([JSON.stringify(payload, null, 2)], {
@@ -140,13 +144,13 @@ export default function AdminPanel() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `mucho8s-player-database-${new Date().toISOString().slice(0, 10)}.json`;
+    link.download = `mucho8s-full-backup-${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(link);
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
 
-    toast.success(`Exported ${players.length} players`);
+    toast.success(`Backup exported: ${players.length} players, ${matches.length} matches`);
   };
 
   return (
