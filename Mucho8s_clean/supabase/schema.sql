@@ -93,7 +93,9 @@ create table if not exists public.player_challenges (
   result_reported_at timestamptz,
   verified_at timestamptz,
   verifier_account_id uuid references auth.users(id) on delete set null,
-  dispute_note text
+  dispute_note text,
+  season_number integer not null default 1,
+  evidence jsonb not null default '[]'::jsonb
 );
 
 create index if not exists player_challenges_challenged_pending_idx
@@ -135,3 +137,92 @@ create index if not exists player_presence_last_seen_idx
 
 alter table public.player_presence enable row level security;
 revoke all on table public.player_presence from anon, authenticated;
+
+
+-- Server-side Admin authentication.
+create table if not exists public.admin_credentials (
+  username text primary key,
+  password_hash text not null,
+  password_scheme text not null default 'legacy_sha256',
+  password_salt text,
+  password_iterations integer,
+  is_active boolean not null default true,
+  required_account_id uuid references public.player_accounts(id) on delete restrict,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.admin_sessions (
+  token_hash text primary key,
+  username text not null references public.admin_credentials(username) on delete cascade,
+  account_id uuid references public.player_accounts(id) on delete cascade,
+  user_agent_hash text not null,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  last_seen_at timestamptz not null default now(),
+  revoked_at timestamptz
+);
+
+create table if not exists public.admin_login_attempts (
+  id bigint generated always as identity primary key,
+  username text not null,
+  client_key_hash text not null,
+  success boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists admin_sessions_username_idx on public.admin_sessions (username, expires_at desc);
+create index if not exists admin_sessions_expiry_idx on public.admin_sessions (expires_at);
+create index if not exists admin_login_attempts_rate_idx on public.admin_login_attempts (username, client_key_hash, created_at desc);
+
+alter table public.admin_credentials enable row level security;
+alter table public.admin_sessions enable row level security;
+alter table public.admin_login_attempts enable row level security;
+
+revoke all on table public.admin_credentials from anon, authenticated;
+revoke all on table public.admin_sessions from anon, authenticated;
+revoke all on table public.admin_login_attempts from anon, authenticated;
+
+
+-- Competition seasons and archives.
+create table if not exists public.competition_config (
+  id text primary key,
+  season_number integer not null default 1,
+  season_name text not null default 'Season 1',
+  season_started_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+insert into public.competition_config (id, season_number, season_name)
+values ('main', 1, 'Season 1')
+on conflict (id) do nothing;
+
+create table if not exists public.season_archives (
+  id bigint generated always as identity primary key,
+  season_number integer not null unique,
+  season_name text not null,
+  started_at timestamptz,
+  ended_at timestamptz not null default now(),
+  players jsonb not null default '[]'::jsonb,
+  matches jsonb not null default '[]'::jsonb,
+  challenge_stats jsonb not null default '{}'::jsonb
+);
+
+alter table public.competition_config enable row level security;
+alter table public.season_archives enable row level security;
+revoke all on table public.competition_config from anon, authenticated;
+revoke all on table public.season_archives from anon, authenticated;
+
+
+-- Private evidence bucket for challenge/result/payment disputes.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'challenge-evidence',
+  'challenge-evidence',
+  false,
+  5242880,
+  array['image/png','image/jpeg','image/webp']
+)
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
