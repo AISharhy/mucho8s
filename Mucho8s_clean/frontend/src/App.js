@@ -10,6 +10,7 @@ import TeamBalancer from "@/pages/TeamBalancer";
 import Matches from "@/pages/Matches";
 import Ranking from "@/pages/Ranking";
 import AdminPanel from "@/pages/AdminPanel";
+import ChallengeMatch from "@/pages/ChallengeMatch";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
               <Route path="leaderboard" element={<Ranking initialTab="leaderboard" />} />
               <Route path="statistics" element={<Ranking initialTab="statistics" />} />
               <Route path="admin" element={<AdminPanel />} />
+              <Route path="challenges/:id" element={<ChallengeMatch />} />
             </Route>
           </Routes>
           <Toaster position="top-right" theme="dark" richColors />
