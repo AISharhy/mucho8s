@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { winRate, computeGameStats, playerForGame } from "@/lib/elo";
 import { GAMES } from "@/lib/demoData";
@@ -69,7 +70,7 @@ export default function Leaderboard() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Medal size={22} className="text-gold" />
           <h2 className="font-display text-2xl font-bold" data-testid="leaderboard-title">
             {game === "ALL" ? "Global Ranking" : `${game} Ranking`}
@@ -82,7 +83,7 @@ export default function Leaderboard() {
               data-testid="leaderboard-game-select"
               value={game}
               onChange={(e) => setGame(e.target.value)}
-              className="h-10 rounded-md bg-[#161924] border border-gold/40 text-gold font-semibold pl-8 pr-3 text-sm"
+              className="h-10 w-full sm:w-auto rounded-md bg-[#161924] border border-gold/40 text-gold font-semibold pl-8 pr-3 text-sm"
             >
               <option value="ALL">All Games (Total)</option>
               {GAMES.map((g) => (
@@ -90,7 +91,7 @@ export default function Leaderboard() {
               ))}
             </select>
           </div>
-          <Button onClick={exportCsv} data-testid="export-csv-btn" className="bg-[#181B26] border border-gold/40 text-gold hover:bg-gold/10">
+          <Button onClick={exportCsv} data-testid="export-csv-btn" className="w-full sm:w-auto bg-[#181B26] border border-gold/40 text-gold hover:bg-gold/10">
             <Download size={16} className="mr-1" /> Export CSV
           </Button>
         </div>
@@ -141,10 +142,10 @@ export default function Leaderboard() {
                     {i + 1}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2.5">
+                    <Link to={`/players/${p.id}`} className="flex items-center gap-2.5 hover:text-magma transition-colors">
                       <PlayerAvatar name={p.name} elo={p.currentElo} size={30} />
                       <span className="font-medium">{p.name}</span>
-                    </div>
+                    </Link>
                   </td>
                   <td className="px-4 py-3"><EloBadge elo={p.currentElo} /></td>
                   <td className="px-4 py-3 font-mono text-gold">{p.peakElo}</td>
