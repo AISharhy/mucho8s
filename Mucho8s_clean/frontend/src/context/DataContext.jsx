@@ -297,6 +297,73 @@ export const DataProvider = ({ children }) => {
     return backendWrite("/restore", { body: { players: normalizedPlayers, matches: normalizedMatches } });
   }, [admin, backendWrite, fetchState]);
 
+  const discordRequest = useCallback(async (payload, { silent = false } = {}) => {
+    if (STORAGE_MODE !== "supabase") {
+      if (!silent) toast.error("Discord integration requires Supabase mode");
+      return null;
+    }
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/mucho8s-discord`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_ANON_KEY,
+          "X-Admin-Password": admin?.password || "",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 401) {
+        if (!silent) toast.error("Admin access required for Discord");
+        return null;
+      }
+
+      if (!res.ok) {
+        if (!silent) toast.error(data?.error || "Discord action failed");
+        return null;
+      }
+
+      return data;
+    } catch {
+      if (!silent) toast.error("Discord connection unavailable");
+      return null;
+    }
+  }, [admin]);
+
+  const getDiscordStatus = useCallback(async () => {
+    const data = await discordRequest({ action: "status" }, { silent: true });
+    return Boolean(data?.configured);
+  }, [discordRequest]);
+
+  const configureDiscordWebhook = useCallback(async (webhookUrl) => {
+    const data = await discordRequest({ action: "configure", webhookUrl });
+    return Boolean(data?.ok);
+  }, [discordRequest]);
+
+  const clearDiscordWebhook = useCallback(async () => {
+    const data = await discordRequest({ action: "clear" });
+    return Boolean(data?.ok);
+  }, [discordRequest]);
+
+  const testDiscordWebhook = useCallback(async () => {
+    const data = await discordRequest({ action: "test" });
+    return Boolean(data?.ok);
+  }, [discordRequest]);
+
+  const sendDiscordTeams = useCallback(async ({ teamA, teamB, game, balanceScore }) => {
+    const data = await discordRequest({
+      action: "teams",
+      teamA,
+      teamB,
+      game,
+      balanceScore,
+    });
+    return Boolean(data?.ok);
+  }, [discordRequest]);
+
   const setAdmin = useCallback(async (nickname, password) => {
     if (nickname === null) {
       setAdminState(null);
@@ -422,8 +489,22 @@ export const DataProvider = ({ children }) => {
     });
     const nextMatches = [match, ...matches];
     recomputeRecent(byId, nextMatches, new Set([...teamA, ...teamB]));
-    return persistWholeState(Object.values(byId), nextMatches);
-  }, [players, matches, backendWrite, persistWholeState]);
+    const ok = await persistWholeState(Object.values(byId), nextMatches);
+
+    if (ok && STORAGE_MODE === "supabase") {
+      void discordRequest({
+        action: "result",
+        teamA: teamA.map((id) => byId[id]?.name).filter(Boolean),
+        teamB: teamB.map((id) => byId[id]?.name).filter(Boolean),
+        winner: match.winner,
+        game: match.game,
+        mode: match.mode,
+        mvp: match.mvpId ? byId[match.mvpId]?.name || "" : "",
+      }, { silent: true });
+    }
+
+    return ok;
+  }, [players, matches, backendWrite, persistWholeState, discordRequest]);
 
   const editMatch = useCallback(async (id, data) => {
     if (STORAGE_MODE === "backend") {
@@ -483,6 +564,11 @@ export const DataProvider = ({ children }) => {
     resetStats,
     importPlayers,
     importFullBackup,
+    getDiscordStatus,
+    configureDiscordWebhook,
+    clearDiscordWebhook,
+    testDiscordWebhook,
+    sendDiscordTeams,
     recordMatch,
     editMatch,
     deleteMatch,
