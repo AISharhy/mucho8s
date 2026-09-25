@@ -536,6 +536,59 @@ export const DataProvider = ({ children }) => {
     return data.challenge;
   }, [challengeRequest, refreshChallenges]);
 
+  const adminChallengeRequest = useCallback(async (payload, { silent = false } = {}) => {
+    if (!HAS_SUPABASE || !admin?.password) {
+      if (!silent) toast.error("Admin access required");
+      return null;
+    }
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/mucho8s-challenges`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_ANON_KEY,
+          "X-Admin-Password": admin.password,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (!silent) toast.error(data?.error || "Admin challenge action failed");
+        return null;
+      }
+      return data;
+    } catch {
+      if (!silent) toast.error("Challenge admin service unavailable");
+      return null;
+    }
+  }, [admin]);
+
+  const listAdminChallenges = useCallback(async () => {
+    const data = await adminChallengeRequest({ action: "admin-list" });
+    return Array.isArray(data?.challenges) ? data.challenges : null;
+  }, [adminChallengeRequest]);
+
+  const adminUpdateChallenge = useCallback(async (id, updates) => {
+    const data = await adminChallengeRequest({ action: "admin-update", id, ...updates });
+    if (!data?.challenge) return null;
+    setChallenges((prev) => {
+      const exists = prev.some((item) => item.id === id);
+      return exists
+        ? prev.map((item) => (item.id === id ? data.challenge : item))
+        : [data.challenge, ...prev];
+    });
+    return data.challenge;
+  }, [adminChallengeRequest]);
+
+  const adminDeleteChallenge = useCallback(async (id) => {
+    const data = await adminChallengeRequest({ action: "admin-delete", id });
+    if (!data?.ok) return false;
+    setChallenges((prev) => prev.filter((item) => item.id !== id));
+    return true;
+  }, [adminChallengeRequest]);
+
   const isAdmin = Boolean(admin?.password);
   const discordPlayer = useMemo(
     () => (discordAccount?.player_id ? playerMap[discordAccount.player_id] || null : null),
@@ -886,6 +939,9 @@ export const DataProvider = ({ children }) => {
     reportChallengeResult,
     verifyChallengeResult,
     cancelChallenge,
+    listAdminChallenges,
+    adminUpdateChallenge,
+    adminDeleteChallenge,
     refreshPlayerAvatars: fetchPlayerAvatars,
     saveMyChallengeLinks,
     signInWithDiscord,
