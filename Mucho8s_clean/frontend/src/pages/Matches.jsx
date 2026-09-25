@@ -55,7 +55,13 @@ export default function Matches() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        <div>
+          <div className="brand-kicker mb-1">History</div>
+          <h2 className="font-display text-2xl font-extrabold">Matches</h2>
+          <p className="text-sm text-[#7F8795] mt-1">Search, review and manage every recorded lobby.</p>
+        </div>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="relative flex-1 max-w-md">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -63,14 +69,14 @@ export default function Matches() {
             placeholder="Search by player, game or mode..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="pl-10 bg-[#161924] border-[#242938] h-11"
+            className="pl-10 bg-[#0F1218] border-[#222834] h-11 rounded-xl"
           />
         </div>
         <select
           data-testid="matches-game-filter"
           value={gameFilter}
           onChange={(e) => setGameFilter(e.target.value)}
-          className="h-11 w-full sm:w-auto rounded-md bg-[#161924] border border-gold/40 text-gold font-semibold px-3 text-sm"
+          className="h-11 w-full sm:w-auto rounded-xl bg-[#0F1218] border border-[#222834] text-[#C8CED8] font-semibold px-3 text-sm"
         >
           <option value="ALL">All Games</option>
           {GAMES.map((g) => (
@@ -88,37 +94,38 @@ export default function Matches() {
               key={f.k}
               data-testid={`matches-filter-${f.k}`}
               onClick={() => setWinnerFilter(f.k)}
-              className={`px-3 py-2 rounded-md text-sm font-medium transition-all ${
-                winnerFilter === f.k ? "bg-magma text-white" : "bg-[#161924] text-muted-foreground border border-[#242938] hover:text-white"
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                winnerFilter === f.k ? "bg-magma text-white border-magma" : "bg-[#0F1218] text-[#8D95A4] border-[#222834] hover:text-white"
               }`}
             >
               {f.l}
             </button>
           ))}
         </div>
-        <Button onClick={() => setOpen(true)} data-testid="new-match-btn" disabled={!isAdmin} title={isAdmin ? "" : "Admin only"} className="w-full sm:w-auto bg-magma hover:bg-magma/90 text-white font-semibold h-11 disabled:opacity-40">
+        <Button onClick={() => setOpen(true)} data-testid="new-match-btn" disabled={!isAdmin} title={isAdmin ? "" : "Admin only"} className="w-full sm:w-auto bg-magma hover:bg-[#ff3c4c] text-white font-semibold h-11 rounded-xl disabled:opacity-40">
           <Plus size={18} className="mr-1" /> New Match
         </Button>
+        </div>
       </div>
 
       <div className="space-y-3" data-testid="matches-list">
         {filtered.length === 0 && (
-          <div className="card-surface rounded-xl p-16 text-center text-muted-foreground">No matches found.</div>
+          <div className="card-surface rounded-2xl p-16 text-center text-muted-foreground">No matches found.</div>
         )}
         {filtered.map((m) => (
-          <div key={m.id} className="card-surface rounded-xl p-5 animate-fade-up" data-testid={`match-row-${m.id}`}>
+          <div key={m.id} className="card-surface rounded-2xl p-5 animate-fade-up" data-testid={`match-row-${m.id}`}>
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div className="flex items-center gap-2 text-sm">
                 <span className="font-mono text-muted-foreground">{new Date(m.date).toLocaleString()}</span>
-                {m.game && <span className="px-2 py-0.5 rounded bg-gold/15 text-xs border border-gold/40 text-gold font-bold" data-testid={`match-game-${m.id}`}>{m.game}</span>}
-                {m.mode && <span className="px-2 py-0.5 rounded bg-[#181B26] text-xs border border-[#242938]">{m.mode}</span>}
+                {m.game && <span className="px-2 py-0.5 rounded-md bg-[#171B23] text-xs border border-[#2B313E] text-[#D5A33A] font-bold" data-testid={`match-game-${m.id}`}>{m.game}</span>}
+                {m.mode && <span className="px-2 py-0.5 rounded-md bg-[#0F1218] text-xs border border-[#222834] text-[#AAB1BE]">{m.mode}</span>}
               </div>
               <div className="flex items-center gap-2">
                 <span
                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold"
                   style={{
-                    background: m.winner === "A" ? "rgba(255,42,59,0.15)" : "rgba(255,184,0,0.15)",
-                    color: m.winner === "A" ? "#FF2A3B" : "#FFB800",
+                    background: m.winner === "A" ? "rgba(255,42,59,0.15)" : "rgba(213,163,58,0.12)",
+                    color: m.winner === "A" ? "#FF2A3B" : "#D5A33A",
                   }}
                 >
                   <Trophy size={13} /> {m.winner === "A" ? "Alpha" : "Bravo"} won
@@ -139,7 +146,7 @@ export default function Matches() {
                       <Trash2 size={15} />
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent className="bg-[#12141C] border-[#242938]">
+                  <AlertDialogContent className="bg-[#101319] border-[#242A35]">
                     <AlertDialogHeader>
                       <AlertDialogTitle className="font-display">Delete this match?</AlertDialogTitle>
                       <AlertDialogDescription>
@@ -147,7 +154,7 @@ export default function Matches() {
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel className="bg-[#181B26] border-[#242938]">Cancel</AlertDialogCancel>
+                      <AlertDialogCancel className="bg-[#0F1218] border-[#222834]">Cancel</AlertDialogCancel>
                       <AlertDialogAction
                         data-testid={`match-delete-confirm-${m.id}`}
                         onClick={() => { deleteMatch(m.id); toast.success("Match deleted — stats recalculated"); }}
@@ -167,9 +174,9 @@ export default function Matches() {
                 <TeamList ids={m.teamA} playerMap={playerMap} eloChanges={m.eloChanges} color="#FF2A3B" mvpId={m.mvpId} />
               </div>
               <div className="flex items-center justify-center font-display font-bold text-muted-foreground py-1 sm:py-0">VS</div>
-              <div className="flex-1 p-3 rounded-lg" style={{ background: m.winner === "B" ? "rgba(255,184,0,0.06)" : "transparent", border: "1px solid #1C202E" }}>
+              <div className="flex-1 p-3 rounded-lg" style={{ background: m.winner === "B" ? "rgba(213,163,58,0.05)" : "transparent", border: "1px solid #1C202E" }}>
                 <div className="text-xs font-bold uppercase tracking-widest text-gold mb-2">Bravo</div>
-                <TeamList ids={m.teamB} playerMap={playerMap} eloChanges={m.eloChanges} color="#FFB800" mvpId={m.mvpId} />
+                <TeamList ids={m.teamB} playerMap={playerMap} eloChanges={m.eloChanges} color="#D5A33A" mvpId={m.mvpId} />
               </div>
             </div>
           </div>
