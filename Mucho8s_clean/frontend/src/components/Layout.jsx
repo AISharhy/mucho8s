@@ -21,11 +21,11 @@ export const Layout = () => {
     <div className="min-h-screen bg-[#090A0F]">
       <Sidebar />
       <div className="lg:pl-56">
-        <header className="sticky top-0 z-20 h-16 flex items-center px-4 sm:px-6 bg-[#10121A]/85 backdrop-blur-md border-b border-[#242938]">
+        <header className="sticky top-0 z-20 h-16 flex items-center px-4 sm:px-6 bg-[#0D1016]/88 backdrop-blur-xl border-b border-[#1D222C]">
           <MobileNav />
-          <h1 className="hidden lg:block font-display text-xl font-bold tracking-tight">{title}</h1>
+          <div className="hidden lg:flex items-center gap-3"><span className="w-1.5 h-1.5 rounded-full bg-magma" /><h1 className="font-display text-[18px] font-bold tracking-tight">{title}</h1></div>
         </header>
-        <main className="p-4 sm:p-6 lg:p-8">
+        <main className="page-shell p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>
