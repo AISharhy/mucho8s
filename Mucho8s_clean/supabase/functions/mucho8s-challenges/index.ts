@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type, apikey, authorization, x-admin-password",
+  "Access-Control-Allow-Headers": "content-type, apikey, authorization, x-admin-session",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -18,8 +18,6 @@ const PLATFORM_COLUMNS: Record<string, string> = {
   cmg: "cmg_url",
 };
 
-const ADMIN_PASSWORD_SHA256 = "5275321e80637acbd0dc2a0d0e9b5120ab79618531edd49b189ff4b4ce4ec4ff";
-
 const sha256 = async (value: string) => {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -28,10 +26,30 @@ const sha256 = async (value: string) => {
     .join("");
 };
 
-const isAdminRequest = async (req: Request) => {
-  const supplied = req.headers.get("x-admin-password") || "";
-  if (!supplied) return false;
-  return (await sha256(supplied)) === ADMIN_PASSWORD_SHA256;
+const isAdminRequest = async (req: Request, supabase: any) => {
+  const token = String(req.headers.get("x-admin-session") || "").trim();
+  if (!token) return false;
+
+  const tokenHash = await sha256(token);
+  const uaHash = await sha256(req.headers.get("user-agent") || "unknown");
+
+  const { data: session, error } = await supabase
+    .from("admin_sessions")
+    .select("username,user_agent_hash,expires_at,revoked_at")
+    .eq("token_hash", tokenHash)
+    .maybeSingle();
+
+  if (error || !session || session.revoked_at) return false;
+  if (new Date(session.expires_at).getTime() <= Date.now()) return false;
+  if (session.user_agent_hash !== uaHash) return false;
+
+  const { data: credential } = await supabase
+    .from("admin_credentials")
+    .select("is_active")
+    .eq("username", session.username)
+    .maybeSingle();
+
+  return Boolean(credential?.is_active);
 };
 
 Deno.serve(async (req: Request) => {
@@ -58,7 +76,7 @@ Deno.serve(async (req: Request) => {
 
     const body = await req.json();
     const action = String(body?.action || "");
-    const adminRequest = await isAdminRequest(req);
+    const adminRequest = await isAdminRequest(req, supabase);
 
     if (adminRequest && action === "admin-list") {
       const { data, error } = await supabase
