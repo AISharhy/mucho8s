@@ -8,9 +8,9 @@ import {
 } from "recharts";
 import { TrendingUp, Percent, Activity, Award, Flame, Gamepad2 } from "lucide-react";
 
-const CARD = "card-surface rounded-xl p-5";
-const tooltipStyle = { background: "#12141C", border: "1px solid #242938", borderRadius: 8 };
-const COLORS = ["#FF2A3B", "#FFB800", "#10B981", "#3B82F6", "#A855F7", "#EC4899"];
+const CARD = "card-surface rounded-2xl p-5";
+const tooltipStyle = { background: "#101319", border: "1px solid #242A35", borderRadius: 12 };
+const COLORS = ["#FF2A3B", "#D5A33A", "#7E8796", "#C8CED8", "#596170", "#AAB1BE"];
 
 const ChartCard = ({ icon: Icon, title, children, testid, empty }) => (
   <div className={CARD} data-testid={testid}>
@@ -120,10 +120,10 @@ export default function Statistics() {
   return (
     <div className="space-y-6">
       {/* Game filter */}
-      <div className="card-surface rounded-xl p-4">
+      <div className="card-surface rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
-          <Gamepad2 size={16} className="text-gold" />
-          <span className="text-xs uppercase tracking-widest text-muted-foreground">Filter statistics by game</span>
+          <Gamepad2 size={16} className="text-[#D5A33A]" />
+          <span className="brand-kicker">Filter statistics by game</span>
         </div>
         <div className="flex flex-wrap gap-2" data-testid="stats-game-filter">
           {games.map((g) => {
@@ -134,12 +134,12 @@ export default function Statistics() {
                 key={g}
                 data-testid={`stats-game-${g}`}
                 onClick={() => setGame(g)}
-                className={`px-3.5 py-2 rounded-md text-sm font-bold transition-all ${
-                  active ? "bg-magma text-white magma-glow" : "bg-[#181B26] text-muted-foreground border border-[#242938] hover:text-white"
+                className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-all border ${
+                  active ? "bg-white text-black border-white" : "bg-[#0F1218] text-muted-foreground border-[#222834] hover:text-white"
                 }`}
               >
                 {g === "ALL" ? "All Games" : g}
-                <span className={`ml-2 font-mono text-xs ${active ? "text-white/80" : "text-gold"}`}>{count}</span>
+                <span className={`ml-2 font-mono text-xs ${active ? "text-white/80" : "text-[#D5A33A]"}`}>{count}</span>
               </button>
             );
           })}
@@ -149,7 +149,7 @@ export default function Statistics() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartCard icon={TrendingUp} title="Elo Progression (Top 5)" testid="chart-elo-progression" empty={isEmpty}>
           <LineChart data={eloProgression}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1C202E" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#1D222C" />
             <XAxis dataKey="match" stroke="#4B5563" fontSize={11} />
             <YAxis stroke="#4B5563" fontSize={11} domain={["dataMin - 40", "dataMax + 40"]} />
             <Tooltip contentStyle={tooltipStyle} />
@@ -162,7 +162,7 @@ export default function Statistics() {
 
         <ChartCard icon={Percent} title="Top Win Rates" testid="chart-win-rates" empty={isEmpty}>
           <BarChart data={winRates} layout="vertical" margin={{ left: 10 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1C202E" horizontal={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#1D222C" horizontal={false} />
             <XAxis type="number" stroke="#4B5563" fontSize={11} domain={[0, 100]} />
             <YAxis type="category" dataKey="name" stroke="#4B5563" fontSize={11} width={70} />
             <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "#ffffff08" }} />
@@ -176,7 +176,7 @@ export default function Statistics() {
 
         <ChartCard icon={Award} title="Player Rankings (Elo)" testid="chart-rankings" empty={isEmpty}>
           <BarChart data={rankings}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1C202E" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#1D222C" vertical={false} />
             <XAxis dataKey="name" stroke="#4B5563" fontSize={10} angle={-25} textAnchor="end" height={60} interval={0} />
             <YAxis stroke="#4B5563" fontSize={11} domain={["dataMin - 40", "dataMax + 40"]} />
             <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "#ffffff08" }} />
@@ -186,11 +186,11 @@ export default function Statistics() {
 
         <ChartCard icon={Activity} title="Most Active Players" testid="chart-most-active" empty={isEmpty}>
           <BarChart data={mostActive}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1C202E" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#1D222C" vertical={false} />
             <XAxis dataKey="name" stroke="#4B5563" fontSize={10} angle={-25} textAnchor="end" height={60} interval={0} />
             <YAxis stroke="#4B5563" fontSize={11} />
             <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "#ffffff08" }} />
-            <Bar dataKey="matches" fill="#FFB800" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="matches" fill="#D5A33A" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ChartCard>
       </div>
