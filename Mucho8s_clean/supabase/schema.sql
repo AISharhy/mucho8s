@@ -71,6 +71,8 @@ create table if not exists public.player_challenges (
   created_at timestamptz not null default now(),
   responded_at timestamptz,
   challenger_seen_at timestamptz,
+  challenger_seen_status text,
+  challenged_seen_status text,
   reported_winner_player_id text,
   reporter_account_id uuid references auth.users(id) on delete set null,
   result_reported_at timestamptz,
