@@ -156,6 +156,7 @@ export const DataProvider = ({ children }) => {
   const [discordLoading, setDiscordLoading] = useState(hasSupabaseAuth);
   const [playerAvatars, setPlayerAvatars] = useState({});
   const [playerProfiles, setPlayerProfiles] = useState({});
+  const [challenges, setChallenges] = useState([]);
   const [loaded, setLoaded] = useState(STORAGE_MODE === "local");
   const versionRef = useRef(-1);
 
@@ -419,6 +420,99 @@ export const DataProvider = ({ children }) => {
     void fetchPlayerAvatars();
     return true;
   }, [accountRequest, discordAccount, fetchPlayerAvatars]);
+
+  const challengeRequest = useCallback(async (payload, { silent = false } = {}) => {
+    if (!HAS_SUPABASE || !discordSession?.access_token) {
+      if (!silent) toast.error("Login with Discord first");
+      return null;
+    }
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/mucho8s-challenges`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${discordSession.access_token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        if (!silent) toast.error(data?.error || "Challenge action failed");
+        return null;
+      }
+
+      return data;
+    } catch {
+      if (!silent) toast.error("Challenge service unavailable");
+      return null;
+    }
+  }, [discordSession]);
+
+  const refreshChallenges = useCallback(async () => {
+    if (!discordSession?.access_token || !discordAccount?.player_id) {
+      setChallenges([]);
+      return [];
+    }
+
+    const data = await challengeRequest({ action: "list" }, { silent: true });
+    const list = Array.isArray(data?.challenges) ? data.challenges : [];
+    setChallenges(list);
+    return list;
+  }, [challengeRequest, discordAccount, discordSession]);
+
+  useEffect(() => {
+    if (!discordSession?.access_token || !discordAccount?.player_id) {
+      setChallenges([]);
+      return undefined;
+    }
+
+    void refreshChallenges();
+    const timer = setInterval(refreshChallenges, 4000);
+    return () => clearInterval(timer);
+  }, [discordSession, discordAccount, refreshChallenges]);
+
+  const createChallenge = useCallback(async (targetPlayerId, platform) => {
+    const data = await challengeRequest({
+      action: "create",
+      targetPlayerId,
+      platform,
+    });
+    if (!data?.challenge) return null;
+    await refreshChallenges();
+    return data.challenge;
+  }, [challengeRequest, refreshChallenges]);
+
+  const respondToChallenge = useCallback(async (id, decision) => {
+    const data = await challengeRequest({ action: "respond", id, decision });
+    if (!data?.challenge) return null;
+    await refreshChallenges();
+    return data.challenge;
+  }, [challengeRequest, refreshChallenges]);
+
+  const reportChallengeResult = useCallback(async (id, winnerPlayerId) => {
+    const data = await challengeRequest({ action: "report-result", id, winnerPlayerId });
+    if (!data?.challenge) return null;
+    await refreshChallenges();
+    return data.challenge;
+  }, [challengeRequest, refreshChallenges]);
+
+  const verifyChallengeResult = useCallback(async (id, decision, note = "") => {
+    const data = await challengeRequest({ action: "verify-result", id, decision, note });
+    if (!data?.challenge) return null;
+    await refreshChallenges();
+    return data.challenge;
+  }, [challengeRequest, refreshChallenges]);
+
+  const cancelChallenge = useCallback(async (id) => {
+    const data = await challengeRequest({ action: "cancel", id });
+    if (!data?.challenge) return null;
+    await refreshChallenges();
+    return data.challenge;
+  }, [challengeRequest, refreshChallenges]);
 
   const isAdmin = Boolean(admin?.password);
   const discordPlayer = useMemo(
@@ -760,6 +854,13 @@ export const DataProvider = ({ children }) => {
     discordLoading,
     playerAvatars,
     playerProfiles,
+    challenges,
+    refreshChallenges,
+    createChallenge,
+    respondToChallenge,
+    reportChallengeResult,
+    verifyChallengeResult,
+    cancelChallenge,
     refreshPlayerAvatars: fetchPlayerAvatars,
     saveMyChallengeLinks,
     signInWithDiscord,
