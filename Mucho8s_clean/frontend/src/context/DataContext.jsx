@@ -164,6 +164,7 @@ export const DataProvider = ({ children }) => {
       return null;
     }
   });
+  const [adminValidated, setAdminValidated] = useState(false);
   const [discordSession, setDiscordSession] = useState(null);
   const [discordAccount, setDiscordAccount] = useState(null);
   const [discordLoading, setDiscordLoading] = useState(hasSupabaseAuth);
@@ -873,7 +874,7 @@ export const DataProvider = ({ children }) => {
     return Array.isArray(data?.logs) ? data.logs : null;
   }, [adminAuditRequest]);
 
-  const isAdmin = Boolean(admin?.sessionToken);
+  const isAdmin = Boolean(admin?.sessionToken && adminValidated);
   const discordPlayer = useMemo(
     () => (discordAccount?.player_id ? playerMap[discordAccount.player_id] || null : null),
     [discordAccount, playerMap],
@@ -1052,14 +1053,22 @@ export const DataProvider = ({ children }) => {
   }, [admin, discordSession]);
 
   useEffect(() => {
-    if (!admin?.sessionToken) return undefined;
+    if (!admin?.sessionToken) {
+      setAdminValidated(false);
+      return undefined;
+    }
+
+    setAdminValidated(false);
 
     const verify = async () => {
       const data = await adminAuthRequest({ action: "status" }, { silent: true });
       if (!data?.ok) {
         sessionStorage.removeItem("mucho8s_admin_session");
+        setAdminValidated(false);
         setAdminState(null);
+        return;
       }
+      setAdminValidated(true);
     };
 
     void verify();
@@ -1074,6 +1083,7 @@ export const DataProvider = ({ children }) => {
         await adminAuthRequest({ action: "logout" }, { token, silent: true });
       }
       sessionStorage.removeItem("mucho8s_admin_session");
+      setAdminValidated(false);
       setAdminState(null);
       return true;
     }
@@ -1094,6 +1104,7 @@ export const DataProvider = ({ children }) => {
 
     sessionStorage.setItem("mucho8s_admin_session", JSON.stringify(next));
     setAdminState(next);
+    setAdminValidated(true);
     return true;
   }, [admin?.sessionToken, adminAuthRequest]);
 
@@ -1109,6 +1120,7 @@ export const DataProvider = ({ children }) => {
     const data = await adminAuthRequest({ action: "logout-all" });
     if (!data?.ok) return false;
     sessionStorage.removeItem("mucho8s_admin_session");
+    setAdminValidated(false);
     setAdminState(null);
     return true;
   }, [adminAuthRequest]);
