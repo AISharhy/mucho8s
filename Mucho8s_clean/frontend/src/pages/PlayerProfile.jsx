@@ -34,6 +34,11 @@ import {
   Link2,
   Swords,
   CreditCard,
+  BadgeCheck,
+  ShieldCheck,
+  Flame,
+  Award,
+  UsersRound,
 } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer, Tooltip, YAxis, XAxis, CartesianGrid } from "recharts";
 import { toast } from "sonner";
@@ -121,6 +126,85 @@ export default function PlayerProfile() {
       profit: wonValue - lostValue,
     };
   }, [publicChallenges, id]);
+
+  const challengeInsights = useMemo(() => {
+    const completed = challengeStats.completed;
+    let currentStreak = 0;
+    let currentType = "";
+    if (completed.length) {
+      currentType = completed[0].reported_winner_player_id === id ? "W" : "L";
+      for (const challenge of completed) {
+        const result = challenge.reported_winner_player_id === id ? "W" : "L";
+        if (result !== currentType) break;
+        currentStreak += 1;
+      }
+    }
+
+    let bestWinStreak = 0;
+    let running = 0;
+    [...completed].reverse().forEach((challenge) => {
+      if (challenge.reported_winner_player_id === id) {
+        running += 1;
+        bestWinStreak = Math.max(bestWinStreak, running);
+      } else {
+        running = 0;
+      }
+    });
+
+    const settled = completed.filter((challenge) => challenge.payment_received_at);
+    const cleanSettled = settled.filter((challenge) => !challenge.payout_disputed_at).length;
+    const payoutDisputes = completed.filter((challenge) => challenge.payout_disputed_at).length;
+    const reputation = settled.length
+      ? Math.max(0, Math.round((cleanSettled / settled.length) * 100))
+      : 100;
+
+    const h2h = new Map();
+    completed.forEach((challenge) => {
+      const opponentId =
+        challenge.challenger_player_id === id
+          ? challenge.challenged_player_id
+          : challenge.challenger_player_id;
+      if (!opponentId) return;
+      const row = h2h.get(opponentId) || { opponentId, wins: 0, losses: 0, profit: 0, played: 0 };
+      const amount = Number(challenge.amount_cents || 0) / 100;
+      const won = challenge.reported_winner_player_id === id;
+      row.played += 1;
+      if (won) {
+        row.wins += 1;
+        if (challenge.payment_received_at) row.profit += amount;
+      } else {
+        row.losses += 1;
+        if (challenge.payment_received_at) row.profit -= amount;
+      }
+      h2h.set(opponentId, row);
+    });
+
+    const headToHead = [...h2h.values()]
+      .sort((a, b) => b.played - a.played || b.wins - a.wins)
+      .slice(0, 5);
+
+    const achievements = [
+      player.totalMatches >= 10 && { label: "10 Matches", icon: Gamepad2 },
+      player.wins >= 10 && { label: "10 Wins", icon: Trophy },
+      player.mvpCount >= 5 && { label: "5 MVP", icon: Crown },
+      challengeStats.wins >= 5 && { label: "5 Chall Wins", icon: Swords },
+      bestWinStreak >= 3 && { label: "3 Win Streak", icon: Flame },
+      challengeStats.profit >= 50 && { label: "€50 Profit", icon: CreditCard },
+      challengeStats.profit >= 100 && { label: "€100 Profit", icon: Award },
+      reputation === 100 && settled.length >= 3 && { label: "Clean Payout", icon: ShieldCheck },
+    ].filter(Boolean);
+
+    return {
+      currentStreak,
+      currentType,
+      bestWinStreak,
+      reputation,
+      settled: settled.length,
+      payoutDisputes,
+      headToHead,
+      achievements,
+    };
+  }, [challengeStats, id, player]);
 
   if (!player) {
     return (
@@ -388,6 +472,113 @@ export default function PlayerProfile() {
                 >
                   {won ? "W" : "L"}
                 </span>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4" data-testid="challenge-insights">
+        <div className="card-surface rounded-2xl p-5">
+          <div className="brand-kicker mb-1">Momentum</div>
+          <h3 className="font-display font-bold text-lg">Challenge Streak</h3>
+          <div className={`font-display text-4xl font-black mt-4 ${
+            challengeInsights.currentType === "W"
+              ? "text-emerald-400"
+              : challengeInsights.currentType === "L"
+                ? "text-red-400"
+                : "text-white"
+          }`}>
+            {challengeInsights.currentStreak
+              ? `${challengeInsights.currentStreak}${challengeInsights.currentType}`
+              : "—"}
+          </div>
+          <div className="text-xs text-muted-foreground mt-2">
+            Best win streak: {challengeInsights.bestWinStreak}
+          </div>
+        </div>
+
+        <div className="card-surface rounded-2xl p-5">
+          <div className="brand-kicker mb-1">Trust</div>
+          <h3 className="font-display font-bold text-lg">Challenge Reputation</h3>
+          <div className="flex items-end gap-2 mt-4">
+            <div className={`font-display text-4xl font-black ${
+              challengeInsights.reputation >= 90 ? "text-emerald-400" : challengeInsights.reputation >= 70 ? "text-[#D5A33A]" : "text-red-400"
+            }`}>
+              {challengeInsights.reputation}%
+            </div>
+            <BadgeCheck size={20} className="text-emerald-400 mb-1.5" />
+          </div>
+          <div className="text-xs text-muted-foreground mt-2">
+            {challengeInsights.settled} settled payouts · {challengeInsights.payoutDisputes} payout disputes
+          </div>
+        </div>
+
+        <div className="card-surface rounded-2xl p-5">
+          <div className="brand-kicker mb-1">Milestones</div>
+          <h3 className="font-display font-bold text-lg">Achievements</h3>
+          <div className="flex flex-wrap gap-2 mt-4">
+            {challengeInsights.achievements.length === 0 ? (
+              <span className="text-sm text-muted-foreground">No badges unlocked yet.</span>
+            ) : challengeInsights.achievements.map((achievement) => {
+              const Icon = achievement.icon;
+              return (
+                <span
+                  key={achievement.label}
+                  className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-[#0F1218] border border-[#222834] text-xs font-semibold"
+                >
+                  <Icon size={13} className="text-[#D5A33A]" /> {achievement.label}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="card-surface rounded-2xl p-4 sm:p-5">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div>
+            <div className="brand-kicker mb-1">Rivals</div>
+            <h3 className="font-display font-bold text-lg">Head-to-Head</h3>
+          </div>
+          <UsersRound size={18} className="text-[#697181]" />
+        </div>
+
+        {challengeInsights.headToHead.length === 0 ? (
+          <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-8 text-center text-sm text-muted-foreground">
+            No verified challenge rivals yet.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {challengeInsights.headToHead.map((row) => {
+              const opponent = playerMap[row.opponentId];
+              return (
+                <Link
+                  key={row.opponentId}
+                  to={`/players/${row.opponentId}`}
+                  className="interactive-row rounded-xl p-3 flex items-center gap-3"
+                >
+                  <PlayerAvatar
+                    name={opponent?.name || "Player"}
+                    elo={opponent?.currentElo || 1000}
+                    size={38}
+                    avatarUrl={playerAvatars[row.opponentId]}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold truncate">{opponent?.name || "Player"}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{row.played} challs played</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-mono font-bold">
+                      <span className="text-emerald-400">{row.wins}W</span>
+                      <span className="text-muted-foreground mx-1">-</span>
+                      <span className="text-red-400">{row.losses}L</span>
+                    </div>
+                    <div className={`text-xs font-mono mt-0.5 ${row.profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                      {row.profit >= 0 ? "+" : "-"}€{Math.abs(row.profit).toFixed(2)}
+                    </div>
+                  </div>
+                </Link>
               );
             })}
           </div>
