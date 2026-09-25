@@ -82,7 +82,7 @@ const Gate = () => {
 };
 
 export default function AdminPanel() {
-  const { admin, setAdmin, players, addPlayer, removePlayer, editElo, resetStats, resetToDemo, importPlayers, restoreLocal } = useData();
+  const { admin, setAdmin, players, addPlayer, removePlayer, editElo, resetStats, importPlayers } = useData();
   const [newName, setNewName] = useState("");
   const [newElo, setNewElo] = useState(1000);
   const [editing, setEditing] = useState({}); // id -> value
@@ -149,15 +149,6 @@ export default function AdminPanel() {
     toast.success(`Exported ${players.length} players`);
   };
 
-  const handleRestore = async () => {
-    const r = await restoreLocal();
-    if (!r.ok && r.reason === "none") {
-      toast.error("No saved data found in this browser to recover");
-      return;
-    }
-    if (r.ok) toast.success(`Recovered ${r.players} players and ${r.matches} matches from this browser`);
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -200,17 +191,14 @@ export default function AdminPanel() {
             <h3 className="font-display font-bold text-lg">Data & Records</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Button onClick={() => setHistOpen(true)} data-testid="admin-add-historical-btn" className="justify-start bg-[#181B26] border border-[#242938] hover:bg-white/5 h-14">
-              <History size={18} className="mr-2 text-magma" /> Add Historical Match
+            <Button onClick={handleExport} data-testid="admin-export-btn" className="justify-start bg-[#181B26] border border-[#242938] hover:bg-white/5 h-14">
+              <Download size={18} className="mr-2 text-emerald-400" /> Export Player Database
             </Button>
+
             <Button onClick={() => fileRef.current?.click()} data-testid="admin-import-btn" className="justify-start bg-[#181B26] border border-[#242938] hover:bg-white/5 h-14">
               <Upload size={18} className="mr-2 text-blue-400" /> Import Player Database
             </Button>
             <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={handleImport} data-testid="admin-import-file" />
-
-            <Button onClick={handleExport} data-testid="admin-export-btn" className="justify-start bg-[#181B26] border border-[#242938] hover:bg-white/5 h-14">
-              <Download size={18} className="mr-2 text-emerald-400" /> Export Player Database
-            </Button>
 
             <ConfirmButton
               testid="admin-reset-stats-btn"
@@ -220,24 +208,10 @@ export default function AdminPanel() {
               desc="Every player's Elo, matches, wins, losses and MVP counts will be wiped and match history cleared. This cannot be undone."
               onConfirm={() => { resetStats(); toast.success("Statistics reset"); }}
             />
-            <ConfirmButton
-              testid="admin-reload-demo-btn"
-              label="Reload Demo Data"
-              icon={<Database size={18} className="mr-2 text-purple-400" />}
-              title="Reload demo data?"
-              desc="This will replace all current players and matches with a fresh set of 20 demo players and sample matches."
-              onConfirm={() => { resetToDemo(); toast.success("Demo data reloaded"); }}
-            />
-            <div className="sm:col-span-2">
-              <ConfirmButton
-                testid="admin-recover-local-btn"
-                label="Recover My Local Data"
-                icon={<History size={18} className="mr-2 text-emerald-400" />}
-                title="Recover data from this browser?"
-                desc="This reads the players & matches you had previously saved in THIS browser (localStorage) and uploads them to the shared database, replacing what is currently there. Use it only from the browser where you originally made those changes."
-                onConfirm={handleRestore}
-              />
-            </div>
+
+            <Button onClick={() => setHistOpen(true)} data-testid="admin-add-historical-btn" className="justify-start bg-[#181B26] border border-[#242938] hover:bg-white/5 h-14">
+              <History size={18} className="mr-2 text-magma" /> Add Historical Match
+            </Button>
           </div>
         </div>
       </div>
