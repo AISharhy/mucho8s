@@ -347,6 +347,27 @@ export const DataProvider = ({ children }) => {
     return persistWholeState(next, matches);
   }, [players, matches, backendWrite, persistWholeState]);
 
+  const editPlayer = useCallback(async (id, { name, currentElo }) => {
+    const cleanName = String(name || "").trim();
+    if (!cleanName) return false;
+    const elo = Math.max(MIN_ELO, Math.round(Number(currentElo) || BASE_ELO));
+
+    if (STORAGE_MODE === "backend") {
+      const okName = await backendWrite(`/players/${id}/name`, { method: "PUT", body: { name: cleanName } });
+      if (!okName) return false;
+      return backendWrite(`/players/${id}/elo`, { method: "PUT", body: { currentElo: elo } });
+    }
+
+    const next = clonePlayers(players);
+    const p = next.find((x) => x.id === id);
+    if (!p) return false;
+    p.name = cleanName;
+    p.currentElo = elo;
+    p.peakElo = Math.max(p.peakElo, elo);
+    p.eloHistory = [...(p.eloHistory || []), { match: p.eloHistory?.length || 0, elo }];
+    return persistWholeState(next, matches);
+  }, [players, matches, backendWrite, persistWholeState]);
+
   const resetStats = useCallback(async () => {
     if (STORAGE_MODE === "backend") return backendWrite("/reset-stats");
     const resetPlayers = players.map((p) => ({
@@ -451,6 +472,7 @@ export const DataProvider = ({ children }) => {
     removePlayer,
     editElo,
     editPlayerName,
+    editPlayer,
     resetStats,
     importPlayers,
     importFullBackup,
