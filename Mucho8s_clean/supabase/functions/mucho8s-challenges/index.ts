@@ -18,6 +18,11 @@ const PLATFORM_COLUMNS: Record<string, string> = {
   cmg: "cmg_url",
 };
 
+const decodeBase64 = (value: string) => {
+  const binary = atob(value);
+  return new Uint8Array([...binary].map((char) => char.charCodeAt(0)));
+};
+
 const sha256 = async (value: string) => {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -451,6 +456,69 @@ Deno.serve(async (req: Request) => {
 
       if (error) throw error;
       return json({ ok: true, challenge: data });
+    }
+
+    if (action === "upload-evidence") {
+      const id = String(body?.id || "").trim();
+      const fileName = String(body?.fileName || "evidence.jpg").trim().slice(0, 120);
+      const mimeType = String(body?.mimeType || "").trim().toLowerCase();
+      const base64 = String(body?.base64 || "").trim();
+      const kind = String(body?.kind || "dispute").trim().slice(0, 40);
+
+      const challenge = await getChallenge(id);
+      if (!challenge) return json({ error: "Challenge not found" }, 404);
+      if (!isParticipant(challenge)) return json({ error: "Not allowed" }, 403);
+      if (!["image/png", "image/jpeg", "image/webp"].includes(mimeType)) {
+        return json({ error: "Evidence must be PNG, JPG or WEBP" }, 400);
+      }
+      if (!base64) return json({ error: "Evidence image is missing" }, 400);
+
+      const bytes = decodeBase64(base64);
+      if (bytes.byteLength > 5 * 1024 * 1024) {
+        return json({ error: "Evidence image must be under 5 MB" }, 400);
+      }
+
+      const safeExt = mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : "jpg";
+      const objectPath = `${id}/${Date.now()}-${crypto.randomUUID()}.${safeExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("challenge-evidence")
+        .upload(objectPath, bytes, {
+          contentType: mimeType,
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicData } = supabase.storage
+        .from("challenge-evidence")
+        .getPublicUrl(objectPath);
+
+      const evidenceItem = {
+        id: crypto.randomUUID(),
+        url: publicData.publicUrl,
+        path: objectPath,
+        file_name: fileName,
+        mime_type: mimeType,
+        kind,
+        uploaded_by_player_id: me.player_id,
+        uploaded_at: new Date().toISOString(),
+      };
+
+      const nextEvidence = [
+        ...(Array.isArray(challenge.evidence) ? challenge.evidence : []),
+        evidenceItem,
+      ].slice(-12);
+
+      const { data, error } = await supabase
+        .from("player_challenges")
+        .update({ evidence: nextEvidence })
+        .eq("id", id)
+        .select("*")
+        .single();
+
+      if (error) throw error;
+      return json({ ok: true, challenge: data, evidence: evidenceItem });
     }
 
     if (action === "payment-sent") {
