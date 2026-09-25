@@ -639,11 +639,11 @@ export const DataProvider = ({ children }) => {
         challenge.reporter_account_id !== discordAccount.id
       ) return count + 1;
 
-      const seen = isChallenger
-        ? challenge.challenger_seen_status
-        : challenge.challenged_seen_status;
+      const seenEvent = isChallenger
+        ? challenge.challenger_seen_event
+        : challenge.challenged_seen_event;
 
-      if (["accepted", "declined", "completed", "disputed"].includes(challenge.status) && seen !== challenge.status) {
+      if (challenge.last_event && seenEvent !== challenge.last_event) {
         return count + 1;
       }
 
