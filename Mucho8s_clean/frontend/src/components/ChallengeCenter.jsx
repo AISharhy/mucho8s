@@ -202,7 +202,7 @@ export default function ChallengeCenter() {
           <div className="flex items-center justify-center mb-5">
             <div className="relative">
               <div className="absolute inset-0 rounded-2xl bg-magma/20 blur-xl animate-pulse" />
-              <div className="relative w-16 h-16 rounded-2xl bg-[#171D27] border border-magma/30 flex items-center justify-center">
+              <div className="relative w-16 h-16 rounded-2xl bg-[#151923] border border-magma/30 flex items-center justify-center">
                 {attention.type === "incoming" ? (
                   <Swords size={30} className="text-magma" />
                 ) : attention.type === "verify" ? (
@@ -226,7 +226,7 @@ export default function ChallengeCenter() {
                 </p>
               </div>
 
-              <div className="mt-5 rounded-2xl bg-[#171D27] border border-[#313B4A] p-4 flex items-center gap-3">
+              <div className="mt-5 rounded-2xl bg-[#151923] border border-[#252B36] p-4 flex items-center gap-3">
                 <PlayerAvatar
                   name={challenger?.name || "Player"}
                   elo={challenger?.currentElo || 1000}
@@ -247,14 +247,14 @@ export default function ChallengeCenter() {
                 <Button
                   disabled={busy}
                   onClick={() => respond("decline")}
-                  className="h-12 rounded-xl bg-[#1A202B] border border-[#364150] text-[#AEB7C6] hover:bg-red-500/10 hover:text-red-300"
+                  className="h-12 rounded-xl bg-[#181B26] border border-[#2B313D] text-[#AAB1BE] hover:bg-red-500/10 hover:text-red-300"
                 >
                   <X size={17} className="mr-2" /> Decline
                 </Button>
                 <Button
                   disabled={busy}
                   onClick={() => respond("accept")}
-                  className="h-12 rounded-xl bg-magma hover:bg-[#FB5A76] text-white font-bold magma-glow"
+                  className="h-12 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-bold magma-glow"
                 >
                   <Check size={17} className="mr-2" /> Accept
                 </Button>
@@ -272,7 +272,7 @@ export default function ChallengeCenter() {
                 </p>
               </div>
 
-              <div className="mt-5 rounded-2xl bg-[#171D27] border border-[#313B4A] p-4 text-center">
+              <div className="mt-5 rounded-2xl bg-[#151923] border border-[#252B36] p-4 text-center">
                 <div className="text-xs uppercase tracking-widest text-muted-foreground">Reported winner</div>
                 <div className="flex items-center justify-center gap-3 mt-3">
                   <PlayerAvatar
@@ -289,7 +289,7 @@ export default function ChallengeCenter() {
                 <Button
                   disabled={busy}
                   onClick={() => navigate(`/challenges/${challenge.id}`)}
-                  className="h-12 rounded-xl bg-[#1A202B] border border-red-500/25 text-red-300 hover:bg-red-500/10"
+                  className="h-12 rounded-xl bg-[#181B26] border border-red-500/25 text-red-300 hover:bg-red-500/10"
                 >
                   <AlertTriangle size={17} className="mr-2" /> Dispute
                 </Button>
@@ -310,7 +310,7 @@ export default function ChallengeCenter() {
                 <div className="brand-kicker mb-2">Challenge Update</div>
                 {challenge.last_event === "payout_sent" ? (
                   <>
-                    <h2 className="font-display text-2xl font-extrabold text-[#C9A45C]">PAYOUT SENT</h2>
+                    <h2 className="font-display text-2xl font-extrabold text-[#D5A33A]">PAYOUT SENT</h2>
                     <p className="text-sm text-muted-foreground mt-2">
                       The losing player marked {money(challenge)} as paid. Confirm it from the match room if you received it.
                     </p>
@@ -362,7 +362,7 @@ export default function ChallengeCenter() {
                       void markChallengeSeen(challenge.id);
                       navigate(`/challenges/${challenge.id}`);
                     }}
-                    className="h-12 rounded-xl bg-magma hover:bg-[#FB5A76] text-white font-bold"
+                    className="h-12 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-bold"
                   >
                     OPEN MATCH
                   </Button>
@@ -371,7 +371,7 @@ export default function ChallengeCenter() {
                   disabled={busy}
                   onClick={closeStatus}
                   variant="ghost"
-                  className="h-11 rounded-xl bg-[#1A202B] border border-[#364150] text-[#AEB7C6]"
+                  className="h-11 rounded-xl bg-[#181B26] border border-[#2B313D] text-[#AAB1BE]"
                 >
                   Close
                 </Button>
