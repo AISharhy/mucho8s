@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, Swords, Gamepad2, Trophy, BarChart3, Shield, Menu, X, Flame,
@@ -84,22 +85,24 @@ export const MobileNav = () => {
         </button>
         <span className="font-display font-bold">{current?.label || "Dashboard"}</span>
       </div>
-      {open && (
-        <div className="lg:hidden fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/70" onClick={() => setOpen(false)} />
-          <div className="absolute inset-y-0 left-0 w-72 bg-[#0D0E15] border-r border-[#242938] flex flex-col animate-fade-up">
-            <div className="flex items-center justify-between pr-3">
-              <Brand />
-              <button onClick={() => setOpen(false)} className="p-2" data-testid="mobile-close-btn">
-                <X size={20} />
-              </button>
+      {open &&
+        createPortal(
+          <div className="lg:hidden fixed inset-0 z-[100]">
+            <div className="absolute inset-0 bg-black/70" onClick={() => setOpen(false)} />
+            <div className="absolute top-0 bottom-0 left-0 w-72 max-w-[85vw] bg-[#0D0E15] border-r border-[#242938] flex flex-col shadow-2xl">
+              <div className="flex items-center justify-between pr-3 shrink-0">
+                <Brand />
+                <button onClick={() => setOpen(false)} className="p-2" data-testid="mobile-close-btn" aria-label="Close menu">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="py-4 flex-1 overflow-y-auto overscroll-contain">
+                <NavItems onNavigate={() => setOpen(false)} />
+              </div>
             </div>
-            <div className="py-4 flex-1 overflow-y-auto">
-              <NavItems onNavigate={() => setOpen(false)} />
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 };
