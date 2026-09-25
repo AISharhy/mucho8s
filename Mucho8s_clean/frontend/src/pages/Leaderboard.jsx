@@ -20,7 +20,7 @@ const COLUMNS = [
 ];
 
 export default function Leaderboard() {
-  const { players, matches } = useData();
+  const { players, matches, playerAvatars } = useData();
   const [sortKey, setSortKey] = useState("currentElo");
   const [dir, setDir] = useState("desc");
   const [game, setGame] = useState("ALL");
@@ -152,7 +152,7 @@ export default function Leaderboard() {
                   </td>
                   <td className="px-4 py-3">
                     <Link to={`/players/${p.id}`} className="flex items-center gap-2.5 hover:text-magma transition-colors">
-                      <PlayerAvatar name={p.name} elo={p.currentElo} size={30} />
+                      <PlayerAvatar name={p.name} elo={p.currentElo} size={30} avatarUrl={playerAvatars[p.id]} />
                       <span className="font-medium">{p.name}</span>
                     </Link>
                   </td>
