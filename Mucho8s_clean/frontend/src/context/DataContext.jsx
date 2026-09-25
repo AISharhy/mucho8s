@@ -586,6 +586,44 @@ export const DataProvider = ({ children }) => {
     return data.challenge;
   }, [challengeRequest, refreshChallenges]);
 
+  const disputeChallengePayout = useCallback(async (id, note) => {
+    const data = await challengeRequest({ action: "payout-dispute", id, note });
+    if (!data?.challenge) return null;
+    await refreshChallenges();
+    return data.challenge;
+  }, [challengeRequest, refreshChallenges]);
+
+  const uploadChallengeEvidence = useCallback(async (id, file, kind = "dispute") => {
+    if (!file) return null;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Evidence image must be under 5 MB");
+      return null;
+    }
+
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const raw = String(reader.result || "");
+        resolve(raw.includes(",") ? raw.split(",")[1] : raw);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    const data = await challengeRequest({
+      action: "upload-evidence",
+      id,
+      fileName: file.name,
+      mimeType: file.type,
+      base64,
+      kind,
+    });
+
+    if (!data?.challenge) return null;
+    setChallenges((prev) => prev.map((item) => item.id === id ? data.challenge : item));
+    return data.evidence || null;
+  }, [challengeRequest]);
+
   const markChallengeSeen = useCallback(async (id) => {
     const data = await challengeRequest({ action: "mark-seen", id }, { silent: true });
     if (!data?.challenge) return null;
@@ -1203,6 +1241,8 @@ export const DataProvider = ({ children }) => {
     respondToChallenge,
     markChallengePaymentSent,
     confirmChallengePaymentReceived,
+    disputeChallengePayout,
+    uploadChallengeEvidence,
     markChallengeSeen,
     setChallengeReady,
     reportChallengeResult,
