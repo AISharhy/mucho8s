@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Trophy, BarChart3 } from "lucide-react";
+import { Trophy, BarChart3, CalendarDays } from "lucide-react";
 import Leaderboard from "@/pages/Leaderboard";
 import Statistics from "@/pages/Statistics";
+import SeasonHistory from "@/pages/SeasonHistory";
 
 export default function Ranking({ initialTab = "leaderboard" }) {
   const [tab, setTab] = useState(initialTab);
@@ -40,10 +41,22 @@ export default function Ranking({ initialTab = "leaderboard" }) {
           >
             <BarChart3 size={15} /> Statistics
           </button>
+          <button
+            type="button"
+            onClick={() => setTab("seasons")}
+            data-testid="ranking-tab-seasons"
+            className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              tab === "seasons"
+                ? "bg-white text-black"
+                : "text-[#8D95A4] hover:text-white"
+            }`}
+          >
+            <CalendarDays size={15} /> Seasons
+          </button>
         </div>
       </div>
 
-      {tab === "leaderboard" ? <Leaderboard /> : <Statistics />}
+      {tab === "leaderboard" ? <Leaderboard /> : tab === "statistics" ? <Statistics /> : <SeasonHistory />}
     </div>
   );
 }
