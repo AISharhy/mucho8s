@@ -120,6 +120,8 @@ Deno.serve(async (req: Request) => {
           platform,
           target_url: targetUrl,
           status: "pending",
+          challenger_seen_status: "pending",
+          challenged_seen_status: null,
         })
         .select("*")
         .single();
@@ -146,6 +148,8 @@ Deno.serve(async (req: Request) => {
         .update({
           status: nextStatus,
           responded_at: new Date().toISOString(),
+          challenged_seen_status: nextStatus,
+          challenger_seen_status: null,
         })
         .eq("id", id)
         .eq("status", "pending")
@@ -175,6 +179,8 @@ Deno.serve(async (req: Request) => {
           reported_winner_player_id: winnerPlayerId,
           reporter_account_id: user.id,
           result_reported_at: new Date().toISOString(),
+          challenger_seen_status: challenge.challenger_account_id === user.id ? "result_pending" : null,
+          challenged_seen_status: challenge.challenged_account_id === user.id ? "result_pending" : null,
         })
         .eq("id", id)
         .eq("status", "accepted")
@@ -208,9 +214,33 @@ Deno.serve(async (req: Request) => {
           verifier_account_id: user.id,
           verified_at: decision === "confirm" ? new Date().toISOString() : null,
           dispute_note: decision === "dispute" ? String(body?.note || "").trim().slice(0, 240) || "Result disputed" : null,
+          challenger_seen_status: challenge.challenger_account_id === user.id ? nextStatus : null,
+          challenged_seen_status: challenge.challenged_account_id === user.id ? nextStatus : null,
         })
         .eq("id", id)
         .eq("status", "result_pending")
+        .select("*")
+        .single();
+
+      if (error) throw error;
+      return json({ ok: true, challenge: data });
+    }
+
+    if (action === "mark-seen") {
+      const id = String(body?.id || "").trim();
+      const challenge = await getChallenge(id);
+      if (!challenge) return json({ error: "Challenge not found" }, 404);
+      if (!isParticipant(challenge)) return json({ error: "Not allowed" }, 403);
+
+      const field =
+        challenge.challenger_account_id === user.id
+          ? "challenger_seen_status"
+          : "challenged_seen_status";
+
+      const { data, error } = await supabase
+        .from("player_challenges")
+        .update({ [field]: challenge.status })
+        .eq("id", id)
         .select("*")
         .single();
 
@@ -227,7 +257,10 @@ Deno.serve(async (req: Request) => {
 
       const { data, error } = await supabase
         .from("player_challenges")
-        .update({ status: "cancelled" })
+        .update({
+          status: "cancelled",
+          challenger_seen_status: "cancelled",
+        })
         .eq("id", id)
         .eq("status", "pending")
         .select("*")
