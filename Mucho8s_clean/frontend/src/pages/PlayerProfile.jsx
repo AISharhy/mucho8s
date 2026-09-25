@@ -98,12 +98,14 @@ export default function PlayerProfile() {
 
     completed.forEach((challenge) => {
       const amount = Number(challenge.amount_cents || 0) / 100;
+      const settled = Boolean(challenge.payment_received_at);
+
       if (challenge.reported_winner_player_id === id) {
         wins += 1;
-        wonValue += amount;
+        if (settled) wonValue += amount;
       } else {
         losses += 1;
-        lostValue += amount;
+        if (settled) lostValue += amount;
       }
     });
 
@@ -344,7 +346,7 @@ export default function PlayerProfile() {
           <div>
             <div className="brand-kicker mb-1">Challenge Record</div>
             <h3 className="font-display text-xl font-bold">{challengeStats.wins}W - {challengeStats.losses}L</h3>
-            <p className="text-sm text-muted-foreground mt-1">Verified challs only.</p>
+            <p className="text-sm text-muted-foreground mt-1">Record: verified challs · € totals: confirmed payouts only.</p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full lg:w-auto lg:min-w-[560px]">
