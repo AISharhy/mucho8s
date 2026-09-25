@@ -39,6 +39,25 @@ const money = (challenge) =>
     currency: challenge?.currency || "EUR",
   }).format(Number(challenge?.amount_cents || 0) / 100);
 
+const payoutUrlFor = (challenge, profiles = {}) => {
+  const winnerId = challenge?.reported_winner_player_id;
+  const platform = String(challenge?.platform || "").toLowerCase();
+  const profile = profiles?.[winnerId] || {};
+  const profileUrl =
+    platform === "paypal"
+      ? profile.paypalUrl
+      : platform === "revolut"
+        ? profile.revolutUrl
+        : platform === "cmg"
+          ? profile.cmgUrl
+          : "";
+
+  if (winnerId === challenge?.challenger_player_id) {
+    return challenge?.challenger_payout_url || profileUrl || "";
+  }
+  return challenge?.challenged_payout_url || profileUrl || challenge?.target_url || "";
+};
+
 export default function ChallengeCenter() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -48,6 +67,7 @@ export default function ChallengeCenter() {
     discordPlayer,
     playerMap,
     playerAvatars,
+    playerProfiles,
     respondToChallenge,
     verifyChallengeResult,
     markChallengeSeen,
@@ -107,8 +127,24 @@ export default function ChallengeCenter() {
       void markChallengeSeen(attention.challenge.id);
       const target = `/challenges/${attention.challenge.id}`;
       if (location.pathname !== target) navigate(target);
+      return;
     }
-  }, [attention, location.pathname, markChallengeSeen, navigate]);
+
+    if (
+      attention.type === "event" &&
+      attention.challenge.status === "completed" &&
+      attention.challenge.reported_winner_player_id !== discordPlayer?.id &&
+      !attention.challenge.payment_sent_at
+    ) {
+      const payoutUrl = payoutUrlFor(attention.challenge, playerProfiles);
+      const key = `m8-payout-redirect-${attention.challenge.id}`;
+      if (payoutUrl && !sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, "1");
+        void markChallengeSeen(attention.challenge.id);
+        window.location.assign(payoutUrl);
+      }
+    }
+  }, [attention, location.pathname, markChallengeSeen, navigate, discordPlayer, playerProfiles]);
 
   if (!attention || !discordPlayer) return null;
   if (attention.type === "accepted") return null;
@@ -295,25 +331,18 @@ export default function ChallengeCenter() {
                       The challenge needs Admin review.
                     </p>
                   </>
-                ) : challenge.last_event === "payment_sent" ? (
+                ) : challenge.last_event === "payout_sent" ? (
                   <>
-                    <h2 className="font-display text-2xl font-extrabold text-[#D5A33A]">PAYMENT SENT</h2>
+                    <h2 className="font-display text-2xl font-extrabold text-[#D5A33A]">PAYOUT SENT</h2>
                     <p className="text-sm text-muted-foreground mt-2">
-                      {challenger?.name || "The challenger"} marked {money(challenge)} as sent. Check your {platform} account.
+                      The losing player marked {money(challenge)} as paid. Confirm it from the match room if you received it.
                     </p>
                   </>
-                ) : challenge.last_event === "payment_received" ? (
+                ) : challenge.last_event === "payout_received" ? (
                   <>
-                    <h2 className="font-display text-2xl font-extrabold text-emerald-400">PAYMENT CONFIRMED</h2>
+                    <h2 className="font-display text-2xl font-extrabold text-emerald-400">PAYMENT RECEIVED</h2>
                     <p className="text-sm text-muted-foreground mt-2">
-                      {money(challenge)} has been confirmed. Ready Check is now available.
-                    </p>
-                  </>
-                ) : ["challenger_ready", "challenged_ready"].includes(challenge.last_event) ? (
-                  <>
-                    <h2 className="font-display text-2xl font-extrabold text-emerald-400">OPPONENT READY</h2>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Open the match room and mark yourself ready when you are set.
+                      {money(challenge)} has been confirmed by the winner.
                     </p>
                   </>
                 ) : (
