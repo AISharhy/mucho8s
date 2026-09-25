@@ -8,7 +8,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Crown, Trophy, Filter, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Crown, Trophy, Filter, Pencil, Trash2, Flag } from "lucide-react";
 import { GAMES } from "@/lib/demoData";
 import { toast } from "sonner";
 
@@ -38,6 +38,7 @@ export default function Matches() {
   const { matches, playerMap, deleteMatch, isAdmin } = useData();
   const [open, setOpen] = useState(false);
   const [editData, setEditData] = useState(null);
+  const [reportData, setReportData] = useState(null);
   const [query, setQuery] = useState("");
   const [winnerFilter, setWinnerFilter] = useState("all");
   const [gameFilter, setGameFilter] = useState("ALL");
@@ -120,7 +121,7 @@ export default function Matches() {
                 {m.game && <span className="px-2 py-0.5 rounded-md bg-[#171B23] text-xs border border-[#2B313E] text-[#D5A33A] font-bold" data-testid={`match-game-${m.id}`}>{m.game}</span>}
                 {m.mode && <span className="px-2 py-0.5 rounded-md bg-[#0F1218] text-xs border border-[#222834] text-[#AAB1BE]">{m.mode}</span>}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap justify-end">
                 <span
                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold"
                   style={{
@@ -130,41 +131,60 @@ export default function Matches() {
                 >
                   <Trophy size={13} /> {m.winner === "A" ? "Alpha" : "Bravo"} won
                 </span>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  data-testid={`match-edit-${m.id}`}
-                  onClick={() => { setEditData(m); }}
-                  className={`h-8 w-8 text-muted-foreground hover:text-white ${isAdmin ? "" : "hidden"}`}
-                >
-                  <Pencil size={15} />
-                </Button>
+
                 {isAdmin && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button size="icon" variant="ghost" data-testid={`match-delete-${m.id}`} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10">
-                      <Trash2 size={15} />
+                  <>
+                    <Button
+                      variant="ghost"
+                      data-testid={`match-report-${m.id}`}
+                      onClick={() => setReportData(m)}
+                      className="h-9 px-3 rounded-lg bg-magma/10 border border-magma/25 text-magma hover:bg-magma/15 hover:text-[#ff5a68]"
+                    >
+                      <Flag size={14} className="mr-1.5" /> Report Result
                     </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="bg-[#101319] border-[#242A35]">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle className="font-display">Delete this match?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        The match will be removed and every player's Elo, wins/losses and stats will be recalculated.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel className="bg-[#0F1218] border-[#222834]">Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        data-testid={`match-delete-confirm-${m.id}`}
-                        onClick={() => { deleteMatch(m.id); toast.success("Match deleted — stats recalculated"); }}
-                        className="bg-magma hover:bg-magma/90 text-white"
-                      >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+
+                    <Button
+                      variant="ghost"
+                      data-testid={`match-edit-${m.id}`}
+                      onClick={() => setEditData(m)}
+                      className="h-9 px-3 rounded-lg bg-[#0F1218] border border-[#222834] text-[#C8CED8] hover:text-white hover:bg-white/[0.04]"
+                    >
+                      <Pencil size={14} className="mr-1.5" /> Edit
+                    </Button>
+
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          data-testid={`match-delete-${m.id}`}
+                          className="h-9 px-3 rounded-lg bg-red-500/5 border border-red-500/20 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                        >
+                          <Trash2 size={14} className="mr-1.5" /> Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="bg-[#101319] border-[#242A35]">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="font-display">Delete this match?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            The match will be removed and every player's Elo, wins/losses and stats will be recalculated.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="bg-[#0F1218] border-[#222834]">Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            data-testid={`match-delete-confirm-${m.id}`}
+                            onClick={async () => {
+                              const ok = await deleteMatch(m.id);
+                              if (ok) toast.success("Match deleted — stats recalculated");
+                            }}
+                            className="bg-magma hover:bg-magma/90 text-white"
+                          >
+                            Delete Match
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </>
                 )}
               </div>
             </div>
@@ -189,6 +209,14 @@ export default function Matches() {
         onOpenChange={(o) => !o && setEditData(null)}
         editData={editData}
         title="Edit Match"
+      />
+
+      <RecordMatchDialog
+        open={!!reportData}
+        onOpenChange={(o) => !o && setReportData(null)}
+        editData={reportData}
+        title="Report Result"
+        reportOnly
       />
     </div>
   );
