@@ -32,7 +32,7 @@ const NavItem = ({ item, onNavigate }) => {
         `group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all border-l-2 ${
           isActive
             ? "bg-white/[0.045] text-white border-magma"
-            : "text-muted-foreground hover:text-white hover:bg-white/[0.035] border-transparent"
+            : "text-[#8D95A4] hover:text-white hover:bg-white/[0.03] border-transparent"
         }`
       }
     >
@@ -44,7 +44,7 @@ const NavItem = ({ item, onNavigate }) => {
 
 const NavSection = ({ label, items, onNavigate }) => (
   <div>
-    <div className="px-4 mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5F6678]">
+    <div className="brand-section-title px-4 mb-2">
       {label}
     </div>
     <nav className="flex flex-col gap-1 px-2">
@@ -56,15 +56,19 @@ const NavSection = ({ label, items, onNavigate }) => (
 );
 
 const Brand = () => (
-  <div className="flex items-center gap-2.5 px-4 h-16 border-b border-[#1C202E]">
-    <div className="w-9 h-9 rounded-lg flex items-center justify-center gradient-bar magma-glow text-black font-display font-black text-xs tracking-tighter shrink-0">
-      M8
+  <div className="flex items-center gap-2.5 px-4 h-[72px] border-b border-[#1D222C]">
+    <div className="w-10 h-10 rounded-xl bg-[#0B0D12] border border-[#262C37] flex items-center justify-center overflow-hidden shrink-0">
+      <img
+        src={`${process.env.PUBLIC_URL}/logo-mark.svg`}
+        alt="MuchoMoney8s"
+        className="w-9 h-9 object-contain"
+      />
     </div>
     <div className="leading-tight min-w-0">
-      <div className="font-display font-extrabold text-[15px] tracking-tight whitespace-nowrap">
-        MUCHO<span className="text-magma">MONEY</span><span className="text-gold">8s</span>
+      <div className="font-display font-extrabold text-[14px] tracking-tight whitespace-nowrap">
+        MUCHO<span className="text-magma">MONEY</span><span className="text-white">8s</span>
       </div>
-      <div className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground">COD 8s</div>
+      <div className="text-[9px] uppercase tracking-[0.2em] text-[#697181] mt-1">Competitive COD 8s</div>
     </div>
   </div>
 );
@@ -96,7 +100,7 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
 };
 
 export const Sidebar = () => (
-  <aside className="hidden lg:flex flex-col w-56 fixed inset-y-0 left-0 bg-[#0D0E15] border-r border-[#1C202E] z-30">
+  <aside className="hidden lg:flex flex-col w-56 fixed inset-y-0 left-0 bg-[#0D0F14]/95 backdrop-blur-xl border-r border-[#1D222C] z-30">
     <Brand />
     <MenuContent />
   </aside>
@@ -127,7 +131,7 @@ export const MobileNav = () => {
         createPortal(
           <div className="lg:hidden fixed inset-0 z-[100]">
             <div className="absolute inset-0 bg-black/75" onClick={() => setOpen(false)} />
-            <div className="absolute top-0 bottom-0 left-0 w-64 max-w-[86vw] bg-[#0D0E15] border-r border-[#1C202E] flex flex-col shadow-2xl">
+            <div className="absolute top-0 bottom-0 left-0 w-64 max-w-[86vw] bg-[#0D0F14] border-r border-[#1D222C] flex flex-col shadow-2xl">
               <div className="relative shrink-0">
                 <Brand />
                 <button
