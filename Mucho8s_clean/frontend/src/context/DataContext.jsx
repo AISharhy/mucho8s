@@ -177,6 +177,10 @@ export const DataProvider = ({ children }) => {
     onlinePlayers: [],
     competition: { season_number: 1, season_name: "Season 1" },
   });
+  const [competitionData, setCompetitionData] = useState({
+    current: { season_number: 1, season_name: "Season 1" },
+    archives: [],
+  });
   const [loaded, setLoaded] = useState(STORAGE_MODE === "local");
   const versionRef = useRef(-1);
 
@@ -284,6 +288,34 @@ export const DataProvider = ({ children }) => {
     const timer = setInterval(fetchPlayerAvatars, 15000);
     return () => clearInterval(timer);
   }, [fetchPlayerAvatars]);
+
+  const fetchCompetitionData = useCallback(async () => {
+    if (!HAS_SUPABASE) return null;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/mucho8s-competition`, {
+        method: "GET",
+        headers: { apikey: SUPABASE_ANON_KEY },
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data?.ok) {
+        setCompetitionData({
+          current: data.current || { season_number: 1, season_name: "Season 1" },
+          archives: Array.isArray(data.archives) ? data.archives : [],
+        });
+      }
+      return data;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!HAS_SUPABASE) return undefined;
+    void fetchCompetitionData();
+    const timer = setInterval(fetchCompetitionData, 60000);
+    return () => clearInterval(timer);
+  }, [fetchCompetitionData]);
 
   const fetchDashboardData = useCallback(async () => {
     if (!HAS_SUPABASE) return null;
@@ -1040,6 +1072,47 @@ export const DataProvider = ({ children }) => {
     return true;
   }, [adminAuthRequest]);
 
+  const startNewSeason = useCallback(async ({ seasonName = "", resetStats = true } = {}) => {
+    if (!HAS_SUPABASE || !admin?.sessionToken) {
+      toast.error("Admin access required");
+      return false;
+    }
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/mucho8s-competition`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_ANON_KEY,
+          "X-Admin-Session": admin.sessionToken,
+        },
+        body: JSON.stringify({
+          action: "new-season",
+          seasonName,
+          resetStats,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data?.error || "Could not start new season");
+        return false;
+      }
+
+      versionRef.current = -1;
+      await Promise.all([
+        fetchState(),
+        fetchCompetitionData(),
+        fetchDashboardData(),
+        fetchPublicChallenges(),
+      ]);
+      return true;
+    } catch {
+      toast.error("Competition service unavailable");
+      return false;
+    }
+  }, [admin, fetchState, fetchCompetitionData, fetchDashboardData, fetchPublicChallenges]);
+
   const addPlayer = useCallback(async (name, startElo = BASE_ELO) => {
     if (STORAGE_MODE === "backend") return backendWrite("/players", { body: { name, startElo } });
     const player = makePlayer(name, startElo);
@@ -1151,6 +1224,7 @@ export const DataProvider = ({ children }) => {
       ...data,
       id: uid(),
       date: data.date || new Date().toISOString(),
+      season: data.season || competitionData?.current?.season_number || dashboardData?.competition?.season_number || 1,
       eloChanges,
     });
     const nextMatches = [match, ...matches];
@@ -1171,7 +1245,7 @@ export const DataProvider = ({ children }) => {
 
     if (ok) void logAdminAction("match.add", "match", match.id, { game: match.game, mode: match.mode, winner: match.winner });
     return ok;
-  }, [players, matches, backendWrite, persistWholeState, discordRequest, logAdminAction]);
+  }, [players, matches, backendWrite, persistWholeState, discordRequest, logAdminAction, competitionData, dashboardData]);
 
   const editMatch = useCallback(async (id, data) => {
     if (STORAGE_MODE === "backend") {
@@ -1235,6 +1309,7 @@ export const DataProvider = ({ children }) => {
     challenges,
     publicChallenges,
     dashboardData,
+    competitionData,
     challengeNotificationCount,
     refreshChallenges,
     createChallenge,
@@ -1256,6 +1331,8 @@ export const DataProvider = ({ children }) => {
     logAdminAction,
     refreshPublicChallenges: fetchPublicChallenges,
     refreshDashboardData: fetchDashboardData,
+    refreshCompetitionData: fetchCompetitionData,
+    startNewSeason,
     refreshPlayerAvatars: fetchPlayerAvatars,
     saveMyChallengeLinks,
     signInWithDiscord,
