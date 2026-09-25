@@ -51,7 +51,6 @@ export default function PlayerProfile() {
     saveMyChallengeLinks,
     challenges,
     createChallenge,
-    reportChallengeResult,
   } = useData();
 
   const player = players.find((p) => p.id === id);
@@ -149,13 +148,6 @@ export default function PlayerProfile() {
           challenge.challenged_player_id === player.id
       )
     : [];
-
-  const reportWinner = async (challenge, winnerPlayerId) => {
-    const updated = await reportChallengeResult(challenge.id, winnerPlayerId);
-    if (updated) {
-      toast.success("Result submitted — the other player must verify it");
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -393,89 +385,88 @@ export default function PlayerProfile() {
                     ? challenge.challenged_player_id
                     : challenge.challenger_player_id;
                 const opponent = playerMap[opponentId];
-                const winner = playerMap[challenge.reported_winner_player_id];
-                const iReported = challenge.reporter_account_id === discordSession?.user?.id;
-                const isChallenger = challenge.challenger_player_id === player.id;
+                const completed = challenge.status === "completed";
+                const won = completed && challenge.reported_winner_player_id === player.id;
+                const lost = completed && challenge.reported_winner_player_id && challenge.reported_winner_player_id !== player.id;
+                const amount = new Intl.NumberFormat("it-IT", {
+                  style: "currency",
+                  currency: challenge.currency || "EUR",
+                }).format(Number(challenge.amount_cents || 0) / 100);
+                const canOpen = ["accepted", "result_pending", "completed", "disputed"].includes(challenge.status);
 
                 return (
-                  <div key={challenge.id} className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3 sm:p-4">
+                  <div
+                    key={challenge.id}
+                    className={`rounded-xl p-3 sm:p-4 border transition-colors ${
+                      won
+                        ? "bg-emerald-500/[0.06] border-emerald-500/25"
+                        : lost
+                          ? "bg-red-500/[0.06] border-red-500/25"
+                          : "bg-[#0F1218] border-[#1D222C]"
+                    }`}
+                  >
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                       <PlayerAvatar
                         name={opponent?.name || "Player"}
                         elo={opponent?.currentElo || 1000}
-                        size={40}
+                        size={42}
                         avatarUrl={playerAvatars[opponentId]}
                       />
+
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold truncate">vs {opponent?.name || "Player"}</div>
                         <div className="text-xs text-muted-foreground mt-0.5">
-                          {String(challenge.platform || "").toUpperCase()} · {new Date(challenge.created_at).toLocaleDateString()}
+                          {String(challenge.platform || "").toUpperCase()} · {amount} · {new Date(challenge.created_at).toLocaleDateString()}
                         </div>
                       </div>
 
-                      <div className="text-xs font-bold uppercase tracking-wider">
-                        {challenge.status === "pending" && <span className="text-[#D5A33A]">Pending</span>}
-                        {challenge.status === "accepted" && <span className="text-emerald-400">Accepted</span>}
-                        {challenge.status === "result_pending" && <span className="text-[#8E98FF]">Verification</span>}
-                        {challenge.status === "completed" && <span className="text-emerald-400">Verified</span>}
-                        {challenge.status === "declined" && <span className="text-red-400">Declined</span>}
-                        {challenge.status === "disputed" && <span className="text-orange-400">Disputed</span>}
-                        {challenge.status === "cancelled" && <span className="text-muted-foreground">Cancelled</span>}
+                      <div className="flex items-center gap-2">
+                        {won && (
+                          <span className="inline-flex items-center h-9 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-extrabold tracking-wider">
+                            WON
+                          </span>
+                        )}
+                        {lost && (
+                          <span className="inline-flex items-center h-9 px-3 rounded-lg bg-red-500/10 border border-red-500/25 text-red-400 text-xs font-extrabold tracking-wider">
+                            LOST
+                          </span>
+                        )}
+                        {!completed && challenge.status === "pending" && (
+                          <span className="text-xs font-bold uppercase tracking-wider text-[#D5A33A]">Pending</span>
+                        )}
+                        {!completed && challenge.status === "accepted" && (
+                          <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Accepted</span>
+                        )}
+                        {!completed && challenge.status === "result_pending" && (
+                          <span className="text-xs font-bold uppercase tracking-wider text-[#8E98FF]">Verification</span>
+                        )}
+                        {!completed && challenge.status === "declined" && (
+                          <span className="text-xs font-bold uppercase tracking-wider text-red-400">Declined</span>
+                        )}
+                        {!completed && challenge.status === "disputed" && (
+                          <span className="text-xs font-bold uppercase tracking-wider text-orange-400">Disputed</span>
+                        )}
+                        {!completed && challenge.status === "cancelled" && (
+                          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Cancelled</span>
+                        )}
+
+                        {canOpen && (
+                          <Link
+                            to={`/challenges/${challenge.id}`}
+                            className={`inline-flex items-center justify-center h-9 px-3 rounded-lg text-xs font-bold border ${
+                              won
+                                ? "bg-emerald-500 text-black border-emerald-400"
+                                : lost
+                                  ? "bg-red-500 text-white border-red-400"
+                                  : "bg-magma text-white border-magma hover:bg-[#ff3c4c]"
+                            }`}
+                            data-testid={`open-challenge-${challenge.id}`}
+                          >
+                            OPEN MATCH
+                          </Link>
+                        )}
                       </div>
                     </div>
-
-                    {challenge.status === "accepted" && (
-                      <div className="mt-3 pt-3 border-t border-[#1D222C]">
-                        <div className="text-xs text-muted-foreground mb-2">Report the result after the challenge is finished:</div>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <Button
-                            onClick={() => reportWinner(challenge, player.id)}
-                            className="flex-1 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold"
-                          >
-                            I WON
-                          </Button>
-                          <Button
-                            onClick={() => reportWinner(challenge, opponentId)}
-                            className="flex-1 rounded-xl bg-[#171B23] border border-[#2A303B] text-white hover:bg-white/[0.05]"
-                          >
-                            {opponent?.name || "Opponent"} WON
-                          </Button>
-                          {isChallenger && challenge.target_url && (
-                            <a
-                              href={challenge.target_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="h-10 px-4 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white text-sm font-semibold inline-flex items-center justify-center gap-2"
-                            >
-                              Open {String(challenge.platform || "").toUpperCase()} <ExternalLink size={13} />
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {challenge.status === "result_pending" && (
-                      <div className="mt-3 pt-3 border-t border-[#1D222C] text-sm">
-                        <span className="text-muted-foreground">Reported winner: </span>
-                        <span className="font-semibold text-white">{winner?.name || "Unknown"}</span>
-                        <span className="text-muted-foreground">
-                          {iReported ? " · waiting for opponent verification" : " · verify the result in the popup"}
-                        </span>
-                      </div>
-                    )}
-
-                    {challenge.status === "completed" && (
-                      <div className="mt-3 pt-3 border-t border-[#1D222C] text-sm">
-                        <span className="text-muted-foreground">Verified winner: </span>
-                        <span className="font-bold text-emerald-400">{winner?.name || "Unknown"}</span>
-                      </div>
-                    )}
-
-                    {challenge.status === "disputed" && (
-                      <div className="mt-3 pt-3 border-t border-[#1D222C] text-sm text-orange-300">
-                        Result disputed. The challenge is not counted as completed.
-                      </div>
-                    )}
                   </div>
                 );
               })}
