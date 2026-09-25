@@ -16,7 +16,7 @@ const TITLES = {
 
 export const Layout = () => {
   const loc = useLocation();
-  const title = TITLES[loc.pathname] || (loc.pathname.startsWith("/players/") ? "Player Profile" : "MuchoMoney8s");
+  const title = TITLES[loc.pathname] || (loc.pathname.startsWith("/players/") ? "Player Profile" : loc.pathname.startsWith("/challenges/") ? "Challenge Match" : "MuchoMoney8s");
 
   return (
     <div className="min-h-screen bg-[#090A0F]">
