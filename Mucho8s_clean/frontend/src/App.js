@@ -11,6 +11,8 @@ import Matches from "@/pages/Matches";
 import Ranking from "@/pages/Ranking";
 import AdminPanel from "@/pages/AdminPanel";
 import ChallengeMatch from "@/pages/ChallengeMatch";
+import ChallengeInbox from "@/pages/ChallengeInbox";
+import ChallengeLeaderboard from "@/pages/ChallengeLeaderboard";
 
 function App() {
   return (
@@ -28,6 +30,8 @@ function App() {
               <Route path="leaderboard" element={<Ranking initialTab="leaderboard" />} />
               <Route path="statistics" element={<Ranking initialTab="statistics" />} />
               <Route path="admin" element={<AdminPanel />} />
+              <Route path="challenges" element={<ChallengeInbox />} />
+              <Route path="challenge-ranking" element={<ChallengeLeaderboard />} />
               <Route path="challenges/:id" element={<ChallengeMatch />} />
             </Route>
           </Routes>
