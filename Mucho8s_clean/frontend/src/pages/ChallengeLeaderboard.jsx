@@ -11,7 +11,11 @@ const euro = (value) =>
   }).format(value);
 
 export default function ChallengeLeaderboard() {
-  const { players, playerMap, playerAvatars, publicChallenges } = useData();
+  const { players, playerMap, playerAvatars, publicChallenges, competitionData } = useData();
+  const currentSeason = Number(competitionData?.current?.season_number || 1);
+  const seasonChallenges = publicChallenges.filter(
+    (challenge) => Number(challenge.season_number || 1) === currentSeason
+  );
 
   const rows = useMemo(() => {
     const map = new Map();
@@ -27,7 +31,7 @@ export default function ChallengeLeaderboard() {
       });
     });
 
-    publicChallenges.forEach((challenge) => {
+    seasonChallenges.forEach((challenge) => {
       if (!challenge.payment_received_at) return;
       const amount = Number(challenge.amount_cents || 0) / 100;
       const ids = [challenge.challenger_player_id, challenge.challenged_player_id];
@@ -68,7 +72,7 @@ export default function ChallengeLeaderboard() {
         b.wins - a.wins ||
         b.winRate - a.winRate
       );
-  }, [players, playerMap, publicChallenges]);
+  }, [players, playerMap, seasonChallenges]);
 
   return (
     <div className="space-y-6">
@@ -76,7 +80,7 @@ export default function ChallengeLeaderboard() {
         <div className="brand-kicker mb-1">Competition</div>
         <h2 className="font-display text-3xl font-extrabold">Challenge Leaderboard</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Settled challs only. Profit is calculated after the winner confirms the payout received.
+          {competitionData?.current?.season_name || `Season ${currentSeason}`} · settled challs only. Profit counts only confirmed payouts.
         </p>
       </div>
 
@@ -151,13 +155,13 @@ export default function ChallengeLeaderboard() {
         <div className="card-surface rounded-2xl p-4">
           <TrendingUp size={18} className="text-emerald-400 mb-2" />
           <div className="text-xs text-muted-foreground">Settled Chall</div>
-          <div className="font-display text-2xl font-extrabold mt-1">{publicChallenges.filter((item) => item.payment_received_at).length}</div>
+          <div className="font-display text-2xl font-extrabold mt-1">{seasonChallenges.filter((item) => item.payment_received_at).length}</div>
         </div>
         <div className="card-surface rounded-2xl p-4">
           <WalletCards size={18} className="text-[#D5A33A] mb-2" />
           <div className="text-xs text-muted-foreground">Verified Volume</div>
           <div className="font-display text-2xl font-extrabold mt-1">
-            {euro(publicChallenges.filter((item) => item.payment_received_at).reduce((sum, item) => sum + Number(item.amount_cents || 0) / 100, 0))}
+            {euro(seasonChallenges.filter((item) => item.payment_received_at).reduce((sum, item) => sum + Number(item.amount_cents || 0) / 100, 0))}
           </div>
         </div>
         <div className="card-surface rounded-2xl p-4">
