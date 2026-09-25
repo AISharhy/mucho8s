@@ -41,6 +41,7 @@ export default function Dashboard() {
     discordPlayer,
     createChallenge,
     isAdmin,
+    adminChallengeAlertCount,
   } = useData();
 
   const [quickTarget, setQuickTarget] = useState("");
@@ -188,6 +189,23 @@ export default function Dashboard() {
           </Link>
         </div>
       </section>
+
+      {isAdmin && adminChallengeAlertCount > 0 && (
+        <Link
+          to="/admin"
+          data-testid="dashboard-admin-dispute-banner"
+          className="rounded-2xl border border-orange-500/25 bg-orange-500/[0.07] px-4 py-3 flex items-center gap-3 hover:bg-orange-500/[0.10] transition-colors"
+        >
+          <ShieldAlert size={19} className="text-orange-400 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-orange-300">
+              {adminChallengeAlertCount} {adminChallengeAlertCount === 1 ? "disputa richiede" : "dispute richiedono"} controllo Admin
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">Apri il Control Room per verificare risultato, pagamento e prove.</div>
+          </div>
+          <ArrowUpRight size={16} className="text-orange-400 shrink-0" />
+        </Link>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard icon={Users} label="Players" value={players.length} sub="Active roster" testid="kpi-total-players" />
