@@ -190,6 +190,14 @@ Deno.serve(async (req: Request) => {
         .maybeSingle();
       if (accountError) throw accountError;
 
+      if (account?.player_id) {
+        await supabase.from("player_presence").upsert({
+          account_id: user.id,
+          player_id: account.player_id,
+          last_seen_at: new Date().toISOString(),
+        });
+      }
+
       return json({ ok: true, account, user: { id: user.id, email: user.email || null } });
     }
 
