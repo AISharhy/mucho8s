@@ -14,13 +14,17 @@ import { Shield, UserPlus, Trash2, Pencil, RotateCcw, Upload, Download, LogOut, 
 import { toast } from "sonner";
 
 const Gate = () => {
-  const { setAdmin } = useData();
+  const { setAdmin, discordSession, discordAccount, discordLoading, signInWithDiscord } = useData();
   const [nick, setNick] = useState("");
   const [pwd, setPwd] = useState("");
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const tryEnter = async () => {
+    if (!discordSession) {
+      toast.error("Login with the authorized Discord account first");
+      return;
+    }
     if (!nick.trim() || !pwd) return;
     setBusy(true);
     const ok = await setAdmin(nick.trim(), pwd);
@@ -40,6 +44,26 @@ const Gate = () => {
         </div>
         <div className="brand-kicker mb-1">Control Room</div><h2 className="font-display text-2xl font-extrabold">Admin Access</h2>
         <p className="text-muted-foreground text-sm mt-2 mb-6">Restricted area for roster and match management.</p>
+        <div className={`mb-4 rounded-xl border px-3 py-3 text-sm ${
+          discordSession
+            ? "border-emerald-500/25 bg-emerald-500/5 text-emerald-300"
+            : "border-[#2A303B] bg-[#0F1218] text-muted-foreground"
+        }`}>
+          {discordLoading
+            ? "Checking Discord session..."
+            : discordSession
+              ? `Discord connected: ${discordAccount?.display_name || "authorized account"}`
+              : "Authorized Discord required before Admin login."}
+        </div>
+        {!discordSession && !discordLoading && (
+          <Button
+            type="button"
+            onClick={signInWithDiscord}
+            className="w-full mb-3 h-11 bg-[#5865F2] hover:bg-[#6571F4] text-white font-semibold"
+          >
+            <MessageCircle size={16} className="mr-2" /> Login with Discord
+          </Button>
+        )}
         <Input
           data-testid="admin-nickname-input"
           placeholder="Username..."
@@ -70,7 +94,7 @@ const Gate = () => {
         </div>
         <Button
           data-testid="admin-enter-btn"
-          disabled={!nick.trim() || !pwd || busy}
+          disabled={!discordSession || !nick.trim() || !pwd || busy}
           onClick={tryEnter}
           className="w-full mt-4 h-12 bg-magma hover:bg-magma/90 text-white font-bold"
         >
@@ -106,6 +130,8 @@ export default function AdminPanel() {
     adminUpdateChallenge,
     adminDeleteChallenge,
     listAdminAudit,
+    changeAdminPassword,
+    logoutAllAdminSessions,
   } = useData();
   const [newName, setNewName] = useState("");
   const [newElo, setNewElo] = useState(1000);
@@ -123,6 +149,8 @@ export default function AdminPanel() {
   const [editMatchData, setEditMatchData] = useState(null);
   const [reportMatchData, setReportMatchData] = useState(null);
   const [auditLogs, setAuditLogs] = useState([]);
+  const [newAdminPassword, setNewAdminPassword] = useState("");
+  const [securityBusy, setSecurityBusy] = useState(false);
   const fileRef = useRef(null);
 
   const loadDiscordAccounts = useCallback(async () => {
@@ -345,6 +373,23 @@ export default function AdminPanel() {
     toast.success("Challenge deleted");
   };
 
+  const updateAdminPassword = async () => {
+    if (!newAdminPassword) return toast.error("Enter a new password");
+    setSecurityBusy(true);
+    const ok = await changeAdminPassword(newAdminPassword);
+    setSecurityBusy(false);
+    if (!ok) return;
+    setNewAdminPassword("");
+    toast.success("Admin password changed. Other Admin sessions were revoked.");
+  };
+
+  const revokeEveryAdminSession = async () => {
+    setSecurityBusy(true);
+    const ok = await logoutAllAdminSessions();
+    setSecurityBusy(false);
+    if (ok) toast.success("All Admin sessions revoked");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -357,6 +402,50 @@ export default function AdminPanel() {
         <Button variant="ghost" onClick={() => setAdmin(null)} data-testid="admin-logout-btn" className="text-muted-foreground">
           <LogOut size={16} className="mr-1" /> Sign out
         </Button>
+      </div>
+
+      <div className="card-surface rounded-2xl p-5" data-testid="admin-security-panel">
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div>
+            <div className="brand-kicker mb-1">Security</div>
+            <h3 className="font-display font-bold text-lg">Admin Protection</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Admin access now requires the authorized Discord account plus the Admin password.
+            </p>
+          </div>
+          <Shield size={20} className="text-emerald-400" />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3">
+          <Input
+            type="password"
+            value={newAdminPassword}
+            onChange={(e) => setNewAdminPassword(e.target.value)}
+            placeholder="New Admin password (12+ characters)"
+            className="bg-[#0F1218] border-[#222834] h-11"
+          />
+          <Button
+            disabled={securityBusy || !newAdminPassword}
+            onClick={updateAdminPassword}
+            className="h-11 bg-magma hover:bg-magma/90 text-white"
+          >
+            Change Password
+          </Button>
+        </div>
+
+        <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+          <div className="text-xs text-muted-foreground">
+            Sessions expire automatically. Use this if you suspect someone else accessed Admin.
+          </div>
+          <Button
+            variant="ghost"
+            disabled={securityBusy}
+            onClick={revokeEveryAdminSession}
+            className="shrink-0 border border-red-500/20 text-red-300 hover:bg-red-500/10"
+          >
+            <LogOut size={14} className="mr-1.5" /> Revoke All Sessions
+          </Button>
+        </div>
       </div>
 
       {storageMode === "local" && (
