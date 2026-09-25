@@ -3,8 +3,8 @@ import { Trophy, BarChart3 } from "lucide-react";
 import Leaderboard from "@/pages/Leaderboard";
 import Statistics from "@/pages/Statistics";
 
-export default function Ranking() {
-  const [tab, setTab] = useState("leaderboard");
+export default function Ranking({ initialTab = "leaderboard" }) {
+  const [tab, setTab] = useState(initialTab);
 
   return (
     <div className="space-y-6">
