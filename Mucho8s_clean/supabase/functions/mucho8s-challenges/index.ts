@@ -35,7 +35,7 @@ const isAdminRequest = async (req: Request, supabase: any) => {
 
   const { data: session, error } = await supabase
     .from("admin_sessions")
-    .select("username,user_agent_hash,expires_at,revoked_at")
+    .select("username,account_id,user_agent_hash,expires_at,revoked_at")
     .eq("token_hash", tokenHash)
     .maybeSingle();
 
@@ -45,11 +45,15 @@ const isAdminRequest = async (req: Request, supabase: any) => {
 
   const { data: credential } = await supabase
     .from("admin_credentials")
-    .select("is_active")
+    .select("is_active,required_account_id")
     .eq("username", session.username)
     .maybeSingle();
 
-  return Boolean(credential?.is_active);
+  return Boolean(
+    credential?.is_active &&
+    credential?.required_account_id &&
+    credential.required_account_id === session.account_id
+  );
 };
 
 Deno.serve(async (req: Request) => {
