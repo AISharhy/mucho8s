@@ -308,7 +308,21 @@ export default function ChallengeCenter() {
             <>
               <div className="text-center">
                 <div className="brand-kicker mb-2">Challenge Update</div>
-                {challenge.last_event === "payout_sent" ? (
+                {challenge.last_event === "pairing_assigned" ? (
+                  <>
+                    <h2 className="font-display text-2xl font-extrabold text-magma">MONEY MATCHUP ASSIGNED</h2>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      You have been paired vs {challenge.challenger_player_id === discordPlayer.id ? challenged?.name : challenger?.name} for {money(challenge)} via {platform}.
+                    </p>
+                  </>
+                ) : challenge.last_event === "payout_disputed" ? (
+                  <>
+                    <h2 className="font-display text-2xl font-extrabold text-orange-400">PAYMENT DISPUTE</h2>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      The payout has been disputed and is waiting for Admin review.
+                    </p>
+                  </>
+                ) : challenge.last_event === "payout_sent" ? (
                   <>
                     <h2 className="font-display text-2xl font-extrabold text-[#D5A33A]">PAYOUT SENT</h2>
                     <p className="text-sm text-muted-foreground mt-2">
