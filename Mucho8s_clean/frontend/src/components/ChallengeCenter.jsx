@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useData } from "@/context/DataContext";
 import { Button } from "@/components/ui/button";
 import { PlayerAvatar } from "@/components/shared";
-import { Check, X, Swords, ShieldCheck, AlertTriangle, ExternalLink } from "lucide-react";
+import { Check, X, Swords, ShieldCheck, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 const playChallengeTone = () => {
@@ -87,23 +87,13 @@ export default function ChallengeCenter() {
 
   const respond = async (decision) => {
     setBusy(true);
-
-    let newTab = null;
-    if (decision === "accept" && challenge.target_url) {
-      newTab = window.open("about:blank", "_blank", "noopener,noreferrer");
-    }
-
     const updated = await respondToChallenge(challenge.id, decision);
     setBusy(false);
 
-    if (!updated) {
-      if (newTab) newTab.close();
-      return;
-    }
+    if (!updated) return;
 
     if (decision === "accept") {
       toast.success("Challenge accepted — play it, then report the result.");
-      if (newTab) newTab.location.href = challenge.target_url;
     } else {
       toast("Challenge declined");
     }
