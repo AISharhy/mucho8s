@@ -140,7 +140,7 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <Label className="text-xs text-muted-foreground">Winner</Label>
             <div className="flex gap-2 mt-1">
@@ -209,11 +209,11 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)} data-testid="record-cancel-btn">
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} data-testid="record-cancel-btn" className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button onClick={submit} disabled={!valid} className="bg-magma hover:bg-magma/90 text-white" data-testid="record-save-btn">
+          <Button onClick={submit} disabled={!valid} className="w-full sm:w-auto bg-magma hover:bg-magma/90 text-white" data-testid="record-save-btn">
             <Crown size={16} className="mr-1" /> {editData ? "Update Match" : "Save Result"}
           </Button>
         </DialogFooter>
