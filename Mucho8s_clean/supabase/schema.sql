@@ -33,3 +33,20 @@ create table if not exists public.discord_config (
 
 alter table public.discord_config enable row level security;
 revoke all on table public.discord_config from anon, authenticated;
+
+
+-- Discord-authenticated player accounts.
+-- Access is mediated by the mucho8s-account Edge Function.
+create table if not exists public.player_accounts (
+  id uuid primary key references auth.users(id) on delete cascade,
+  discord_id text unique,
+  discord_username text,
+  display_name text,
+  avatar_url text,
+  player_id text unique,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.player_accounts enable row level security;
+revoke all on table public.player_accounts from anon, authenticated;
