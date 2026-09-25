@@ -46,6 +46,16 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, secretKey);
 
+    const writeAudit = async (action: string, entityId: string | null, details: Record<string, unknown> = {}) => {
+      const { error } = await supabase.from("admin_audit_log").insert({
+        action,
+        entity_type: "challenge",
+        entity_id: entityId,
+        details,
+      });
+      if (error) console.error("audit log failed", error);
+    };
+
     const body = await req.json();
     const action = String(body?.action || "");
     const adminRequest = await isAdminRequest(req);
@@ -128,6 +138,13 @@ Deno.serve(async (req: Request) => {
         .single();
 
       if (error) throw error;
+      await writeAudit("challenge.update", id, {
+        status: data.status,
+        amount_cents: data.amount_cents,
+        winner_player_id: data.reported_winner_player_id,
+        payment_sent: Boolean(data.payment_sent_at),
+        payment_received: Boolean(data.payment_received_at),
+      });
       return json({ ok: true, challenge: data });
     }
 
@@ -136,6 +153,7 @@ Deno.serve(async (req: Request) => {
       if (!id) return json({ error: "Challenge id is required" }, 400);
       const { error } = await supabase.from("player_challenges").delete().eq("id", id);
       if (error) throw error;
+      await writeAudit("challenge.delete", id, {});
       return json({ ok: true });
     }
 
@@ -310,6 +328,32 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, challenge: data });
     }
 
+    if (action === "set-ready") {
+      const id = String(body?.id || "").trim();
+      const ready = body?.ready !== false;
+      const challenge = await getChallenge(id);
+
+      if (!challenge) return json({ error: "Challenge not found" }, 404);
+      if (!isParticipant(challenge)) return json({ error: "Not allowed" }, 403);
+      if (challenge.status !== "accepted") return json({ error: "Challenge must be accepted first" }, 409);
+      if (!challenge.payment_received_at) return json({ error: "Payment must be confirmed before Ready" }, 409);
+
+      const field =
+        challenge.challenger_account_id === user.id
+          ? "challenger_ready_at"
+          : "challenged_ready_at";
+
+      const { data, error } = await supabase
+        .from("player_challenges")
+        .update({ [field]: ready ? new Date().toISOString() : null })
+        .eq("id", id)
+        .select("*")
+        .single();
+
+      if (error) throw error;
+      return json({ ok: true, challenge: data });
+    }
+
     if (action === "report-result") {
       const id = String(body?.id || "").trim();
       const winnerPlayerId = String(body?.winnerPlayerId || "").trim();
@@ -320,6 +364,9 @@ Deno.serve(async (req: Request) => {
       if (challenge.status !== "accepted") return json({ error: "Challenge is not ready for a result" }, 409);
       if (Number(challenge.amount_cents || 0) > 0 && !challenge.payment_received_at) {
         return json({ error: "Payment must be confirmed before reporting the result" }, 409);
+      }
+      if (!challenge.challenger_ready_at || !challenge.challenged_ready_at) {
+        return json({ error: "Both players must be READY before reporting the result" }, 409);
       }
 
       const validWinners = [challenge.challenger_player_id, challenge.challenged_player_id];
