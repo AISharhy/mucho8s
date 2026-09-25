@@ -155,6 +155,7 @@ export const DataProvider = ({ children }) => {
   const [discordAccount, setDiscordAccount] = useState(null);
   const [discordLoading, setDiscordLoading] = useState(hasSupabaseAuth);
   const [playerAvatars, setPlayerAvatars] = useState({});
+  const [playerProfiles, setPlayerProfiles] = useState({});
   const [loaded, setLoaded] = useState(STORAGE_MODE === "local");
   const versionRef = useRef(-1);
 
@@ -247,8 +248,10 @@ export const DataProvider = ({ children }) => {
       if (!res.ok) return null;
       const data = await res.json();
       const avatars = data?.avatars && typeof data.avatars === "object" ? data.avatars : {};
+      const profiles = data?.profiles && typeof data.profiles === "object" ? data.profiles : {};
       setPlayerAvatars(avatars);
-      return avatars;
+      setPlayerProfiles(profiles);
+      return profiles;
     } catch {
       return null;
     }
@@ -377,6 +380,28 @@ export const DataProvider = ({ children }) => {
     if (data?.account) setDiscordAccount(data.account);
     return data?.account || null;
   }, [accountRequest, discordSession]);
+
+  const saveMyChallengeLinks = useCallback(async ({ paypalUrl, revolutUrl, cmgUrl }) => {
+    if (!discordSession) {
+      toast.error("Login with Discord first");
+      return false;
+    }
+
+    const data = await accountRequest(
+      {
+        action: "update-links",
+        paypalUrl,
+        revolutUrl,
+        cmgUrl,
+      },
+      { session: discordSession },
+    );
+
+    if (!data?.account) return false;
+    setDiscordAccount(data.account);
+    await fetchPlayerAvatars();
+    return true;
+  }, [accountRequest, discordSession, fetchPlayerAvatars]);
 
   const listDiscordAccounts = useCallback(async () => {
     const data = await accountRequest({ action: "admin-list" });
@@ -734,7 +759,9 @@ export const DataProvider = ({ children }) => {
     discordPlayer,
     discordLoading,
     playerAvatars,
+    playerProfiles,
     refreshPlayerAvatars: fetchPlayerAvatars,
+    saveMyChallengeLinks,
     signInWithDiscord,
     signOutDiscord,
     refreshDiscordAccount,
