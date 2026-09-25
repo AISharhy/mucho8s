@@ -24,7 +24,7 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, secretKey);
     const { data, error } = await supabase
       .from("player_challenges")
-      .select("id,challenger_player_id,challenged_player_id,platform,amount_cents,currency,status,created_at,verified_at,reported_winner_player_id")
+      .select("id,challenger_player_id,challenged_player_id,platform,amount_cents,currency,status,created_at,verified_at,reported_winner_player_id,payment_sent_at,payment_received_at")
       .eq("status", "completed")
       .order("verified_at", { ascending: false })
       .limit(500);
