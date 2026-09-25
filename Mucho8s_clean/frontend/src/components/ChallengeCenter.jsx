@@ -308,7 +308,21 @@ export default function ChallengeCenter() {
             <>
               <div className="text-center">
                 <div className="brand-kicker mb-2">Challenge Update</div>
-                {challenge.status === "completed" ? (
+                {challenge.last_event === "payout_sent" ? (
+                  <>
+                    <h2 className="font-display text-2xl font-extrabold text-[#D5A33A]">PAYOUT SENT</h2>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      The losing player marked {money(challenge)} as paid. Confirm it from the match room if you received it.
+                    </p>
+                  </>
+                ) : challenge.last_event === "payout_received" ? (
+                  <>
+                    <h2 className="font-display text-2xl font-extrabold text-emerald-400">PAYMENT RECEIVED</h2>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {money(challenge)} has been confirmed by the winner.
+                    </p>
+                  </>
+                ) : challenge.status === "completed" ? (
                   <>
                     <h2 className={`font-display text-3xl font-black ${currentWon ? "text-emerald-400" : "text-red-400"}`}>
                       {currentWon ? "HAI VINTO" : "HAI PERSO"}
@@ -329,20 +343,6 @@ export default function ChallengeCenter() {
                     <h2 className="font-display text-2xl font-extrabold text-orange-400">RESULT DISPUTED</h2>
                     <p className="text-sm text-muted-foreground mt-2">
                       The challenge needs Admin review.
-                    </p>
-                  </>
-                ) : challenge.last_event === "payout_sent" ? (
-                  <>
-                    <h2 className="font-display text-2xl font-extrabold text-[#D5A33A]">PAYOUT SENT</h2>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      The losing player marked {money(challenge)} as paid. Confirm it from the match room if you received it.
-                    </p>
-                  </>
-                ) : challenge.last_event === "payout_received" ? (
-                  <>
-                    <h2 className="font-display text-2xl font-extrabold text-emerald-400">PAYMENT RECEIVED</h2>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      {money(challenge)} has been confirmed by the winner.
                     </p>
                   </>
                 ) : (
