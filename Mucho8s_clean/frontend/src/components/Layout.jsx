@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { Sidebar, MobileNav } from "@/components/Sidebar";
 import ChallengeCenter from "@/components/ChallengeCenter";
-import { Bell, Swords, Trophy, ShieldAlert, WalletCards, X } from "lucide-react";
+import { Bell, Swords, Trophy, ShieldAlert, WalletCards, X, Shield } from "lucide-react";
 import { useData } from "@/context/DataContext";
 
 const TITLES = {
@@ -20,7 +20,15 @@ const TITLES = {
 
 export const Layout = () => {
   const loc = useLocation();
-  const { discordPlayer, discordAccount, challengeNotificationCount, challenges, playerMap } = useData();
+  const {
+    discordPlayer,
+    discordAccount,
+    challengeNotificationCount,
+    adminChallengeAlertCount,
+    isAdmin,
+    challenges,
+    playerMap,
+  } = useData();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const notifications = useMemo(() => {
@@ -77,7 +85,26 @@ export const Layout = () => {
             <h1 className="font-display text-[18px] font-bold tracking-tight">{title}</h1>
           </div>
 
-          <div className="ml-auto flex items-center relative">
+          <div className="ml-auto flex items-center gap-2 relative">
+            {isAdmin && (
+              <Link
+                to="/admin"
+                data-testid="header-admin-alerts"
+                title={adminChallengeAlertCount > 0 ? `${adminChallengeAlertCount} Admin disputes need review` : "Admin Control Room"}
+                className={`relative w-10 h-10 rounded-xl border transition-all flex items-center justify-center ${
+                  adminChallengeAlertCount > 0
+                    ? "border-orange-500/30 bg-orange-500/10 text-orange-400 hover:bg-orange-500/15"
+                    : "border-[#242A35] bg-[#12151C] text-[#AAB1BE] hover:text-white"
+                }`}
+              >
+                <Shield size={18} />
+                {adminChallengeAlertCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[19px] h-[19px] px-1 rounded-full bg-orange-500 border-2 border-[#0D1016] text-black text-[9px] font-extrabold flex items-center justify-center">
+                    {adminChallengeAlertCount > 99 ? "99+" : adminChallengeAlertCount}
+                  </span>
+                )}
+              </Link>
+            )}
             {discordPlayer && (
               <>
                 <button
