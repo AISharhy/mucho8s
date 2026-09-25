@@ -118,6 +118,7 @@ export default function AdminPanel() {
   const [adminChallenges, setAdminChallenges] = useState([]);
   const [challengeBusyId, setChallengeBusyId] = useState("");
   const [challengeDrafts, setChallengeDrafts] = useState({});
+  const [expandedChallengeId, setExpandedChallengeId] = useState("");
   const [editMatchData, setEditMatchData] = useState(null);
   const [reportMatchData, setReportMatchData] = useState(null);
   const fileRef = useRef(null);
@@ -518,152 +519,189 @@ export default function AdminPanel() {
             const challenged = playerMap[challenge.challenged_player_id];
             const draft = challengeDrafts[challenge.id] || {};
             const busy = challengeBusyId === challenge.id;
+            const expanded = expandedChallengeId === challenge.id;
+            const amount = new Intl.NumberFormat("it-IT", {
+              style: "currency",
+              currency: challenge.currency || "EUR",
+            }).format(Number(challenge.amount_cents || 0) / 100);
+
+            const statusClass =
+              challenge.status === "completed"
+                ? "text-emerald-400 border-emerald-500/25 bg-emerald-500/5"
+                : challenge.status === "disputed"
+                  ? "text-orange-400 border-orange-500/25 bg-orange-500/5"
+                  : challenge.status === "declined" || challenge.status === "cancelled"
+                    ? "text-red-400 border-red-500/20 bg-red-500/5"
+                    : challenge.status === "accepted"
+                      ? "text-[#8E98FF] border-[#5865F2]/25 bg-[#5865F2]/5"
+                      : "text-[#D5A33A] border-[#D5A33A]/25 bg-[#D5A33A]/5";
 
             return (
-              <div key={challenge.id} className="rounded-2xl bg-[#0F1218] border border-[#1D222C] p-4">
-                <div className="flex flex-col xl:flex-row xl:items-center gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Swords size={15} className="text-magma" />
-                      <span className="font-display font-bold">
-                        {challenger?.name || "Unknown"} vs {challenged?.name || "Unknown"}
-                      </span>
-                      <span className="text-[10px] uppercase tracking-widest px-2 py-1 rounded border border-[#2A303B] text-muted-foreground">
-                        {String(challenge.platform || "").toUpperCase()}
-                      </span>
-                      {challenge.status === "disputed" && (
-                        <span className="text-[10px] uppercase tracking-widest px-2 py-1 rounded border border-orange-500/25 bg-orange-500/5 text-orange-400">
-                          Disputed
-                        </span>
-                      )}
+              <div key={challenge.id} className="rounded-2xl bg-[#0F1218] border border-[#1D222C] overflow-hidden">
+                <div className="p-4 flex flex-col lg:flex-row lg:items-center gap-4">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-magma/10 border border-magma/20 flex items-center justify-center shrink-0">
+                      <Swords size={17} className="text-magma" />
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      #{challenge.id.slice(0, 8)} · {new Date(challenge.created_at).toLocaleString()}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="font-display font-bold truncate">
+                        {challenger?.name || "Unknown"} <span className="text-[#596170]">vs</span> {challenged?.name || "Unknown"}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-muted-foreground">
+                        <span>{String(challenge.platform || "").toUpperCase()}</span>
+                        <span>·</span>
+                        <span>{new Date(challenge.created_at).toLocaleDateString()}</span>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-[130px_150px_170px_auto] gap-2 w-full xl:w-auto">
-                    <div>
-                      <Label className="text-[10px] text-muted-foreground">Stake €</Label>
-                      <div className="flex gap-1 mt-1">
-                        <Input
-                          type="number"
-                          step="0.50"
-                          min="0"
-                          value={draft.amount ?? ""}
-                          onChange={(e) => setChallengeDrafts((prev) => ({
-                            ...prev,
-                            [challenge.id]: { ...prev[challenge.id], amount: e.target.value },
-                          }))}
-                          className="h-9 bg-[#151923] border-[#2A303B]"
-                        />
-                        <Button
-                          size="icon"
+                  <div className="flex items-center gap-2 flex-wrap lg:justify-end">
+                    <div className="h-10 px-3 rounded-xl bg-[#151923] border border-[#242A35] flex items-center">
+                      <span className="font-mono font-bold text-white">{amount}</span>
+                    </div>
+
+                    <span className={`h-10 px-3 rounded-xl border text-xs font-bold uppercase tracking-wider inline-flex items-center ${statusClass}`}>
+                      {challenge.status.replace("_", " ")}
+                    </span>
+
+                    <Button
+                      variant="ghost"
+                      onClick={() => setExpandedChallengeId(expanded ? "" : challenge.id)}
+                      className="h-10 px-4 rounded-xl bg-[#171B23] border border-[#2A303B] text-white hover:bg-white/[0.05]"
+                    >
+                      {expanded ? "Close" : "Manage"}
+                    </Button>
+                  </div>
+                </div>
+
+                {expanded && (
+                  <div className="border-t border-[#1D222C] p-4 bg-[#0C0F14]">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Stake €</Label>
+                        <div className="flex gap-2 mt-1">
+                          <Input
+                            type="number"
+                            step="0.50"
+                            min="0"
+                            value={draft.amount ?? ""}
+                            onChange={(e) => setChallengeDrafts((prev) => ({
+                              ...prev,
+                              [challenge.id]: { ...prev[challenge.id], amount: e.target.value },
+                            }))}
+                            className="h-10 bg-[#151923] border-[#2A303B]"
+                          />
+                          <Button
+                            disabled={busy}
+                            onClick={() => saveChallengeAmount(challenge)}
+                            className="h-10 px-3 bg-[#171B23] border border-[#2A303B]"
+                          >
+                            Save
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Status</Label>
+                        <select
+                          value={challenge.status}
                           disabled={busy}
-                          onClick={() => saveChallengeAmount(challenge)}
-                          className="h-9 w-9 bg-[#171B23] border border-[#2A303B]"
+                          onChange={(e) => updateAdminChallenge(challenge.id, { status: e.target.value })}
+                          className="mt-1 h-10 w-full rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm"
                         >
-                          <Check size={14} />
-                        </Button>
+                          {["pending","accepted","declined","result_pending","completed","disputed","cancelled"].map((status) => (
+                            <option key={status} value={status}>{status.replace("_", " ")}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Winner</Label>
+                        <div className="flex gap-2 mt-1">
+                          <select
+                            value={draft.winnerPlayerId || ""}
+                            disabled={busy}
+                            onChange={(e) => setChallengeDrafts((prev) => ({
+                              ...prev,
+                              [challenge.id]: { ...prev[challenge.id], winnerPlayerId: e.target.value },
+                            }))}
+                            className="h-10 flex-1 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm"
+                          >
+                            <option value="">No winner</option>
+                            <option value={challenge.challenger_player_id}>{challenger?.name || "Challenger"}</option>
+                            <option value={challenge.challenged_player_id}>{challenged?.name || "Challenged"}</option>
+                          </select>
+                          <Button
+                            disabled={busy || !draft.winnerPlayerId}
+                            onClick={() => setChallengeWinner(challenge, true)}
+                            className="h-10 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold"
+                          >
+                            <Trophy size={14} className="mr-1.5" /> Complete
+                          </Button>
+                        </div>
                       </div>
                     </div>
 
-                    <div>
-                      <Label className="text-[10px] text-muted-foreground">Status</Label>
-                      <select
-                        value={challenge.status}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mt-4">
+                      <button
+                        type="button"
                         disabled={busy}
-                        onChange={(e) => updateAdminChallenge(challenge.id, { status: e.target.value })}
-                        className="mt-1 h-9 w-full rounded-lg bg-[#151923] border border-[#2A303B] px-2 text-xs"
+                        onClick={() => updateAdminChallenge(challenge.id, { paymentSent: !challenge.payment_sent_at })}
+                        className={`h-10 rounded-xl border text-xs font-semibold ${
+                          challenge.payment_sent_at
+                            ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
+                            : "bg-[#151923] border-[#2A303B] text-muted-foreground"
+                        }`}
                       >
-                        {["pending","accepted","declined","result_pending","completed","disputed","cancelled"].map((status) => (
-                          <option key={status} value={status}>{status}</option>
-                        ))}
-                      </select>
-                    </div>
+                        Sent: {challenge.payment_sent_at ? "YES" : "NO"}
+                      </button>
 
-                    <div>
-                      <Label className="text-[10px] text-muted-foreground">Winner</Label>
-                      <select
-                        value={draft.winnerPlayerId || ""}
+                      <button
+                        type="button"
                         disabled={busy}
-                        onChange={(e) => setChallengeDrafts((prev) => ({
-                          ...prev,
-                          [challenge.id]: { ...prev[challenge.id], winnerPlayerId: e.target.value },
-                        }))}
-                        className="mt-1 h-9 w-full rounded-lg bg-[#151923] border border-[#2A303B] px-2 text-xs"
+                        onClick={() => updateAdminChallenge(challenge.id, { paymentReceived: !challenge.payment_received_at })}
+                        className={`h-10 rounded-xl border text-xs font-semibold ${
+                          challenge.payment_received_at
+                            ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
+                            : "bg-[#151923] border-[#2A303B] text-muted-foreground"
+                        }`}
                       >
-                        <option value="">No winner</option>
-                        <option value={challenge.challenger_player_id}>{challenger?.name || "Challenger"}</option>
-                        <option value={challenge.challenged_player_id}>{challenged?.name || "Challenged"}</option>
-                      </select>
-                    </div>
+                        Received: {challenge.payment_received_at ? "YES" : "NO"}
+                      </button>
 
-                    <div className="flex items-end gap-1">
                       <Button
-                        disabled={busy || !draft.winnerPlayerId}
-                        onClick={() => setChallengeWinner(challenge, true)}
-                        className="h-9 px-3 bg-emerald-500 hover:bg-emerald-400 text-black font-bold"
+                        disabled={busy}
+                        onClick={() => updateAdminChallenge(challenge.id, { status: "disputed" }, "Challenge marked disputed")}
+                        variant="ghost"
+                        className="h-10 rounded-xl bg-orange-500/5 border border-orange-500/20 text-orange-400 hover:bg-orange-500/10"
                       >
-                        <Trophy size={14} className="mr-1" /> Complete
+                        <AlertTriangle size={14} className="mr-1.5" /> Dispute
                       </Button>
-                      <ConfirmButton
-                        iconOnly
-                        testid={`admin-delete-challenge-${challenge.id}`}
-                        icon={<Trash2 size={14} />}
-                        title="Delete this challenge?"
-                        desc="This permanently removes the challenge and its verification history."
-                        onConfirm={() => removeAdminChallenge(challenge.id)}
-                      />
+
+                      <div className="flex gap-2">
+                        <Link
+                          to={`/challenges/${challenge.id}`}
+                          className="h-10 flex-1 rounded-xl bg-[#151923] border border-[#2A303B] text-sm text-white inline-flex items-center justify-center gap-2"
+                        >
+                          Open Match <ExternalLink size={13} />
+                        </Link>
+
+                        <ConfirmButton
+                          iconOnly
+                          testid={`admin-delete-challenge-${challenge.id}`}
+                          icon={<Trash2 size={14} />}
+                          title="Delete this challenge?"
+                          desc="This permanently removes the challenge and its verification history."
+                          onConfirm={() => removeAdminChallenge(challenge.id)}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3 pt-3 border-t border-[#1D222C]">
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => updateAdminChallenge(challenge.id, { paymentSent: !challenge.payment_sent_at })}
-                    className={`h-10 rounded-xl border text-xs font-semibold transition-colors ${
-                      challenge.payment_sent_at
-                        ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
-                        : "bg-[#151923] border-[#2A303B] text-muted-foreground"
-                    }`}
-                  >
-                    Payment sent: {challenge.payment_sent_at ? "YES" : "NO"}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => updateAdminChallenge(challenge.id, { paymentReceived: !challenge.payment_received_at })}
-                    className={`h-10 rounded-xl border text-xs font-semibold transition-colors ${
-                      challenge.payment_received_at
-                        ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
-                        : "bg-[#151923] border-[#2A303B] text-muted-foreground"
-                    }`}
-                  >
-                    Payment received: {challenge.payment_received_at ? "YES" : "NO"}
-                  </button>
-                  <div className="flex gap-2">
-                    <Button
-                      disabled={busy}
-                      onClick={() => updateAdminChallenge(challenge.id, { status: "disputed" }, "Challenge marked disputed")}
-                      variant="ghost"
-                      className="flex-1 h-10 bg-orange-500/5 border border-orange-500/20 text-orange-400 hover:bg-orange-500/10"
-                    >
-                      <AlertTriangle size={14} className="mr-1.5" /> Dispute
-                    </Button>
-                    <Link
-                      to={`/challenges/${challenge.id}`}
-                      className="h-10 px-3 rounded-xl bg-[#151923] border border-[#2A303B] text-sm text-white inline-flex items-center justify-center"
-                    >
-                      <ExternalLink size={14} />
-                    </Link>
-                  </div>
-                </div>
+                )}
               </div>
             );
-          })}
+          })}          })}
 
           {adminChallenges.length === 0 && (
             <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-8 text-center text-sm text-muted-foreground">
