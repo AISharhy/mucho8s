@@ -171,6 +171,7 @@ export const DataProvider = ({ children }) => {
   const [playerProfiles, setPlayerProfiles] = useState({});
   const [challenges, setChallenges] = useState([]);
   const [publicChallenges, setPublicChallenges] = useState([]);
+  const [adminChallengeAlertCount, setAdminChallengeAlertCount] = useState(0);
   const [dashboardData, setDashboardData] = useState({
     activeChallenges: [],
     recentChallenges: [],
@@ -732,6 +733,33 @@ export const DataProvider = ({ children }) => {
       return null;
     }
   }, [admin]);
+
+  const refreshAdminChallengeAlerts = useCallback(async () => {
+    if (!admin?.sessionToken) {
+      setAdminChallengeAlertCount(0);
+      return 0;
+    }
+
+    const data = await adminChallengeRequest({ action: "admin-list" }, { silent: true });
+    const list = Array.isArray(data?.challenges) ? data.challenges : [];
+    const count = list.filter((challenge) =>
+      challenge.status === "disputed" ||
+      (challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at)
+    ).length;
+
+    setAdminChallengeAlertCount(count);
+    return count;
+  }, [admin, adminChallengeRequest]);
+
+  useEffect(() => {
+    if (!admin?.sessionToken) {
+      setAdminChallengeAlertCount(0);
+      return undefined;
+    }
+    void refreshAdminChallengeAlerts();
+    const timer = setInterval(refreshAdminChallengeAlerts, 10000);
+    return () => clearInterval(timer);
+  }, [admin?.sessionToken, refreshAdminChallengeAlerts]);
 
   const listAdminChallenges = useCallback(async () => {
     const data = await adminChallengeRequest({ action: "admin-list" });
@@ -1324,6 +1352,7 @@ export const DataProvider = ({ children }) => {
     dashboardData,
     competitionData,
     challengeNotificationCount,
+    adminChallengeAlertCount,
     refreshChallenges,
     createChallenge,
     respondToChallenge,
@@ -1345,6 +1374,7 @@ export const DataProvider = ({ children }) => {
     refreshPublicChallenges: fetchPublicChallenges,
     refreshDashboardData: fetchDashboardData,
     refreshCompetitionData: fetchCompetitionData,
+    refreshAdminChallengeAlerts,
     startNewSeason,
     refreshPlayerAvatars: fetchPlayerAvatars,
     saveMyChallengeLinks,
