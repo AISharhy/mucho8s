@@ -1,10 +1,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const ADMIN_PASSWORD_SHA256 = "5275321e80637acbd0dc2a0d0e9b5120ab79618531edd49b189ff4b4ce4ec4ff";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type, apikey, x-admin-password",
+  "Access-Control-Allow-Headers": "content-type, apikey, x-admin-session",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -20,6 +18,31 @@ const sha256 = async (value: string) => {
   return Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+};
+
+const validateAdminSession = async (req: Request, supabase: any) => {
+  const token = String(req.headers.get("x-admin-session") || "").trim();
+  if (!token) return false;
+  const tokenHash = await sha256(token);
+  const uaHash = await sha256(req.headers.get("user-agent") || "unknown");
+
+  const { data: session, error } = await supabase
+    .from("admin_sessions")
+    .select("username,user_agent_hash,expires_at,revoked_at")
+    .eq("token_hash", tokenHash)
+    .maybeSingle();
+
+  if (error || !session || session.revoked_at) return false;
+  if (new Date(session.expires_at).getTime() <= Date.now()) return false;
+  if (session.user_agent_hash !== uaHash) return false;
+
+  const { data: credential } = await supabase
+    .from("admin_credentials")
+    .select("is_active")
+    .eq("username", session.username)
+    .maybeSingle();
+
+  return Boolean(credential?.is_active);
 };
 
 const isDiscordWebhook = (value: string) => {
@@ -53,11 +76,6 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  const suppliedPassword = req.headers.get("x-admin-password") || "";
-  if ((await sha256(suppliedPassword)) !== ADMIN_PASSWORD_SHA256) {
-    return json({ error: "Unauthorized" }, 401);
-  }
-
   try {
     const secretKeys = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}");
     const secretKey = secretKeys.default || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -65,6 +83,9 @@ Deno.serve(async (req: Request) => {
     if (!supabaseUrl || !secretKey) throw new Error("Supabase server credentials unavailable");
 
     const supabase = createClient(supabaseUrl, secretKey);
+    if (!(await validateAdminSession(req, supabase))) {
+      return json({ error: "Admin session expired or invalid" }, 401);
+    }
     const body = await req.json();
     const action = String(body?.action || "");
 
