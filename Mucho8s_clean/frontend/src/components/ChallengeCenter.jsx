@@ -272,7 +272,7 @@ export default function ChallengeCenter() {
                 {challenge.status === "completed" ? (
                   <>
                     <h2 className={`font-display text-3xl font-black ${currentWon ? "text-emerald-400" : "text-red-400"}`}>
-                      {currentWon ? "YOU WON" : "YOU LOST"}
+                      {currentWon ? "HAI VINTO" : "HAI PERSO"}
                     </h2>
                     <p className="text-sm text-muted-foreground mt-2">
                       Final verified result vs {challenge.challenger_player_id === discordPlayer.id ? challenged?.name : challenger?.name}.
