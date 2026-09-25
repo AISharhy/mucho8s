@@ -32,7 +32,7 @@ LOSS_DELTA = 25
 MVP_BONUS = 10
 UPSET_BONUS = 15
 GAMES = ["BO7", "BO6", "MW3", "WW2", "VG", "CW", "BO2", "MW4"]
-MODES = ["Hardpoint", "Search & Destroy", "Control", "Domination"]
+MODES = ["Hardpoint", "Search & Destroy"]
 NAMES = ["Reaper", "Ghxst", "Vortex", "N0Scope", "Havoc", "Blaze", "Cyclone", "Venom",
          "Sh4dow", "Frost", "Razor", "Titan", "Phantom", "Nitro", "Kraken", "Rogue",
          "Sniperz", "Blitz", "Echo", "Fury"]
