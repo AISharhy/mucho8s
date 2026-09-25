@@ -72,30 +72,33 @@ export default function ChallengeCenter() {
     );
     if (request) return { type: "incoming", challenge: request };
 
-    const acceptedForSender = challenges.find(
-      (c) =>
+    const acceptedForSender = challenges.find((c) => {
+      const isSender = c.challenger_account_id === discordAccount.id;
+      return (
+        isSender &&
         c.status === "accepted" &&
-        c.challenger_account_id === discordAccount.id &&
-        c.challenger_seen_status !== "accepted"
-    );
+        c.last_event === "accepted" &&
+        c.challenger_seen_event !== "accepted"
+      );
+    });
     if (acceptedForSender) return { type: "accepted", challenge: acceptedForSender };
 
-    const statusNotice = challenges.find((c) => {
+    const eventNotice = challenges.find((c) => {
       const isChallenger = c.challenger_account_id === discordAccount.id;
       const isChallenged = c.challenged_account_id === discordAccount.id;
       if (!isChallenger && !isChallenged) return false;
-      if (!["declined", "completed", "disputed"].includes(c.status)) return false;
-      const seen = isChallenger ? c.challenger_seen_status : c.challenged_seen_status;
-      return seen !== c.status;
+      if (!c.last_event || ["created", "result_reported", "accepted"].includes(c.last_event)) return false;
+      const seenEvent = isChallenger ? c.challenger_seen_event : c.challenged_seen_event;
+      return seenEvent !== c.last_event;
     });
-    if (statusNotice) return { type: "status", challenge: statusNotice };
+    if (eventNotice) return { type: "event", challenge: eventNotice };
 
     return null;
   }, [challenges, discordAccount]);
 
   useEffect(() => {
     if (!attention) return;
-    const key = `${attention.type}:${attention.challenge.id}:${attention.challenge.status}`;
+    const key = `${attention.type}:${attention.challenge.id}:${attention.challenge.status}:${attention.challenge.last_event || ""}`;
     if (lastAttentionRef.current === key) return;
     lastAttentionRef.current = key;
     playChallengeTone();
@@ -249,7 +252,7 @@ export default function ChallengeCenter() {
               <div className="grid grid-cols-2 gap-3 mt-5">
                 <Button
                   disabled={busy}
-                  onClick={() => verify("dispute")}
+                  onClick={() => navigate(`/challenges/${challenge.id}`)}
                   className="h-12 rounded-xl bg-[#171B23] border border-red-500/25 text-red-300 hover:bg-red-500/10"
                 >
                   <AlertTriangle size={17} className="mr-2" /> Dispute
@@ -265,7 +268,7 @@ export default function ChallengeCenter() {
             </>
           )}
 
-          {attention.type === "status" && (
+          {attention.type === "event" && (
             <>
               <div className="text-center">
                 <div className="brand-kicker mb-2">Challenge Update</div>
@@ -285,11 +288,39 @@ export default function ChallengeCenter() {
                       {challenged?.name || "The player"} declined your challenge.
                     </p>
                   </>
-                ) : (
+                ) : challenge.status === "disputed" ? (
                   <>
                     <h2 className="font-display text-2xl font-extrabold text-orange-400">RESULT DISPUTED</h2>
                     <p className="text-sm text-muted-foreground mt-2">
-                      The challenge needs review before it can be closed.
+                      The challenge needs Admin review.
+                    </p>
+                  </>
+                ) : challenge.last_event === "payment_sent" ? (
+                  <>
+                    <h2 className="font-display text-2xl font-extrabold text-[#D5A33A]">PAYMENT SENT</h2>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {challenger?.name || "The challenger"} marked {money(challenge)} as sent. Check your {platform} account.
+                    </p>
+                  </>
+                ) : challenge.last_event === "payment_received" ? (
+                  <>
+                    <h2 className="font-display text-2xl font-extrabold text-emerald-400">PAYMENT CONFIRMED</h2>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {money(challenge)} has been confirmed. Ready Check is now available.
+                    </p>
+                  </>
+                ) : ["challenger_ready", "challenged_ready"].includes(challenge.last_event) ? (
+                  <>
+                    <h2 className="font-display text-2xl font-extrabold text-emerald-400">OPPONENT READY</h2>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Open the match room and mark yourself ready when you are set.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="font-display text-2xl font-extrabold">CHALLENGE UPDATED</h2>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Open the match room to see the latest update.
                     </p>
                   </>
                 )}
@@ -319,7 +350,7 @@ export default function ChallengeCenter() {
             </>
           )}
 
-          {attention.type !== "status" && (
+          {attention.type !== "event" && (
             <div className="mt-4 text-center text-[11px] text-[#596170]">
               A win is official only after the other player verifies it.
             </div>
