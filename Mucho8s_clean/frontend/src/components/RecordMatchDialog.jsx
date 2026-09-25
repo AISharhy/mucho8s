@@ -111,7 +111,7 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#10151D] border-[#303947] max-w-2xl max-h-[90vh] flex flex-col rounded-2xl shadow-2xl" data-testid="record-match-dialog">
+      <DialogContent className="bg-[#101319] border-[#242A35] max-w-2xl max-h-[90vh] flex flex-col rounded-2xl shadow-2xl" data-testid="record-match-dialog">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">{title}</DialogTitle>
         </DialogHeader>
@@ -122,8 +122,8 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
             <span className="font-mono font-bold text-magma">{teamA.length}</span>
           </span>
           <span className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-sm bg-[#C9A45C]" /> Bravo
-            <span className="font-mono font-bold text-[#C9A45C]">{teamB.length}</span>
+            <span className="w-3 h-3 rounded-sm bg-[#D5A33A]" /> Bravo
+            <span className="font-mono font-bold text-[#D5A33A]">{teamB.length}</span>
           </span>
           <span className="text-muted-foreground text-xs ml-auto">Teams must be equal (2–4 each)</span>
         </div>
@@ -138,8 +138,8 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
                 ))}
               </div>
             </div>
-            <div className="rounded-xl bg-[#C9A45C]/5 border border-[#C9A45C]/20 p-3">
-              <div className="text-[10px] uppercase tracking-widest text-[#C9A45C] mb-2">Bravo</div>
+            <div className="rounded-xl bg-[#D5A33A]/5 border border-[#D5A33A]/20 p-3">
+              <div className="text-[10px] uppercase tracking-widest text-[#D5A33A] mb-2">Bravo</div>
               <div className="space-y-1 text-sm">
                 {teamB.map((id) => (
                   <div key={id} className="font-medium">{players.find((p) => p.id === id)?.name || "Unknown"}</div>
@@ -156,7 +156,7 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
             placeholder="Search players..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="pl-9 bg-[#0E1219] border-[#2B3443] rounded-xl"
+            className="pl-9 bg-[#0F1218] border-[#222834] rounded-xl"
           />
         </div>
 
@@ -164,14 +164,14 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {filtered.map((p) => {
               const side = assign[p.id];
-              const color = side === "A" ? "#F43F5E" : side === "B" ? "#C9A45C" : "#2B3443";
+              const color = side === "A" ? "#FF2A3B" : side === "B" ? "#D5A33A" : "#222834";
               return (
                 <button
                   key={p.id}
                   data-testid={`record-player-${p.id}`}
                   onClick={() => cycle(p.id)}
                   className="flex items-center gap-2 p-2 rounded-xl text-left transition-all"
-                  style={{ background: side ? `${color}18` : "#1A202B", border: `1px solid ${color}` }}
+                  style={{ background: side ? `${color}18` : "#181B26", border: `1px solid ${color}` }}
                 >
                   <PlayerAvatar name={p.name} elo={p.currentElo} size={30} />
                   <span className="text-sm font-medium truncate flex-1">{p.name}</span>
@@ -200,7 +200,7 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
                 type="button"
                 data-testid="winner-alpha-btn"
                 onClick={() => setWinner("A")}
-                className={winner === "A" ? "bg-magma text-white flex-1" : "flex-1 bg-[#0E1219] text-magma border border-magma/40 hover:bg-magma/10"}
+                className={winner === "A" ? "bg-magma text-white flex-1" : "flex-1 bg-[#0F1218] text-magma border border-magma/40 hover:bg-magma/10"}
               >
                 Alpha
               </Button>
@@ -208,7 +208,7 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
                 type="button"
                 data-testid="winner-bravo-btn"
                 onClick={() => setWinner("B")}
-                className={winner === "B" ? "bg-[#C9A45C] text-black flex-1" : "flex-1 bg-[#0E1219] text-[#C9A45C] border border-[#3A3320] hover:bg-[#C9A45C]/10"}
+                className={winner === "B" ? "bg-[#D5A33A] text-black flex-1" : "flex-1 bg-[#0F1218] text-[#D5A33A] border border-[#3A3320] hover:bg-[#D5A33A]/10"}
               >
                 Bravo
               </Button>
@@ -220,7 +220,7 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
               data-testid="mvp-select"
               value={mvpId}
               onChange={(e) => setMvpId(e.target.value)}
-              className="mt-1 w-full h-10 rounded-xl bg-[#0E1219] border border-[#2B3443] px-3 text-sm"
+              className="mt-1 w-full h-10 rounded-xl bg-[#0F1218] border border-[#222834] px-3 text-sm"
             >
               <option value="">No MVP</option>
               {assigned.map((id) => {
@@ -241,7 +241,7 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
               data-testid="mode-select"
               value={mode}
               onChange={(e) => setMode(e.target.value)}
-              className="mt-1 w-full h-10 rounded-xl bg-[#0E1219] border border-[#2B3443] px-3 text-sm"
+              className="mt-1 w-full h-10 rounded-xl bg-[#0F1218] border border-[#222834] px-3 text-sm"
             >
               {MODES.map((m) => (
                 <option key={m}>{m}</option>
@@ -254,7 +254,7 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
               data-testid="game-select"
               value={game}
               onChange={(e) => setGame(e.target.value)}
-              className="mt-1 w-full h-10 rounded-xl bg-[#0E1219] border border-[#3A3320] text-[#C9A45C] font-semibold px-3 text-sm"
+              className="mt-1 w-full h-10 rounded-xl bg-[#0F1218] border border-[#3A3320] text-[#D5A33A] font-semibold px-3 text-sm"
             >
               {GAMES.map((g) => (
                 <option key={g} value={g}>{g}</option>
@@ -269,7 +269,7 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
           <Button variant="ghost" onClick={() => onOpenChange(false)} data-testid="record-cancel-btn" className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button onClick={submit} disabled={!valid} className="w-full sm:w-auto rounded-xl bg-magma hover:bg-[#FB5A76] text-white" data-testid="record-save-btn">
+          <Button onClick={submit} disabled={!valid} className="w-full sm:w-auto rounded-xl bg-magma hover:bg-[#ff3c4c] text-white" data-testid="record-save-btn">
             <Crown size={16} className="mr-1" /> {reportOnly ? "Report Result" : editData ? "Update Match" : "Save Result"}
           </Button>
         </DialogFooter>
