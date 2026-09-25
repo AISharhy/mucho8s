@@ -638,7 +638,16 @@ export default function TeamBalancer() {
         onOpenChange={setRecordOpen}
         title="Report Match Result"
         defaultGame={balancedGame !== "ALL" ? balancedGame : undefined}
-        initialTeams={result ? { teamA: result.teamA.map((p) => p.id), teamB: result.teamB.map((p) => p.id) } : null}
+        initialTeams={result ? {
+          teamA: result.teamA.map((p) => p.id),
+          teamB: result.teamB.map((p) => p.id),
+          pairings: moneyPairings.map((pair) => ({
+            playerAId: pair.playerAId,
+            playerBId: pair.playerBId,
+            amount: Number(pair.amount || 0),
+            platform: pair.platform || defaultPlatform,
+          })),
+        } : null}
       />
     </div>
   );
