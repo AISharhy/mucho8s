@@ -52,7 +52,7 @@ const FORMATS = [
 ];
 
 export default function TeamBalancer() {
-  const { players, matches, isAdmin, sendDiscordTeams } = useData();
+  const { players, matches, isAdmin, sendDiscordTeams, adminCreateChallengePairings } = useData();
   const [required, setRequired] = useState(8);
   const [selected, setSelected] = useState([]);
   const [query, setQuery] = useState("");
@@ -62,11 +62,15 @@ export default function TeamBalancer() {
   const [recordOpen, setRecordOpen] = useState(false);
   const [moneyPairings, setMoneyPairings] = useState([]);
   const [defaultStake, setDefaultStake] = useState("5");
+  const [defaultPlatform, setDefaultPlatform] = useState("cmg");
+  const [sendingPairings, setSendingPairings] = useState(false);
+  const [pairingsSent, setPairingsSent] = useState(false);
 
   const changeFormat = (n) => {
     setRequired(n);
     setResult(null);
     setMoneyPairings([]);
+    setPairingsSent(false);
     setSelected((prev) => prev.slice(0, n));
   };
 
@@ -74,11 +78,13 @@ export default function TeamBalancer() {
     setGame(g);
     setResult(null);
     setMoneyPairings([]);
+    setPairingsSent(false);
   };
 
   const toggle = (id) => {
     setResult(null);
     setMoneyPairings([]);
+    setPairingsSent(false);
     setSelected((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
       if (prev.length >= required) {
@@ -107,6 +113,7 @@ export default function TeamBalancer() {
     const r = balanceTeams(chosen);
     setResult(r);
     setMoneyPairings([]);
+    setPairingsSent(false);
     setBalancedGame(game);
     toast.success(
       game === "ALL"
@@ -120,6 +127,7 @@ export default function TeamBalancer() {
     setSelected(top);
     setResult(null);
     setMoneyPairings([]);
+    setPairingsSent(false);
     toast.success(`Auto-picked ${required} most active players`);
   };
 
@@ -127,6 +135,7 @@ export default function TeamBalancer() {
     setSelected([]);
     setResult(null);
     setMoneyPairings([]);
+    setPairingsSent(false);
   };
 
   const autoPairMoney = () => {
@@ -151,6 +160,7 @@ export default function TeamBalancer() {
         playerAId: a.id,
         playerBId: orderedB[index].id,
         amount: stake,
+        platform: defaultPlatform,
       }));
       const totalGap = pairs.reduce((sum, pair) => {
         const a = teamA.find((p) => p.id === pair.playerAId);
@@ -179,6 +189,7 @@ export default function TeamBalancer() {
           playerAId,
           playerBId,
           amount: existing?.amount ?? Math.max(0, Number(String(defaultStake).replace(",", ".")) || 0),
+          platform: existing?.platform || defaultPlatform,
         },
       ];
     });
@@ -206,6 +217,46 @@ export default function TeamBalancer() {
     const totalStake = moneyPairings.reduce((sum, pair) => sum + Number(pair.amount || 0), 0);
     return { score, avgGap: Math.round(avgGap), totalStake };
   }, [moneyPairings, result]);
+
+  const setAllPairingPlatform = (platform) => {
+    setDefaultPlatform(platform);
+    setPairingsSent(false);
+    setMoneyPairings((prev) => prev.map((pair) => ({ ...pair, platform })));
+  };
+
+  const sendPairingNotifications = async () => {
+    if (!result) return;
+
+    if (moneyPairings.length !== result.teamA.length) {
+      toast.error("Complete every money pairing first");
+      return;
+    }
+
+    if (moneyPairings.some((pair) => !pair.playerBId || Number(pair.amount || 0) <= 0)) {
+      toast.error("Every pairing needs an opponent and an amount");
+      return;
+    }
+
+    setSendingPairings(true);
+
+    const created = await adminCreateChallengePairings(
+      moneyPairings.map((pair) => ({
+        challengerPlayerId: pair.playerAId,
+        challengedPlayerId: pair.playerBId,
+        amount: Number(pair.amount || 0),
+        platform: pair.platform || defaultPlatform,
+      }))
+    );
+
+    setSendingPairings(false);
+
+    if (!created) return;
+
+    setPairingsSent(true);
+    toast.success(
+      `Money challs sent — ${created.length * 2} players notified`
+    );
+  };
 
   const sendTeamsToDiscord = async () => {
     if (!result) return;
@@ -398,7 +449,20 @@ export default function TeamBalancer() {
                     </p>
                   </div>
 
-                  <div className="flex items-end gap-2">
+                  <div className="flex items-end gap-2 flex-wrap">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Platform</div>
+                      <select
+                        value={defaultPlatform}
+                        onChange={(e) => setAllPairingPlatform(e.target.value)}
+                        className="w-28 h-10 rounded-xl bg-[#0E1219] border border-[#2B3443] px-3 text-sm font-semibold text-white"
+                        data-testid="money-default-platform"
+                      >
+                        <option value="cmg">CMG</option>
+                        <option value="paypal">PayPal</option>
+                        <option value="revolut">Revolut</option>
+                      </select>
+                    </div>
                     <div>
                       <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Default €</div>
                       <Input
@@ -406,7 +470,10 @@ export default function TeamBalancer() {
                         min="0"
                         step="0.5"
                         value={defaultStake}
-                        onChange={(e) => setDefaultStake(e.target.value)}
+                        onChange={(e) => {
+                          setDefaultStake(e.target.value);
+                          setPairingsSent(false);
+                        }}
                         className="w-24 h-10 bg-[#0E1219] border-[#2B3443] rounded-xl font-mono"
                         data-testid="money-default-stake"
                       />
@@ -445,7 +512,10 @@ export default function TeamBalancer() {
 
                         <select
                           value={pairing?.playerBId || ""}
-                          onChange={(e) => setPairOpponent(alpha.id, e.target.value)}
+                          onChange={(e) => {
+                            setPairingsSent(false);
+                            setPairOpponent(alpha.id, e.target.value);
+                          }}
                           className="h-10 rounded-xl bg-[#171D27] border border-[#35404F] px-3 text-sm text-white"
                           data-testid={`money-opponent-${alpha.id}`}
                         >
@@ -469,7 +539,10 @@ export default function TeamBalancer() {
                             step="0.5"
                             value={pairing?.amount ?? ""}
                             disabled={!pairing}
-                            onChange={(e) => setPairAmount(alpha.id, e.target.value)}
+                            onChange={(e) => {
+                              setPairingsSent(false);
+                              setPairAmount(alpha.id, e.target.value);
+                            }}
                             placeholder="0"
                             className="h-10 pl-7 bg-[#171D27] border-[#35404F] rounded-xl font-mono"
                             data-testid={`money-amount-${alpha.id}`}
@@ -506,6 +579,31 @@ export default function TeamBalancer() {
                     </div>
                   </div>
                 </div>
+
+                {isAdmin && (
+                  <Button
+                    onClick={sendPairingNotifications}
+                    disabled={
+                      sendingPairings ||
+                      pairingsSent ||
+                      moneyPairings.length !== result.teamA.length ||
+                      moneyPairings.some((pair) => Number(pair.amount || 0) <= 0)
+                    }
+                    className={`w-full h-12 mt-4 rounded-xl font-extrabold ${
+                      pairingsSent
+                        ? "bg-emerald-500/15 border border-emerald-500/25 text-emerald-400"
+                        : "bg-[#F43F5E] hover:bg-[#FB5A76] text-white"
+                    }`}
+                    data-testid="send-money-challs-all"
+                  >
+                    <MessageCircle size={17} className="mr-2" />
+                    {sendingPairings
+                      ? "Sending notifications..."
+                      : pairingsSent
+                        ? "All Players Notified"
+                        : "Send Challs to All Players"}
+                  </Button>
+                )}
               </div>
 
               {isAdmin ? (
