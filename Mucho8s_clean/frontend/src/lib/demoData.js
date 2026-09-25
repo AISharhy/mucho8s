@@ -10,7 +10,7 @@ const NAMES = [
 
 const MAPS = ["Terminal", "Nuketown", "Shipment", "Rust", "Highrise", "Firing Range", "Standoff", "Raid"];
 const MODES = ["Hardpoint", "Search & Destroy"];
-const GAMES = ["BO7", "BO6", "MW3", "WW2", "VG", "CW", "BO2", "MW4"];
+const GAMES = ["MW4", "BO7", "BO6", "MW3", "VG", "CW", "WW2", "BO2"];
 
 // deterministic PRNG so demo data is stable per generation
 const makeRand = (seed) => () => {
