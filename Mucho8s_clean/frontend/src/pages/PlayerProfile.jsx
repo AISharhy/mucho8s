@@ -423,12 +423,12 @@ export default function PlayerProfile() {
                       <div className="flex items-center gap-2">
                         {won && (
                           <span className="inline-flex items-center h-9 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-extrabold tracking-wider">
-                            WON
+                            VINTA
                           </span>
                         )}
                         {lost && (
                           <span className="inline-flex items-center h-9 px-3 rounded-lg bg-red-500/10 border border-red-500/25 text-red-400 text-xs font-extrabold tracking-wider">
-                            LOST
+                            PERSA
                           </span>
                         )}
                         {!completed && challenge.status === "pending" && (
