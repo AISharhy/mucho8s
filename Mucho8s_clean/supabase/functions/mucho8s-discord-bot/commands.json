@@ -42,16 +42,21 @@
         "description": "Challenge platform",
         "required": true,
         "choices": [
-          { "name": "PayPal", "value": "paypal" },
-          { "name": "Revolut", "value": "revolut" },
-          { "name": "CMG", "value": "cmg" }
+          {
+            "name": "PayPal",
+            "value": "paypal"
+          },
+          {
+            "name": "Revolut",
+            "value": "revolut"
+          },
+          {
+            "name": "CMG",
+            "value": "cmg"
+          }
         ]
       }
     ]
-  },
-  {
-    "name": "ready",
-    "description": "Toggle Ready on your active challenge"
   },
   {
     "name": "match",
