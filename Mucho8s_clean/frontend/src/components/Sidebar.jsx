@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { NavLink, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Users, Swords, Gamepad2, Trophy, Shield, Menu, X, MessageCircle, LogOut, UserCircle,
+  LayoutDashboard, Users, Swords, Gamepad2, Trophy, Shield, Menu, X, MessageCircle, LogOut, UserCircle, Bell, BarChart3,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 
@@ -15,12 +15,13 @@ const MAIN_NAV = [
 
 const COMPETITION_NAV = [
   { to: "/ranking", label: "Ranking", icon: Trophy, testid: "nav-ranking-link" },
+  { to: "/challenge-ranking", label: "Chall Ranking", icon: BarChart3, testid: "nav-chall-ranking-link" },
 ];
 
 const ADMIN_NAV = { to: "/admin", label: "Admin Panel", icon: Shield, testid: "nav-admin-link" };
 const ALL_NAV = [...MAIN_NAV, ...COMPETITION_NAV, ADMIN_NAV];
 
-const NavItem = ({ item, onNavigate }) => {
+const NavItem = ({ item, onNavigate, badge = 0 }) => {
   const Icon = item.icon;
   return (
     <NavLink
@@ -37,19 +38,24 @@ const NavItem = ({ item, onNavigate }) => {
       }
     >
       <Icon size={17} className="shrink-0" />
-      <span>{item.label}</span>
+      <span className="flex-1">{item.label}</span>
+      {badge > 0 && (
+        <span className="min-w-5 h-5 px-1.5 rounded-full bg-magma text-white text-[10px] font-extrabold flex items-center justify-center">
+          {badge > 9 ? "9+" : badge}
+        </span>
+      )}
     </NavLink>
   );
 };
 
-const NavSection = ({ label, items, onNavigate }) => (
+const NavSection = ({ label, items, onNavigate, badges = {} }) => (
   <div>
     <div className="brand-section-title px-4 mb-2">
       {label}
     </div>
     <nav className="flex flex-col gap-1 px-2">
       {items.map((item) => (
-        <NavItem key={item.to} item={item} onNavigate={onNavigate} />
+        <NavItem key={item.to} item={item} onNavigate={onNavigate} badge={badges[item.to] || 0} />
       ))}
     </nav>
   </div>
@@ -82,6 +88,7 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
     discordLoading,
     signInWithDiscord,
     signOutDiscord,
+    challengeNotificationCount,
   } = useData();
 
   const discordName = discordPlayer?.name || discordAccount?.display_name || discordAccount?.discord_username || "Discord";
@@ -95,12 +102,31 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
       }
     : null;
 
+  const accountItems = linked
+    ? [
+        {
+          to: "/challenges",
+          label: "Challenge Inbox",
+          icon: Bell,
+          testid: "nav-challenge-inbox-link",
+        },
+        myProfileItem,
+      ]
+    : [];
+
   return (
     <>
       <div className="py-5 flex-1 overflow-y-auto space-y-6">
         <NavSection label="Main" items={MAIN_NAV} onNavigate={onNavigate} />
         <NavSection label="Competition" items={COMPETITION_NAV} onNavigate={onNavigate} />
-        {myProfileItem && <NavSection label="Account" items={[myProfileItem]} onNavigate={onNavigate} />}
+        {accountItems.length > 0 && (
+          <NavSection
+            label="Account"
+            items={accountItems}
+            onNavigate={onNavigate}
+            badges={{ "/challenges": challengeNotificationCount }}
+          />
+        )}
       </div>
 
       <div className="px-2 pb-3">
