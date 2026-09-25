@@ -14,6 +14,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: Mucho8s_clean/frontend
+
     steps:
       - name: Scarica repository
         uses: actions/checkout@v4
@@ -28,6 +32,8 @@ jobs:
 
       - name: Compila sito
         run: npm run build
+        env:
+          CI: false
 
       - name: Configura Pages
         uses: actions/configure-pages@v5
@@ -35,7 +41,7 @@ jobs:
       - name: Carica sito
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./build
+          path: Mucho8s_clean/frontend/build
 
   deploy:
     needs: build
