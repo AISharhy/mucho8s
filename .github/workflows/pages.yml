@@ -27,8 +27,8 @@ jobs:
         with:
           node-version: 20
 
-      - name: Installa dipendenze
-          run: |
+- name: Installa dipendenze
+  run: |
     npm install --legacy-peer-deps
     npm install --legacy-peer-deps --no-save ajv@8.17.1 ajv-keywords@5.1.0
 
