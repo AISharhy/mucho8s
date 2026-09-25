@@ -66,6 +66,8 @@ const normalizeMatch = (m) => ({
   mode: m?.mode || "",
   game: m?.game || "",
   eloChanges: m?.eloChanges && typeof m.eloChanges === "object" ? m.eloChanges : {},
+  pairings: Array.isArray(m?.pairings) ? m.pairings : [],
+  season: Math.max(1, Number(m?.season) || 1),
 });
 
 const clonePlayers = (players) => players.map((p) => ({
@@ -169,6 +171,12 @@ export const DataProvider = ({ children }) => {
   const [playerProfiles, setPlayerProfiles] = useState({});
   const [challenges, setChallenges] = useState([]);
   const [publicChallenges, setPublicChallenges] = useState([]);
+  const [dashboardData, setDashboardData] = useState({
+    activeChallenges: [],
+    recentChallenges: [],
+    onlinePlayers: [],
+    competition: { season_number: 1, season_name: "Season 1" },
+  });
   const [loaded, setLoaded] = useState(STORAGE_MODE === "local");
   const versionRef = useRef(-1);
 
@@ -276,6 +284,36 @@ export const DataProvider = ({ children }) => {
     const timer = setInterval(fetchPlayerAvatars, 15000);
     return () => clearInterval(timer);
   }, [fetchPlayerAvatars]);
+
+  const fetchDashboardData = useCallback(async () => {
+    if (!HAS_SUPABASE) return null;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/mucho8s-dashboard`, {
+        method: "GET",
+        headers: { apikey: SUPABASE_ANON_KEY },
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data?.ok) {
+        setDashboardData({
+          activeChallenges: Array.isArray(data.activeChallenges) ? data.activeChallenges : [],
+          recentChallenges: Array.isArray(data.recentChallenges) ? data.recentChallenges : [],
+          onlinePlayers: Array.isArray(data.onlinePlayers) ? data.onlinePlayers : [],
+          competition: data.competition || { season_number: 1, season_name: "Season 1" },
+        });
+      }
+      return data;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!HAS_SUPABASE) return undefined;
+    void fetchDashboardData();
+    const timer = setInterval(fetchDashboardData, 15000);
+    return () => clearInterval(timer);
+  }, [fetchDashboardData]);
 
   const fetchPublicChallenges = useCallback(async () => {
     if (!HAS_SUPABASE) {
@@ -1158,6 +1196,7 @@ export const DataProvider = ({ children }) => {
     playerProfiles,
     challenges,
     publicChallenges,
+    dashboardData,
     challengeNotificationCount,
     refreshChallenges,
     createChallenge,
@@ -1176,6 +1215,7 @@ export const DataProvider = ({ children }) => {
     listAdminAudit,
     logAdminAction,
     refreshPublicChallenges: fetchPublicChallenges,
+    refreshDashboardData: fetchDashboardData,
     refreshPlayerAvatars: fetchPlayerAvatars,
     saveMyChallengeLinks,
     signInWithDiscord,
