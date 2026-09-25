@@ -330,7 +330,7 @@ export default function AdminPanel() {
       challenge.id,
       {
         winnerPlayerId,
-        ...(complete ? { status: "completed", paymentSent: true, paymentReceived: true } : {}),
+        ...(complete ? { status: "completed" } : {}),
       },
       complete ? "Challenge completed by Admin" : "Challenge winner updated"
     );
@@ -546,8 +546,6 @@ export default function AdminPanel() {
                           {
                             winnerPlayerId: challenge.challenger_player_id,
                             status: "completed",
-                            paymentSent: true,
-                            paymentReceived: true,
                           },
                           `${challenger?.name || "Challenger"} set as winner`
                         )}
@@ -562,8 +560,6 @@ export default function AdminPanel() {
                           {
                             winnerPlayerId: challenge.challenged_player_id,
                             status: "completed",
-                            paymentSent: true,
-                            paymentReceived: true,
                           },
                           `${challenged?.name || "Challenged"} set as winner`
                         )}
