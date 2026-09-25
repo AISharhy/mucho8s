@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { NavLink, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Users, Swords, Gamepad2, Trophy, BarChart3, Shield, Menu, X, Flame,
+  LayoutDashboard, Users, Swords, Gamepad2, Trophy, BarChart3, Shield, Menu, X,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 
@@ -45,8 +45,8 @@ const NavItems = ({ onNavigate }) => (
 
 const Brand = () => (
   <div className="flex items-center gap-2.5 px-5 h-16 border-b border-[#242938]">
-    <div className="w-9 h-9 rounded-md flex items-center justify-center gradient-bar magma-glow">
-      <Flame size={20} className="text-black" />
+    <div className="w-9 h-9 rounded-md flex items-center justify-center gradient-bar magma-glow text-black font-display font-black text-xs tracking-tighter">
+      M8
     </div>
     <div className="leading-tight">
       <div className="font-display font-extrabold text-lg tracking-tight">
