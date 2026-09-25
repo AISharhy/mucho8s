@@ -5,6 +5,7 @@ import { Layout } from "@/components/Layout";
 import { Toaster } from "@/components/ui/sonner";
 import Dashboard from "@/pages/Dashboard";
 import Players from "@/pages/Players";
+import PlayerProfile from "@/pages/PlayerProfile";
 import TeamBalancer from "@/pages/TeamBalancer";
 import Matches from "@/pages/Matches";
 import Leaderboard from "@/pages/Leaderboard";
@@ -20,6 +21,7 @@ function App() {
             <Route element={<Layout />}>
               <Route index element={<Dashboard />} />
               <Route path="players" element={<Players />} />
+              <Route path="players/:id" element={<PlayerProfile />} />
               <Route path="balancer" element={<TeamBalancer />} />
               <Route path="matches" element={<Matches />} />
               <Route path="leaderboard" element={<Leaderboard />} />
