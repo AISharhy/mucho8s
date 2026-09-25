@@ -65,7 +65,7 @@ export default function ChallengeMatch() {
 
   useEffect(() => {
     if (challenge && discordAccount?.id) void markChallengeSeen(challenge.id);
-  }, [challenge?.id, challenge?.status, discordAccount?.id, markChallengeSeen]);
+  }, [challenge?.id, challenge?.status, challenge?.last_event, discordAccount?.id, markChallengeSeen]);
 
   const participant = useMemo(() => {
     if (!challenge || !discordAccount?.id) return false;
