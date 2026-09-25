@@ -53,3 +53,37 @@ create table if not exists public.player_accounts (
 
 alter table public.player_accounts enable row level security;
 revoke all on table public.player_accounts from anon, authenticated;
+
+
+-- Player-to-player challenges with CMG-style result verification.
+-- All access is mediated by the mucho8s-challenges Edge Function.
+create table if not exists public.player_challenges (
+  id uuid primary key default gen_random_uuid(),
+  challenger_account_id uuid not null references auth.users(id) on delete cascade,
+  challenger_player_id text not null,
+  challenged_account_id uuid not null references auth.users(id) on delete cascade,
+  challenged_player_id text not null,
+  platform text not null check (platform in ('paypal','revolut','cmg')),
+  target_url text not null,
+  status text not null default 'pending' check (status in (
+    'pending','accepted','declined','result_pending','completed','disputed','cancelled'
+  )),
+  created_at timestamptz not null default now(),
+  responded_at timestamptz,
+  challenger_seen_at timestamptz,
+  reported_winner_player_id text,
+  reporter_account_id uuid references auth.users(id) on delete set null,
+  result_reported_at timestamptz,
+  verified_at timestamptz,
+  verifier_account_id uuid references auth.users(id) on delete set null,
+  dispute_note text
+);
+
+create index if not exists player_challenges_challenged_pending_idx
+  on public.player_challenges (challenged_account_id, status, created_at desc);
+
+create index if not exists player_challenges_challenger_updates_idx
+  on public.player_challenges (challenger_account_id, challenger_seen_at, responded_at desc);
+
+alter table public.player_challenges enable row level security;
+revoke all on table public.player_challenges from anon, authenticated;
