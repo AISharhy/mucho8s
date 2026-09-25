@@ -66,6 +66,67 @@ export default function Dashboard() {
   const onlinePlayers = players.filter((player) => onlineIds.has(player.id));
   const season = dashboardData?.competition || { season_number: 1, season_name: "Season 1" };
 
+  const challengeHighlights = useMemo(() => {
+    const now = Date.now();
+    const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const today = new Date();
+    const todayKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+
+    const weekly = recentChallenges.filter((challenge) => {
+      const ts = new Date(challenge.verified_at || challenge.created_at).getTime();
+      return Number.isFinite(ts) && ts >= weekAgo;
+    });
+
+    const byPlayer = new Map();
+    weekly.forEach((challenge) => {
+      const winnerId = challenge.reported_winner_player_id;
+      if (!winnerId) return;
+      const row = byPlayer.get(winnerId) || { wins: 0, profit: 0 };
+      row.wins += 1;
+      if (challenge.payment_received_at) {
+        row.profit += Number(challenge.amount_cents || 0) / 100;
+      }
+      byPlayer.set(winnerId, row);
+    });
+
+    const topEntry = [...byPlayer.entries()]
+      .sort((a, b) => b[1].wins - a[1].wins || b[1].profit - a[1].profit)[0];
+
+    const myToday = discordPlayer
+      ? recentChallenges.filter((challenge) => {
+          const date = new Date(challenge.verified_at || challenge.created_at);
+          const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+          return key === todayKey &&
+            [challenge.challenger_player_id, challenge.challenged_player_id].includes(discordPlayer.id);
+        })
+      : [];
+
+    let myWins = 0;
+    let myLosses = 0;
+    let myNet = 0;
+    myToday.forEach((challenge) => {
+      const amount = Number(challenge.amount_cents || 0) / 100;
+      const won = challenge.reported_winner_player_id === discordPlayer?.id;
+      if (won) {
+        myWins += 1;
+        if (challenge.payment_received_at) myNet += amount;
+      } else {
+        myLosses += 1;
+        if (challenge.payment_received_at) myNet -= amount;
+      }
+    });
+
+    return {
+      topPlayer: topEntry ? playerMap[topEntry[0]] : null,
+      topStats: topEntry ? topEntry[1] : null,
+      weeklyCount: weekly.length,
+      weeklyVolume: weekly
+        .filter((challenge) => challenge.payment_received_at)
+        .reduce((sum, challenge) => sum + Number(challenge.amount_cents || 0) / 100, 0),
+      myToday: { wins: myWins, losses: myLosses, net: myNet, total: myToday.length },
+    };
+  }, [recentChallenges, discordPlayer, playerMap]);
+
   const quickCandidates = players.filter((p) => p.id !== discordPlayer?.id);
   const targetProfile = quickTarget ? playerProfiles?.[quickTarget] : null;
 
@@ -325,6 +386,62 @@ export default function Dashboard() {
             })}
           </div>
         </section>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-testid="dashboard-challenge-highlights">
+        <div className="card-surface rounded-2xl p-5">
+          <div className="brand-kicker mb-1">This Week</div>
+          <h3 className="font-display font-bold text-lg">Top Chall Player</h3>
+          {challengeHighlights.topPlayer ? (
+            <div className="flex items-center gap-3 mt-4">
+              <PlayerAvatar
+                name={challengeHighlights.topPlayer.name}
+                elo={challengeHighlights.topPlayer.currentElo}
+                size={42}
+                avatarUrl={playerAvatars[challengeHighlights.topPlayer.id]}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold truncate">{challengeHighlights.topPlayer.name}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {challengeHighlights.topStats?.wins || 0} wins · +€{Number(challengeHighlights.topStats?.profit || 0).toFixed(2)}
+                </div>
+              </div>
+              <Trophy size={18} className="text-[#D5A33A]" />
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground mt-4">No verified challs this week.</div>
+          )}
+        </div>
+
+        <div className="card-surface rounded-2xl p-5">
+          <div className="brand-kicker mb-1">Weekly Volume</div>
+          <h3 className="font-display font-bold text-lg">Challenge Activity</h3>
+          <div className="font-display text-3xl font-black mt-4">€{challengeHighlights.weeklyVolume.toFixed(2)}</div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {challengeHighlights.weeklyCount} verified challs in the last 7 days
+          </div>
+        </div>
+
+        <div className="card-surface rounded-2xl p-5">
+          <div className="brand-kicker mb-1">Your Night</div>
+          <h3 className="font-display font-bold text-lg">Today</h3>
+          {discordPlayer ? (
+            <>
+              <div className="font-display text-3xl font-black mt-4">
+                <span className="text-emerald-400">{challengeHighlights.myToday.wins}W</span>
+                <span className="text-muted-foreground mx-1.5">-</span>
+                <span className="text-red-400">{challengeHighlights.myToday.losses}L</span>
+              </div>
+              <div className={`text-sm font-mono mt-1 ${
+                challengeHighlights.myToday.net >= 0 ? "text-emerald-400" : "text-red-400"
+              }`}>
+                {challengeHighlights.myToday.net >= 0 ? "+" : "-"}€{Math.abs(challengeHighlights.myToday.net).toFixed(2)}
+              </div>
+            </>
+          ) : (
+            <div className="text-sm text-muted-foreground mt-4">Login with Discord to see your night.</div>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
