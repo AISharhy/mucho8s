@@ -121,3 +121,17 @@ create index if not exists admin_audit_log_created_at_idx
 
 alter table public.admin_audit_log enable row level security;
 revoke all on table public.admin_audit_log from anon, authenticated;
+
+
+-- Presence for Discord-linked players shown as online on the dashboard.
+create table if not exists public.player_presence (
+  account_id uuid primary key references public.player_accounts(id) on delete cascade,
+  player_id text not null,
+  last_seen_at timestamptz not null default now()
+);
+
+create index if not exists player_presence_last_seen_idx
+  on public.player_presence (last_seen_at desc);
+
+alter table public.player_presence enable row level security;
+revoke all on table public.player_presence from anon, authenticated;
