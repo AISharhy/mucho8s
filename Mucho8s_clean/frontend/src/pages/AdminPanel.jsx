@@ -132,6 +132,8 @@ export default function AdminPanel() {
     listAdminAudit,
     changeAdminPassword,
     logoutAllAdminSessions,
+    competitionData,
+    startNewSeason,
   } = useData();
   const [newName, setNewName] = useState("");
   const [newElo, setNewElo] = useState(1000);
@@ -151,6 +153,8 @@ export default function AdminPanel() {
   const [auditLogs, setAuditLogs] = useState([]);
   const [newAdminPassword, setNewAdminPassword] = useState("");
   const [securityBusy, setSecurityBusy] = useState(false);
+  const [seasonName, setSeasonName] = useState("");
+  const [seasonBusy, setSeasonBusy] = useState(false);
   const fileRef = useRef(null);
 
   const loadDiscordAccounts = useCallback(async () => {
@@ -379,6 +383,18 @@ export default function AdminPanel() {
     toast.success("Challenge deleted");
   };
 
+  const beginNewSeason = async () => {
+    setSeasonBusy(true);
+    const ok = await startNewSeason({
+      seasonName: seasonName.trim(),
+      resetStats: true,
+    });
+    setSeasonBusy(false);
+    if (!ok) return;
+    setSeasonName("");
+    toast.success("New season started and previous season archived");
+  };
+
   const updateAdminPassword = async () => {
     if (!newAdminPassword) return toast.error("Enter a new password");
     setSecurityBusy(true);
@@ -408,6 +424,53 @@ export default function AdminPanel() {
         <Button variant="ghost" onClick={() => setAdmin(null)} data-testid="admin-logout-btn" className="text-muted-foreground">
           <LogOut size={16} className="mr-1" /> Sign out
         </Button>
+      </div>
+
+      <div className="card-surface rounded-2xl p-5" data-testid="admin-season-control">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <div className="brand-kicker mb-1">Competition</div>
+            <h3 className="font-display font-bold text-lg">
+              {competitionData?.current?.season_name || `Season ${competitionData?.current?.season_number || 1}`}
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Starting a new season archives the current ranking and resets Elo/statistics to 1000.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+            <Input
+              value={seasonName}
+              onChange={(e) => setSeasonName(e.target.value)}
+              placeholder={`Season ${Number(competitionData?.current?.season_number || 1) + 1}`}
+              className="h-11 bg-[#0F1218] border-[#222834] sm:w-52"
+            />
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  disabled={seasonBusy}
+                  className="h-11 bg-magma hover:bg-magma/90 text-white font-bold"
+                >
+                  Start New Season
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="bg-[#101319] border-[#242A35]">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Start a new season?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    The current season will be archived. Player Elo and seasonal statistics will reset to 1000, and current match history will move into the season archive.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={beginNewSeason} className="bg-magma hover:bg-magma/90">
+                    Start Season
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
       </div>
 
       <div className="card-surface rounded-2xl p-5" data-testid="admin-security-panel">
