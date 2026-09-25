@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type, apikey, authorization",
+  "Access-Control-Allow-Headers": "content-type, apikey, authorization, x-admin-password",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -18,6 +18,22 @@ const PLATFORM_COLUMNS: Record<string, string> = {
   cmg: "cmg_url",
 };
 
+const ADMIN_PASSWORD_SHA256 = "5275321e80637acbd0dc2a0d0e9b5120ab79618531edd49b189ff4b4ce4ec4ff";
+
+const sha256 = async (value: string) => {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+};
+
+const isAdminRequest = async (req: Request) => {
+  const supplied = req.headers.get("x-admin-password") || "";
+  if (!supplied) return false;
+  return (await sha256(supplied)) === ADMIN_PASSWORD_SHA256;
+};
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -29,6 +45,99 @@ Deno.serve(async (req: Request) => {
     if (!supabaseUrl || !secretKey) throw new Error("Supabase server credentials unavailable");
 
     const supabase = createClient(supabaseUrl, secretKey);
+
+    const body = await req.json();
+    const action = String(body?.action || "");
+    const adminRequest = await isAdminRequest(req);
+
+    if (adminRequest && action === "admin-list") {
+      const { data, error } = await supabase
+        .from("player_challenges")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return json({ ok: true, challenges: data || [] });
+    }
+
+    if (adminRequest && action === "admin-update") {
+      const id = String(body?.id || "").trim();
+      if (!id) return json({ error: "Challenge id is required" }, 400);
+
+      const current = await (async () => {
+        const { data, error } = await supabase
+          .from("player_challenges")
+          .select("*")
+          .eq("id", id)
+          .maybeSingle();
+        if (error) throw error;
+        return data;
+      })();
+
+      if (!current) return json({ error: "Challenge not found" }, 404);
+
+      const updates: Record<string, unknown> = {};
+      const allowedStatuses = ["pending","accepted","declined","result_pending","completed","disputed","cancelled"];
+
+      if (body?.status !== undefined) {
+        const status = String(body.status);
+        if (!allowedStatuses.includes(status)) return json({ error: "Invalid status" }, 400);
+        updates.status = status;
+        if (status === "accepted" || status === "declined") updates.responded_at = new Date().toISOString();
+        if (status === "completed") updates.verified_at = new Date().toISOString();
+      }
+
+      if (body?.amount !== undefined) {
+        const amount = Number(body.amount);
+        if (!Number.isFinite(amount) || amount < 0) return json({ error: "Invalid amount" }, 400);
+        updates.amount_cents = Math.round(amount * 100);
+      }
+
+      if (body?.paymentSent !== undefined) {
+        updates.payment_sent_at = body.paymentSent ? new Date().toISOString() : null;
+      }
+
+      if (body?.paymentReceived !== undefined) {
+        updates.payment_received_at = body.paymentReceived ? new Date().toISOString() : null;
+      }
+
+      if (body?.winnerPlayerId !== undefined) {
+        const winner = String(body.winnerPlayerId || "").trim();
+        if (winner && ![current.challenger_player_id, current.challenged_player_id].includes(winner)) {
+          return json({ error: "Winner must be one of the challenge players" }, 400);
+        }
+        updates.reported_winner_player_id = winner || null;
+        if (winner) {
+          updates.reporter_account_id = null;
+          updates.result_reported_at = new Date().toISOString();
+        }
+      }
+
+      if (body?.disputeNote !== undefined) {
+        updates.dispute_note = String(body.disputeNote || "").trim().slice(0, 240) || null;
+      }
+
+      updates.challenger_seen_status = null;
+      updates.challenged_seen_status = null;
+
+      const { data, error } = await supabase
+        .from("player_challenges")
+        .update(updates)
+        .eq("id", id)
+        .select("*")
+        .single();
+
+      if (error) throw error;
+      return json({ ok: true, challenge: data });
+    }
+
+    if (adminRequest && action === "admin-delete") {
+      const id = String(body?.id || "").trim();
+      if (!id) return json({ error: "Challenge id is required" }, 400);
+      const { error } = await supabase.from("player_challenges").delete().eq("id", id);
+      if (error) throw error;
+      return json({ ok: true });
+    }
 
     const authHeader = req.headers.get("authorization") || "";
     const token = authHeader.replace(/^Bearer\s+/i, "").trim();
@@ -46,9 +155,6 @@ Deno.serve(async (req: Request) => {
 
     if (meError) throw meError;
     if (!me?.player_id) return json({ error: "Your Discord account is not linked to a player yet" }, 409);
-
-    const body = await req.json();
-    const action = String(body?.action || "");
 
     const getChallenge = async (id: string) => {
       const { data, error } = await supabase
