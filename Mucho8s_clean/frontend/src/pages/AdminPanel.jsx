@@ -108,6 +108,7 @@ const Gate = () => {
 export default function AdminPanel() {
   const {
     admin,
+    isAdmin,
     setAdmin,
     players,
     matches,
@@ -220,7 +221,7 @@ export default function AdminPanel() {
     [adminChallenges],
   );
 
-  if (!admin) return <Gate />;
+  if (!isAdmin) return <Gate />;
 
   const handleAdd = () => {
     if (!newName.trim()) return toast.error("Enter a player name");
