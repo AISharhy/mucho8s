@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar, EloBadge } from "@/components/shared";
 import { MODES, GAMES } from "@/lib/demoData";
-import { Crown, Search } from "lucide-react";
+import { Crown, Search, WalletCards, ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 
 // Reusable match recorder. initialTeams = { teamA: [ids], teamB: [ids] }
@@ -20,6 +20,7 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
   const [mode, setMode] = useState(MODES[0]);
   const [game, setGame] = useState(GAMES[0]);
   const [query, setQuery] = useState("");
+  const [pairings, setPairings] = useState([]);
 
   useEffect(() => {
     if (open) {
@@ -34,6 +35,7 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
       setMvpId(editData?.mvpId || "");
       setMode(editData?.mode || MODES[0]);
       setGame(editData?.game || defaultGame || GAMES[0]);
+      setPairings(Array.isArray((editData || initialTeams)?.pairings) ? (editData || initialTeams).pairings : []);
       setQuery("");
     }
   }, [open, initialTeams, editData, defaultGame]);
@@ -65,6 +67,38 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
 
   const valid = teamA.length === teamB.length && teamA.length >= 2 && teamA.length <= 4;
 
+  const updatePairing = (playerAId, field, value) => {
+    setPairings((prev) => {
+      const existing = prev.find((pair) => pair.playerAId === playerAId);
+      const base = existing || {
+        playerAId,
+        playerBId: "",
+        amount: 5,
+        platform: "cmg",
+      };
+      const nextPair = {
+        ...base,
+        [field]: field === "amount" ? Math.max(0, Number(value) || 0) : value,
+      };
+      return [...prev.filter((pair) => pair.playerAId !== playerAId), nextPair];
+    });
+  };
+
+  const cleanPairings = pairings
+    .filter((pair) =>
+      teamA.includes(pair.playerAId) &&
+      teamB.includes(pair.playerBId) &&
+      Number(pair.amount || 0) > 0
+    )
+    .map((pair) => ({
+      playerAId: pair.playerAId,
+      playerBId: pair.playerBId,
+      amount: Number(pair.amount || 0),
+      platform: ["cmg", "paypal", "revolut"].includes(pair.platform) ? pair.platform : "cmg",
+    }));
+
+
+
   const submit = async () => {
     if (!valid) {
       toast.error("Both teams must be equal (2, 3 or 4 players each)");
@@ -81,6 +115,7 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
             game: editData.game || game,
             map: editData.map || "",
             date: editData.date,
+            pairings: Array.isArray(editData.pairings) ? editData.pairings : [],
           }
         : {
             teamA,
@@ -91,6 +126,7 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
             game,
             map: editData.map || "",
             date: editData.date,
+            pairings: cleanPairings,
           };
 
       const ok = await editMatch(editData.id, payload);
@@ -102,7 +138,16 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
           : "Match updated — Elo & stats recalculated"
       );
     } else {
-      const ok = await recordMatch({ teamA, teamB, winner, mvpId: mvpId || undefined, map, mode, game });
+      const ok = await recordMatch({
+        teamA,
+        teamB,
+        winner,
+        mvpId: mvpId || undefined,
+        map,
+        mode,
+        game,
+        pairings: cleanPairings,
+      });
       if (!ok) return;
       toast.success("Match recorded — Elo & stats updated");
     }
@@ -129,7 +174,76 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
         </div>
 
         {reportOnly ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {!reportOnly && (
+          <div className="rounded-2xl bg-[#0F1218] border border-[#1D222C] p-4" data-testid="match-money-pairings">
+            <div className="flex items-center gap-2 mb-3">
+              <WalletCards size={17} className="text-[#D5A33A]" />
+              <div>
+                <div className="font-display font-bold">Money Chall Pairings</div>
+                <div className="text-xs text-muted-foreground">
+                  Admin can edit who challs who, stake and platform for this match.
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {teamA.map((alphaId) => {
+                const alpha = players.find((p) => p.id === alphaId);
+                const pairing = pairings.find((pair) => pair.playerAId === alphaId);
+                const usedBravo = pairings
+                  .filter((pair) => pair.playerAId !== alphaId)
+                  .map((pair) => pair.playerBId);
+
+                return (
+                  <div
+                    key={alphaId}
+                    className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr_95px_105px] gap-2 sm:items-center rounded-xl bg-[#151923] border border-[#242A35] p-2.5"
+                  >
+                    <div className="text-sm font-semibold truncate">{alpha?.name || "Alpha"}</div>
+                    <ArrowRightLeft size={14} className="hidden sm:block text-muted-foreground" />
+                    <select
+                      value={pairing?.playerBId || ""}
+                      onChange={(e) => updatePairing(alphaId, "playerBId", e.target.value)}
+                      className="h-9 rounded-lg bg-[#0F1218] border border-[#2A303B] px-2 text-xs"
+                    >
+                      <option value="">No pairing</option>
+                      {teamB.map((bravoId) => {
+                        const bravo = players.find((p) => p.id === bravoId);
+                        return (
+                          <option key={bravoId} value={bravoId} disabled={usedBravo.includes(bravoId)}>
+                            {bravo?.name || "Bravo"}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">€</span>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        value={pairing?.amount ?? ""}
+                        onChange={(e) => updatePairing(alphaId, "amount", e.target.value)}
+                        className="h-9 pl-6 bg-[#0F1218] border-[#2A303B] text-xs"
+                      />
+                    </div>
+                    <select
+                      value={pairing?.platform || "cmg"}
+                      onChange={(e) => updatePairing(alphaId, "platform", e.target.value)}
+                      className="h-9 rounded-lg bg-[#0F1218] border border-[#2A303B] px-2 text-xs"
+                    >
+                      <option value="cmg">CMG</option>
+                      <option value="paypal">PayPal</option>
+                      <option value="revolut">Revolut</option>
+                    </select>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="rounded-xl bg-magma/5 border border-magma/20 p-3">
               <div className="text-[10px] uppercase tracking-widest text-magma mb-2">Alpha</div>
               <div className="space-y-1 text-sm">
