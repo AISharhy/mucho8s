@@ -9,7 +9,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Shield, UserPlus, Trash2, Pencil, RotateCcw, Upload, LogOut, History, Database, Check, Lock, Eye, EyeOff } from "lucide-react";
+import { Shield, UserPlus, Trash2, Pencil, RotateCcw, Upload, Download, LogOut, History, Database, Check, Lock, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 const Gate = () => {
@@ -123,6 +123,32 @@ export default function AdminPanel() {
     e.target.value = "";
   };
 
+  const handleExport = () => {
+    if (!players.length) {
+      toast.error("No players to export");
+      return;
+    }
+
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      players,
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `mucho8s-player-database-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+
+    toast.success(`Exported ${players.length} players`);
+  };
+
   const handleRestore = async () => {
     const r = await restoreLocal();
     if (!r.ok && r.reason === "none") {
@@ -181,6 +207,10 @@ export default function AdminPanel() {
               <Upload size={18} className="mr-2 text-blue-400" /> Import Player Database
             </Button>
             <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={handleImport} data-testid="admin-import-file" />
+
+            <Button onClick={handleExport} data-testid="admin-export-btn" className="justify-start bg-[#181B26] border border-[#242938] hover:bg-white/5 h-14">
+              <Download size={18} className="mr-2 text-emerald-400" /> Export Player Database
+            </Button>
 
             <ConfirmButton
               testid="admin-reset-stats-btn"
