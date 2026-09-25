@@ -10,14 +10,14 @@ export const PlayerAvatar = ({ name, size = 40, elo }) => {
     .toUpperCase();
   return (
     <div
-      className="flex items-center justify-center rounded-md font-display font-bold shrink-0"
+      className="flex items-center justify-center rounded-lg font-display font-extrabold shrink-0 shadow-sm"
       style={{
         width: size,
         height: size,
         fontSize: size * 0.38,
-        background: `linear-gradient(135deg, ${tier.color}22, #161924)`,
-        border: `1px solid ${tier.color}55`,
-        color: tier.color,
+        background: "linear-gradient(145deg, #171B23, #101319)",
+        border: `1px solid ${tier.color}38`,
+        color: "#F3F4F6",
       }}
     >
       {initials}
@@ -29,8 +29,8 @@ export const EloBadge = ({ elo }) => {
   const tier = tierOf(elo);
   return (
     <span
-      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono font-bold"
-      style={{ background: `${tier.color}18`, color: tier.color, border: `1px solid ${tier.color}44` }}
+      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-mono font-bold"
+      style={{ background: "#0F1218", color: tier.color, border: `1px solid ${tier.color}32` }}
     >
       {elo}
     </span>
@@ -82,8 +82,8 @@ export const StreakBadge = ({ streak }) => {
 };
 
 export const MvpBadge = ({ count }) => (
-  <span className="inline-flex items-center gap-1 text-gold font-mono font-bold">
-    <Crown size={14} className="text-gold" />
+  <span className="inline-flex items-center gap-1 text-[#D5A33A] font-mono font-bold">
+    <Crown size={14} className="text-[#D5A33A]" />
     {count}
   </span>
 );
