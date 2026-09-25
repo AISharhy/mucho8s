@@ -97,6 +97,19 @@ Deno.serve(async (req: Request) => {
       return Math.max(1, Number(data?.season_number || 1));
     };
 
+    const signEvidence = async (challenge: any) => {
+      if (!challenge) return challenge;
+      const items = Array.isArray(challenge.evidence) ? challenge.evidence : [];
+      const evidence = await Promise.all(items.map(async (item: any) => {
+        if (!item?.path) return { ...item, url: null };
+        const { data } = await supabase.storage
+          .from("challenge-evidence")
+          .createSignedUrl(item.path, 600);
+        return { ...item, url: data?.signedUrl || null };
+      }));
+      return { ...challenge, evidence };
+    };
+
     if (adminRequest && action === "admin-list") {
       const { data, error } = await supabase
         .from("player_challenges")
@@ -104,7 +117,8 @@ Deno.serve(async (req: Request) => {
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) throw error;
-      return json({ ok: true, challenges: data || [] });
+      const signed = await Promise.all((data || []).map(signEvidence));
+      return json({ ok: true, challenges: signed });
     }
 
     if (adminRequest && action === "admin-create-pairings") {
@@ -364,7 +378,8 @@ Deno.serve(async (req: Request) => {
         .order("created_at", { ascending: false })
         .limit(40);
       if (error) throw error;
-      return json({ ok: true, challenges: data || [] });
+      const signed = await Promise.all((data || []).map(signEvidence));
+      return json({ ok: true, challenges: signed });
     }
 
     if (action === "create") {
@@ -505,13 +520,8 @@ Deno.serve(async (req: Request) => {
 
       if (uploadError) throw uploadError;
 
-      const { data: publicData } = supabase.storage
-        .from("challenge-evidence")
-        .getPublicUrl(objectPath);
-
       const evidenceItem = {
         id: crypto.randomUUID(),
-        url: publicData.publicUrl,
         path: objectPath,
         file_name: fileName,
         mime_type: mimeType,
@@ -533,7 +543,9 @@ Deno.serve(async (req: Request) => {
         .single();
 
       if (error) throw error;
-      return json({ ok: true, challenge: data, evidence: evidenceItem });
+      const signedChallenge = await signEvidence(data);
+      const signedItem = (signedChallenge.evidence || []).find((item: any) => item.id === evidenceItem.id) || null;
+      return json({ ok: true, challenge: signedChallenge, evidence: signedItem });
     }
 
     if (action === "payment-sent") {
