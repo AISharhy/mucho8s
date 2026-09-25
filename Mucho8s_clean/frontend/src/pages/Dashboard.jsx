@@ -1,24 +1,52 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar, EloBadge, WinRatePill } from "@/components/shared";
-import { Users, Gamepad2, Flame, Zap, Swords, ArrowUpRight, Crown, Trophy } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Users, Gamepad2, Flame, Zap, Swords, ArrowUpRight, Crown, Trophy,
+  Radio, CircleDollarSign, UserCheck, Send, ShieldAlert, Activity, BadgeCheck
+} from "lucide-react";
+import { toast } from "sonner";
+
+const money = (c) =>
+  new Intl.NumberFormat("it-IT", {
+    style: "currency",
+    currency: c?.currency || "EUR",
+  }).format(Number(c?.amount_cents || 0) / 100);
 
 const StatCard = ({ icon: Icon, label, value, sub, testid }) => (
   <div className="card-surface rounded-2xl p-5 animate-fade-up" data-testid={testid}>
     <div className="flex items-center justify-between mb-5">
       <span className="brand-kicker">{label}</span>
-      <div className="w-9 h-9 rounded-lg bg-[#0E1219] border border-[#2D3645] flex items-center justify-center text-[#AEB7C6]">
+      <div className="w-9 h-9 rounded-lg bg-[#0F1218] border border-[#222834] flex items-center justify-center text-[#AAB1BE]">
         <Icon size={17} />
       </div>
     </div>
     <div className="font-mono text-[30px] leading-none font-bold text-white">{value}</div>
-    {sub && <div className="text-xs text-[#7E899B] mt-2 truncate">{sub}</div>}
+    {sub && <div className="text-xs text-[#7F8795] mt-2 truncate">{sub}</div>}
   </div>
 );
 
 export default function Dashboard() {
-  const { players, matches, playerMap, playerAvatars } = useData();
+  const {
+    players,
+    matches,
+    playerMap,
+    playerAvatars,
+    playerProfiles,
+    dashboardData,
+    discordSession,
+    discordPlayer,
+    createChallenge,
+    isAdmin,
+  } = useData();
+
+  const [quickTarget, setQuickTarget] = useState("");
+  const [quickAmount, setQuickAmount] = useState("5");
+  const [quickPlatform, setQuickPlatform] = useState("cmg");
+  const [quickBusy, setQuickBusy] = useState(false);
 
   const stats = useMemo(() => {
     const highest = [...players].sort((a, b) => b.currentElo - a.currentElo)[0];
@@ -32,22 +60,60 @@ export default function Dashboard() {
   );
 
   const feed = matches.slice(0, 6);
+  const activeChallenges = dashboardData?.activeChallenges || [];
+  const recentChallenges = dashboardData?.recentChallenges || [];
+  const onlineIds = new Set((dashboardData?.onlinePlayers || []).map((item) => item.player_id));
+  const onlinePlayers = players.filter((player) => onlineIds.has(player.id));
+  const season = dashboardData?.competition || { season_number: 1, season_name: "Season 1" };
+
+  const quickCandidates = players.filter((p) => p.id !== discordPlayer?.id);
+  const targetProfile = quickTarget ? playerProfiles?.[quickTarget] : null;
+
+  const quickSend = async () => {
+    if (!discordSession || !discordPlayer) {
+      toast.error("Login with Discord first");
+      return;
+    }
+    if (!quickTarget) return toast.error("Choose a player");
+    const amount = Number(String(quickAmount).replace(",", "."));
+    if (!Number.isFinite(amount) || amount <= 0) return toast.error("Enter a valid amount");
+
+    const methodLink =
+      quickPlatform === "paypal"
+        ? targetProfile?.paypalUrl
+        : quickPlatform === "revolut"
+          ? targetProfile?.revolutUrl
+          : targetProfile?.cmgUrl;
+
+    if (!methodLink) {
+      toast.error(`This player has not configured ${quickPlatform.toUpperCase()}`);
+      return;
+    }
+
+    setQuickBusy(true);
+    const challenge = await createChallenge(quickTarget, quickPlatform, amount);
+    setQuickBusy(false);
+    if (!challenge) return;
+
+    toast.success("Challenge sent");
+    setQuickTarget("");
+  };
 
   return (
     <div className="space-y-6">
       <section className="brand-card rounded-2xl p-6 sm:p-8">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-7">
           <div className="flex items-start gap-4 sm:gap-5">
-            <div className="hidden sm:flex w-16 h-16 rounded-2xl bg-[#080A0F] border border-[#333D4B] items-center justify-center shrink-0">
+            <div className="hidden sm:flex w-16 h-16 rounded-2xl bg-[#0B0D12] border border-[#282E39] items-center justify-center shrink-0">
               <img src={`${process.env.PUBLIC_URL}/logo-mark.svg`} alt="" className="w-14 h-14 object-contain" />
             </div>
             <div>
-              <div className="brand-kicker mb-2">MuchoMoney8s · Competitive ladder</div>
+              <div className="brand-kicker mb-2">MuchoMoney8s · {season.season_name || `Season ${season.season_number}`}</div>
               <h2 className="font-display text-3xl sm:text-[40px] leading-tight font-extrabold tracking-tight">
                 Build a better <span className="text-magma">8s lobby.</span>
               </h2>
-              <p className="text-[#98A2B3] mt-3 max-w-xl text-sm leading-6">
-                Balance teams, track Elo and keep every match in one clean competitive hub.
+              <p className="text-[#9199A7] mt-3 max-w-xl text-sm leading-6">
+                Balance teams, run money challs, track Elo and keep every competitive result in one place.
               </p>
             </div>
           </div>
@@ -55,7 +121,7 @@ export default function Dashboard() {
           <Link
             to="/balancer"
             data-testid="dashboard-balance-cta"
-            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-magma hover:bg-[#FB5A76] text-white font-semibold transition-all magma-glow self-start md:self-center"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-semibold transition-all magma-glow self-start md:self-center"
           >
             <Swords size={17} /> Balance Teams <ArrowUpRight size={15} />
           </Link>
@@ -69,6 +135,198 @@ export default function Dashboard() {
         <StatCard icon={Zap} label="Most Active" value={stats.mostActive?.totalMatches ?? "—"} sub={stats.mostActive?.name} testid="kpi-most-active" />
       </div>
 
+      {(activeChallenges.length > 0 || onlinePlayers.length > 0) && (
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
+          <section className="xl:col-span-3 card-surface rounded-2xl p-5" data-testid="dashboard-live-challs">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div>
+                <div className="brand-kicker mb-1">Live Now</div>
+                <h3 className="font-display font-bold text-lg flex items-center gap-2">
+                  <Radio size={17} className="text-magma" /> Live Chall
+                </h3>
+              </div>
+              <span className="text-xs font-mono text-muted-foreground">{activeChallenges.length} live</span>
+            </div>
+
+            {activeChallenges.length === 0 ? (
+              <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-8 text-center text-sm text-muted-foreground">
+                No live challs right now.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {activeChallenges.slice(0, 6).map((challenge) => {
+                  const a = playerMap[challenge.challenger_player_id];
+                  const b = playerMap[challenge.challenged_player_id];
+                  return (
+                    <Link
+                      key={challenge.id}
+                      to={discordPlayer && [challenge.challenger_player_id, challenge.challenged_player_id].includes(discordPlayer.id) ? `/challenges/${challenge.id}` : "/challenge-ranking"}
+                      className="interactive-row rounded-xl p-3 flex items-center gap-3"
+                    >
+                      <div className="relative flex -space-x-2 shrink-0">
+                        <PlayerAvatar name={a?.name || "A"} elo={a?.currentElo || 1000} size={34} avatarUrl={playerAvatars[challenge.challenger_player_id]} />
+                        <PlayerAvatar name={b?.name || "B"} elo={b?.currentElo || 1000} size={34} avatarUrl={playerAvatars[challenge.challenged_player_id]} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold truncate">
+                          {a?.name || "Player"} <span className="text-muted-foreground font-normal">vs</span> {b?.name || "Player"}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {String(challenge.platform || "").toUpperCase()} · {money(challenge)}
+                        </div>
+                      </div>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-extrabold tracking-wider text-magma">
+                        <span className="w-1.5 h-1.5 rounded-full bg-magma animate-pulse" /> LIVE
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          <section className="xl:col-span-2 card-surface rounded-2xl p-5" data-testid="dashboard-online-players">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div>
+                <div className="brand-kicker mb-1">Presence</div>
+                <h3 className="font-display font-bold text-lg flex items-center gap-2">
+                  <UserCheck size={17} className="text-emerald-400" /> Players Online
+                </h3>
+              </div>
+              <span className="text-xs font-mono text-emerald-400">{onlinePlayers.length}</span>
+            </div>
+
+            {onlinePlayers.length === 0 ? (
+              <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-8 text-center text-sm text-muted-foreground">
+                No linked players online.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-2">
+                {onlinePlayers.slice(0, 8).map((player) => (
+                  <Link key={player.id} to={`/players/${player.id}`} className="interactive-row rounded-xl p-2.5 flex items-center gap-3">
+                    <div className="relative">
+                      <PlayerAvatar name={player.name} elo={player.currentElo} size={34} avatarUrl={playerAvatars[player.id]} />
+                      <span className="absolute -right-0.5 -bottom-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#12151C]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{player.name}</div>
+                      <div className="text-[11px] text-emerald-400">Online</div>
+                    </div>
+                    <EloBadge elo={player.currentElo} />
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
+        <section className="xl:col-span-2 card-surface rounded-2xl p-5" data-testid="dashboard-quick-chall">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="brand-kicker mb-1">Fast Action</div>
+              <h3 className="font-display font-bold text-lg flex items-center gap-2">
+                <CircleDollarSign size={18} className="text-[#D5A33A]" /> Quick Chall
+              </h3>
+            </div>
+            <Send size={16} className="text-[#697181]" />
+          </div>
+
+          {!discordSession || !discordPlayer ? (
+            <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-5 text-center">
+              <div className="text-sm text-muted-foreground">Login with Discord to send a Quick Chall.</div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <select
+                value={quickTarget}
+                onChange={(e) => setQuickTarget(e.target.value)}
+                className="w-full h-11 rounded-xl bg-[#0F1218] border border-[#222834] px-3 text-sm"
+              >
+                <option value="">Choose player</option>
+                {quickCandidates.map((player) => (
+                  <option key={player.id} value={player.id}>{player.name}</option>
+                ))}
+              </select>
+
+              <div className="grid grid-cols-[1fr_120px] gap-2">
+                <select
+                  value={quickPlatform}
+                  onChange={(e) => setQuickPlatform(e.target.value)}
+                  className="h-11 rounded-xl bg-[#0F1218] border border-[#222834] px-3 text-sm"
+                >
+                  <option value="cmg">CMG</option>
+                  <option value="paypal">PayPal</option>
+                  <option value="revolut">Revolut</option>
+                </select>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                  <Input
+                    type="number"
+                    min="0.5"
+                    step="0.5"
+                    value={quickAmount}
+                    onChange={(e) => setQuickAmount(e.target.value)}
+                    className="h-11 pl-7 bg-[#0F1218] border-[#222834]"
+                  />
+                </div>
+              </div>
+
+              <Button
+                onClick={quickSend}
+                disabled={quickBusy || !quickTarget}
+                className="w-full h-11 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-extrabold"
+              >
+                <Swords size={16} className="mr-2" /> {quickBusy ? "Sending..." : "CHALL ME"}
+              </Button>
+            </div>
+          )}
+        </section>
+
+        <section className="xl:col-span-3 card-surface rounded-2xl p-5" data-testid="dashboard-challenge-activity">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div>
+              <div className="brand-kicker mb-1">Money Feed</div>
+              <h3 className="font-display font-bold text-lg">Latest Verified Challs</h3>
+            </div>
+            <Activity size={17} className="text-magma" />
+          </div>
+
+          <div className="space-y-2">
+            {recentChallenges.length === 0 ? (
+              <div className="text-sm text-muted-foreground py-8 text-center">No verified challs yet.</div>
+            ) : recentChallenges.slice(0, 6).map((challenge) => {
+              const winner = playerMap[challenge.reported_winner_player_id];
+              const loserId = challenge.challenger_player_id === challenge.reported_winner_player_id
+                ? challenge.challenged_player_id
+                : challenge.challenger_player_id;
+              const loser = playerMap[loserId];
+
+              return (
+                <div key={challenge.id} className="interactive-row flex items-center gap-3 p-3 rounded-xl">
+                  <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                    <Trophy size={15} className="text-emerald-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">
+                      <span className="text-white">{winner?.name || "Player"}</span>
+                      <span className="text-[#717988]"> beat {loser?.name || "Player"} · {money(challenge)}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {String(challenge.platform || "").toUpperCase()} · {challenge.payment_received_at ? "Payout verified" : "Payout pending"}
+                    </div>
+                  </div>
+                  {challenge.payment_received_at
+                    ? <BadgeCheck size={16} className="text-emerald-400 shrink-0" />
+                    : <ShieldAlert size={16} className="text-[#D5A33A] shrink-0" />}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <section className="lg:col-span-2 card-surface rounded-2xl p-5" data-testid="dashboard-top-players">
           <div className="flex items-center justify-between mb-4">
@@ -76,7 +334,7 @@ export default function Dashboard() {
               <div className="brand-kicker mb-1">Competition</div>
               <h3 className="font-display font-bold text-lg">Top Ranked</h3>
             </div>
-            <Trophy size={18} className="text-[#C9A45C]" />
+            <Trophy size={18} className="text-[#D5A33A]" />
           </div>
 
           <div className="space-y-1">
@@ -86,7 +344,7 @@ export default function Dashboard() {
                 key={p.id}
                 className="interactive-row flex items-center gap-3 p-2.5 rounded-xl"
               >
-                <span className={`font-mono text-xs font-bold w-5 text-center ${i === 0 ? "text-[#C9A45C]" : "text-[#697386]"}`}>
+                <span className={`font-mono text-xs font-bold w-5 text-center ${i === 0 ? "text-[#D5A33A]" : "text-[#697181]"}`}>
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <PlayerAvatar name={p.name} elo={p.currentElo} size={34} avatarUrl={playerAvatars[p.id]} />
@@ -103,7 +361,7 @@ export default function Dashboard() {
         <section className="lg:col-span-3 card-surface rounded-2xl p-5" data-testid="dashboard-activity-feed">
           <div className="mb-4">
             <div className="brand-kicker mb-1">Timeline</div>
-            <h3 className="font-display font-bold text-lg">Recent Activity</h3>
+            <h3 className="font-display font-bold text-lg">Recent 8s Activity</h3>
           </div>
 
           <div className="space-y-2">
@@ -123,18 +381,18 @@ export default function Dashboard() {
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium">
                       <span className="text-white">{m.winner === "A" ? "Alpha" : "Bravo"}</span>
-                      <span className="text-[#737E90]"> won · {m.mode || "Match"}</span>
+                      <span className="text-[#717988]"> won · {m.mode || "Match"}</span>
                     </div>
                     <div className="text-xs text-muted-foreground truncate mt-0.5">
                       {winIds.map((id) => playerMap[id]?.name).filter(Boolean).join(", ")}
                     </div>
                   </div>
                   {mvp && (
-                    <div className="hidden sm:flex text-xs items-center gap-1 text-[#C9A45C] shrink-0">
+                    <div className="hidden sm:flex text-xs items-center gap-1 text-[#D5A33A] shrink-0">
                       <Crown size={12} /> {mvp.name}
                     </div>
                   )}
-                  <span className="text-[11px] text-[#697386] shrink-0">
+                  <span className="text-[11px] text-[#697181] shrink-0">
                     {new Date(m.date).toLocaleDateString()}
                   </span>
                 </div>
@@ -143,6 +401,12 @@ export default function Dashboard() {
           </div>
         </section>
       </div>
+
+      {isAdmin && (
+        <div className="text-xs text-muted-foreground text-center">
+          Admin mode active · live dashboard updates every 15 seconds.
+        </div>
+      )}
     </div>
   );
 }
