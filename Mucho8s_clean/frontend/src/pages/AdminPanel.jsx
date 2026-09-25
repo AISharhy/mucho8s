@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useData } from "@/context/DataContext";
+import { Link } from "react-router-dom";
 import { EloBadge, PlayerAvatar } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Shield, UserPlus, Trash2, Pencil, RotateCcw, Upload, Download, LogOut, History, Database, Check, Lock, Eye, EyeOff, MessageCircle, Send, Link2 } from "lucide-react";
+import { Shield, UserPlus, Trash2, Pencil, RotateCcw, Upload, Download, LogOut, History, Database, Check, Lock, Eye, EyeOff, MessageCircle, Send, Link2, Swords, WalletCards, AlertTriangle, Flag, Trophy, ExternalLink, Users, Gamepad2 } from "lucide-react";
 import { toast } from "sonner";
 
 const Gate = () => {
@@ -81,7 +82,30 @@ const Gate = () => {
 };
 
 export default function AdminPanel() {
-  const { admin, setAdmin, players, matches, addPlayer, removePlayer, editPlayer, resetStats, importPlayers, importFullBackup, storageMode, getDiscordStatus, configureDiscordWebhook, clearDiscordWebhook, testDiscordWebhook, listDiscordAccounts, linkDiscordAccount } = useData();
+  const {
+    admin,
+    setAdmin,
+    players,
+    matches,
+    playerMap,
+    addPlayer,
+    removePlayer,
+    editPlayer,
+    resetStats,
+    importPlayers,
+    importFullBackup,
+    deleteMatch,
+    storageMode,
+    getDiscordStatus,
+    configureDiscordWebhook,
+    clearDiscordWebhook,
+    testDiscordWebhook,
+    listDiscordAccounts,
+    linkDiscordAccount,
+    listAdminChallenges,
+    adminUpdateChallenge,
+    adminDeleteChallenge,
+  } = useData();
   const [newName, setNewName] = useState("");
   const [newElo, setNewElo] = useState(1000);
   const [editing, setEditing] = useState({}); // id -> { name, elo }
@@ -91,12 +115,33 @@ export default function AdminPanel() {
   const [discordBusy, setDiscordBusy] = useState(false);
   const [discordAccounts, setDiscordAccounts] = useState([]);
   const [accountBusyId, setAccountBusyId] = useState("");
+  const [adminChallenges, setAdminChallenges] = useState([]);
+  const [challengeBusyId, setChallengeBusyId] = useState("");
+  const [challengeDrafts, setChallengeDrafts] = useState({});
+  const [editMatchData, setEditMatchData] = useState(null);
+  const [reportMatchData, setReportMatchData] = useState(null);
   const fileRef = useRef(null);
 
   const loadDiscordAccounts = useCallback(async () => {
     const list = await listDiscordAccounts();
     if (list) setDiscordAccounts(list);
   }, [listDiscordAccounts]);
+
+  const loadAdminChallenges = useCallback(async () => {
+    const list = await listAdminChallenges();
+    if (!list) return;
+    setAdminChallenges(list);
+    setChallengeDrafts((prev) => {
+      const next = { ...prev };
+      list.forEach((challenge) => {
+        next[challenge.id] = {
+          amount: (Number(challenge.amount_cents || 0) / 100).toFixed(2),
+          winnerPlayerId: challenge.reported_winner_player_id || "",
+        };
+      });
+      return next;
+    });
+  }, [listAdminChallenges]);
 
   useEffect(() => {
     let active = true;
@@ -106,11 +151,22 @@ export default function AdminPanel() {
       if (active) setDiscordConfigured(configured);
     });
     void loadDiscordAccounts();
+    void loadAdminChallenges();
 
     return () => {
       active = false;
     };
-  }, [admin, getDiscordStatus, loadDiscordAccounts]);
+  }, [admin, getDiscordStatus, loadDiscordAccounts, loadAdminChallenges]);
+
+  const challengeStats = useMemo(() => {
+    const active = adminChallenges.filter((challenge) =>
+      ["pending", "accepted", "result_pending"].includes(challenge.status)
+    ).length;
+    const disputed = adminChallenges.filter((challenge) => challenge.status === "disputed").length;
+    const completed = adminChallenges.filter((challenge) => challenge.status === "completed").length;
+    const totalStake = adminChallenges.reduce((sum, challenge) => sum + Number(challenge.amount_cents || 0), 0) / 100;
+    return { active, disputed, completed, totalStake };
+  }, [adminChallenges]);
 
   if (!admin) return <Gate />;
 
@@ -229,6 +285,52 @@ export default function AdminPanel() {
     toast.success(playerId ? "Discord account linked to player" : "Discord account unlinked");
   };
 
+  const updateAdminChallenge = async (id, updates, successMessage = "Challenge updated") => {
+    setChallengeBusyId(id);
+    const updated = await adminUpdateChallenge(id, updates);
+    setChallengeBusyId("");
+    if (!updated) return false;
+    setAdminChallenges((prev) => prev.map((item) => (item.id === id ? updated : item)));
+    setChallengeDrafts((prev) => ({
+      ...prev,
+      [id]: {
+        amount: (Number(updated.amount_cents || 0) / 100).toFixed(2),
+        winnerPlayerId: updated.reported_winner_player_id || "",
+      },
+    }));
+    toast.success(successMessage);
+    return true;
+  };
+
+  const saveChallengeAmount = async (challenge) => {
+    const raw = challengeDrafts[challenge.id]?.amount ?? "0";
+    const amount = Number(String(raw).replace(",", "."));
+    if (!Number.isFinite(amount) || amount < 0) return toast.error("Invalid amount");
+    await updateAdminChallenge(challenge.id, { amount }, "Challenge amount updated");
+  };
+
+  const setChallengeWinner = async (challenge, complete = false) => {
+    const winnerPlayerId = challengeDrafts[challenge.id]?.winnerPlayerId || "";
+    if (!winnerPlayerId) return toast.error("Choose a winner first");
+    await updateAdminChallenge(
+      challenge.id,
+      {
+        winnerPlayerId,
+        ...(complete ? { status: "completed", paymentSent: true, paymentReceived: true } : {}),
+      },
+      complete ? "Challenge completed by Admin" : "Challenge winner updated"
+    );
+  };
+
+  const removeAdminChallenge = async (id) => {
+    setChallengeBusyId(id);
+    const ok = await adminDeleteChallenge(id);
+    setChallengeBusyId("");
+    if (!ok) return;
+    setAdminChallenges((prev) => prev.filter((item) => item.id !== id));
+    toast.success("Challenge deleted");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -248,6 +350,27 @@ export default function AdminPanel() {
           <span className="text-[#D5A33A] font-semibold">Local mode:</span> player e match sono salvati solo in questo browser. Collega Supabase per avere lo stesso database su PC e telefono.
         </div>
       )}
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" data-testid="admin-overview">
+        {[
+          { label: "Players", value: players.length, icon: Users, sub: `${discordAccounts.filter((a) => a.player_id).length} Discord linked` },
+          { label: "Matches", value: matches.length, icon: Gamepad2, sub: "Recorded results" },
+          { label: "Active Chall", value: challengeStats.active, icon: Swords, sub: `${challengeStats.disputed} disputed` },
+          { label: "Challenge Volume", value: `€${challengeStats.totalStake.toFixed(2)}`, icon: WalletCards, sub: `${challengeStats.completed} completed` },
+        ].map((item) => {
+          const Icon = item.icon;
+          return (
+            <div key={item.label} className="card-surface rounded-2xl p-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{item.label}</div>
+                <Icon size={16} className="text-[#697181]" />
+              </div>
+              <div className="font-display text-2xl font-extrabold mt-2">{item.value}</div>
+              <div className="text-xs text-muted-foreground mt-1">{item.sub}</div>
+            </div>
+          );
+        })}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Add player */}
@@ -300,6 +423,253 @@ export default function AdminPanel() {
               <History size={18} className="mr-2 text-magma" /> Add Historical Match
             </Button>
           </div>
+        </div>
+      </div>
+
+      <div className="card-surface rounded-2xl p-5" data-testid="admin-match-management">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div>
+            <div className="brand-kicker mb-1">Match Control</div>
+            <h3 className="font-display font-bold text-lg">Manage Matches ({matches.length})</h3>
+            <p className="text-sm text-muted-foreground mt-1">Report, edit or delete any recorded match directly from Admin.</p>
+          </div>
+          <Button onClick={() => setHistOpen(true)} className="bg-magma hover:bg-[#ff3c4c] text-white rounded-xl">
+            <History size={15} className="mr-1.5" /> New Match
+          </Button>
+        </div>
+
+        <div className="space-y-2 max-h-[440px] overflow-y-auto pr-1">
+          {matches.map((match) => (
+            <div key={match.id} className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3 flex flex-col lg:flex-row lg:items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold text-sm">{match.game || "Game"} · {match.mode || "Mode"}</span>
+                  <span className="text-xs px-2 py-0.5 rounded-md border border-[#2A303B] text-muted-foreground">
+                    {new Date(match.date).toLocaleString()}
+                  </span>
+                  <span className="text-xs font-bold text-emerald-400">
+                    {match.winner === "A" ? "Alpha" : "Bravo"} won
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1 truncate">
+                  {match.teamA.map((id) => playerMap[id]?.name || "?").join(", ")} vs {match.teamB.map((id) => playerMap[id]?.name || "?").join(", ")}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  onClick={() => setReportMatchData(match)}
+                  variant="ghost"
+                  className="h-9 px-3 bg-magma/10 border border-magma/20 text-magma hover:bg-magma/15"
+                >
+                  <Flag size={14} className="mr-1.5" /> Report
+                </Button>
+                <Button
+                  onClick={() => setEditMatchData(match)}
+                  variant="ghost"
+                  className="h-9 px-3 bg-[#151923] border border-[#2A303B] text-white"
+                >
+                  <Pencil size={14} className="mr-1.5" /> Edit
+                </Button>
+                <ConfirmButton
+                  testid={`admin-delete-match-${match.id}`}
+                  label="Delete"
+                  icon={<Trash2 size={14} className="mr-1.5" />}
+                  compact
+                  title="Delete this match?"
+                  desc="The match will be removed and player Elo/statistics will be recalculated."
+                  onConfirm={async () => {
+                    const ok = await deleteMatch(match.id);
+                    if (ok) toast.success("Match deleted");
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+          {matches.length === 0 && (
+            <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-8 text-center text-sm text-muted-foreground">
+              No matches recorded.
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="card-surface rounded-2xl p-5" data-testid="admin-challenge-management">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div>
+            <div className="brand-kicker mb-1">Challenge Control</div>
+            <h3 className="font-display font-bold text-lg">Manage Challenges ({adminChallenges.length})</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Control status, stake, payment verification, results and disputes.
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            onClick={loadAdminChallenges}
+            className="bg-[#0F1218] border border-[#222834]"
+          >
+            <RotateCcw size={14} className="mr-1.5" /> Refresh
+          </Button>
+        </div>
+
+        <div className="space-y-3 max-h-[700px] overflow-y-auto pr-1">
+          {adminChallenges.map((challenge) => {
+            const challenger = playerMap[challenge.challenger_player_id];
+            const challenged = playerMap[challenge.challenged_player_id];
+            const draft = challengeDrafts[challenge.id] || {};
+            const busy = challengeBusyId === challenge.id;
+
+            return (
+              <div key={challenge.id} className="rounded-2xl bg-[#0F1218] border border-[#1D222C] p-4">
+                <div className="flex flex-col xl:flex-row xl:items-center gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Swords size={15} className="text-magma" />
+                      <span className="font-display font-bold">
+                        {challenger?.name || "Unknown"} vs {challenged?.name || "Unknown"}
+                      </span>
+                      <span className="text-[10px] uppercase tracking-widest px-2 py-1 rounded border border-[#2A303B] text-muted-foreground">
+                        {String(challenge.platform || "").toUpperCase()}
+                      </span>
+                      {challenge.status === "disputed" && (
+                        <span className="text-[10px] uppercase tracking-widest px-2 py-1 rounded border border-orange-500/25 bg-orange-500/5 text-orange-400">
+                          Disputed
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      #{challenge.id.slice(0, 8)} · {new Date(challenge.created_at).toLocaleString()}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-[130px_150px_170px_auto] gap-2 w-full xl:w-auto">
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Stake €</Label>
+                      <div className="flex gap-1 mt-1">
+                        <Input
+                          type="number"
+                          step="0.50"
+                          min="0"
+                          value={draft.amount ?? ""}
+                          onChange={(e) => setChallengeDrafts((prev) => ({
+                            ...prev,
+                            [challenge.id]: { ...prev[challenge.id], amount: e.target.value },
+                          }))}
+                          className="h-9 bg-[#151923] border-[#2A303B]"
+                        />
+                        <Button
+                          size="icon"
+                          disabled={busy}
+                          onClick={() => saveChallengeAmount(challenge)}
+                          className="h-9 w-9 bg-[#171B23] border border-[#2A303B]"
+                        >
+                          <Check size={14} />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Status</Label>
+                      <select
+                        value={challenge.status}
+                        disabled={busy}
+                        onChange={(e) => updateAdminChallenge(challenge.id, { status: e.target.value })}
+                        className="mt-1 h-9 w-full rounded-lg bg-[#151923] border border-[#2A303B] px-2 text-xs"
+                      >
+                        {["pending","accepted","declined","result_pending","completed","disputed","cancelled"].map((status) => (
+                          <option key={status} value={status}>{status}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">Winner</Label>
+                      <select
+                        value={draft.winnerPlayerId || ""}
+                        disabled={busy}
+                        onChange={(e) => setChallengeDrafts((prev) => ({
+                          ...prev,
+                          [challenge.id]: { ...prev[challenge.id], winnerPlayerId: e.target.value },
+                        }))}
+                        className="mt-1 h-9 w-full rounded-lg bg-[#151923] border border-[#2A303B] px-2 text-xs"
+                      >
+                        <option value="">No winner</option>
+                        <option value={challenge.challenger_player_id}>{challenger?.name || "Challenger"}</option>
+                        <option value={challenge.challenged_player_id}>{challenged?.name || "Challenged"}</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-end gap-1">
+                      <Button
+                        disabled={busy || !draft.winnerPlayerId}
+                        onClick={() => setChallengeWinner(challenge, true)}
+                        className="h-9 px-3 bg-emerald-500 hover:bg-emerald-400 text-black font-bold"
+                      >
+                        <Trophy size={14} className="mr-1" /> Complete
+                      </Button>
+                      <ConfirmButton
+                        iconOnly
+                        testid={`admin-delete-challenge-${challenge.id}`}
+                        icon={<Trash2 size={14} />}
+                        title="Delete this challenge?"
+                        desc="This permanently removes the challenge and its verification history."
+                        onConfirm={() => removeAdminChallenge(challenge.id)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3 pt-3 border-t border-[#1D222C]">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => updateAdminChallenge(challenge.id, { paymentSent: !challenge.payment_sent_at })}
+                    className={`h-10 rounded-xl border text-xs font-semibold transition-colors ${
+                      challenge.payment_sent_at
+                        ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
+                        : "bg-[#151923] border-[#2A303B] text-muted-foreground"
+                    }`}
+                  >
+                    Payment sent: {challenge.payment_sent_at ? "YES" : "NO"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => updateAdminChallenge(challenge.id, { paymentReceived: !challenge.payment_received_at })}
+                    className={`h-10 rounded-xl border text-xs font-semibold transition-colors ${
+                      challenge.payment_received_at
+                        ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
+                        : "bg-[#151923] border-[#2A303B] text-muted-foreground"
+                    }`}
+                  >
+                    Payment received: {challenge.payment_received_at ? "YES" : "NO"}
+                  </button>
+                  <div className="flex gap-2">
+                    <Button
+                      disabled={busy}
+                      onClick={() => updateAdminChallenge(challenge.id, { status: "disputed" }, "Challenge marked disputed")}
+                      variant="ghost"
+                      className="flex-1 h-10 bg-orange-500/5 border border-orange-500/20 text-orange-400 hover:bg-orange-500/10"
+                    >
+                      <AlertTriangle size={14} className="mr-1.5" /> Dispute
+                    </Button>
+                    <Link
+                      to={`/challenges/${challenge.id}`}
+                      className="h-10 px-3 rounded-xl bg-[#151923] border border-[#2A303B] text-sm text-white inline-flex items-center justify-center"
+                    >
+                      <ExternalLink size={14} />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {adminChallenges.length === 0 && (
+            <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-8 text-center text-sm text-muted-foreground">
+              No challenges yet.
+            </div>
+          )}
         </div>
       </div>
 
@@ -498,16 +868,33 @@ export default function AdminPanel() {
       </div>
 
       <RecordMatchDialog open={histOpen} onOpenChange={setHistOpen} title="Add Historical Match" />
+      <RecordMatchDialog
+        open={!!editMatchData}
+        onOpenChange={(open) => !open && setEditMatchData(null)}
+        editData={editMatchData}
+        title="Edit Match"
+      />
+      <RecordMatchDialog
+        open={!!reportMatchData}
+        onOpenChange={(open) => !open && setReportMatchData(null)}
+        editData={reportMatchData}
+        title="Report Result"
+        reportOnly
+      />
     </div>
   );
 }
 
-const ConfirmButton = ({ label, icon, title, desc, onConfirm, testid, iconOnly }) => (
+const ConfirmButton = ({ label, icon, title, desc, onConfirm, testid, iconOnly, compact }) => (
   <AlertDialog>
     <AlertDialogTrigger asChild>
       {iconOnly ? (
         <Button size="icon" variant="ghost" data-testid={testid} className="h-9 w-9 text-red-400 hover:text-red-300 hover:bg-red-500/10">
           {icon}
+        </Button>
+      ) : compact ? (
+        <Button data-testid={testid} variant="ghost" className="h-9 px-3 rounded-lg bg-red-500/5 border border-red-500/20 text-red-400 hover:text-red-300 hover:bg-red-500/10">
+          {icon} {label}
         </Button>
       ) : (
         <Button data-testid={testid} className="justify-start bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] h-14 rounded-xl">
