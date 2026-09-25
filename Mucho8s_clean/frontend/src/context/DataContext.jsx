@@ -647,18 +647,12 @@ export const DataProvider = ({ children }) => {
         return count + 1;
       }
 
-      if (
-        challenge.status === "accepted" &&
-        isChallenged &&
-        challenge.payment_sent_at &&
-        !challenge.payment_received_at
-      ) return count + 1;
+      if (challenge.status === "completed" && challenge.reported_winner_player_id) {
+        const myPlayerId = discordAccount.player_id;
+        const iWon = challenge.reported_winner_player_id === myPlayerId;
 
-      if (challenge.status === "accepted" && challenge.payment_received_at) {
-        const myReady = isChallenger
-          ? challenge.challenger_ready_at
-          : challenge.challenged_ready_at;
-        if (!myReady) return count + 1;
+        if (!iWon && !challenge.payment_sent_at) return count + 1;
+        if (iWon && challenge.payment_sent_at && !challenge.payment_received_at) return count + 1;
       }
 
       return count;
