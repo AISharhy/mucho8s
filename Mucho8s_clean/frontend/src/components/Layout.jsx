@@ -12,6 +12,8 @@ const TITLES = {
   "/leaderboard": "Ranking",
   "/statistics": "Ranking",
   "/admin": "Admin Panel",
+  "/challenges": "Challenge Inbox",
+  "/challenge-ranking": "Chall Ranking",
 };
 
 export const Layout = () => {
