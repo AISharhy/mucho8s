@@ -82,7 +82,7 @@ const Gate = () => {
 };
 
 export default function AdminPanel() {
-  const { admin, setAdmin, players, matches, addPlayer, removePlayer, editElo, editPlayerName, resetStats, importPlayers, importFullBackup, storageMode } = useData();
+  const { admin, setAdmin, players, matches, addPlayer, removePlayer, editPlayer, resetStats, importPlayers, importFullBackup, storageMode } = useData();
   const [newName, setNewName] = useState("");
   const [newElo, setNewElo] = useState(1000);
   const [editing, setEditing] = useState({}); // id -> { name, elo }
@@ -102,9 +102,8 @@ export default function AdminPanel() {
   const savePlayer = async (id) => {
     const draft = editing[id];
     if (!draft?.name?.trim()) return toast.error("Nickname cannot be empty");
-    const okName = await editPlayerName(id, draft.name.trim());
-    const okElo = await editElo(id, Number(draft.elo));
-    if (!okName || !okElo) return;
+    const ok = await editPlayer(id, { name: draft.name.trim(), currentElo: Number(draft.elo) });
+    if (!ok) return;
     setEditing((prev) => {
       const next = { ...prev };
       delete next[id];
