@@ -70,6 +70,116 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, challenges: data || [] });
     }
 
+    if (adminRequest && action === "admin-create-pairings") {
+      const rawPairings = Array.isArray(body?.pairings) ? body.pairings : [];
+      if (!rawPairings.length) return json({ error: "No pairings supplied" }, 400);
+      if (rawPairings.length > 8) return json({ error: "Too many pairings" }, 400);
+
+      const pairings = rawPairings.map((pair: any) => ({
+        challengerPlayerId: String(pair?.challengerPlayerId || "").trim(),
+        challengedPlayerId: String(pair?.challengedPlayerId || "").trim(),
+        platform: String(pair?.platform || "").trim().toLowerCase(),
+        amount: Number(pair?.amount),
+      }));
+
+      const seenPlayers = new Set<string>();
+      for (const pair of pairings) {
+        if (!pair.challengerPlayerId || !pair.challengedPlayerId || pair.challengerPlayerId === pair.challengedPlayerId) {
+          return json({ error: "Invalid pairing" }, 400);
+        }
+        if (!PLATFORM_COLUMNS[pair.platform]) return json({ error: "Invalid challenge platform" }, 400);
+        if (!Number.isFinite(pair.amount) || pair.amount <= 0) return json({ error: "Every pairing needs a valid amount" }, 400);
+        if (seenPlayers.has(pair.challengerPlayerId) || seenPlayers.has(pair.challengedPlayerId)) {
+          return json({ error: "A player can appear only once in a pairing set" }, 400);
+        }
+        seenPlayers.add(pair.challengerPlayerId);
+        seenPlayers.add(pair.challengedPlayerId);
+      }
+
+      const playerIds = [...seenPlayers];
+      const { data: accounts, error: accountError } = await supabase
+        .from("player_accounts")
+        .select("id,player_id,paypal_url,revolut_url,cmg_url")
+        .in("player_id", playerIds);
+
+      if (accountError) throw accountError;
+
+      const accountByPlayer = Object.fromEntries(
+        (accounts || []).map((account: any) => [String(account.player_id), account])
+      );
+
+      for (const playerId of playerIds) {
+        if (!accountByPlayer[playerId]) {
+          return json({ error: `Player ${playerId} has not linked Discord yet`, playerId }, 409);
+        }
+      }
+
+      const rows: any[] = [];
+
+      for (const pair of pairings) {
+        const challenger = accountByPlayer[pair.challengerPlayerId];
+        const challenged = accountByPlayer[pair.challengedPlayerId];
+        const column = PLATFORM_COLUMNS[pair.platform];
+        const challengerUrl = String(challenger?.[column] || "").trim();
+        const challengedUrl = String(challenged?.[column] || "").trim();
+
+        if (!challengerUrl || !challengedUrl) {
+          const missingPlayerId = !challengerUrl ? pair.challengerPlayerId : pair.challengedPlayerId;
+          return json({
+            error: `Player ${missingPlayerId} has not configured ${pair.platform.toUpperCase()}`,
+            playerId: missingPlayerId,
+          }, 409);
+        }
+
+        const { data: active, error: activeError } = await supabase
+          .from("player_challenges")
+          .select("id")
+          .or(
+            `and(challenger_player_id.eq.${pair.challengerPlayerId},challenged_player_id.eq.${pair.challengedPlayerId}),and(challenger_player_id.eq.${pair.challengedPlayerId},challenged_player_id.eq.${pair.challengerPlayerId})`
+          )
+          .in("status", ["pending", "accepted", "result_pending"])
+          .limit(1);
+
+        if (activeError) throw activeError;
+        if (active?.length) {
+          return json({ error: "There is already an active challenge between one of the selected pairs" }, 409);
+        }
+
+        rows.push({
+          challenger_account_id: challenger.id,
+          challenger_player_id: pair.challengerPlayerId,
+          challenged_account_id: challenged.id,
+          challenged_player_id: pair.challengedPlayerId,
+          platform: pair.platform,
+          target_url: challengedUrl,
+          challenger_payout_url: challengerUrl,
+          challenged_payout_url: challengedUrl,
+          amount_cents: Math.round(pair.amount * 100),
+          currency: "EUR",
+          status: "pending",
+          challenger_seen_status: null,
+          challenged_seen_status: null,
+          last_event: "pairing_assigned",
+          challenger_seen_event: null,
+          challenged_seen_event: null,
+        });
+      }
+
+      const { data: created, error: insertError } = await supabase
+        .from("player_challenges")
+        .insert(rows)
+        .select("*");
+
+      if (insertError) throw insertError;
+
+      await writeAudit("challenge.pairings_created", null, {
+        count: created?.length || 0,
+        player_ids: playerIds,
+      });
+
+      return json({ ok: true, challenges: created || [] });
+    }
+
     if (adminRequest && action === "admin-update") {
       const id = String(body?.id || "").trim();
       if (!id) return json({ error: "Challenge id is required" }, 400);
