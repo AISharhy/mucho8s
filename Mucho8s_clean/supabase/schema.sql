@@ -71,6 +71,10 @@ create table if not exists public.player_challenges (
   currency text not null default 'EUR',
   payment_sent_at timestamptz,
   payment_received_at timestamptz,
+  payout_disputed_at timestamptz,
+  payout_dispute_note text,
+  payout_dispute_resolved_at timestamptz,
+  payout_dispute_resolution text,
   challenger_ready_at timestamptz,
   challenged_ready_at timestamptz,
   status text not null default 'pending' check (status in (
