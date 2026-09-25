@@ -194,6 +194,13 @@ Deno.serve(async (req: Request) => {
       if (existingError) throw existingError;
       if (existing?.length) return ephemeral("There is already an active challenge between you.");
 
+      const { data: seasonConfig } = await supabase
+        .from("competition_config")
+        .select("season_number")
+        .eq("id", "main")
+        .maybeSingle();
+      const seasonNumber = Math.max(1, Number(seasonConfig?.season_number || 1));
+
       const { error: insertError } = await supabase
         .from("player_challenges")
         .insert({
@@ -208,6 +215,7 @@ Deno.serve(async (req: Request) => {
           amount_cents: Math.round(amount * 100),
           currency: "EUR",
           status: "pending",
+          season_number: seasonNumber,
           challenger_seen_status: "pending",
           challenged_seen_status: null,
           last_event: "created",
