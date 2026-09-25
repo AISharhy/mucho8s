@@ -31,19 +31,33 @@ Deno.serve(async (req: Request) => {
 
     const { data, error } = await supabase
       .from("player_accounts")
-      .select("player_id,avatar_url")
+      .select("player_id,avatar_url,paypal_url,revolut_url,cmg_url")
       .not("player_id", "is", null)
       .not("avatar_url", "is", null);
 
     if (error) throw error;
 
-    const avatars = Object.fromEntries(
+    const profiles = Object.fromEntries(
       (data || [])
-        .filter((row: any) => row?.player_id && row?.avatar_url)
-        .map((row: any) => [String(row.player_id), String(row.avatar_url)])
+        .filter((row: any) => row?.player_id)
+        .map((row: any) => [
+          String(row.player_id),
+          {
+            avatarUrl: row?.avatar_url ? String(row.avatar_url) : "",
+            paypalUrl: row?.paypal_url ? String(row.paypal_url) : "",
+            revolutUrl: row?.revolut_url ? String(row.revolut_url) : "",
+            cmgUrl: row?.cmg_url ? String(row.cmg_url) : "",
+          },
+        ])
     );
 
-    return new Response(JSON.stringify({ ok: true, avatars }), {
+    const avatars = Object.fromEntries(
+      Object.entries(profiles)
+        .filter(([, profile]: any) => profile?.avatarUrl)
+        .map(([playerId, profile]: any) => [playerId, profile.avatarUrl])
+    );
+
+    return new Response(JSON.stringify({ ok: true, avatars, profiles }), {
       status: 200,
       headers: {
         ...corsHeaders,
