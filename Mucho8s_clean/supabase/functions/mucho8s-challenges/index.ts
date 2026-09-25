@@ -127,9 +127,26 @@ Deno.serve(async (req: Request) => {
         updates.dispute_note = String(body.disputeNote || "").trim().slice(0, 240) || null;
       }
 
+      if (body?.payoutResolution !== undefined) {
+        const resolution = String(body.payoutResolution || "").trim().toLowerCase();
+        if (!["received", "reopen"].includes(resolution)) {
+          return json({ error: "Invalid payout dispute resolution" }, 400);
+        }
+        updates.payout_dispute_resolved_at = new Date().toISOString();
+        updates.payout_dispute_resolution = resolution;
+        if (resolution === "received") {
+          updates.payment_received_at = new Date().toISOString();
+          updates.last_event = "payout_received";
+        } else {
+          updates.payment_sent_at = null;
+          updates.payment_received_at = null;
+          updates.last_event = "payout_reopened";
+        }
+      }
+
       updates.challenger_seen_status = null;
       updates.challenged_seen_status = null;
-      updates.last_event = "admin_update";
+      if (body?.payoutResolution === undefined) updates.last_event = "admin_update";
       updates.challenger_seen_event = null;
       updates.challenged_seen_event = null;
 
@@ -356,6 +373,40 @@ Deno.serve(async (req: Request) => {
         .single();
 
       if (error) throw error;
+      return json({ ok: true, challenge: data });
+    }
+
+    if (action === "payout-dispute") {
+      const id = String(body?.id || "").trim();
+      const note = String(body?.note || "").trim().slice(0, 240);
+      const challenge = await getChallenge(id);
+      if (!challenge) return json({ error: "Challenge not found" }, 404);
+      if (!isParticipant(challenge)) return json({ error: "Not allowed" }, 403);
+      if (challenge.status !== "completed") return json({ error: "The result must be verified first" }, 409);
+      if (me.player_id !== challenge.reported_winner_player_id) return json({ error: "Only the winner can dispute a missing payout" }, 403);
+      if (!challenge.payment_sent_at) return json({ error: "The losing player has not marked the payout as sent yet" }, 409);
+      if (challenge.payment_received_at) return json({ error: "This payout is already confirmed as received" }, 409);
+      if (!note) return json({ error: "Add a short reason for the payout dispute" }, 400);
+      if (challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at) return json({ error: "A payout dispute is already open" }, 409);
+
+      const event = "payout_disputed";
+      const { data, error } = await supabase
+        .from("player_challenges")
+        .update({
+          payout_disputed_at: new Date().toISOString(),
+          payout_dispute_note: note,
+          payout_dispute_resolved_at: null,
+          payout_dispute_resolution: null,
+          last_event: event,
+          challenger_seen_event: challenge.challenger_account_id === user.id ? event : null,
+          challenged_seen_event: challenge.challenged_account_id === user.id ? event : null,
+        })
+        .eq("id", id)
+        .select("*")
+        .single();
+
+      if (error) throw error;
+      await writeAudit("challenge.payout_dispute", id, { winner_player_id: challenge.reported_winner_player_id, amount_cents: challenge.amount_cents, note });
       return json({ ok: true, challenge: data });
     }
 
