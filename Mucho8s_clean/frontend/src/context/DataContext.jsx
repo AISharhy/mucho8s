@@ -492,6 +492,19 @@ export const DataProvider = ({ children }) => {
     return data?.account || null;
   }, [accountRequest, discordSession]);
 
+  // Keep Discord-linked player presence fresh while the site is open.
+  useEffect(() => {
+    if (!discordSession?.access_token || !discordAccount?.player_id) return undefined;
+
+    const heartbeat = async () => {
+      await accountRequest({ action: "me" }, { session: discordSession, silent: true });
+    };
+
+    void heartbeat();
+    const timer = setInterval(heartbeat, 60 * 1000);
+    return () => clearInterval(timer);
+  }, [discordSession, discordAccount?.player_id, accountRequest]);
+
   const saveMyChallengeLinks = useCallback(async ({ paypalUrl, revolutUrl, cmgUrl }) => {
     if (!discordSession) {
       toast.error("Login with Discord first");
