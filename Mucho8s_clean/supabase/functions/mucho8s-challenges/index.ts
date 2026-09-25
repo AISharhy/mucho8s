@@ -129,6 +129,9 @@ Deno.serve(async (req: Request) => {
 
       updates.challenger_seen_status = null;
       updates.challenged_seen_status = null;
+      updates.last_event = "admin_update";
+      updates.challenger_seen_event = null;
+      updates.challenged_seen_event = null;
 
       const { data, error } = await supabase
         .from("player_challenges")
@@ -253,6 +256,9 @@ Deno.serve(async (req: Request) => {
           status: "pending",
           challenger_seen_status: "pending",
           challenged_seen_status: null,
+          last_event: "created",
+          challenger_seen_event: "created",
+          challenged_seen_event: null,
         })
         .select("*")
         .single();
@@ -281,6 +287,9 @@ Deno.serve(async (req: Request) => {
           responded_at: new Date().toISOString(),
           challenged_seen_status: nextStatus,
           challenger_seen_status: null,
+          last_event: nextStatus,
+          challenged_seen_event: nextStatus,
+          challenger_seen_event: null,
         })
         .eq("id", id)
         .eq("status", "pending")
@@ -300,7 +309,12 @@ Deno.serve(async (req: Request) => {
 
       const { data, error } = await supabase
         .from("player_challenges")
-        .update({ payment_sent_at: new Date().toISOString() })
+        .update({
+          payment_sent_at: new Date().toISOString(),
+          last_event: "payment_sent",
+          challenger_seen_event: "payment_sent",
+          challenged_seen_event: null,
+        })
         .eq("id", id)
         .select("*")
         .single();
@@ -319,7 +333,12 @@ Deno.serve(async (req: Request) => {
 
       const { data, error } = await supabase
         .from("player_challenges")
-        .update({ payment_received_at: new Date().toISOString() })
+        .update({
+          payment_received_at: new Date().toISOString(),
+          last_event: "payment_received",
+          challenged_seen_event: "payment_received",
+          challenger_seen_event: null,
+        })
         .eq("id", id)
         .select("*")
         .single();
@@ -345,7 +364,20 @@ Deno.serve(async (req: Request) => {
 
       const { data, error } = await supabase
         .from("player_challenges")
-        .update({ [field]: ready ? new Date().toISOString() : null })
+        .update({
+          [field]: ready ? new Date().toISOString() : null,
+          last_event: ready
+            ? (challenge.challenger_account_id === user.id ? "challenger_ready" : "challenged_ready")
+            : "ready_removed",
+          challenger_seen_event:
+            challenge.challenger_account_id === user.id
+              ? (ready ? "challenger_ready" : "ready_removed")
+              : null,
+          challenged_seen_event:
+            challenge.challenged_account_id === user.id
+              ? (ready ? "challenged_ready" : "ready_removed")
+              : null,
+        })
         .eq("id", id)
         .select("*")
         .single();
@@ -381,6 +413,9 @@ Deno.serve(async (req: Request) => {
           result_reported_at: new Date().toISOString(),
           challenger_seen_status: challenge.challenger_account_id === user.id ? "result_pending" : null,
           challenged_seen_status: challenge.challenged_account_id === user.id ? "result_pending" : null,
+          last_event: "result_reported",
+          challenger_seen_event: challenge.challenger_account_id === user.id ? "result_reported" : null,
+          challenged_seen_event: challenge.challenged_account_id === user.id ? "result_reported" : null,
         })
         .eq("id", id)
         .eq("status", "accepted")
@@ -416,6 +451,9 @@ Deno.serve(async (req: Request) => {
           dispute_note: decision === "dispute" ? String(body?.note || "").trim().slice(0, 240) || "Result disputed" : null,
           challenger_seen_status: challenge.challenger_account_id === user.id ? nextStatus : null,
           challenged_seen_status: challenge.challenged_account_id === user.id ? nextStatus : null,
+          last_event: nextStatus,
+          challenger_seen_event: challenge.challenger_account_id === user.id ? nextStatus : null,
+          challenged_seen_event: challenge.challenged_account_id === user.id ? nextStatus : null,
         })
         .eq("id", id)
         .eq("status", "result_pending")
@@ -436,10 +474,17 @@ Deno.serve(async (req: Request) => {
         challenge.challenger_account_id === user.id
           ? "challenger_seen_status"
           : "challenged_seen_status";
+      const eventField =
+        challenge.challenger_account_id === user.id
+          ? "challenger_seen_event"
+          : "challenged_seen_event";
 
       const { data, error } = await supabase
         .from("player_challenges")
-        .update({ [field]: challenge.status })
+        .update({
+          [field]: challenge.status,
+          [eventField]: challenge.last_event || challenge.status,
+        })
         .eq("id", id)
         .select("*")
         .single();
@@ -460,6 +505,8 @@ Deno.serve(async (req: Request) => {
         .update({
           status: "cancelled",
           challenger_seen_status: "cancelled",
+          last_event: "cancelled",
+          challenger_seen_event: "cancelled",
         })
         .eq("id", id)
         .eq("status", "pending")
