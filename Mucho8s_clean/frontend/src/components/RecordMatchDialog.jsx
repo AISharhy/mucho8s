@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 // Reusable match recorder. initialTeams = { teamA: [ids], teamB: [ids] }
 // editData = existing match object -> switches dialog to edit mode
-export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, defaultGame, title = "Record Match" }) => {
+export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, defaultGame, title = "Record Match", reportOnly = false }) => {
   const { players, recordMatch, editMatch } = useData();
   const [assign, setAssign] = useState({}); // id -> 'A' | 'B'
   const [winner, setWinner] = useState("A");
@@ -65,16 +65,45 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
 
   const valid = teamA.length === teamB.length && teamA.length >= 2 && teamA.length <= 4;
 
-  const submit = () => {
+  const submit = async () => {
     if (!valid) {
       toast.error("Both teams must be equal (2, 3 or 4 players each)");
       return;
     }
     if (editData) {
-      editMatch(editData.id, { teamA, teamB, winner, mvpId: mvpId || undefined, mode, game });
-      toast.success("Match updated — Elo & stats recalculated");
+      const payload = reportOnly
+        ? {
+            teamA: editData.teamA || [],
+            teamB: editData.teamB || [],
+            winner,
+            mvpId: mvpId || undefined,
+            mode: editData.mode || mode,
+            game: editData.game || game,
+            map: editData.map || "",
+            date: editData.date,
+          }
+        : {
+            teamA,
+            teamB,
+            winner,
+            mvpId: mvpId || undefined,
+            mode,
+            game,
+            map: editData.map || "",
+            date: editData.date,
+          };
+
+      const ok = await editMatch(editData.id, payload);
+      if (!ok) return;
+
+      toast.success(
+        reportOnly
+          ? "Result reported — Elo & stats recalculated"
+          : "Match updated — Elo & stats recalculated"
+      );
     } else {
-      recordMatch({ teamA, teamB, winner, mvpId: mvpId || undefined, map, mode, game });
+      const ok = await recordMatch({ teamA, teamB, winner, mvpId: mvpId || undefined, map, mode, game });
+      if (!ok) return;
       toast.success("Match recorded — Elo & stats updated");
     }
     onOpenChange(false);
@@ -99,6 +128,27 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
           <span className="text-muted-foreground text-xs ml-auto">Teams must be equal (2–4 each)</span>
         </div>
 
+        {reportOnly ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="rounded-xl bg-magma/5 border border-magma/20 p-3">
+              <div className="text-[10px] uppercase tracking-widest text-magma mb-2">Alpha</div>
+              <div className="space-y-1 text-sm">
+                {teamA.map((id) => (
+                  <div key={id} className="font-medium">{players.find((p) => p.id === id)?.name || "Unknown"}</div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl bg-[#D5A33A]/5 border border-[#D5A33A]/20 p-3">
+              <div className="text-[10px] uppercase tracking-widest text-[#D5A33A] mb-2">Bravo</div>
+              <div className="space-y-1 text-sm">
+                {teamB.map((id) => (
+                  <div key={id} className="font-medium">{players.find((p) => p.id === id)?.name || "Unknown"}</div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -139,6 +189,8 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
             })}
           </div>
         </div>
+          </>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
@@ -181,6 +233,8 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
               })}
             </select>
           </div>
+          {!reportOnly && (
+            <>
           <div>
             <Label className="text-xs text-muted-foreground">Mode</Label>
             <select
@@ -207,6 +261,8 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
               ))}
             </select>
           </div>
+            </>
+          )}
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
@@ -214,7 +270,7 @@ export const RecordMatchDialog = ({ open, onOpenChange, initialTeams, editData, 
             Cancel
           </Button>
           <Button onClick={submit} disabled={!valid} className="w-full sm:w-auto rounded-xl bg-magma hover:bg-[#ff3c4c] text-white" data-testid="record-save-btn">
-            <Crown size={16} className="mr-1" /> {editData ? "Update Match" : "Save Result"}
+            <Crown size={16} className="mr-1" /> {reportOnly ? "Report Result" : editData ? "Update Match" : "Save Result"}
           </Button>
         </DialogFooter>
       </DialogContent>
