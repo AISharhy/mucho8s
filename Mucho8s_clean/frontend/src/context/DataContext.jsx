@@ -174,13 +174,25 @@ export const DataProvider = ({ children }) => {
           {
             headers: {
               apikey: SUPABASE_ANON_KEY,
-              Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
             },
           },
         );
         if (!res.ok) return;
         const rows = await res.json();
-        if (rows?.[0]) applyState(rows[0]);
+        if (rows?.[0]) {
+          const remote = rows[0];
+          const localPlayers = load("players", []);
+          const localMatches = load("matches", []);
+          const cloudIsEmpty = Array.isArray(remote.players) && remote.players.length === 0
+            && Array.isArray(remote.matches) && remote.matches.length === 0;
+          if (cloudIsEmpty && Array.isArray(localPlayers) && localPlayers.length > 0) {
+            setPlayers(localPlayers.map(normalizePlayer));
+            setMatches((Array.isArray(localMatches) ? localMatches : []).map(normalizeMatch));
+            setLoaded(true);
+          } else {
+            applyState(remote);
+          }
+        }
         return;
       }
 
@@ -260,7 +272,6 @@ export const DataProvider = ({ children }) => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
             apikey: SUPABASE_ANON_KEY,
             "X-Admin-Password": admin?.password || "",
           },
