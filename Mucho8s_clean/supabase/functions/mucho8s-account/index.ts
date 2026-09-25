@@ -27,6 +27,17 @@ const getAdmin = async (req: Request) => {
   return (await sha256(supplied)) === ADMIN_PASSWORD_SHA256;
 };
 
+const cleanPublicUrl = (value: unknown) => {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  if (raw.length > 500) throw new Error("Link is too long");
+  const url = new URL(raw);
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    throw new Error("Only http/https links are allowed");
+  }
+  return url.toString();
+};
+
 const metadataFromUser = (user: any) => {
   const identity = Array.isArray(user?.identities)
     ? user.identities.find((x: any) => x?.provider === "discord") || user.identities[0]
@@ -82,7 +93,7 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const action = String(body?.action || "");
 
-    if (action === "sync" || action === "me") {
+    if (action === "sync" || action === "me" || action === "update-links") {
       const authHeader = req.headers.get("authorization") || "";
       const token = authHeader.replace(/^Bearer\s+/i, "").trim();
       if (!token) return json({ error: "Missing session" }, 401);
@@ -115,9 +126,39 @@ Deno.serve(async (req: Request) => {
         if (upsertError) throw upsertError;
       }
 
+      if (action === "update-links") {
+        if (!existing?.player_id) {
+          return json({ error: "Discord account is not linked to a player yet" }, 409);
+        }
+
+        let paypalUrl = null;
+        let revolutUrl = null;
+        let cmgUrl = null;
+
+        try {
+          paypalUrl = cleanPublicUrl(body?.paypalUrl);
+          revolutUrl = cleanPublicUrl(body?.revolutUrl);
+          cmgUrl = cleanPublicUrl(body?.cmgUrl);
+        } catch (error) {
+          return json({ error: String(error).replace(/^Error:\s*/, "") }, 400);
+        }
+
+        const { error: linkError } = await supabase
+          .from("player_accounts")
+          .update({
+            paypal_url: paypalUrl,
+            revolut_url: revolutUrl,
+            cmg_url: cmgUrl,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", user.id);
+
+        if (linkError) throw linkError;
+      }
+
       const { data: account, error: accountError } = await supabase
         .from("player_accounts")
-        .select("id,discord_id,discord_username,display_name,avatar_url,player_id,created_at,updated_at")
+        .select("id,discord_id,discord_username,display_name,avatar_url,player_id,paypal_url,revolut_url,cmg_url,created_at,updated_at")
         .eq("id", user.id)
         .maybeSingle();
       if (accountError) throw accountError;
@@ -130,7 +171,7 @@ Deno.serve(async (req: Request) => {
     if (action === "admin-list") {
       const { data, error } = await supabase
         .from("player_accounts")
-        .select("id,discord_id,discord_username,display_name,avatar_url,player_id,created_at,updated_at")
+        .select("id,discord_id,discord_username,display_name,avatar_url,player_id,paypal_url,revolut_url,cmg_url,created_at,updated_at")
         .order("created_at", { ascending: true });
       if (error) throw error;
       return json({ ok: true, accounts: data || [] });
@@ -152,7 +193,7 @@ Deno.serve(async (req: Request) => {
           updated_at: new Date().toISOString(),
         })
         .eq("id", accountId)
-        .select("id,discord_id,discord_username,display_name,avatar_url,player_id,created_at,updated_at")
+        .select("id,discord_id,discord_username,display_name,avatar_url,player_id,paypal_url,revolut_url,cmg_url,created_at,updated_at")
         .single();
 
       if (error) {
