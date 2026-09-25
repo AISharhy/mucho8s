@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar, EloBadge } from "@/components/shared";
@@ -10,11 +10,10 @@ import {
   ShieldCheck,
   Swords,
   Trophy,
-  WalletCards,
   AlertTriangle,
   Clock3,
   X,
-  Gamepad2,
+  Banknote,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,17 +25,26 @@ const money = (challenge) =>
 
 const statusLabel = {
   pending: "Waiting for acceptance",
-  accepted: "Challenge accepted",
+  accepted: "Match live",
   declined: "Challenge declined",
   result_pending: "Result verification",
-  completed: "Completed",
+  completed: "Result verified",
   disputed: "Disputed",
   cancelled: "Cancelled",
+};
+
+const profileLinkFor = (profile, platform) => {
+  if (!profile) return "";
+  if (platform === "paypal") return profile.paypalUrl || "";
+  if (platform === "revolut") return profile.revolutUrl || "";
+  if (platform === "cmg") return profile.cmgUrl || "";
+  return "";
 };
 
 export default function ChallengeMatch() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const redirectRef = useRef(false);
   const {
     challenges,
     refreshChallenges,
@@ -45,10 +53,10 @@ export default function ChallengeMatch() {
     discordPlayer,
     playerMap,
     playerAvatars,
+    playerProfiles,
     respondToChallenge,
     markChallengePaymentSent,
     confirmChallengePaymentReceived,
-    setChallengeReady,
     reportChallengeResult,
     verifyChallengeResult,
     markChallengeSeen,
@@ -74,6 +82,37 @@ export default function ChallengeMatch() {
       challenge.challenged_account_id === discordAccount.id
     );
   }, [challenge, discordAccount]);
+
+  const winnerId = challenge?.reported_winner_player_id || "";
+  const platform = String(challenge?.platform || "").toLowerCase();
+  const winnerProfile = winnerId ? playerProfiles?.[winnerId] : null;
+  const payoutUrl = challenge
+    ? winnerId === challenge.challenger_player_id
+      ? challenge.challenger_payout_url || profileLinkFor(winnerProfile, platform)
+      : challenge.challenged_payout_url || profileLinkFor(winnerProfile, platform) || challenge.target_url
+    : "";
+
+  const completedLost = Boolean(
+    challenge?.status === "completed" &&
+    winnerId &&
+    discordPlayer?.id &&
+    winnerId !== discordPlayer.id
+  );
+
+  useEffect(() => {
+    if (!challenge || !completedLost || !payoutUrl || challenge.payment_sent_at || redirectRef.current) return;
+
+    const key = `m8-payout-redirect-${challenge.id}`;
+    if (sessionStorage.getItem(key)) return;
+
+    redirectRef.current = true;
+    sessionStorage.setItem(key, "1");
+    const timer = setTimeout(() => {
+      window.location.assign(payoutUrl);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [challenge, completedLost, payoutUrl]);
 
   if (!discordSession || !discordPlayer) {
     return (
@@ -113,53 +152,39 @@ export default function ChallengeMatch() {
   const challenged = playerMap[challenge.challenged_player_id];
   const isChallenger = challenge.challenger_account_id === discordAccount.id;
   const opponent = isChallenger ? challenged : challenger;
-  const winner = playerMap[challenge.reported_winner_player_id];
+  const winner = playerMap[winnerId];
   const iReported = challenge.reporter_account_id === discordAccount.id;
-  const paymentReady = Boolean(challenge.payment_received_at);
-  const myReady = Boolean(isChallenger ? challenge.challenger_ready_at : challenge.challenged_ready_at);
-  const opponentReady = Boolean(isChallenger ? challenge.challenged_ready_at : challenge.challenger_ready_at);
-  const bothReady = myReady && opponentReady;
-  const platform = String(challenge.platform || "").toUpperCase();
-  const completedWon = challenge.status === "completed" && challenge.reported_winner_player_id === discordPlayer.id;
+  const completedWon = challenge.status === "completed" && winnerId === discordPlayer.id;
+  const platformLabel = String(challenge.platform || "").toUpperCase();
 
   const respond = async (decision) => {
     setBusy(decision);
     const updated = await respondToChallenge(challenge.id, decision);
     setBusy("");
     if (!updated) return;
-    if (decision === "accept") toast.success("Challenge accepted");
+
+    if (decision === "accept") toast.success("Challenge accepted — match started");
     else toast("Challenge declined");
   };
 
-  const markSent = async () => {
-    setBusy("payment-sent");
-    const updated = await markChallengePaymentSent(challenge.id);
-    setBusy("");
-    if (updated) toast.success("Payment marked as sent");
-  };
-
-  const confirmReceived = async () => {
-    setBusy("payment-received");
-    const updated = await confirmChallengePaymentReceived(challenge.id);
-    setBusy("");
-    if (updated) toast.success(`${money(challenge)} payment confirmed`);
-  };
-
-  const toggleReady = async () => {
-    setBusy("ready");
-    const updated = await setChallengeReady(challenge.id, !myReady);
-    setBusy("");
-    if (updated) toast.success(!myReady ? "You are READY" : "Ready removed");
-  };
-
-  const reportWinner = async (winnerPlayerId) => {
-    setBusy(`winner:${winnerPlayerId}`);
-    const updated = await reportChallengeResult(challenge.id, winnerPlayerId);
+  const reportWinner = async (reportedWinnerId) => {
+    setBusy(`winner:${reportedWinnerId}`);
+    const updated = await reportChallengeResult(challenge.id, reportedWinnerId);
     setBusy("");
     if (updated) toast.success("Result sent for opponent verification");
   };
 
   const verify = async (decision) => {
+    const loserAfterConfirm =
+      decision === "confirm" &&
+      challenge.reported_winner_player_id &&
+      challenge.reported_winner_player_id !== discordPlayer.id;
+
+    let payoutTab = null;
+    if (loserAfterConfirm && payoutUrl) {
+      payoutTab = window.open("about:blank", "_blank");
+    }
+
     setBusy(decision);
     const updated = await verifyChallengeResult(
       challenge.id,
@@ -167,15 +192,38 @@ export default function ChallengeMatch() {
       decision === "dispute" ? disputeNote : "",
     );
     setBusy("");
-    if (!updated) return;
+
+    if (!updated) {
+      if (payoutTab) payoutTab.close();
+      return;
+    }
 
     if (decision === "confirm") {
       toast.success("Result verified");
+      if (payoutTab && payoutUrl) {
+        sessionStorage.setItem(`m8-payout-redirect-${challenge.id}`, "1");
+        payoutTab.location.href = payoutUrl;
+      }
     } else {
+      if (payoutTab) payoutTab.close();
       toast.error("Result disputed — Admin can review it");
       setShowDispute(false);
       setDisputeNote("");
     }
+  };
+
+  const markPayoutSent = async () => {
+    setBusy("payout-sent");
+    const updated = await markChallengePaymentSent(challenge.id);
+    setBusy("");
+    if (updated) toast.success("Payment marked as sent");
+  };
+
+  const confirmPayoutReceived = async () => {
+    setBusy("payout-received");
+    const updated = await confirmChallengePaymentReceived(challenge.id);
+    setBusy("");
+    if (updated) toast.success(`${money(challenge)} received and confirmed`);
   };
 
   return (
@@ -201,7 +249,7 @@ export default function ChallengeMatch() {
           : ""
       }`}>
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-6">
-          <div className="flex flex-col sm:flex-row items-center sm:items-center gap-3 min-w-0">
+          <div className="flex flex-col sm:flex-row items-center gap-3 min-w-0">
             <PlayerAvatar
               name={challenger?.name || "Player"}
               elo={challenger?.currentElo || 1000}
@@ -217,7 +265,7 @@ export default function ChallengeMatch() {
           <div className="text-center">
             <Swords size={22} className="text-magma mx-auto" />
             <div className="font-display text-3xl font-black mt-1">{money(challenge)}</div>
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">{platform}</div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">{platformLabel}</div>
           </div>
 
           <div className="flex flex-col-reverse sm:flex-row items-center sm:justify-end gap-3 min-w-0">
@@ -253,14 +301,14 @@ export default function ChallengeMatch() {
             <div className="text-center py-4">
               <Clock3 size={28} className="text-[#D5A33A] mx-auto mb-3" />
               <h3 className="font-display text-xl font-bold">Waiting for {challenged?.name || "player"}</h3>
-              <p className="text-sm text-muted-foreground mt-1">They must accept the {money(challenge)} challenge first.</p>
+              <p className="text-sm text-muted-foreground mt-1">They must accept the {money(challenge)} challenge.</p>
             </div>
           ) : (
             <div>
-              <div className="brand-kicker mb-1">Step 1</div>
-              <h3 className="font-display text-xl font-bold">Accept this challenge?</h3>
+              <div className="brand-kicker mb-1">Incoming Chall</div>
+              <h3 className="font-display text-xl font-bold">Accept this match?</h3>
               <p className="text-sm text-muted-foreground mt-1 mb-4">
-                {challenger?.name || "Player"} challenged you for {money(challenge)} via {platform}.
+                {challenger?.name || "Player"} challenged you for {money(challenge)} via {platformLabel}.
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <Button
@@ -275,7 +323,7 @@ export default function ChallengeMatch() {
                   onClick={() => respond("accept")}
                   className="h-12 bg-magma hover:bg-[#ff3c4c] text-white font-bold"
                 >
-                  <Check size={16} className="mr-2" /> Accept
+                  <Check size={16} className="mr-2" /> Accept & Start Match
                 </Button>
               </div>
             </div>
@@ -284,147 +332,32 @@ export default function ChallengeMatch() {
       )}
 
       {challenge.status === "accepted" && (
-        <>
-          <div className="card-surface rounded-2xl p-5">
-            <div className="flex items-start justify-between gap-4 mb-4">
-              <div>
-                <div className="brand-kicker mb-1">Step 2 · Payment</div>
-                <h3 className="font-display text-xl font-bold">{money(challenge)}</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Confirm the payment manually before the Ready Check.
-                </p>
-              </div>
-              <WalletCards size={20} className={paymentReady ? "text-emerald-400" : "text-[#697181]"} />
-            </div>
-
-            {isChallenger ? (
-              <div className="flex flex-col sm:flex-row gap-3">
-                {challenge.target_url && (
-                  <a
-                    href={challenge.target_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="h-11 px-4 rounded-xl bg-[#171B23] border border-[#2A303B] text-white text-sm font-semibold inline-flex items-center justify-center gap-2"
-                  >
-                    Open {platform} <ExternalLink size={14} />
-                  </a>
-                )}
-                {!challenge.payment_sent_at ? (
-                  <Button
-                    onClick={markSent}
-                    disabled={Boolean(busy)}
-                    className="h-11 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-bold"
-                  >
-                    <Check size={16} className="mr-2" /> I SENT {money(challenge)}
-                  </Button>
-                ) : (
-                  <div className="h-11 px-4 rounded-xl bg-[#D5A33A]/10 border border-[#D5A33A]/25 text-[#D5A33A] text-sm font-semibold flex items-center">
-                    Waiting for payment confirmation
-                  </div>
-                )}
-              </div>
-            ) : !challenge.payment_sent_at ? (
-              <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-4 text-sm text-muted-foreground">
-                Waiting for {challenger?.name || "the challenger"} to mark the payment as sent.
-              </div>
-            ) : !challenge.payment_received_at ? (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                <div className="flex-1 rounded-xl bg-[#0F1218] border border-[#1D222C] p-4">
-                  <div className="text-xs text-muted-foreground">Check your {platform} account.</div>
-                  <div className="font-display text-2xl font-extrabold mt-1">{money(challenge)}</div>
-                </div>
-                <Button
-                  onClick={confirmReceived}
-                  disabled={Boolean(busy)}
-                  className="h-12 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold"
-                >
-                  <ShieldCheck size={17} className="mr-2" /> PAYMENT RECEIVED
-                </Button>
-              </div>
-            ) : (
-              <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/25 p-4 text-emerald-400 font-semibold flex items-center gap-2">
-                <ShieldCheck size={18} /> Payment verified
-              </div>
-            )}
+        <div className="card-surface rounded-2xl p-5 border-magma/20">
+          <div className="text-center py-2">
+            <div className="brand-kicker mb-1">Match Live</div>
+            <h3 className="font-display text-2xl font-extrabold">PLAY THE CHALLENGE</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              When the match ends, report the winner below.
+            </p>
           </div>
 
-          {paymentReady && (
-            <div className="card-surface rounded-2xl p-5">
-              <div className="brand-kicker mb-1">Step 3 · Ready Check</div>
-              <h3 className="font-display text-xl font-bold">Both players must be ready</h3>
-
-              <div className="grid grid-cols-2 gap-3 mt-4">
-                <div className={`rounded-xl border p-4 text-center ${
-                  challenge.challenger_ready_at
-                    ? "bg-emerald-500/10 border-emerald-500/25"
-                    : "bg-[#0F1218] border-[#1D222C]"
-                }`}>
-                  <div className="font-semibold">{challenger?.name || "Challenger"}</div>
-                  <div className={`text-xs font-bold mt-1 ${challenge.challenger_ready_at ? "text-emerald-400" : "text-muted-foreground"}`}>
-                    {challenge.challenger_ready_at ? "READY" : "NOT READY"}
-                  </div>
-                </div>
-                <div className={`rounded-xl border p-4 text-center ${
-                  challenge.challenged_ready_at
-                    ? "bg-emerald-500/10 border-emerald-500/25"
-                    : "bg-[#0F1218] border-[#1D222C]"
-                }`}>
-                  <div className="font-semibold">{challenged?.name || "Challenged"}</div>
-                  <div className={`text-xs font-bold mt-1 ${challenge.challenged_ready_at ? "text-emerald-400" : "text-muted-foreground"}`}>
-                    {challenge.challenged_ready_at ? "READY" : "NOT READY"}
-                  </div>
-                </div>
-              </div>
-
-              <Button
-                onClick={toggleReady}
-                disabled={Boolean(busy)}
-                className={`w-full h-12 mt-3 rounded-xl font-extrabold ${
-                  myReady
-                    ? "bg-[#171B23] border border-[#2A303B] text-white hover:bg-white/[0.05]"
-                    : "bg-emerald-500 hover:bg-emerald-400 text-black"
-                }`}
-              >
-                <Gamepad2 size={17} className="mr-2" />
-                {myReady ? "I'M NOT READY" : "I'M READY"}
-              </Button>
-
-              {bothReady && (
-                <div className="mt-3 rounded-xl bg-magma/10 border border-magma/25 p-4 text-center">
-                  <div className="brand-kicker mb-1">Match Ready</div>
-                  <div className="font-display text-xl font-extrabold">PLAY THE CHALLENGE</div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {paymentReady && bothReady && (
-            <div className="card-surface rounded-2xl p-5">
-              <div className="brand-kicker mb-1">Step 4 · Result</div>
-              <h3 className="font-display text-xl font-bold">Who won?</h3>
-              <p className="text-sm text-muted-foreground mt-1 mb-4">
-                The other player must verify the result before it becomes official.
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Button
-                  onClick={() => reportWinner(discordPlayer.id)}
-                  disabled={Boolean(busy)}
-                  className="h-14 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold"
-                >
-                  <Trophy size={18} className="mr-2" /> I WON
-                </Button>
-                <Button
-                  onClick={() => reportWinner(opponent?.id)}
-                  disabled={Boolean(busy) || !opponent?.id}
-                  className="h-14 rounded-xl bg-[#171B23] border border-[#2A303B] text-white font-bold hover:bg-white/[0.05]"
-                >
-                  {opponent?.name || "Opponent"} WON
-                </Button>
-              </div>
-            </div>
-          )}
-        </>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5">
+            <Button
+              onClick={() => reportWinner(discordPlayer.id)}
+              disabled={Boolean(busy)}
+              className="h-14 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold"
+            >
+              <Trophy size={18} className="mr-2" /> I WON
+            </Button>
+            <Button
+              onClick={() => reportWinner(opponent?.id)}
+              disabled={Boolean(busy) || !opponent?.id}
+              className="h-14 rounded-xl bg-[#171B23] border border-[#2A303B] text-white font-bold hover:bg-white/[0.05]"
+            >
+              {opponent?.name || "Opponent"} WON
+            </Button>
+          </div>
+        </div>
       )}
 
       {challenge.status === "result_pending" && (
@@ -451,7 +384,7 @@ export default function ChallengeMatch() {
                 disabled={Boolean(busy)}
                 className="h-12 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold"
               >
-                <ShieldCheck size={16} className="mr-2" /> Confirm
+                <ShieldCheck size={16} className="mr-2" /> Confirm Result
               </Button>
             </div>
           )}
@@ -488,18 +421,87 @@ export default function ChallengeMatch() {
       )}
 
       {challenge.status === "completed" && (
-        <div className={`card-surface rounded-2xl p-7 text-center ${
-          completedWon ? "border-emerald-500/25" : "border-red-500/25"
-        }`}>
-          <Trophy size={38} className={`${completedWon ? "text-emerald-400" : "text-red-400"} mx-auto mb-3`} />
-          <div className="brand-kicker mb-1">Official Result</div>
-          <h3 className={`font-display text-3xl font-black ${completedWon ? "text-emerald-400" : "text-red-400"}`}>
-            {completedWon ? "VINTA" : "PERSA"}
-          </h3>
-          <p className="text-sm text-muted-foreground mt-2">
-            {winner?.name || "Player"} won · {money(challenge)} · result verified.
-          </p>
-        </div>
+        <>
+          <div className={`card-surface rounded-2xl p-7 text-center ${
+            completedWon ? "border-emerald-500/25" : "border-red-500/25"
+          }`}>
+            <Trophy size={38} className={`${completedWon ? "text-emerald-400" : "text-red-400"} mx-auto mb-3`} />
+            <div className="brand-kicker mb-1">Official Result</div>
+            <h3 className={`font-display text-3xl font-black ${completedWon ? "text-emerald-400" : "text-red-400"}`}>
+              {completedWon ? "VINTA" : "PERSA"}
+            </h3>
+            <p className="text-sm text-muted-foreground mt-2">
+              {winner?.name || "Player"} won · {money(challenge)} · verified result.
+            </p>
+          </div>
+
+          <div className="card-surface rounded-2xl p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="brand-kicker mb-1">Payout</div>
+                <h3 className="font-display text-xl font-bold">
+                  {challenge.payment_received_at ? "Payment completed" : `Pay ${money(challenge)} to the winner`}
+                </h3>
+              </div>
+              <Banknote size={20} className={challenge.payment_received_at ? "text-emerald-400" : "text-[#D5A33A]"} />
+            </div>
+
+            {challenge.payment_received_at ? (
+              <div className="mt-4 rounded-xl bg-emerald-500/10 border border-emerald-500/25 p-4 text-emerald-400 font-semibold flex items-center gap-2">
+                <ShieldCheck size={18} /> {winner?.name || "Winner"} confirmed the payment received.
+              </div>
+            ) : completedWon ? (
+              challenge.payment_sent_at ? (
+                <div className="mt-4">
+                  <div className="rounded-xl bg-[#D5A33A]/10 border border-[#D5A33A]/25 p-4 text-[#D5A33A] text-sm font-semibold">
+                    The losing player marked {money(challenge)} as paid.
+                  </div>
+                  <Button
+                    onClick={confirmPayoutReceived}
+                    disabled={Boolean(busy)}
+                    className="w-full h-12 mt-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold"
+                  >
+                    <ShieldCheck size={17} className="mr-2" /> CONFIRM PAYMENT RECEIVED
+                  </Button>
+                </div>
+              ) : (
+                <div className="mt-4 rounded-xl bg-[#0F1218] border border-[#1D222C] p-4 text-sm text-muted-foreground">
+                  Waiting for {opponent?.name || "the losing player"} to pay {money(challenge)} via {platformLabel}.
+                </div>
+              )
+            ) : challenge.payment_sent_at ? (
+              <div className="mt-4 rounded-xl bg-[#D5A33A]/10 border border-[#D5A33A]/25 p-4 text-[#D5A33A] font-semibold">
+                Payment marked as sent. Waiting for {winner?.name || "the winner"} to confirm receipt.
+              </div>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {payoutUrl ? (
+                  <a
+                    href={payoutUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full h-12 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-extrabold inline-flex items-center justify-center gap-2"
+                  >
+                    PAY {winner?.name || "WINNER"} · {money(challenge)} ON {platformLabel}
+                    <ExternalLink size={15} />
+                  </a>
+                ) : (
+                  <div className="rounded-xl bg-red-500/10 border border-red-500/25 p-4 text-red-300 text-sm">
+                    The winner has not configured a {platformLabel} payout link. Contact Admin.
+                  </div>
+                )}
+
+                <Button
+                  onClick={markPayoutSent}
+                  disabled={Boolean(busy)}
+                  className="w-full h-12 rounded-xl bg-[#171B23] border border-[#2A303B] text-white font-bold hover:bg-white/[0.05]"
+                >
+                  <Check size={16} className="mr-2" /> I HAVE PAID {money(challenge)}
+                </Button>
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {challenge.status === "disputed" && (
