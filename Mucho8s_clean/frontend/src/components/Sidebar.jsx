@@ -38,7 +38,7 @@ const NavItem = ({ item, onNavigate, badge = 0 }) => {
         `group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all border-l-2 ${
           isActive
             ? "bg-white/[0.045] text-white border-magma"
-            : "text-[#8D95A4] hover:text-white hover:bg-white/[0.03] border-transparent"
+            : "text-[#929BAD] hover:text-white hover:bg-white/[0.03] border-transparent"
         }`
       }
     >
@@ -67,8 +67,8 @@ const NavSection = ({ label, items, onNavigate, badges = {} }) => (
 );
 
 const Brand = () => (
-  <div className="flex items-center gap-2.5 px-4 h-[72px] border-b border-[#1D222C]">
-    <div className="w-10 h-10 rounded-xl bg-[#0B0D12] border border-[#262C37] flex items-center justify-center overflow-hidden shrink-0">
+  <div className="flex items-center gap-2.5 px-4 h-[72px] border-b border-[#252C39]">
+    <div className="w-10 h-10 rounded-xl bg-[#080A0F] border border-[#313B4A] flex items-center justify-center overflow-hidden shrink-0">
       <img
         src={`${process.env.PUBLIC_URL}/logo-mark.svg`}
         alt="MuchoMoney8s"
@@ -79,7 +79,7 @@ const Brand = () => (
       <div className="font-display font-extrabold text-[14px] tracking-tight whitespace-nowrap">
         MUCHO<span className="text-magma">MONEY</span><span className="text-white">8s</span>
       </div>
-      <div className="text-[9px] uppercase tracking-[0.2em] text-[#697181] mt-1">Competitive COD 8s</div>
+      <div className="text-[9px] uppercase tracking-[0.2em] text-[#697386] mt-1">Competitive COD 8s</div>
     </div>
   </div>
 );
@@ -123,17 +123,17 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
       </div>
 
       <div className="px-2 pb-3">
-        <div className="h-px bg-[#1C202E] mb-3" />
+        <div className="h-px bg-[#222938] mb-3" />
         <NavItem item={ADMIN_NAV} onNavigate={onNavigate} />
       </div>
 
-      <div className={`border-t border-[#1C202E] ${mobile ? "px-3 py-4" : "px-3 py-3"}`}>
+      <div className={`border-t border-[#222938] ${mobile ? "px-3 py-4" : "px-3 py-3"}`}>
         {discordLoading ? (
-          <div className="h-11 rounded-xl bg-[#0F1218] border border-[#1D222C] flex items-center px-3 text-xs text-muted-foreground">
+          <div className="h-11 rounded-xl bg-[#0E1219] border border-[#252C39] flex items-center px-3 text-xs text-muted-foreground">
             Checking Discord session...
           </div>
         ) : discordSession ? (
-          <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-2.5">
+          <div className="rounded-xl bg-[#0E1219] border border-[#252C39] p-2.5">
             <div className="flex items-center gap-2.5">
               {discordAccount?.avatar_url ? (
                 <img
@@ -143,21 +143,21 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
                 />
               ) : (
                 <div className="w-8 h-8 rounded-lg bg-[#5865F2]/15 border border-[#5865F2]/30 flex items-center justify-center shrink-0">
-                  <MessageCircle size={15} className="text-[#8E98FF]" />
+                  <MessageCircle size={15} className="text-[#9AA4FF]" />
                 </div>
               )}
               <div className="min-w-0 flex-1">
                 <div className="text-xs font-semibold text-white truncate" data-testid="sidebar-player-account">
                   {discordName}
                 </div>
-                <div className={`text-[10px] truncate ${linked ? "text-emerald-400" : "text-[#D5A33A]"}`}>
+                <div className={`text-[10px] truncate ${linked ? "text-emerald-400" : "text-[#C9A45C]"}`}>
                   {linked ? `Linked · ${discordPlayer.currentElo} Elo` : "Waiting for player link"}
                 </div>
               </div>
               <button
                 type="button"
                 onClick={signOutDiscord}
-                className="w-8 h-8 rounded-lg text-[#697181] hover:text-white hover:bg-white/5 flex items-center justify-center"
+                className="w-8 h-8 rounded-lg text-[#697386] hover:text-white hover:bg-white/5 flex items-center justify-center"
                 aria-label="Logout Discord"
                 data-testid="discord-logout-btn"
               >
@@ -190,7 +190,7 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
 };
 
 export const Sidebar = () => (
-  <aside className="hidden lg:flex flex-col w-56 fixed inset-y-0 left-0 bg-[#0D0F14]/95 backdrop-blur-xl border-r border-[#1D222C] z-30">
+  <aside className="hidden lg:flex flex-col w-56 fixed inset-y-0 left-0 bg-[#0A0D13]/95 backdrop-blur-xl border-r border-[#252C39] z-30">
     <Brand />
     <MenuContent />
   </aside>
@@ -221,7 +221,7 @@ export const MobileNav = () => {
         createPortal(
           <div className="lg:hidden fixed inset-0 z-[100]">
             <div className="absolute inset-0 bg-black/75" onClick={() => setOpen(false)} />
-            <div className="absolute top-0 bottom-0 left-0 w-64 max-w-[86vw] bg-[#0D0F14] border-r border-[#1D222C] flex flex-col shadow-2xl">
+            <div className="absolute top-0 bottom-0 left-0 w-64 max-w-[86vw] bg-[#0A0D13] border-r border-[#252C39] flex flex-col shadow-2xl">
               <div className="relative shrink-0">
                 <Brand />
                 <button
