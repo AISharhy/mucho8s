@@ -65,6 +65,10 @@ create table if not exists public.player_challenges (
   challenged_player_id text not null,
   platform text not null check (platform in ('paypal','revolut','cmg')),
   target_url text not null,
+  amount_cents integer not null default 0 check (amount_cents >= 0),
+  currency text not null default 'EUR',
+  payment_sent_at timestamptz,
+  payment_received_at timestamptz,
   status text not null default 'pending' check (status in (
     'pending','accepted','declined','result_pending','completed','disputed','cancelled'
   )),
