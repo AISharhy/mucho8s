@@ -129,9 +129,9 @@ export default function ChallengeMatch() {
   if (!challenge) {
     return (
       <div className="card-surface rounded-2xl p-10 text-center max-w-xl mx-auto">
-        <Clock3 size={32} className="text-[#697181] mx-auto mb-3" />
+        <Clock3 size={32} className="text-[#697386] mx-auto mb-3" />
         <h2 className="font-display text-xl font-bold">Loading challenge...</h2>
-        <Button onClick={() => refreshChallenges()} className="mt-4 bg-[#171B23] border border-[#2A303B]">
+        <Button onClick={() => refreshChallenges()} className="mt-4 bg-[#1A202B] border border-[#35404F]">
           Refresh
         </Button>
       </div>
@@ -236,7 +236,7 @@ export default function ChallengeMatch() {
         >
           <ArrowLeft size={16} /> Challenge Inbox
         </button>
-        <div className="text-xs uppercase tracking-[0.18em] text-[#697181]">
+        <div className="text-xs uppercase tracking-[0.18em] text-[#697386]">
           #{challenge.id.slice(0, 8)}
         </div>
       </div>
@@ -288,7 +288,7 @@ export default function ChallengeMatch() {
               {completedWon ? "VINTA" : "PERSA"}
             </div>
           ) : (
-            <span className="inline-flex h-9 items-center px-3 rounded-xl bg-[#0F1218] border border-[#242A35] text-xs font-bold uppercase tracking-wider">
+            <span className="inline-flex h-9 items-center px-3 rounded-xl bg-[#0E1219] border border-[#303947] text-xs font-bold uppercase tracking-wider">
               {statusLabel[challenge.status] || challenge.status}
             </span>
           )}
@@ -299,7 +299,7 @@ export default function ChallengeMatch() {
         <div className="card-surface rounded-2xl p-5">
           {isChallenger ? (
             <div className="text-center py-4">
-              <Clock3 size={28} className="text-[#D5A33A] mx-auto mb-3" />
+              <Clock3 size={28} className="text-[#C9A45C] mx-auto mb-3" />
               <h3 className="font-display text-xl font-bold">Waiting for {challenged?.name || "player"}</h3>
               <p className="text-sm text-muted-foreground mt-1">They must accept the {money(challenge)} challenge.</p>
             </div>
@@ -321,7 +321,7 @@ export default function ChallengeMatch() {
                 <Button
                   disabled={Boolean(busy)}
                   onClick={() => respond("accept")}
-                  className="h-12 bg-magma hover:bg-[#ff3c4c] text-white font-bold"
+                  className="h-12 bg-magma hover:bg-[#FB5A76] text-white font-bold"
                 >
                   <Check size={16} className="mr-2" /> Accept & Start Match
                 </Button>
@@ -352,7 +352,7 @@ export default function ChallengeMatch() {
             <Button
               onClick={() => reportWinner(opponent?.id)}
               disabled={Boolean(busy) || !opponent?.id}
-              className="h-14 rounded-xl bg-[#171B23] border border-[#2A303B] text-white font-bold hover:bg-white/[0.05]"
+              className="h-14 rounded-xl bg-[#1A202B] border border-[#35404F] text-white font-bold hover:bg-white/[0.05]"
             >
               {opponent?.name || "Opponent"} WON
             </Button>
@@ -397,13 +397,13 @@ export default function ChallengeMatch() {
                 onChange={(e) => setDisputeNote(e.target.value)}
                 maxLength={240}
                 placeholder="Example: I won the match, the reported result is incorrect."
-                className="mt-2 w-full min-h-24 rounded-xl bg-[#0F1218] border border-[#2A303B] px-3 py-2 text-sm outline-none focus:border-orange-500/40"
+                className="mt-2 w-full min-h-24 rounded-xl bg-[#0E1219] border border-[#35404F] px-3 py-2 text-sm outline-none focus:border-orange-500/40"
               />
               <div className="flex gap-2 mt-3">
                 <Button
                   variant="ghost"
                   onClick={() => setShowDispute(false)}
-                  className="flex-1 bg-[#171B23] border border-[#2A303B]"
+                  className="flex-1 bg-[#1A202B] border border-[#35404F]"
                 >
                   Cancel
                 </Button>
@@ -443,7 +443,7 @@ export default function ChallengeMatch() {
                   {challenge.payment_received_at ? "Payment completed" : `Pay ${money(challenge)} to the winner`}
                 </h3>
               </div>
-              <Banknote size={20} className={challenge.payment_received_at ? "text-emerald-400" : "text-[#D5A33A]"} />
+              <Banknote size={20} className={challenge.payment_received_at ? "text-emerald-400" : "text-[#C9A45C]"} />
             </div>
 
             {challenge.payment_received_at ? (
@@ -453,7 +453,7 @@ export default function ChallengeMatch() {
             ) : completedWon ? (
               challenge.payment_sent_at ? (
                 <div className="mt-4">
-                  <div className="rounded-xl bg-[#D5A33A]/10 border border-[#D5A33A]/25 p-4 text-[#D5A33A] text-sm font-semibold">
+                  <div className="rounded-xl bg-[#C9A45C]/10 border border-[#C9A45C]/25 p-4 text-[#C9A45C] text-sm font-semibold">
                     The losing player marked {money(challenge)} as paid.
                   </div>
                   <Button
@@ -465,12 +465,12 @@ export default function ChallengeMatch() {
                   </Button>
                 </div>
               ) : (
-                <div className="mt-4 rounded-xl bg-[#0F1218] border border-[#1D222C] p-4 text-sm text-muted-foreground">
+                <div className="mt-4 rounded-xl bg-[#0E1219] border border-[#252C39] p-4 text-sm text-muted-foreground">
                   Waiting for {opponent?.name || "the losing player"} to pay {money(challenge)} via {platformLabel}.
                 </div>
               )
             ) : challenge.payment_sent_at ? (
-              <div className="mt-4 rounded-xl bg-[#D5A33A]/10 border border-[#D5A33A]/25 p-4 text-[#D5A33A] font-semibold">
+              <div className="mt-4 rounded-xl bg-[#C9A45C]/10 border border-[#C9A45C]/25 p-4 text-[#C9A45C] font-semibold">
                 Payment marked as sent. Waiting for {winner?.name || "the winner"} to confirm receipt.
               </div>
             ) : (
@@ -480,7 +480,7 @@ export default function ChallengeMatch() {
                     href={payoutUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full h-12 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-extrabold inline-flex items-center justify-center gap-2"
+                    className="w-full h-12 rounded-xl bg-magma hover:bg-[#FB5A76] text-white font-extrabold inline-flex items-center justify-center gap-2"
                   >
                     PAY {winner?.name || "WINNER"} · {money(challenge)} ON {platformLabel}
                     <ExternalLink size={15} />
@@ -494,7 +494,7 @@ export default function ChallengeMatch() {
                 <Button
                   onClick={markPayoutSent}
                   disabled={Boolean(busy)}
-                  className="w-full h-12 rounded-xl bg-[#171B23] border border-[#2A303B] text-white font-bold hover:bg-white/[0.05]"
+                  className="w-full h-12 rounded-xl bg-[#1A202B] border border-[#35404F] text-white font-bold hover:bg-white/[0.05]"
                 >
                   <Check size={16} className="mr-2" /> I HAVE PAID {money(challenge)}
                 </Button>
