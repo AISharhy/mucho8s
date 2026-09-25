@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useData } from "@/context/DataContext";
 import { EloBadge, PlayerAvatar } from "@/components/shared";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Shield, UserPlus, Trash2, Pencil, RotateCcw, Upload, Download, LogOut, History, Database, Check, Lock, Eye, EyeOff } from "lucide-react";
+import { Shield, UserPlus, Trash2, Pencil, RotateCcw, Upload, Download, LogOut, History, Database, Check, Lock, Eye, EyeOff, MessageCircle, Send, Link2 } from "lucide-react";
 import { toast } from "sonner";
 
 const Gate = () => {
@@ -81,12 +81,28 @@ const Gate = () => {
 };
 
 export default function AdminPanel() {
-  const { admin, setAdmin, players, matches, addPlayer, removePlayer, editPlayer, resetStats, importPlayers, importFullBackup, storageMode } = useData();
+  const { admin, setAdmin, players, matches, addPlayer, removePlayer, editPlayer, resetStats, importPlayers, importFullBackup, storageMode, getDiscordStatus, configureDiscordWebhook, clearDiscordWebhook, testDiscordWebhook } = useData();
   const [newName, setNewName] = useState("");
   const [newElo, setNewElo] = useState(1000);
   const [editing, setEditing] = useState({}); // id -> { name, elo }
   const [histOpen, setHistOpen] = useState(false);
+  const [discordWebhook, setDiscordWebhook] = useState("");
+  const [discordConfigured, setDiscordConfigured] = useState(false);
+  const [discordBusy, setDiscordBusy] = useState(false);
   const fileRef = useRef(null);
+
+  useEffect(() => {
+    let active = true;
+    if (!admin) return undefined;
+
+    getDiscordStatus().then((configured) => {
+      if (active) setDiscordConfigured(configured);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [admin, getDiscordStatus]);
 
   if (!admin) return <Gate />;
 
@@ -159,6 +175,38 @@ export default function AdminPanel() {
     toast.success(`Backup exported: ${players.length} players, ${matches.length} matches`);
   };
 
+  const connectDiscord = async () => {
+    if (!discordWebhook.trim()) return toast.error("Paste the Discord webhook URL first");
+    setDiscordBusy(true);
+    const ok = await configureDiscordWebhook(discordWebhook.trim());
+    if (ok) {
+      setDiscordConfigured(true);
+      setDiscordWebhook("");
+      const tested = await testDiscordWebhook();
+      if (tested) toast.success("Discord connected — test message sent");
+      else toast.success("Discord webhook saved");
+    }
+    setDiscordBusy(false);
+  };
+
+  const sendDiscordTest = async () => {
+    setDiscordBusy(true);
+    const ok = await testDiscordWebhook();
+    setDiscordBusy(false);
+    if (ok) toast.success("Test message sent to Discord");
+  };
+
+  const disconnectDiscord = async () => {
+    setDiscordBusy(true);
+    const ok = await clearDiscordWebhook();
+    setDiscordBusy(false);
+    if (ok) {
+      setDiscordConfigured(false);
+      setDiscordWebhook("");
+      toast.success("Discord disconnected");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -229,6 +277,77 @@ export default function AdminPanel() {
             <Button onClick={() => setHistOpen(true)} data-testid="admin-add-historical-btn" className="justify-start bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] h-14 rounded-xl">
               <History size={18} className="mr-2 text-magma" /> Add Historical Match
             </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="card-surface rounded-2xl p-5" data-testid="discord-settings">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <MessageCircle size={19} className="text-[#5865F2]" />
+              <h3 className="font-display font-bold text-lg">Discord Integration</h3>
+              <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full border ${
+                discordConfigured
+                  ? "text-emerald-400 border-emerald-500/25 bg-emerald-500/5"
+                  : "text-muted-foreground border-[#2A303B] bg-[#0F1218]"
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${discordConfigured ? "bg-emerald-400" : "bg-[#596170]"}`} />
+                {discordConfigured ? "Connected" : "Not connected"}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
+              Connect a Discord channel with a webhook. Team Balancer can send teams to Discord and saved match results are posted automatically.
+            </p>
+          </div>
+
+          <div className="w-full lg:max-w-xl">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="relative flex-1">
+                <Link2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="password"
+                  value={discordWebhook}
+                  onChange={(e) => setDiscordWebhook(e.target.value)}
+                  placeholder={discordConfigured ? "Paste a new webhook to replace the current one" : "https://discord.com/api/webhooks/..."}
+                  className="pl-9 bg-[#0F1218] border-[#222834] h-11"
+                  data-testid="discord-webhook-input"
+                />
+              </div>
+              <Button
+                onClick={connectDiscord}
+                disabled={discordBusy || !discordWebhook.trim()}
+                className="h-11 bg-[#5865F2] hover:bg-[#6875f5] text-white"
+                data-testid="discord-connect-btn"
+              >
+                <Link2 size={15} className="mr-1.5" /> {discordConfigured ? "Replace" : "Connect"}
+              </Button>
+            </div>
+
+            <div className="flex flex-wrap gap-2 mt-2">
+              <Button
+                variant="ghost"
+                onClick={sendDiscordTest}
+                disabled={discordBusy || !discordConfigured}
+                className="text-sm bg-[#0F1218] border border-[#222834]"
+                data-testid="discord-test-btn"
+              >
+                <Send size={14} className="mr-1.5" /> Send Test
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={disconnectDiscord}
+                disabled={discordBusy || !discordConfigured}
+                className="text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                data-testid="discord-disconnect-btn"
+              >
+                Disconnect
+              </Button>
+            </div>
+
+            <div className="text-[11px] text-[#697181] mt-2">
+              The webhook URL is stored server-side and is not exposed to site visitors.
+            </div>
           </div>
         </div>
       </div>
