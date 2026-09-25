@@ -25,7 +25,6 @@ For automatic command registration, keep the Discord application ID and bot toke
 - `/ranking`
 - `/player name:<nickname>`
 - `/chall player:<Discord user> amount:<EUR> platform:<paypal|revolut|cmg>`
-- `/ready`
 - `/match`
 
 The bot verifies Discord request signatures before processing commands. Never commit the Discord bot token or other private credentials to GitHub.
