@@ -1,0 +1,120 @@
+export const BASE_ELO = 1000;
+export const MIN_ELO = 500;
+export const WIN_DELTA = 25;
+export const LOSS_DELTA = 25;
+export const MVP_BONUS = 10;
+export const UPSET_BONUS = 15;
+
+// Balancing formula weights
+export const WEIGHTS = { peak: 0.6, current: 0.25, winRate: 0.15 };
+
+export const winRate = (p) =>
+  p.totalMatches > 0 ? Math.round((p.wins / p.totalMatches) * 1000) / 10 : 0;
+
+// Composite player rating driven by main KPIs
+export const playerRating = (p) => {
+  const wr = winRate(p); // 0-100
+  return WEIGHTS.peak * p.peakElo + WEIGHTS.current * p.currentElo + WEIGHTS.winRate * (wr * 15);
+};
+
+// Rebuild per-game player stats (Elo/wins) purely from that game's match history.
+export const computeGameStats = (matches, game) => {
+  const filtered = (matches || [])
+    .filter((m) => m.game === game)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+  const stats = {};
+  const ensure = (id) =>
+    stats[id] || (stats[id] = { currentElo: BASE_ELO, peakElo: BASE_ELO, wins: 0, losses: 0, totalMatches: 0, mvpCount: 0 });
+  filtered.forEach((m) => {
+    const winners = m.winner === "A" ? m.teamA : m.teamB;
+    [...m.teamA, ...m.teamB].forEach((id) => {
+      const s = ensure(id);
+      const delta = m.eloChanges?.[id] ?? 0;
+      s.currentElo = Math.max(MIN_ELO, s.currentElo + delta);
+      s.peakElo = Math.max(s.peakElo, s.currentElo);
+      s.totalMatches += 1;
+      if (winners.includes(id)) s.wins += 1;
+      else s.losses += 1;
+      if (m.mvpId === id) s.mvpCount += 1;
+    });
+  });
+  return stats;
+};
+
+// Project a player onto a specific game's stats (falls back to baseline if never played it).
+export const playerForGame = (player, gameStats) => {
+  const g = gameStats[player.id];
+  if (!g) return { ...player, currentElo: BASE_ELO, peakElo: BASE_ELO, wins: 0, losses: 0, totalMatches: 0, mvpCount: 0 };
+  return { ...player, currentElo: g.currentElo, peakElo: g.peakElo, wins: g.wins, losses: g.losses, totalMatches: g.totalMatches, mvpCount: g.mvpCount };
+};
+
+export const tierOf = (elo) => {
+  if (elo >= 1500) return { name: "Legend", color: "#FFB800" };
+  if (elo >= 1350) return { name: "Diamond", color: "#3B82F6" };
+  if (elo >= 1200) return { name: "Platinum", color: "#10B981" };
+  if (elo >= 1050) return { name: "Gold", color: "#F59E0B" };
+  if (elo >= 900) return { name: "Silver", color: "#9CA3AF" };
+  return { name: "Bronze", color: "#B45309" };
+};
+
+const kCombos = (arr, k) => {
+  const result = [];
+  const helper = (start, combo) => {
+    if (combo.length === k) {
+      result.push([...combo]);
+      return;
+    }
+    for (let i = start; i < arr.length; i++) {
+      combo.push(arr[i]);
+      helper(i + 1, combo);
+      combo.pop();
+    }
+  };
+  helper(0, []);
+  return result;
+};
+
+// Generate the most balanced split from an even number of players (4, 6 or 8).
+// Splits into two equal teams of size players.length / 2.
+export const balanceTeams = (players) => {
+  if (!players || players.length < 4 || players.length % 2 !== 0) return null;
+  const teamSize = players.length / 2;
+  const anchor = players[0];
+  const others = players.slice(1);
+  const otherIdx = others.map((_, i) => i);
+  const combos = kCombos(otherIdx, teamSize - 1); // unique splits (anchor fixed in A)
+  let best = null;
+
+  for (const c of combos) {
+    const teamA = [anchor, ...c.map((i) => others[i])];
+    const aIds = new Set(teamA.map((p) => p.id));
+    const teamB = players.filter((p) => !aIds.has(p.id));
+    const sA = teamA.reduce((s, p) => s + playerRating(p), 0);
+    const sB = teamB.reduce((s, p) => s + playerRating(p), 0);
+    const diff = Math.abs(sA - sB);
+    if (!best || diff < best.diff) best = { teamA, teamB, sA, sB, diff };
+  }
+
+  const avg = (best.sA + best.sB) / 2;
+  const balanceScore = Math.max(0, Math.min(100, 100 - (best.diff / avg) * 100));
+  const avgA = best.sA / teamSize;
+  const avgB = best.sB / teamSize;
+  const probA = 1 / (1 + Math.pow(10, (avgB - avgA) / 400));
+
+  return {
+    teamA: best.teamA,
+    teamB: best.teamB,
+    teamSize,
+    strengthA: Math.round(best.sA),
+    strengthB: Math.round(best.sB),
+    diff: Math.round(best.diff),
+    balanceScore: Math.round(balanceScore * 10) / 10,
+    probA: Math.round(probA * 1000) / 10,
+    probB: Math.round((1 - probA) * 1000) / 10,
+  };
+};
+
+export const nextStreak = (streak, won) => {
+  if (won) return streak > 0 ? streak + 1 : 1;
+  return streak < 0 ? streak - 1 : -1;
+};

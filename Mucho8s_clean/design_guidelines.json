@@ -1,0 +1,176 @@
+{
+  "project_info": {
+    "name": "MuchoMoney8s",
+    "type": "dashboard",
+    "theme": "dark",
+    "description": "Production-ready esports management platform and Call of Duty 8s match generator featuring automated 4v4 team balancing, ELO tracking, match history, and performance analytics with Magma Red & Gold highlights.",
+    "tech_stack": {
+      "framework": "React (JavaScript - .js/.jsx)",
+      "styling": "Tailwind CSS",
+      "components": "shadcn/ui (custom dark mode variant)",
+      "icons": "lucide-react",
+      "storage": "localStorage",
+      "charts": "Recharts / shadcn chart"
+    }
+  },
+  "colors": {
+    "backgrounds": {
+      "body": "#090A0F",
+      "surface_base": "#10121A",
+      "card": "#161924",
+      "card_hover": "#1E2230",
+      "card_active": "#252B3C",
+      "sidebar": "#0D0E15",
+      "header_glass": "rgba(16, 18, 26, 0.85)",
+      "input": "#181B26"
+    },
+    "brand_highlights": {
+      "magma_red": {
+        "primary": "#FF2A3B",
+        "glow": "rgba(255, 42, 59, 0.35)",
+        "hover": "#E01F30",
+        "dark": "#99101C",
+        "border": "rgba(255, 42, 59, 0.3)"
+      },
+      "cyber_gold": {
+        "primary": "#FFB800",
+        "glow": "rgba(255, 184, 0, 0.35)",
+        "hover": "#E5A400",
+        "dark": "#8B6500",
+        "border": "rgba(255, 184, 0, 0.3)"
+      }
+    },
+    "team_colors": {
+      "team_alpha": {
+        "primary": "#FF2A3B",
+        "bg_badge": "rgba(255, 42, 59, 0.15)",
+        "border": "rgba(255, 42, 59, 0.4)",
+        "label": "Alpha Squad (Magma)"
+      },
+      "team_bravo": {
+        "primary": "#FFB800",
+        "bg_badge": "rgba(255, 184, 0, 0.15)",
+        "border": "rgba(255, 184, 0, 0.4)",
+        "label": "Bravo Squad (Gold)"
+      }
+    },
+    "status": {
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "danger": "#EF4444",
+      "info": "#3B82F6"
+    },
+    "text": {
+      "heading": "#FFFFFF",
+      "primary": "#F3F4F6",
+      "muted": "#9CA3AF",
+      "disabled": "#4B5563"
+    },
+    "borders": {
+      "default": "#242938",
+      "subtle": "#1C202E",
+      "highlight_red": "#FF2A3B",
+      "highlight_gold": "#FFB800"
+    }
+  },
+  "typography": {
+    "font_family": {
+      "heading": "Chivo, Outfit, system-ui, sans-serif",
+      "body": "Inter, system-ui, sans-serif",
+      "mono_stats": "Source Code Pro, JetBrains Mono, monospace"
+    },
+    "hierarchy": {
+      "h1_hero": "text-4xl sm:text-5xl font-extrabold tracking-tight uppercase text-white",
+      "h2_section": "text-2xl sm:text-3xl font-bold tracking-tight text-white",
+      "h3_card": "text-xl sm:text-2xl font-semibold text-white",
+      "h4_title": "text-lg font-medium text-gray-100",
+      "body": "text-sm sm:text-base font-normal text-gray-300 leading-relaxed",
+      "mono_stat_lg": "font-mono text-3xl font-extrabold tracking-wider",
+      "mono_stat_md": "font-mono text-xl font-bold tracking-wide",
+      "badge": "text-xs font-semibold tracking-widest uppercase"
+    }
+  },
+  "layout_and_spacing": {
+    "sidebar": {
+      "width_desktop": "w-64",
+      "width_collapsed": "w-20",
+      "bg": "bg-[#0D0E15]",
+      "border": "border-r border-[#242938]"
+    },
+    "header": {
+      "height": "h-16",
+      "bg": "bg-[#10121A]/85 backdrop-blur-md",
+      "border": "border-b border-[#242938]"
+    },
+    "padding": {
+      "page_container": "p-4 sm:p-6 lg:p-8 space-y-8",
+      "card_internal": "p-5 sm:p-6",
+      "modal_internal": "p-6 sm:p-8"
+    },
+    "grid_modes": {
+      "dashboard_top_kpis": "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6",
+      "team_balancer_view": "grid grid-cols-1 lg:grid-cols-12 gap-6 items-start",
+      "stats_grid": "grid grid-cols-1 lg:grid-cols-2 gap-6"
+    }
+  },
+  "visual_enhancers": {
+    "glassmorphism": "bg-[#161924]/90 backdrop-blur-xl border border-[#242938]",
+    "magma_card_glow": "border border-[#FF2A3B]/30 shadow-[0_0_20px_rgba(255,42,59,0.12)] hover:border-[#FF2A3B]/60 transition-all duration-200",
+    "gold_card_glow": "border border-[#FFB800]/30 shadow-[0_0_20px_rgba(255,184,0,0.12)] hover:border-[#FFB800]/60 transition-all duration-200",
+    "esports_badge": "px-2.5 py-1 rounded-sm text-xs font-mono font-bold uppercase tracking-widest border",
+    "gradient_accent_bar": "h-1 w-full bg-gradient-to-r from-[#FF2A3B] via-[#FFB800] to-[#FF2A3B]"
+  },
+  "pages_and_components": {
+    "Dashboard": {
+      "route": "/",
+      "description": "Top KPIs (Total Players, Total Matches, Highest Elo, Most Active Player) + Recent Activity Feed + Quick Match Balancer CTA + Elo Distribution snippet."
+    },
+    "Players": {
+      "route": "/players",
+      "description": "Player roster database with search, role filters, Elo badges, and detailed player profile dialog."
+    },
+    "TeamBalancer": {
+      "route": "/balancer",
+      "description": "CORE FEATURE. Select 8 active players -> generate optimized 4v4 squads (Alpha vs Bravo) based on total ELO, partial/current ELO, and recent match trends. Displays balance score %, projected winner win-probability bar, and instantaneous team swap options."
+    },
+    "Matches": {
+      "route": "/matches",
+      "description": "Match creation/recording form + past match log history with date, map/mode tags, winning team, and MVP display."
+    },
+    "Leaderboard": {
+      "route": "/leaderboard",
+      "description": "Sortable high-density esports table: Rank, Player Nickname, Current Elo, Peak Elo, Win Rate %, Wins/Losses, MVPs count, and CSV export functionality."
+    },
+    "Statistics": {
+      "route": "/statistics",
+      "description": "Interactive data charts (Elo progression over time, Win rate breakdown, Most active players, Player performance radar/bar charts)."
+    },
+    "AdminPanel": {
+      "route": "/admin",
+      "description": "Nickname-only access (no password). Allows adding/deleting players, manually adjusting Elo, resetting statistics, and injecting historical match records."
+    }
+  },
+  "image_urls": {
+    "trophy_celebration": "https://images.pexels.com/photos/34179719/pexels-photo-34179719.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "esports_award": "https://images.pexels.com/photos/19012043/pexels-photo-19012043.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+  },
+  "testing_attributes": {
+    "rule": "Every interactive element (button, input, tab, table row, select, modal trigger, toast) MUST include a explicit data-testid attribute in kebab-case.",
+    "examples": {
+      "navigation": "data-testid='nav-team-balancer-link'",
+      "balancer_submit": "data-testid='generate-teams-button'",
+      "player_card": "data-testid='player-card-nickname'",
+      "admin_entry": "data-testid='admin-nickname-input'",
+      "leaderboard_table": "data-testid='leaderboard-table'"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Strictly follow the dark theme with black (#090A0F) background, dark gray surfaces (#10121A, #161924), and Magma Red (#FF2A3B) & Cyber Gold (#FFB800) accents.",
+    "Use JavaScript / React (.js and .jsx files) as set up in /app/frontend/src/.",
+    "Ensure the Team Balancer features an intuitive 8-player selection list, balanced 4v4 output showing precise Elo totals and balance percentage (e.g., '98.4% Match Balance').",
+    "Use localStorage to maintain persistence across page reloads for players, matches, and ELO history.",
+    "Do NOT use transparent dropdown menus or modal backgrounds. Use solid or blurred high-contrast dark backgrounds.",
+    "Include data-testid on all interactive buttons, forms, navigation tabs, cards, and table elements.",
+    "Utilize Sonner for dark-themed toast notifications upon saving matches or updating Elo."
+  ]
+}
