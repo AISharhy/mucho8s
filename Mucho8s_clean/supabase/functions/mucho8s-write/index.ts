@@ -1,12 +1,16 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const ADMIN_PASSWORD_SHA256 = "5275321e80637acbd0dc2a0d0e9b5120ab79618531edd49b189ff4b4ce4ec4ff";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type, apikey, x-admin-password",
+  "Access-Control-Allow-Headers": "content-type, apikey, x-admin-session",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
+  });
 
 const sha256 = async (value: string) => {
   const bytes = new TextEncoder().encode(value);
@@ -16,44 +20,59 @@ const sha256 = async (value: string) => {
     .join("");
 };
 
+const validateAdminSession = async (req: Request, supabase: any) => {
+  const token = String(req.headers.get("x-admin-session") || "").trim();
+  if (!token) return false;
+
+  const tokenHash = await sha256(token);
+  const uaHash = await sha256(req.headers.get("user-agent") || "unknown");
+
+  const { data: session, error } = await supabase
+    .from("admin_sessions")
+    .select("username,user_agent_hash,expires_at,revoked_at")
+    .eq("token_hash", tokenHash)
+    .maybeSingle();
+
+  if (error || !session || session.revoked_at) return false;
+  if (new Date(session.expires_at).getTime() <= Date.now()) return false;
+  if (session.user_agent_hash !== uaHash) return false;
+
+  const { data: credential } = await supabase
+    .from("admin_credentials")
+    .select("is_active")
+    .eq("username", session.username)
+    .maybeSingle();
+
+  if (!credential?.is_active) return false;
+
+  await supabase
+    .from("admin_sessions")
+    .update({ last_seen_at: new Date().toISOString() })
+    .eq("token_hash", tokenHash);
+
+  return true;
+};
+
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
-
-  if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  const suppliedPassword = req.headers.get("x-admin-password") || "";
-  if ((await sha256(suppliedPassword)) !== ADMIN_PASSWORD_SHA256) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
-    const body = await req.json();
-    if (!Array.isArray(body.players) || !Array.isArray(body.matches)) {
-      return new Response(JSON.stringify({ error: "Invalid state payload" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const secretKeys = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}");
     const secretKey = secretKeys.default || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-
-    if (!supabaseUrl || !secretKey) {
-      throw new Error("Supabase server credentials unavailable");
-    }
+    if (!supabaseUrl || !secretKey) throw new Error("Supabase server credentials unavailable");
 
     const supabase = createClient(supabaseUrl, secretKey);
+
+    if (!(await validateAdminSession(req, supabase))) {
+      return json({ error: "Admin session expired or invalid" }, 401);
+    }
+
+    const body = await req.json();
+    if (!Array.isArray(body.players) || !Array.isArray(body.matches)) {
+      return json({ error: "Invalid state payload" }, 400);
+    }
 
     const { error } = await supabase
       .from("app_state")
@@ -67,14 +86,9 @@ Deno.serve(async (req: Request) => {
 
     if (error) throw error;
 
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ ok: true });
   } catch (error) {
-    return new Response(JSON.stringify({ error: String(error) }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    console.error(error);
+    return json({ error: "Cloud database update failed" }, 500);
   }
 });
