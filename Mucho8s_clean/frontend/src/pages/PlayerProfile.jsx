@@ -50,6 +50,7 @@ export default function PlayerProfile() {
     discordSession,
     saveMyChallengeLinks,
     challenges,
+    publicChallenges,
     createChallenge,
   } = useData();
 
@@ -81,6 +82,43 @@ export default function PlayerProfile() {
       .filter((m) => m.teamA.includes(player.id) || m.teamB.includes(player.id))
       .sort((a, b) => new Date(b.date) - new Date(a.date));
   }, [matches, player]);
+
+  const challengeStats = useMemo(() => {
+    const completed = publicChallenges
+      .filter((challenge) =>
+        challenge.challenger_player_id === id ||
+        challenge.challenged_player_id === id
+      )
+      .sort((a, b) => new Date(b.verified_at || b.created_at) - new Date(a.verified_at || a.created_at));
+
+    let wins = 0;
+    let losses = 0;
+    let wonValue = 0;
+    let lostValue = 0;
+
+    completed.forEach((challenge) => {
+      const amount = Number(challenge.amount_cents || 0) / 100;
+      if (challenge.reported_winner_player_id === id) {
+        wins += 1;
+        wonValue += amount;
+      } else {
+        losses += 1;
+        lostValue += amount;
+      }
+    });
+
+    const played = wins + losses;
+    return {
+      completed,
+      wins,
+      losses,
+      played,
+      winRate: played ? Math.round((wins / played) * 100) : 0,
+      wonValue,
+      lostValue,
+      profit: wonValue - lostValue,
+    };
+  }, [publicChallenges, id]);
 
   if (!player) {
     return (
@@ -299,6 +337,59 @@ export default function PlayerProfile() {
           <Last10 record={player.last10} />
           <MvpBadge count={player.mvpCount} />
         </div>
+      </div>
+
+      <div className="card-surface rounded-2xl p-4 sm:p-5" data-testid="challenge-profile-stats">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <div className="brand-kicker mb-1">Challenge Record</div>
+            <h3 className="font-display text-xl font-bold">{challengeStats.wins}W - {challengeStats.losses}L</h3>
+            <p className="text-sm text-muted-foreground mt-1">Verified challs only.</p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full lg:w-auto lg:min-w-[560px]">
+            <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Win Rate</div>
+              <div className="font-mono font-bold text-lg mt-1">{challengeStats.winRate}%</div>
+            </div>
+            <div className="rounded-xl bg-emerald-500/[0.05] border border-emerald-500/15 p-3">
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">€ Won</div>
+              <div className="font-mono font-bold text-lg mt-1 text-emerald-400">€{challengeStats.wonValue.toFixed(2)}</div>
+            </div>
+            <div className="rounded-xl bg-red-500/[0.05] border border-red-500/15 p-3">
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">€ Lost</div>
+              <div className="font-mono font-bold text-lg mt-1 text-red-400">€{challengeStats.lostValue.toFixed(2)}</div>
+            </div>
+            <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Net</div>
+              <div className={`font-mono font-bold text-lg mt-1 ${challengeStats.profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                {challengeStats.profit >= 0 ? "+" : "-"}€{Math.abs(challengeStats.profit).toFixed(2)}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {challengeStats.completed.length > 0 && (
+          <div className="flex items-center gap-1.5 mt-4">
+            <span className="text-xs text-muted-foreground mr-1">Last 5</span>
+            {challengeStats.completed.slice(0, 5).map((challenge) => {
+              const won = challenge.reported_winner_player_id === id;
+              return (
+                <span
+                  key={challenge.id}
+                  title={won ? "Vinta" : "Persa"}
+                  className={`w-7 h-7 rounded-lg border flex items-center justify-center text-[10px] font-black ${
+                    won
+                      ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
+                      : "bg-red-500/10 border-red-500/25 text-red-400"
+                  }`}
+                >
+                  {won ? "W" : "L"}
+                </span>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {isOwnProfile && (
