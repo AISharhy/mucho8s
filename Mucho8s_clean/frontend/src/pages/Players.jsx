@@ -13,7 +13,7 @@ const FILTERS = [
 ];
 
 export default function Players() {
-  const { players } = useData();
+  const { players, playerAvatars } = useData();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
 
@@ -77,7 +77,7 @@ export default function Players() {
             className="card-surface rounded-2xl p-5 text-left animate-fade-up block group"
           >
             <div className="flex items-center gap-3 mb-5">
-              <PlayerAvatar name={p.name} elo={p.currentElo} size={46} />
+              <PlayerAvatar name={p.name} elo={p.currentElo} size={46} avatarUrl={playerAvatars[p.id]} />
               <div className="min-w-0 flex-1">
                 <div className="font-display font-bold text-[17px] truncate flex items-center gap-1.5">
                   {p.name}
