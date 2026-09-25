@@ -32,8 +32,7 @@ Deno.serve(async (req: Request) => {
     const { data, error } = await supabase
       .from("player_accounts")
       .select("player_id,avatar_url,paypal_url,revolut_url,cmg_url")
-      .not("player_id", "is", null)
-      .not("avatar_url", "is", null);
+      .not("player_id", "is", null);
 
     if (error) throw error;
 
