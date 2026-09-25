@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { load, save, uid } from "@/lib/storage";
 import { playerRating, BASE_ELO, MIN_ELO, WIN_DELTA, LOSS_DELTA, MVP_BONUS, UPSET_BONUS } from "@/lib/elo";
 import { toast } from "sonner";
+import { supabaseAuth, hasSupabaseAuth } from "@/lib/supabaseClient";
 
 const DataContext = createContext(null);
 export const useData = () => useContext(DataContext);
@@ -150,6 +151,9 @@ export const DataProvider = ({ children }) => {
   const [players, setPlayers] = useState(() => (load("players", []) || []).map(normalizePlayer));
   const [matches, setMatches] = useState(() => (load("matches", []) || []).map(normalizeMatch));
   const [admin, setAdminState] = useState(null);
+  const [discordSession, setDiscordSession] = useState(null);
+  const [discordAccount, setDiscordAccount] = useState(null);
+  const [discordLoading, setDiscordLoading] = useState(hasSupabaseAuth);
   const [loaded, setLoaded] = useState(STORAGE_MODE === "local");
   const versionRef = useRef(-1);
 
@@ -225,7 +229,143 @@ export const DataProvider = ({ children }) => {
     return result;
   }, [players]);
 
+  const accountRequest = useCallback(async (payload, { session, silent = false } = {}) => {
+    if (!HAS_SUPABASE) {
+      if (!silent) toast.error("Discord login requires Supabase");
+      return null;
+    }
+
+    try {
+      const activeSession = session || discordSession;
+      const headers = {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_ANON_KEY,
+      };
+
+      if (activeSession?.access_token) {
+        headers.Authorization = `Bearer ${activeSession.access_token}`;
+      }
+
+      if (admin?.password) {
+        headers["X-Admin-Password"] = admin.password;
+      }
+
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/mucho8s-account`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        if (!silent) toast.error(data?.error || "Discord account action failed");
+        return null;
+      }
+
+      return data;
+    } catch {
+      if (!silent) toast.error("Discord account service unavailable");
+      return null;
+    }
+  }, [admin, discordSession]);
+
+  const syncDiscordSession = useCallback(async (session) => {
+    setDiscordSession(session || null);
+
+    if (!session) {
+      setDiscordAccount(null);
+      setDiscordLoading(false);
+      return;
+    }
+
+    const data = await accountRequest({ action: "sync" }, { session, silent: true });
+    setDiscordAccount(data?.account || null);
+    setDiscordLoading(false);
+  }, [accountRequest]);
+
+  useEffect(() => {
+    if (!supabaseAuth) {
+      setDiscordLoading(false);
+      return undefined;
+    }
+
+    let active = true;
+
+    supabaseAuth.auth.getSession().then(({ data }) => {
+      if (active) void syncDiscordSession(data?.session || null);
+    });
+
+    const { data: listener } = supabaseAuth.auth.onAuthStateChange((_event, session) => {
+      if (active) void syncDiscordSession(session || null);
+    });
+
+    return () => {
+      active = false;
+      listener?.subscription?.unsubscribe();
+    };
+  }, [syncDiscordSession]);
+
+  const signInWithDiscord = useCallback(async () => {
+    if (!supabaseAuth) {
+      toast.error("Discord login is not available");
+      return false;
+    }
+
+    const redirectTo = `${window.location.origin}${window.location.pathname}`;
+    const { error } = await supabaseAuth.auth.signInWithOAuth({
+      provider: "discord",
+      options: { redirectTo },
+    });
+
+    if (error) {
+      toast.error(error.message || "Discord login failed");
+      return false;
+    }
+
+    return true;
+  }, []);
+
+  const signOutDiscord = useCallback(async () => {
+    if (!supabaseAuth) return false;
+    const { error } = await supabaseAuth.auth.signOut();
+    if (error) {
+      toast.error(error.message || "Discord logout failed");
+      return false;
+    }
+    setDiscordSession(null);
+    setDiscordAccount(null);
+    return true;
+  }, []);
+
+  const refreshDiscordAccount = useCallback(async () => {
+    if (!discordSession) return null;
+    const data = await accountRequest({ action: "me" }, { session: discordSession, silent: true });
+    if (data?.account) setDiscordAccount(data.account);
+    return data?.account || null;
+  }, [accountRequest, discordSession]);
+
+  const listDiscordAccounts = useCallback(async () => {
+    const data = await accountRequest({ action: "admin-list" });
+    return Array.isArray(data?.accounts) ? data.accounts : null;
+  }, [accountRequest]);
+
+  const linkDiscordAccount = useCallback(async (accountId, playerId) => {
+    const data = await accountRequest({ action: "admin-link", accountId, playerId });
+    if (!data?.account) return false;
+
+    if (discordAccount?.id === accountId) {
+      setDiscordAccount(data.account);
+    }
+
+    return true;
+  }, [accountRequest, discordAccount]);
+
   const isAdmin = Boolean(admin?.password);
+  const discordPlayer = useMemo(
+    () => (discordAccount?.player_id ? playerMap[discordAccount.player_id] || null : null),
+    [discordAccount, playerMap],
+  );
 
   const backendWrite = useCallback(async (path, { method = "POST", body } = {}) => {
     try {
