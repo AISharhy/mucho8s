@@ -157,6 +157,7 @@ export const DataProvider = ({ children }) => {
   const [playerAvatars, setPlayerAvatars] = useState({});
   const [playerProfiles, setPlayerProfiles] = useState({});
   const [challenges, setChallenges] = useState([]);
+  const [publicChallenges, setPublicChallenges] = useState([]);
   const [loaded, setLoaded] = useState(STORAGE_MODE === "local");
   const versionRef = useRef(-1);
 
@@ -264,6 +265,34 @@ export const DataProvider = ({ children }) => {
     const timer = setInterval(fetchPlayerAvatars, 15000);
     return () => clearInterval(timer);
   }, [fetchPlayerAvatars]);
+
+  const fetchPublicChallenges = useCallback(async () => {
+    if (!HAS_SUPABASE) {
+      setPublicChallenges([]);
+      return [];
+    }
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/mucho8s-challenge-public`, {
+        method: "GET",
+        headers: { apikey: SUPABASE_ANON_KEY },
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const list = Array.isArray(data?.challenges) ? data.challenges : [];
+      setPublicChallenges(list);
+      return list;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!HAS_SUPABASE) return undefined;
+    void fetchPublicChallenges();
+    const timer = setInterval(fetchPublicChallenges, 30000);
+    return () => clearInterval(timer);
+  }, [fetchPublicChallenges]);
 
   const accountRequest = useCallback(async (payload, { session, silent = false } = {}) => {
     if (!HAS_SUPABASE) {
@@ -515,6 +544,13 @@ export const DataProvider = ({ children }) => {
     return data.challenge;
   }, [challengeRequest]);
 
+  const setChallengeReady = useCallback(async (id, ready = true) => {
+    const data = await challengeRequest({ action: "set-ready", id, ready });
+    if (!data?.challenge) return null;
+    await refreshChallenges();
+    return data.challenge;
+  }, [challengeRequest, refreshChallenges]);
+
   const reportChallengeResult = useCallback(async (id, winnerPlayerId) => {
     const data = await challengeRequest({ action: "report-result", id, winnerPlayerId });
     if (!data?.challenge) return null;
@@ -588,6 +624,86 @@ export const DataProvider = ({ children }) => {
     setChallenges((prev) => prev.filter((item) => item.id !== id));
     return true;
   }, [adminChallengeRequest]);
+
+  const challengeNotificationCount = useMemo(() => {
+    if (!discordAccount?.id) return 0;
+
+    return challenges.reduce((count, challenge) => {
+      const isChallenger = challenge.challenger_account_id === discordAccount.id;
+      const isChallenged = challenge.challenged_account_id === discordAccount.id;
+      if (!isChallenger && !isChallenged) return count;
+
+      if (challenge.status === "pending" && isChallenged) return count + 1;
+      if (
+        challenge.status === "result_pending" &&
+        challenge.reporter_account_id !== discordAccount.id
+      ) return count + 1;
+
+      const seen = isChallenger
+        ? challenge.challenger_seen_status
+        : challenge.challenged_seen_status;
+
+      if (["accepted", "declined", "completed", "disputed"].includes(challenge.status) && seen !== challenge.status) {
+        return count + 1;
+      }
+
+      if (
+        challenge.status === "accepted" &&
+        isChallenged &&
+        challenge.payment_sent_at &&
+        !challenge.payment_received_at
+      ) return count + 1;
+
+      if (challenge.status === "accepted" && challenge.payment_received_at) {
+        const myReady = isChallenger
+          ? challenge.challenger_ready_at
+          : challenge.challenged_ready_at;
+        if (!myReady) return count + 1;
+      }
+
+      return count;
+    }, 0);
+  }, [challenges, discordAccount]);
+
+  const adminAuditRequest = useCallback(async (payload, { silent = false } = {}) => {
+    if (!HAS_SUPABASE || !admin?.password) {
+      if (!silent) toast.error("Admin access required");
+      return null;
+    }
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/mucho8s-admin-audit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_ANON_KEY,
+          "X-Admin-Password": admin.password,
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (!silent) toast.error(data?.error || "Audit log action failed");
+        return null;
+      }
+      return data;
+    } catch {
+      if (!silent) toast.error("Audit log service unavailable");
+      return null;
+    }
+  }, [admin]);
+
+  const logAdminAction = useCallback(async (event, entityType, entityId = null, details = {}) => {
+    return adminAuditRequest(
+      { action: "log", event, entityType, entityId, details },
+      { silent: true },
+    );
+  }, [adminAuditRequest]);
+
+  const listAdminAudit = useCallback(async () => {
+    const data = await adminAuditRequest({ action: "list" });
+    return Array.isArray(data?.logs) ? data.logs : null;
+  }, [adminAuditRequest]);
 
   const isAdmin = Boolean(admin?.password);
   const discordPlayer = useMemo(
@@ -754,13 +870,19 @@ export const DataProvider = ({ children }) => {
 
   const addPlayer = useCallback(async (name, startElo = BASE_ELO) => {
     if (STORAGE_MODE === "backend") return backendWrite("/players", { body: { name, startElo } });
-    return persistWholeState([...players, makePlayer(name, startElo)], matches);
-  }, [players, matches, backendWrite, persistWholeState]);
+    const player = makePlayer(name, startElo);
+    const ok = await persistWholeState([...players, player], matches);
+    if (ok) void logAdminAction("player.add", "player", player.id, { name: player.name, elo: player.currentElo });
+    return ok;
+  }, [players, matches, backendWrite, persistWholeState, logAdminAction]);
 
   const removePlayer = useCallback(async (id) => {
     if (STORAGE_MODE === "backend") return backendWrite(`/players/${id}`, { method: "DELETE" });
-    return persistWholeState(players.filter((p) => p.id !== id), matches);
-  }, [players, matches, backendWrite, persistWholeState]);
+    const removed = players.find((p) => p.id === id);
+    const ok = await persistWholeState(players.filter((p) => p.id !== id), matches);
+    if (ok) void logAdminAction("player.delete", "player", id, { name: removed?.name || "" });
+    return ok;
+  }, [players, matches, backendWrite, persistWholeState, logAdminAction]);
 
   const editElo = useCallback(async (id, currentElo) => {
     if (STORAGE_MODE === "backend") {
@@ -807,8 +929,10 @@ export const DataProvider = ({ children }) => {
     p.currentElo = elo;
     p.peakElo = Math.max(p.peakElo, elo);
     p.eloHistory = [...(p.eloHistory || []), { match: p.eloHistory?.length || 0, elo }];
-    return persistWholeState(next, matches);
-  }, [players, matches, backendWrite, persistWholeState]);
+    const ok = await persistWholeState(next, matches);
+    if (ok) void logAdminAction("player.update", "player", id, { name: cleanName, elo });
+    return ok;
+  }, [players, matches, backendWrite, persistWholeState, logAdminAction]);
 
   const resetStats = useCallback(async () => {
     if (STORAGE_MODE === "backend") return backendWrite("/reset-stats");
@@ -825,8 +949,10 @@ export const DataProvider = ({ children }) => {
       mvpCount: 0,
       eloHistory: [{ match: 0, elo: BASE_ELO }],
     }));
-    return persistWholeState(resetPlayers, []);
-  }, [players, backendWrite, persistWholeState]);
+    const ok = await persistWholeState(resetPlayers, []);
+    if (ok) void logAdminAction("stats.reset", "database", "main", {});
+    return ok;
+  }, [players, backendWrite, persistWholeState, logAdminAction]);
 
   const importPlayers = useCallback(async (list) => {
     const next = (Array.isArray(list) ? list : []).map(normalizePlayer);
@@ -871,8 +997,9 @@ export const DataProvider = ({ children }) => {
       }, { silent: true });
     }
 
+    if (ok) void logAdminAction("match.add", "match", match.id, { game: match.game, mode: match.mode, winner: match.winner });
     return ok;
-  }, [players, matches, backendWrite, persistWholeState, discordRequest]);
+  }, [players, matches, backendWrite, persistWholeState, discordRequest, logAdminAction]);
 
   const editMatch = useCallback(async (id, data) => {
     if (STORAGE_MODE === "backend") {
@@ -898,8 +1025,10 @@ export const DataProvider = ({ children }) => {
 
     const nextMatches = matches.map((m) => (m.id === id ? nextMatch : m));
     recomputeRecent(byId, nextMatches, new Set([...old.teamA, ...old.teamB, ...teamA, ...teamB]));
-    return persistWholeState(Object.values(byId), nextMatches);
-  }, [players, matches, backendWrite, persistWholeState]);
+    const ok = await persistWholeState(Object.values(byId), nextMatches);
+    if (ok) void logAdminAction("match.update", "match", id, { winner: nextMatch.winner, game: nextMatch.game, mode: nextMatch.mode });
+    return ok;
+  }, [players, matches, backendWrite, persistWholeState, logAdminAction]);
 
   const deleteMatch = useCallback(async (id) => {
     if (STORAGE_MODE === "backend") return backendWrite(`/matches/${id}`, { method: "DELETE" });
@@ -912,8 +1041,10 @@ export const DataProvider = ({ children }) => {
     revertEffects(byId, old);
     const nextMatches = matches.filter((m) => m.id !== id);
     recomputeRecent(byId, nextMatches, new Set([...old.teamA, ...old.teamB]));
-    return persistWholeState(Object.values(byId), nextMatches);
-  }, [players, matches, backendWrite, persistWholeState]);
+    const ok = await persistWholeState(Object.values(byId), nextMatches);
+    if (ok) void logAdminAction("match.delete", "match", id, { game: old.game, mode: old.mode });
+    return ok;
+  }, [players, matches, backendWrite, persistWholeState, logAdminAction]);
 
   const value = {
     players,
@@ -930,18 +1061,24 @@ export const DataProvider = ({ children }) => {
     playerAvatars,
     playerProfiles,
     challenges,
+    publicChallenges,
+    challengeNotificationCount,
     refreshChallenges,
     createChallenge,
     respondToChallenge,
     markChallengePaymentSent,
     confirmChallengePaymentReceived,
     markChallengeSeen,
+    setChallengeReady,
     reportChallengeResult,
     verifyChallengeResult,
     cancelChallenge,
     listAdminChallenges,
     adminUpdateChallenge,
     adminDeleteChallenge,
+    listAdminAudit,
+    logAdminAction,
+    refreshPublicChallenges: fetchPublicChallenges,
     refreshPlayerAvatars: fetchPlayerAvatars,
     saveMyChallengeLinks,
     signInWithDiscord,
