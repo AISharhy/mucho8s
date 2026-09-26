@@ -23,7 +23,7 @@ class PageErrorBoundary extends Component {
   render() {
     if (this.state.error) {
       return (
-        <div className="card-surface rounded-2xl p-8 min-h-[280px] flex flex-col items-center justify-center text-center">
+        <div role="alert" className="m8-panel rounded-2xl p-8 min-h-[280px] flex flex-col items-center justify-center text-center">
           <AlertTriangle size={28} className="text-orange-400 mb-3" />
           <h2 className="font-display text-xl font-bold">This page could not load</h2>
           <p className="text-sm text-muted-foreground mt-2 max-w-xl">
@@ -47,12 +47,15 @@ class PageErrorBoundary extends Component {
 const TITLES = {
   "/": "Dashboard",
   "/players": "Players",
-  "/balancer": "Team Balancer",
+  "/team-builder": "Team Builder",
+  "/balancer": "Team Builder",
+  "/draft": "Team Builder",
   "/matches": "Matches",
   "/ranking": "Ranking",
   "/leaderboard": "Ranking",
   "/statistics": "Ranking",
-  "/ranks": "Ranks",
+  "/rank-guide": "Rank Guide",
+  "/ranks": "Rank Guide",
   "/admin": "Admin Panel",
   "/challenges": "Challenge Inbox",
   "/challenge-ranking": "Chall Ranking",
@@ -176,6 +179,8 @@ export const Layout = () => {
                 onClick={() => setNotificationsOpen((open) => !open)}
                 aria-label={challengeNotificationCount > 0 ? `${challengeNotificationCount} challenge notifications` : "Challenge notifications"}
                 title="Challenge notifications"
+                aria-expanded={notificationsOpen}
+                aria-controls="challenge-notifications-panel"
                 data-testid="header-challenge-bell"
                 className="m8-action relative w-10 h-10 rounded-xl border border-[#242A35] bg-[#11161E] hover:bg-white/[0.05] hover:border-[#343B48] transition-all flex items-center justify-center text-[#AAB1BE] hover:text-white"
               >
@@ -196,6 +201,7 @@ export const Layout = () => {
                 to="/admin"
                 data-testid="header-admin-alerts"
                 title={adminChallengeAlertCount > 0 ? `${adminChallengeAlertCount} Admin disputes need review` : "Admin Control Room"}
+                aria-label={adminChallengeAlertCount > 0 ? `${adminChallengeAlertCount} Admin disputes need review` : "Admin Control Room"}
                 className={`relative w-10 h-10 rounded-xl border transition-all flex items-center justify-center ${
                   adminChallengeAlertCount > 0
                     ? "border-orange-500/30 bg-orange-500/10 text-orange-400 hover:bg-orange-500/15"
@@ -211,7 +217,7 @@ export const Layout = () => {
               </Link>
             )}
             {discordPlayer && notificationsOpen && (
-                  <div className="absolute right-0 top-12 w-[min(92vw,380px)] m8-panel rounded-2xl shadow-2xl overflow-hidden z-50">
+                  <div id="challenge-notifications-panel" role="dialog" aria-label="Challenge notifications" className="absolute right-0 top-12 w-[min(92vw,380px)] m8-panel rounded-2xl shadow-2xl overflow-hidden z-50">
                     <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#1D222C]">
                       <div>
                         <div className="brand-kicker mb-0.5">Notifications</div>
@@ -220,6 +226,7 @@ export const Layout = () => {
                       <button
                         type="button"
                         onClick={() => setNotificationsOpen(false)}
+                        aria-label="Close notifications"
                         className="w-8 h-8 rounded-lg bg-[#171B23] border border-[#2A303B] flex items-center justify-center text-muted-foreground hover:text-white"
                       >
                         <X size={14} />
