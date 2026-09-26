@@ -72,7 +72,6 @@ export const RecordMatchDialog = ({
 
   const teamA = Object.keys(assign).filter((id) => assign[id] === "A");
   const teamB = Object.keys(assign).filter((id) => assign[id] === "B");
-  const assigned = [...teamA, ...teamB];
 
   const orderedPairings = (
     pairingOrder.length === teamA.length &&
