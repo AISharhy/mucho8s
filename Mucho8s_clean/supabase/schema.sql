@@ -59,9 +59,9 @@ revoke all on table public.player_accounts from anon, authenticated;
 -- Individual rounds still live in player_challenges for stats and history.
 create table if not exists public.challenge_series (
   id uuid primary key default gen_random_uuid(),
-  player_a_account_id uuid not null,
+  player_a_account_id uuid,
   player_a_player_id text not null,
-  player_b_account_id uuid not null,
+  player_b_account_id uuid,
   player_b_player_id text not null,
   platform text not null,
   currency text not null default 'EUR',
