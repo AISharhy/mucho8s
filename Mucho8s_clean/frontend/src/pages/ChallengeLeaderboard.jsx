@@ -78,9 +78,9 @@ export default function ChallengeLeaderboard() {
         winRate: row.played ? Math.round((row.wins / row.played) * 100) : 0,
       }))
       .sort((a, b) =>
-        b.profit - a.profit ||
         b.wins - a.wins ||
-        b.winRate - a.winRate
+        b.winRate - a.winRate ||
+        b.profit - a.profit
       );
   }, [players, playerMap, seasonChallenges]);
 
@@ -90,7 +90,7 @@ export default function ChallengeLeaderboard() {
         <div className="brand-kicker mb-1">Competition</div>
         <h2 className="font-display text-3xl font-extrabold">Challenge Leaderboard</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          {competitionData?.current?.season_name || `Season ${currentSeason}`} · W/L includes every verified chall and Money Match Pairing. € profit counts confirmed payouts only.
+          {competitionData?.current?.season_name || `Season ${currentSeason}`} · W/L includes every verified chall and Money Match Pairing. Ranking prioritizes wins; € profit counts confirmed payouts only.
         </p>
       </div>
 
