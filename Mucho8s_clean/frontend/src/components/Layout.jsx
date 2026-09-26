@@ -27,16 +27,16 @@ class PageErrorBoundary extends Component {
       return (
         <div role="alert" className="m8-panel rounded-2xl p-8 min-h-[280px] flex flex-col items-center justify-center text-center">
           <AlertTriangle size={28} className="text-orange-400 mb-3" />
-          <h2 className="font-display text-xl font-bold">This page could not load</h2>
+          <h2 className="font-display text-xl font-bold">Impossibile caricare questa pagina</h2>
           <p className="text-sm text-muted-foreground mt-2 max-w-xl">
-            {this.state.error?.message || "A page error occurred."}
+            {this.state.error?.message || "Si è verificato un errore nella pagina."}
           </p>
           <button
             type="button"
             onClick={() => window.location.reload()}
             className="mt-5 h-10 px-4 rounded-xl bg-magma text-white text-sm font-bold"
           >
-            Reload page
+            Ricarica pagina
           </button>
         </div>
       );
@@ -279,8 +279,8 @@ export const Layout = () => {
               <Link
                 to="/admin"
                 data-testid="header-admin-alerts"
-                title={adminChallengeAlertCount > 0 ? `${adminChallengeAlertCount} Admin disputes need review` : "Admin Control Room"}
-                aria-label={adminChallengeAlertCount > 0 ? `${adminChallengeAlertCount} Admin disputes need review` : "Admin Control Room"}
+                title={adminChallengeAlertCount > 0 ? `${adminChallengeAlertCount} Contestazioni Admin da controllare` : "Pannello di controllo Admin"}
+                aria-label={adminChallengeAlertCount > 0 ? `${adminChallengeAlertCount} Contestazioni Admin da controllare` : "Pannello di controllo Admin"}
                 className={`relative w-10 h-10 rounded-xl border transition-all flex items-center justify-center ${
                   adminChallengeAlertCount > 0
                     ? "border-orange-500/30 bg-orange-500/10 text-orange-400 hover:bg-orange-500/15"
