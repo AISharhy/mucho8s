@@ -383,6 +383,11 @@ Deno.serve(async (req: Request) => {
           row = data;
         }
 
+        const { error: eloError } = await supabase.rpc("sync_challenge_elo", {
+          p_challenge_id: row.id,
+        });
+        if (eloError) throw eloError;
+
         synced.push(row);
       }
 
@@ -391,6 +396,13 @@ Deno.serve(async (req: Request) => {
         .map((row: any) => row.id);
 
       if (staleIds.length) {
+        for (const staleId of staleIds) {
+          const { error: eloError } = await supabase.rpc("remove_challenge_elo", {
+            p_challenge_id: staleId,
+          });
+          if (eloError) throw eloError;
+        }
+
         const { error: deleteError } = await supabase
           .from("player_challenges")
           .delete()
@@ -494,6 +506,12 @@ Deno.serve(async (req: Request) => {
         .single();
 
       if (error) throw error;
+
+      const { error: eloError } = await supabase.rpc("sync_challenge_elo", {
+        p_challenge_id: data.id,
+      });
+      if (eloError) throw eloError;
+
       await writeAudit("challenge.update", id, {
         status: data.status,
         amount_cents: data.amount_cents,
@@ -507,6 +525,11 @@ Deno.serve(async (req: Request) => {
     if (adminRequest && action === "admin-delete") {
       const id = String(body?.id || "").trim();
       if (!id) return json({ error: "Challenge id is required" }, 400);
+      const { error: eloError } = await supabase.rpc("remove_challenge_elo", {
+        p_challenge_id: id,
+      });
+      if (eloError) throw eloError;
+
       const { error } = await supabase.from("player_challenges").delete().eq("id", id);
       if (error) throw error;
       await writeAudit("challenge.delete", id, {});
@@ -1243,6 +1266,14 @@ Deno.serve(async (req: Request) => {
         .single();
 
       if (error) throw error;
+
+      if (decision === "confirm") {
+        const { error: eloError } = await supabase.rpc("sync_challenge_elo", {
+          p_challenge_id: data.id,
+        });
+        if (eloError) throw eloError;
+      }
+
       return json({ ok: true, challenge: await attachSeries(data) });
     }
 
