@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { load, save, uid } from "@/lib/storage";
-import { BASE_ELO, MIN_ELO, WIN_DELTA, LOSS_DELTA, MVP_BONUS, MERDA_PENALTY } from "@/lib/elo";
+import { BASE_ELO, MIN_ELO, WIN_DELTA, LOSS_DELTA, MVP_BONUS } from "@/lib/elo";
 import { toast } from "sonner";
 import { supabaseAuth, hasSupabaseAuth } from "@/lib/supabaseClient";
 
@@ -149,7 +149,6 @@ const applyEffects = (byId, teamA, teamB, winner, mvpId, merdaIds = [], merdaCle
     const won = winners.includes(pid);
     let delta = won ? WIN_DELTA : -LOSS_DELTA;
     if (pid === mvpId) delta += MVP_BONUS;
-    if (merdaSet.has(pid)) delta -= MERDA_PENALTY;
 
     const nextElo = Math.max(MIN_ELO, p.currentElo + delta);
     p.currentElo = nextElo;
