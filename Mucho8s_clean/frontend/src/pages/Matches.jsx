@@ -102,6 +102,7 @@ export default function Matches() {
     publicChallenges,
     matchReports,
     liveMatches,
+    discordPlayer,
     playerMap,
     playerAvatars,
     deleteMatch,
@@ -120,6 +121,7 @@ export default function Matches() {
   );
 
   const [editData, setEditData] = useState(null);
+  const [reportLiveMatch, setReportLiveMatch] = useState(null);
   const [view, setView] = useState("live");
   const [query, setQuery] = useState("");
   const [winnerFilter, setWinnerFilter] = useState("all");
@@ -289,31 +291,54 @@ export default function Matches() {
     const names = (ids) =>
       ids.map((id) => safePlayerMap[id]?.name || "Player").join(" · ");
     const captain = safePlayerMap[match.captain_player_id];
+    const canReportLive =
+      isAdmin ||
+      (discordPlayer?.id &&
+        String(discordPlayer.id) === String(match.captain_player_id || ""));
 
     return (
-      <Link
+      <div
         key={`live-team-${match.id}`}
-        to="/team-builder"
-        className="m8-panel rounded-2xl p-4 flex items-center gap-4 hover:border-[#394150] transition-all"
+        className="m8-panel rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-4"
       >
-        <Gamepad2 size={18} className="text-emerald-400 shrink-0" />
-        <div className="min-w-0 flex-1">
-          <div className="font-display font-bold truncate">
-            {names(teamA)} <span className="text-[#596170]">vs</span> {names(teamB)}
-          </div>
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">
-            LIVE
-            {match.format ? ` · ${match.format}` : ""}
-            {match.game ? ` · ${match.game}` : ""}
-            {match.mode ? ` · ${match.mode}` : ""}
-            {captain?.name ? ` · Captain: ${captain.name}` : ""}
+        <div className="flex items-center gap-4 min-w-0 flex-1">
+          <Gamepad2 size={18} className="text-emerald-400 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="font-display font-bold truncate">
+              {names(teamA)} <span className="text-[#596170]">vs</span> {names(teamB)}
+            </div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">
+              LIVE
+              {match.format ? ` · ${match.format}` : ""}
+              {match.game ? ` · ${match.game}` : ""}
+              {match.mode ? ` · ${match.mode}` : ""}
+              {captain?.name ? ` · Captain: ${captain.name}` : ""}
+            </div>
           </div>
         </div>
-        <div className="shrink-0 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-400">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          Live
+
+        <div className="flex items-center gap-2 sm:justify-end shrink-0">
+          <div className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-400">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            Live
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            disabled={!canReportLive}
+            onClick={() => setReportLiveMatch(match)}
+            className="h-9 rounded-lg bg-magma hover:bg-[#ff3c4c] text-white font-bold"
+            title={
+              canReportLive
+                ? "Report the final result"
+                : "Only the match creator or Admin can report this result"
+            }
+          >
+            <Trophy size={14} className="mr-1.5" />
+            Report Result
+          </Button>
         </div>
-      </Link>
+      </div>
     );
   };
 
@@ -866,6 +891,63 @@ export default function Matches() {
           )}
         </div>
       )}
+
+      <RecordMatchDialog
+        open={!!reportLiveMatch}
+        onOpenChange={(open) => !open && setReportLiveMatch(null)}
+        title="Report Final Result"
+        lockTeams
+        lockContext
+        initialTeams={
+          reportLiveMatch
+            ? {
+                teamA: Array.isArray(reportLiveMatch.team_a)
+                  ? reportLiveMatch.team_a
+                  : [],
+                teamB: Array.isArray(reportLiveMatch.team_b)
+                  ? reportLiveMatch.team_b
+                  : [],
+                pairings: (
+                  Array.isArray(reportLiveMatch.team_a)
+                    ? reportLiveMatch.team_a
+                    : []
+                ).map((playerAId, index) => ({
+                  playerAId,
+                  playerBId: (
+                    Array.isArray(reportLiveMatch.team_b)
+                      ? reportLiveMatch.team_b
+                      : []
+                  )[index] || "",
+                  amount: 5,
+                  platform: "paypal",
+                })),
+              }
+            : null
+        }
+        initialCaptains={
+          reportLiveMatch
+            ? {
+                A: (Array.isArray(reportLiveMatch.team_a)
+                  ? reportLiveMatch.team_a
+                  : []
+                ).includes(reportLiveMatch.captain_player_id)
+                  ? reportLiveMatch.captain_player_id
+                  : (reportLiveMatch.team_a || [])[0] || "",
+                B: (Array.isArray(reportLiveMatch.team_b)
+                  ? reportLiveMatch.team_b
+                  : []
+                ).includes(reportLiveMatch.captain_player_id)
+                  ? reportLiveMatch.captain_player_id
+                  : (reportLiveMatch.team_b || [])[0] || "",
+              }
+            : null
+        }
+        creatorPlayerId={reportLiveMatch?.captain_player_id || ""}
+        liveMatchId={reportLiveMatch?.id || ""}
+        defaultGame={reportLiveMatch?.game || undefined}
+        defaultMode={reportLiveMatch?.mode || undefined}
+        onReported={() => setReportLiveMatch(null)}
+      />
 
       <RecordMatchDialog
         open={!!editData}
