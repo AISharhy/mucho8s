@@ -59,6 +59,9 @@ export const Layout = () => {
         } else if (challenge.status === "disputed" || challenge.last_event === "payout_disputed") {
           title = "Challenge dispute opened";
           tone = "orange";
+        } else if (challenge.last_event === "match_pairing_verified") {
+          title = iWon ? "Money matchup won" : "Money matchup lost";
+          tone = iWon ? "green" : "red";
         } else if (challenge.status === "completed") {
           title = iWon ? "Challenge won" : "Challenge lost";
           tone = iWon ? "green" : "red";
