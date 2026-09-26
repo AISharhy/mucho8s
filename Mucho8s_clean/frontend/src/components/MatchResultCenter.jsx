@@ -160,7 +160,7 @@ export default function MatchResultCenter() {
                 <div className="flex flex-wrap gap-2 mt-3">
                   {mvp && (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#D5A33A]/[0.07] border border-[#D5A33A]/20 text-xs text-[#D5A33A] font-bold">
-                      <Crown size={13} /> MVP · {mvp.name}
+                      <span aria-hidden="true">🏆</span> MVP · {mvp.name}
                     </span>
                   )}
 
