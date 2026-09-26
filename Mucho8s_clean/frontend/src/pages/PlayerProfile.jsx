@@ -223,8 +223,11 @@ export default function PlayerProfile() {
       { label: "Clean Payout", detail: "3 clean settled payouts", icon: ShieldCheck, unlocked: reputation === 100 && settled.length >= 3 },
       { label: "Trusted", detail: "10 clean settled payouts", icon: Shield, unlocked: reputation === 100 && settled.length >= 10 },
 
-      { label: "Platinum", detail: "Reach 1200 Elo", icon: Medal, unlocked: (player?.currentElo || 0) >= 1200 },
-      { label: "Masters", detail: "Reach 1350 Elo", icon: Crown, unlocked: (player?.currentElo || 0) >= 1350 },
+      { label: "Bronze Rank", detail: "Reach 900 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 900 },
+      { label: "Silver Rank", detail: "Reach 1000 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 1000 },
+      { label: "Gold Rank", detail: "Reach 1100 Elo", icon: Trophy, unlocked: (player?.peakElo || 0) >= 1100 },
+      { label: "Platinum Rank", detail: "Reach 1200 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 1200 },
+      { label: "Masters", detail: "Reach 1350 Elo", icon: Crown, unlocked: (player?.peakElo || 0) >= 1350 },
     ];
 
     const achievements = achievementCatalog.filter((item) => item.unlocked);
