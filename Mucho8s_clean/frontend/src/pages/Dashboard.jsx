@@ -190,7 +190,7 @@ const CompetitionOverview = ({
             const captain = playerMap[match.captain_player_id];
 
             return (
-              <Link key={match.id} to="/team-builder" className="interactive-row rounded-xl p-3.5 block">
+              <Link key={match.id} to="/matches" className="interactive-row rounded-xl p-3.5 block">
                 <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-emerald-400 font-bold">
                   <Radio size={12} /> {match.format || "MATCH"} · {match.game || "Game"}{match.mode ? ` · ${match.mode}` : ""} · {liveDuration(match.created_at, liveNow)}
                 </div>
