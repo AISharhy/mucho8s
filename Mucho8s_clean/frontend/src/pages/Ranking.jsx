@@ -3,23 +3,15 @@ import { CalendarDays, Trophy } from "lucide-react";
 import Leaderboard from "@/pages/Leaderboard";
 import Statistics from "@/pages/Statistics";
 import SeasonHistory from "@/pages/SeasonHistory";
-import ChallengeLeaderboard from "@/pages/ChallengeLeaderboard";
 
-const normalizeInitial = (initialTab) => {
-  if (initialTab === "seasons") return { section: "seasons", rankingView: "overall" };
-  if (initialTab === "challenges") return { section: "ranking", rankingView: "challs" };
-  return { section: "ranking", rankingView: "overall" };
-};
+const normalizeInitial = (initialTab) =>
+  initialTab === "seasons" ? "seasons" : "ranking";
 
 export default function Ranking({ initialTab = "leaderboard" }) {
-  const initial = normalizeInitial(initialTab);
-  const [section, setSection] = useState(initial.section);
-  const [rankingView, setRankingView] = useState(initial.rankingView);
+  const [section, setSection] = useState(normalizeInitial(initialTab));
 
   useEffect(() => {
-    const next = normalizeInitial(initialTab);
-    setSection(next.section);
-    setRankingView(next.rankingView);
+    setSection(normalizeInitial(initialTab));
   }, [initialTab]);
 
   return (
@@ -27,9 +19,9 @@ export default function Ranking({ initialTab = "leaderboard" }) {
       <section className="m8-panel rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <div className="brand-kicker mb-1">Competition</div>
-          <h2 className="font-display text-3xl font-black tracking-[-0.03em]">Ranking</h2>
+          <h2 className="font-display text-3xl font-black tracking-[-0.03em]">Leaderboard</h2>
           <p className="text-sm text-[#7F8795] mt-1">
-            Overall standings, challenge ranking and season history.
+            One ranking for matches and Money Challs, with season history in one place.
           </p>
         </div>
 
@@ -45,7 +37,7 @@ export default function Ranking({ initialTab = "leaderboard" }) {
                 : "text-[#8D95A4] hover:text-white"
             }`}
           >
-            <Trophy size={15} /> Ranking
+            <Trophy size={15} /> Leaderboard
           </button>
 
           <button
@@ -67,55 +59,19 @@ export default function Ranking({ initialTab = "leaderboard" }) {
       {section === "seasons" ? (
         <SeasonHistory />
       ) : (
-        <div className="space-y-6">
-          <div className="m8-panel-quiet rounded-xl p-1 inline-flex items-center gap-1 self-start">
-            <button
-              type="button"
-              onClick={() => setRankingView("overall")}
-              data-testid="ranking-view-overall"
-              aria-pressed={rankingView === "overall"}
-              className={`relative px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                rankingView === "overall"
-                  ? "bg-white text-black"
-                  : "text-[#7F8795] hover:text-white hover:bg-white/[0.03]"
-              }`}
-            >
-              Overall
-            </button>
+        <div className="space-y-8">
+          <Leaderboard />
 
-            <button
-              type="button"
-              onClick={() => setRankingView("challs")}
-              data-testid="ranking-view-challs"
-              aria-pressed={rankingView === "challs"}
-              className={`relative px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                rankingView === "challs"
-                  ? "bg-white text-black"
-                  : "text-[#7F8795] hover:text-white hover:bg-white/[0.03]"
-              }`}
-            >
-              Challs
-            </button>
-          </div>
-
-          {rankingView === "challs" ? (
-            <ChallengeLeaderboard />
-          ) : (
-            <div className="space-y-8">
-              <Leaderboard />
-
-              <section className="m8-panel rounded-2xl p-5 sm:p-6 space-y-4">
-                <div>
-                  <div className="brand-kicker mb-1">Performance</div>
-                  <h3 className="font-display text-xl font-bold">Statistics</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Elo progression, win rates, activity and competitive performance.
-                  </p>
-                </div>
-                <Statistics />
-              </section>
+          <section className="m8-panel rounded-2xl p-5 sm:p-6 space-y-4">
+            <div>
+              <div className="brand-kicker mb-1">Performance</div>
+              <h3 className="font-display text-xl font-bold">Statistics</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Match activity, progression and competitive performance.
+              </p>
             </div>
-          )}
+            <Statistics />
+          </section>
         </div>
       )}
     </div>
