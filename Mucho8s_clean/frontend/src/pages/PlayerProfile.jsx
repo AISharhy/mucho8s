@@ -472,8 +472,8 @@ export default function PlayerProfile() {
     : [];
 
   return (
-    <div className="space-y-6">
-      <Link to="/players" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-white">
+    <div className="m8-page-stack">
+      <Link to="/players" className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-white self-start m8-pill">
         <ArrowLeft size={16} /> Back to Players
       </Link>
 
@@ -544,8 +544,9 @@ export default function PlayerProfile() {
         </DialogContent>
       </Dialog>
 
-      <div className="brand-card rounded-2xl p-5 sm:p-7">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+      <div className="m8-hero rounded-[22px] p-5 sm:p-7 relative">
+        <span className="m8-hero-accent" />
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-4">
           <PlayerAvatar
             name={player.name}
             elo={player.currentElo}
@@ -554,7 +555,7 @@ export default function PlayerProfile() {
           />
           <div className="min-w-0 flex-1">
             <div className="brand-kicker mb-1">{isOwnProfile ? "My Profile" : "Player Profile"}</div>
-            <h2 className="font-display text-3xl font-extrabold truncate">{player.name}</h2>
+            <h2 className="font-display text-3xl sm:text-4xl font-black tracking-[-0.035em] truncate">{player.name}</h2>
             <div className="mt-3 flex flex-wrap items-center gap-4">
               <RankBadge elo={player.currentElo} />
               <StreakBadge streak={player.currentStreak} />
@@ -608,7 +609,7 @@ export default function PlayerProfile() {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mt-6">
           {stats.map((item) => (
-            <div key={item.label} className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+            <div key={item.label} className="m8-stat-card">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{item.label}</div>
               <div className="font-mono font-bold text-lg mt-1">{item.value}</div>
             </div>
@@ -622,11 +623,11 @@ export default function PlayerProfile() {
         </div>
       </div>
 
-      <section className="brand-card rounded-2xl p-5 sm:p-6 overflow-hidden relative" data-testid="player-rank-preview">
+      <section className="m8-rank-spotlight rounded-[22px] p-5 sm:p-7 overflow-hidden relative" data-testid="player-rank-preview">
         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-center">
           <div>
             <div className="brand-kicker mb-2">Rank Preview</div>
-            <h3 className="font-display text-2xl sm:text-3xl font-extrabold">
+            <h3 className="font-display text-2xl sm:text-4xl font-black tracking-[-0.035em]">
               {player.name} is{" "}
               <span style={{ color: rankPreview.rank.color }}>{rankPreview.rank.name}</span>
             </h3>
@@ -645,7 +646,7 @@ export default function PlayerProfile() {
             </div>
           </div>
 
-          <div className="rounded-2xl bg-[#0B0D12]/70 border border-[#2A303B] p-5 flex items-center justify-center min-h-[170px]">
+          <div className="rounded-2xl bg-[#090C11]/75 border border-[#2A303B] p-6 flex items-center justify-center min-h-[210px] shadow-[inset_0_0_40px_rgba(255,255,255,0.018)]">
             <div className="w-full max-w-[280px]">
               <RankEmblem elo={player.currentElo} />
             </div>
@@ -653,7 +654,7 @@ export default function PlayerProfile() {
         </div>
       </section>
 
-      <div className="card-surface rounded-2xl p-4 sm:p-5" data-testid="challenge-profile-stats">
+      <div className="m8-panel rounded-2xl p-4 sm:p-5" data-testid="challenge-profile-stats">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="brand-kicker mb-1">Challenge Record</div>
@@ -664,19 +665,19 @@ export default function PlayerProfile() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full lg:w-auto">
-            <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+            <div className="m8-stat-card">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Win Rate</div>
               <div className="font-mono font-bold text-lg mt-1">{challengeStats.winRate}%</div>
             </div>
-            <div className="rounded-xl bg-emerald-500/[0.05] border border-emerald-500/15 p-3">
+            <div className="m8-stat-card border-emerald-500/15">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Money Won</div>
               <div className="font-mono font-bold text-lg mt-1 text-emerald-400">€{challengeStats.wonValue.toFixed(2)}</div>
             </div>
-            <div className="rounded-xl bg-red-500/[0.05] border border-red-500/15 p-3">
+            <div className="m8-stat-card border-red-500/15">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Money Lost</div>
               <div className="font-mono font-bold text-lg mt-1 text-red-400">€{challengeStats.lostValue.toFixed(2)}</div>
             </div>
-            <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+            <div className="m8-stat-card">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Match Pairings</div>
               <div className="font-mono font-bold text-lg mt-1 text-magma">{challengeStats.matchPairings}</div>
             </div>
@@ -707,7 +708,7 @@ export default function PlayerProfile() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4" data-testid="challenge-insights">
-        <div className="card-surface rounded-2xl p-5">
+        <div className="m8-panel rounded-2xl p-5">
           <div className="brand-kicker mb-1">Momentum</div>
           <h3 className="font-display font-bold text-lg">Challenge Streak</h3>
           <div className={`font-display text-4xl font-black mt-4 ${
@@ -726,7 +727,7 @@ export default function PlayerProfile() {
           </div>
         </div>
 
-        <div className="card-surface rounded-2xl p-5">
+        <div className="m8-panel rounded-2xl p-5">
           <div className="brand-kicker mb-1">Trust</div>
           <h3 className="font-display font-bold text-lg">Challenge Reputation</h3>
           <div className="flex items-end gap-2 mt-4">
@@ -742,7 +743,7 @@ export default function PlayerProfile() {
           </div>
         </div>
 
-        <div className="card-surface rounded-2xl p-5">
+        <div className="m8-panel rounded-2xl p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="brand-kicker mb-1">Milestones</div>
@@ -782,7 +783,7 @@ export default function PlayerProfile() {
         </div>
       </div>
 
-      <div className="card-surface rounded-2xl p-4 sm:p-5" data-testid="bounty-achievements">
+      <div className="m8-panel rounded-2xl p-4 sm:p-5" data-testid="bounty-achievements">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-5">
           <div>
             <div className="brand-kicker mb-1">Match Bounties</div>
@@ -873,7 +874,7 @@ export default function PlayerProfile() {
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3">Latest completed bounties</div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
               {bountyHistory.events.slice(0, 3).map((event) => (
-                <div key={event.id} className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+                <div key={event.id} className="m8-stat-card">
                   <div className="flex items-center justify-between gap-2">
                     <div className="font-semibold text-sm">{event.title}</div>
                     <div className="font-mono text-xs font-bold text-[#D5A33A]">+{event.points}</div>
@@ -891,7 +892,7 @@ export default function PlayerProfile() {
         )}
       </div>
 
-      <div className="card-surface rounded-2xl p-4 sm:p-5">
+      <div className="m8-panel rounded-2xl p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
             <div className="brand-kicker mb-1">Rivals</div>
@@ -939,11 +940,11 @@ export default function PlayerProfile() {
         )}
       </div>
 
-      <div className="card-surface rounded-2xl p-4 sm:p-5" data-testid="trophy-cabinet">
+      <div className="m8-panel rounded-2xl p-4 sm:p-5" data-testid="trophy-cabinet">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
             <div className="brand-kicker mb-1">Awards</div>
-            <h3 className="font-display font-bold text-lg">Trophy Cabinet</h3>
+            <h3 className="font-display font-black text-xl tracking-[-0.02em]">Trophy Cabinet</h3>
             <p className="text-sm text-muted-foreground mt-1">
               Rank milestones, repeat rank entries, match awards, streaks and chemistry.
             </p>
@@ -978,7 +979,7 @@ export default function PlayerProfile() {
               return (
                 <div
                   key={trophy.id}
-                  className="rounded-2xl bg-gradient-to-b from-[#171A21] to-[#0F1218] border border-[#D5A33A]/20 p-4 relative overflow-hidden"
+                  className="rounded-2xl bg-gradient-to-b from-[#171C25] to-[#0D1118] border border-[#D5A33A]/20 p-4 relative overflow-hidden transition-transform duration-200 hover:-translate-y-1 hover:border-[#D5A33A]/35"
                   style={trophy.type === "rank" ? { borderColor: `${trophy.rankColor}45` } : undefined}
                 >
                   <div
@@ -990,7 +991,7 @@ export default function PlayerProfile() {
                     }}
                   />
                   <div
-                    className="w-11 h-11 rounded-xl border flex items-center justify-center"
+                    className="w-12 h-12 rounded-xl border flex items-center justify-center shadow-[0_8px_24px_rgba(0,0,0,.22)]"
                     style={trophy.type === "rank"
                       ? { backgroundColor: `${trophy.rankColor}14`, borderColor: `${trophy.rankColor}40` }
                       : { backgroundColor: "#D5A33A1A", borderColor: "#D5A33A33" }}
@@ -1020,7 +1021,7 @@ export default function PlayerProfile() {
       </div>
 
       {isOwnProfile && (
-        <div className="card-surface rounded-2xl p-4 sm:p-5">
+        <div className="m8-panel rounded-2xl p-4 sm:p-5">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
               <div className="brand-kicker mb-1">Challenge</div>
@@ -1082,7 +1083,7 @@ export default function PlayerProfile() {
       )}
 
       {isOwnProfile && (
-        <div className="card-surface rounded-2xl p-4 sm:p-5" data-testid="my-challenges-panel">
+        <div className="m8-panel rounded-2xl p-4 sm:p-5" data-testid="my-challenges-panel">
           <div className="mb-4">
             <div className="brand-kicker mb-1">Challenge Center</div>
             <h3 className="font-display font-bold text-lg">My Challenges</h3>
@@ -1193,7 +1194,7 @@ export default function PlayerProfile() {
         </div>
       )}
 
-      <div className="card-surface rounded-2xl p-4 sm:p-5">
+      <div className="m8-panel rounded-2xl p-4 sm:p-5">
         <h3 className="font-display font-bold text-lg mb-4">Elo History</h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
@@ -1211,7 +1212,7 @@ export default function PlayerProfile() {
         </div>
       </div>
 
-      <div className="card-surface rounded-2xl p-4 sm:p-5">
+      <div className="m8-panel rounded-2xl p-4 sm:p-5">
         <h3 className="font-display font-bold text-lg mb-4">Recent Matches</h3>
         <div className="space-y-2">
           {playerMatches.slice(0, 10).map((m) => {
