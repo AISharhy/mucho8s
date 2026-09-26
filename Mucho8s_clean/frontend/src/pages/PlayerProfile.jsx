@@ -473,7 +473,7 @@ export default function PlayerProfile() {
 
   return (
     <div className="m8-page-stack">
-      <Link to="/players" className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-white self-start m8-pill">
+      <Link to="/players" className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-white self-start m8-pill order-0">
         <ArrowLeft size={16} /> Back to Players
       </Link>
 
@@ -544,86 +544,119 @@ export default function PlayerProfile() {
         </DialogContent>
       </Dialog>
 
-      <div className="m8-hero rounded-[22px] p-5 sm:p-7 relative">
-        <span className="m8-hero-accent" />
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-4">
-          <PlayerAvatar
-            name={player.name}
-            elo={player.currentElo}
-            size={82}
-            avatarUrl={playerAvatars[player.id]}
-          />
-          <div className="min-w-0 flex-1">
-            <div className="brand-kicker mb-1">{isOwnProfile ? "My Profile" : "Player Profile"}</div>
-            <h2 className="font-display text-3xl sm:text-4xl font-black tracking-[-0.035em] truncate">{player.name}</h2>
-            <div className="mt-3 flex flex-wrap items-center gap-4">
-              <RankBadge elo={player.currentElo} />
-              <StreakBadge streak={player.currentStreak} />
+      <section className="m8-profile-hero rounded-[24px] overflow-hidden relative order-1">
+        <div className="m8-profile-banner">
+          <div className="m8-profile-grid" />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#10151D] to-transparent" />
+        </div>
+
+        <div className="relative z-10 px-5 sm:px-7 pb-6">
+          <div className="-mt-10 sm:-mt-12 flex flex-col lg:flex-row lg:items-end gap-5">
+            <div className="relative shrink-0 self-start">
+              <div className="absolute -inset-2 rounded-[26px] bg-magma/10 blur-xl" />
+              <div className="relative rounded-[24px] border-4 border-[#10151D] shadow-2xl overflow-hidden">
+                <PlayerAvatar
+                  name={player.name}
+                  elo={player.currentElo}
+                  size={104}
+                  avatarUrl={playerAvatars[player.id]}
+                />
+              </div>
             </div>
+
+            <div className="min-w-0 flex-1 pb-1">
+              <div className="brand-kicker mb-1">{isOwnProfile ? "My Competitive Profile" : "Competitive Player Profile"}</div>
+              <div className="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-4">
+                <h2 className="font-display text-3xl sm:text-[42px] leading-none font-black tracking-[-0.045em] truncate">
+                  {player.name}
+                </h2>
+                <div className="flex flex-wrap items-center gap-2 pb-0.5">
+                  <RankBadge elo={player.currentElo} />
+                  <StreakBadge streak={player.currentStreak} />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-xs text-[#8A94A4]">
+                <span><strong className="text-white font-mono">{player.currentElo}</strong> Elo</span>
+                <span>{player.totalMatches || 0} matches</span>
+                <span>{challengeStats.wins + challengeStats.losses} challs</span>
+                <span>{player.mvpCount || 0} MVP</span>
+              </div>
+            </div>
+
+            {!isOwnProfile && challengeLinks.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    className="m8-action m8-action-primary h-11 px-6 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-extrabold tracking-wide"
+                    data-testid="challenge-me-btn"
+                  >
+                    <Swords size={17} className="mr-2" /> CHALL ME
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  sideOffset={8}
+                  className="w-56 rounded-xl border-[#2A303B] bg-[#101319] p-2 shadow-2xl"
+                >
+                  <DropdownMenuLabel className="px-2 py-2">
+                    <div className="brand-kicker mb-1">Challenge {player.name}</div>
+                    <div className="text-sm font-semibold text-white">Choose platform</div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-[#242A35]" />
+                  {challengeLinks.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <DropdownMenuItem
+                        key={item.key}
+                        onSelect={() => openChallengeAmount(item.key)}
+                        disabled={Boolean(sendingChallenge)}
+                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-[#D7DBE2] focus:bg-white/[0.05] focus:text-white cursor-pointer"
+                        data-testid={`challenge-link-${item.key}`}
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-[#171B23] border border-[#2A303B] flex items-center justify-center">
+                          <Icon size={15} />
+                        </div>
+                        <span className="flex-1">
+                          {sendingChallenge === item.key ? "Sending..." : item.label}
+                        </span>
+                        <Swords size={13} className="text-[#697181]" />
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
 
-          {!isOwnProfile && challengeLinks.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  className="h-11 px-5 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-extrabold tracking-wide magma-glow"
-                  data-testid="challenge-me-btn"
-                >
-                  <Swords size={17} className="mr-2" /> CHALL ME
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                sideOffset={8}
-                className="w-56 rounded-xl border-[#2A303B] bg-[#101319] p-2 shadow-2xl"
-              >
-                <DropdownMenuLabel className="px-2 py-2">
-                  <div className="brand-kicker mb-1">Challenge {player.name}</div>
-                  <div className="text-sm font-semibold text-white">Choose platform</div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-[#242A35]" />
-                {challengeLinks.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <DropdownMenuItem
-                      key={item.key}
-                      onSelect={() => openChallengeAmount(item.key)}
-                      disabled={Boolean(sendingChallenge)}
-                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-[#D7DBE2] focus:bg-white/[0.05] focus:text-white cursor-pointer"
-                      data-testid={`challenge-link-${item.key}`}
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-[#171B23] border border-[#2A303B] flex items-center justify-center">
-                        <Icon size={15} />
-                      </div>
-                      <span className="flex-1">
-                        {sendingChallenge === item.key ? "Sending..." : item.label}
-                      </span>
-                      <Swords size={13} className="text-[#697181]" />
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
+          <div className="m8-profile-stat-strip mt-6">
+            {[
+              { label: "Current Elo", value: player.currentElo, tone: "text-white" },
+              { label: "Peak Elo", value: player.peakElo, tone: "text-[#D5A33A]" },
+              { label: "Match Record", value: `${player.wins || 0}W - ${player.losses || 0}L`, tone: "text-white" },
+              { label: "Win Rate", value: `${winRate(player)}%`, tone: "text-white" },
+              { label: "Money Won", value: `€${challengeStats.wonValue.toFixed(2)}`, tone: "text-emerald-400" },
+              { label: "Chall Record", value: `${challengeStats.wins}W - ${challengeStats.losses}L`, tone: "text-white" },
+            ].map((item) => (
+              <div key={item.label} className="m8-profile-stat">
+                <div className="text-[9px] uppercase tracking-[0.16em] text-[#697181] font-bold">{item.label}</div>
+                <div className={`font-mono font-black text-base sm:text-lg mt-1 ${item.tone}`}>{item.value}</div>
+              </div>
+            ))}
+          </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mt-6">
-          {stats.map((item) => (
-            <div key={item.label} className="m8-stat-card">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{item.label}</div>
-              <div className="font-mono font-bold text-lg mt-1">{item.value}</div>
-            </div>
-          ))}
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <span className="text-[10px] uppercase tracking-widest text-[#697181]">Recent form</span>
+            <Last10 record={player.last10} />
+            <MvpBadge count={player.mvpCount} />
+            <span className="ml-auto hidden sm:inline-flex m8-pill">
+              {tier.name} · {player.currentElo} Elo
+            </span>
+          </div>
         </div>
+      </section>
 
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <span className="text-sm text-muted-foreground">Last 10</span>
-          <Last10 record={player.last10} />
-          <MvpBadge count={player.mvpCount} />
-        </div>
-      </div>
-
-      <section className="m8-rank-spotlight rounded-[22px] p-5 sm:p-7 overflow-hidden relative" data-testid="player-rank-preview">
+      <section className="m8-rank-spotlight rounded-[22px] p-5 sm:p-7 overflow-hidden relative order-3" data-testid="player-rank-preview">
         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-center">
           <div>
             <div className="brand-kicker mb-2">Rank Preview</div>
@@ -654,7 +687,7 @@ export default function PlayerProfile() {
         </div>
       </section>
 
-      <div className="m8-panel rounded-2xl p-4 sm:p-5" data-testid="challenge-profile-stats">
+      <div className="m8-panel rounded-2xl p-4 sm:p-5 order-4" data-testid="challenge-profile-stats">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="brand-kicker mb-1">Challenge Record</div>
@@ -707,7 +740,7 @@ export default function PlayerProfile() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4" data-testid="challenge-insights">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 order-5" data-testid="challenge-insights">
         <div className="m8-panel rounded-2xl p-5">
           <div className="brand-kicker mb-1">Momentum</div>
           <h3 className="font-display font-bold text-lg">Challenge Streak</h3>
@@ -783,7 +816,7 @@ export default function PlayerProfile() {
         </div>
       </div>
 
-      <div className="m8-panel rounded-2xl p-4 sm:p-5" data-testid="bounty-achievements">
+      <div className="m8-panel rounded-2xl p-4 sm:p-5 order-7" data-testid="bounty-achievements">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-5">
           <div>
             <div className="brand-kicker mb-1">Match Bounties</div>
@@ -892,7 +925,7 @@ export default function PlayerProfile() {
         )}
       </div>
 
-      <div className="m8-panel rounded-2xl p-4 sm:p-5">
+      <div className="m8-panel rounded-2xl p-4 sm:p-5 order-6">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
             <div className="brand-kicker mb-1">Rivals</div>
@@ -940,7 +973,7 @@ export default function PlayerProfile() {
         )}
       </div>
 
-      <div className="m8-panel rounded-2xl p-4 sm:p-5" data-testid="trophy-cabinet">
+      <div className="m8-showcase rounded-[22px] p-4 sm:p-6 order-2" data-testid="trophy-cabinet">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
             <div className="brand-kicker mb-1">Awards</div>
@@ -1021,7 +1054,7 @@ export default function PlayerProfile() {
       </div>
 
       {isOwnProfile && (
-        <div className="m8-panel rounded-2xl p-4 sm:p-5">
+        <div className="m8-panel rounded-2xl p-4 sm:p-5 order-[11]">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
               <div className="brand-kicker mb-1">Challenge</div>
@@ -1083,7 +1116,7 @@ export default function PlayerProfile() {
       )}
 
       {isOwnProfile && (
-        <div className="m8-panel rounded-2xl p-4 sm:p-5" data-testid="my-challenges-panel">
+        <div className="m8-panel rounded-2xl p-4 sm:p-5 order-[12]" data-testid="my-challenges-panel">
           <div className="mb-4">
             <div className="brand-kicker mb-1">Challenge Center</div>
             <h3 className="font-display font-bold text-lg">My Challenges</h3>
@@ -1194,8 +1227,9 @@ export default function PlayerProfile() {
         </div>
       )}
 
-      <div className="m8-panel rounded-2xl p-4 sm:p-5">
-        <h3 className="font-display font-bold text-lg mb-4">Elo History</h3>
+      <div className="m8-panel rounded-2xl p-4 sm:p-5 order-8">
+        <div className="brand-kicker mb-1">Progression</div>
+        <h3 className="font-display font-black text-xl tracking-[-0.02em] mb-4">Elo History</h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={player.eloHistory || []}>
@@ -1212,8 +1246,9 @@ export default function PlayerProfile() {
         </div>
       </div>
 
-      <div className="m8-panel rounded-2xl p-4 sm:p-5">
-        <h3 className="font-display font-bold text-lg mb-4">Recent Matches</h3>
+      <div className="m8-panel rounded-2xl p-4 sm:p-5 order-9">
+        <div className="brand-kicker mb-1">Recent Activity</div>
+        <h3 className="font-display font-black text-xl tracking-[-0.02em] mb-4">Recent Matches</h3>
         <div className="space-y-2">
           {playerMatches.slice(0, 10).map((m) => {
             const winners = m.winner === "A" ? m.teamA : m.teamB;
