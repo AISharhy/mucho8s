@@ -181,9 +181,9 @@ export default function RankGuide() {
 
       <section className="m8-panel rounded-2xl p-5 sm:p-6">
         <div className="brand-kicker mb-1">Bilanciamento squadre</div>
-        <h2 className="font-display text-xl font-black">Come funziona l'Auto Balance</h2>
+        <h2 className="font-display text-xl font-black">Come funziona il bilanciamento automatico</h2>
         <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-          L'Auto Balance serve soltanto a creare squadre più equilibrate: non modifica direttamente
+          Il bilanciamento automatico serve soltanto a creare squadre più equilibrate: non modifica direttamente
           l'Elo. Tiene conto soprattutto del picco Elo, poi dell'Elo attuale e della percentuale di
           vittorie. Quando scegli gioco o modalità, usa anche lo storico specifico di quel contesto;
           più partite hai in quel contesto, più quel dato pesa.
@@ -293,9 +293,9 @@ export default function RankGuide() {
         <div className="brand-kicker mb-1">In sintesi</div>
         <h2 className="font-display text-xl font-black">Come salire</h2>
         <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-          Vinci partite verificate, mantieni streak positive e prova a conquistare l'MVP.
+          Vinci partite verificate, mantieni serie positive e prova a conquistare l'MVP.
           Il valore virtuale della sfida aumenta allo stesso modo sia il guadagno sia la perdita.
-          La MERDA è invece un indicatore di streak negativa e non modifica l'Elo.
+          La MERDA è invece un indicatore di serie negativa e non modifica l'Elo.
         </p>
       </section>
     </div>
