@@ -288,7 +288,12 @@ export const RecordMatchDialog = ({
           {teamsLocked ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="rounded-xl bg-magma/5 border border-magma/20 p-3">
-                <div className="text-[10px] uppercase tracking-widest text-magma mb-2">Alpha</div>
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <div className="text-[10px] uppercase tracking-widest text-magma">Alpha</div>
+                  <div className="text-[10px] font-semibold text-[#D5A33A]">
+                    👑 Captain · {players.find((p) => p.id === effectiveCaptainA)?.name || "—"}
+                  </div>
+                </div>
                 <div className="space-y-1 text-sm">
                   {teamA.map((id) => (
                     <div key={id} className="font-medium">
@@ -298,7 +303,12 @@ export const RecordMatchDialog = ({
                 </div>
               </div>
               <div className="rounded-xl bg-[#D5A33A]/5 border border-[#D5A33A]/20 p-3">
-                <div className="text-[10px] uppercase tracking-widest text-[#D5A33A] mb-2">Bravo</div>
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <div className="text-[10px] uppercase tracking-widest text-[#D5A33A]">Bravo</div>
+                  <div className="text-[10px] font-semibold text-[#D5A33A]">
+                    👑 Captain · {players.find((p) => p.id === effectiveCaptainB)?.name || "—"}
+                  </div>
+                </div>
                 <div className="space-y-1 text-sm">
                   {teamB.map((id) => (
                     <div key={id} className="font-medium">
@@ -358,18 +368,29 @@ export const RecordMatchDialog = ({
             </>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="rounded-xl bg-[#0F1218] border border-[#222834] px-3 py-2.5">
-              <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Alpha Captain</div>
-              <div className="text-sm font-bold mt-1">
-                👑 {players.find((p) => p.id === effectiveCaptainA)?.name || "—"}
-              </div>
-            </div>
-            <div className="rounded-xl bg-[#0F1218] border border-[#222834] px-3 py-2.5">
-              <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Bravo Captain</div>
-              <div className="text-sm font-bold mt-1">
-                👑 {players.find((p) => p.id === effectiveCaptainB)?.name || "—"}
-              </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">Winner</Label>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              <Button
+                type="button"
+                data-testid="winner-alpha-btn"
+                onClick={() => setWinner("A")}
+                className={winner === "A"
+                  ? "bg-magma text-white"
+                  : "bg-[#0F1218] text-magma border border-magma/40 hover:bg-magma/10"}
+              >
+                Alpha
+              </Button>
+              <Button
+                type="button"
+                data-testid="winner-bravo-btn"
+                onClick={() => setWinner("B")}
+                className={winner === "B"
+                  ? "bg-[#D5A33A] text-black"
+                  : "bg-[#0F1218] text-[#D5A33A] border border-[#3A3320] hover:bg-[#D5A33A]/10"}
+              >
+                Bravo
+              </Button>
             </div>
           </div>
 
@@ -377,9 +398,9 @@ export const RecordMatchDialog = ({
             <div className="flex items-center gap-2 mb-3">
               <WalletCards size={16} className="text-[#D5A33A]" />
               <div>
-                <div className="text-sm font-bold">Money Match</div>
+                <div className="text-sm font-bold">Money Match Pairings</div>
                 <div className="text-[11px] text-muted-foreground">
-                  Choose who faces who, then set amount and payment method.
+                  Set player pairings, amount and payment method.
                 </div>
               </div>
             </div>
@@ -446,75 +467,49 @@ export const RecordMatchDialog = ({
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs text-muted-foreground">Winner</Label>
-              <div className="flex gap-2 mt-1">
-                <Button
-                  type="button"
-                  data-testid="winner-alpha-btn"
-                  onClick={() => setWinner("A")}
-                  className={winner === "A"
-                    ? "bg-magma text-white flex-1"
-                    : "flex-1 bg-[#0F1218] text-magma border border-magma/40 hover:bg-magma/10"}
-                >
-                  Alpha
-                </Button>
-                <Button
-                  type="button"
-                  data-testid="winner-bravo-btn"
-                  onClick={() => setWinner("B")}
-                  className={winner === "B"
-                    ? "bg-[#D5A33A] text-black flex-1"
-                    : "flex-1 bg-[#0F1218] text-[#D5A33A] border border-[#3A3320] hover:bg-[#D5A33A]/10"}
-                >
-                  Bravo
-                </Button>
+          <div className="rounded-xl bg-[#0F1218] border border-[#2A303B] px-3 py-3">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
+              Automatic Rules
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] leading-5">
+              <div>
+                <span className="font-semibold text-[#D5A33A]">MVP 🏆</span>
+                <span className="text-muted-foreground"> · Every 4 consecutive wins = +1 MVP and +3 Elo.</span>
+              </div>
+              <div>
+                <span className="font-semibold text-[#C79A6B]">MERDA 💩</span>
+                <span className="text-muted-foreground"> · Every 4 consecutive losses = +1 MERDA.</span>
               </div>
             </div>
-
-            <div className="rounded-xl bg-[#D5A33A]/[0.07] border border-[#D5A33A]/20 px-3 py-2.5">
-              <Label className="text-xs text-[#D5A33A]">MVP 🏆 · automatic</Label>
-              <div className="text-[11px] text-muted-foreground mt-1 leading-5">
-                Every 4 consecutive wins automatically awards 1 MVP and +3 Elo.
-              </div>
-            </div>
-
-            <div className="rounded-xl bg-[#8B5E3C]/[0.07] border border-[#8B5E3C]/20 px-3 py-2.5">
-              <Label className="text-xs text-[#C79A6B]">MERDA 💩 · automatic</Label>
-              <div className="text-[11px] text-muted-foreground mt-1 leading-5">
-                Automatically awarded every 4 consecutive losses: 4, 8, 12, 16…
-              </div>
-            </div>
-
-            {!reportOnly && !lockContext && (
-              <>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Mode</Label>
-                  <select
-                    data-testid="mode-select"
-                    value={mode}
-                    onChange={(e) => setMode(e.target.value)}
-                    className="mt-1 w-full h-10 rounded-xl bg-[#0F1218] border border-[#222834] px-3 text-sm"
-                  >
-                    {MATCH_MODES.map((m) => <option key={m}>{m}</option>)}
-                  </select>
-                </div>
-
-                <div>
-                  <Label className="text-xs text-muted-foreground">Game</Label>
-                  <select
-                    data-testid="game-select"
-                    value={game}
-                    onChange={(e) => setGame(e.target.value)}
-                    className="mt-1 w-full h-10 rounded-xl bg-[#0F1218] border border-[#3A3320] text-[#D5A33A] font-semibold px-3 text-sm"
-                  >
-                    {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
-                  </select>
-                </div>
-              </>
-            )}
           </div>
+
+          {!reportOnly && !lockContext && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Mode</Label>
+                <select
+                  data-testid="mode-select"
+                  value={mode}
+                  onChange={(e) => setMode(e.target.value)}
+                  className="mt-1 w-full h-10 rounded-xl bg-[#0F1218] border border-[#222834] px-3 text-sm"
+                >
+                  {MATCH_MODES.map((m) => <option key={m}>{m}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <Label className="text-xs text-muted-foreground">Game</Label>
+                <select
+                  data-testid="game-select"
+                  value={game}
+                  onChange={(e) => setGame(e.target.value)}
+                  className="mt-1 w-full h-10 rounded-xl bg-[#0F1218] border border-[#3A3320] text-[#D5A33A] font-semibold px-3 text-sm"
+                >
+                  {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
 
         </div>
 
