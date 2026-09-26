@@ -1909,6 +1909,7 @@ export const DataProvider = ({ children }) => {
     challenges,
     publicChallenges,
     matchReports,
+    liveMatches,
     dashboardData,
     competitionData,
     challengeNotificationCount,
