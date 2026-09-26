@@ -45,9 +45,7 @@ const CompetitionOverview = ({
   matches,
   playerMap,
   playerAvatars,
-  activeChallenges,
   liveMatches,
-  loggedIn = false,
 }) => {
   const topThree = useMemo(
     () => [...(players || [])]
@@ -271,7 +269,7 @@ const GuestDashboard = ({
         matches={matches}
         playerMap={playerMap}
         playerAvatars={playerAvatars}
-        activeChallenges={activeChallenges}
+        liveMatches={liveMatches}
       />
     </div>
   );
@@ -288,6 +286,7 @@ const PersonalDashboard = ({
   adminChallengeAlertCount,
   players,
   activeChallenges,
+  liveMatches,
 }) => {
   const personalMatches = useMemo(
     () =>
@@ -533,9 +532,7 @@ const PersonalDashboard = ({
         matches={matches}
         playerMap={playerMap}
         playerAvatars={playerAvatars}
-        activeChallenges={activeChallenges}
         liveMatches={liveMatches}
-        loggedIn
       />
     </div>
   );
