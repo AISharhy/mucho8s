@@ -35,6 +35,150 @@ const CompactMetric = ({ label, value, sub, icon: Icon, tone = "" }) => (
   </div>
 );
 
+const CompetitionOverview = ({
+  players,
+  matches,
+  playerMap,
+  playerAvatars,
+  activeChallenges,
+  loggedIn = false,
+}) => {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <section className="card-surface rounded-2xl p-5">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div>
+            <div className="brand-kicker mb-1">Competition</div>
+            <h3 className="font-display font-bold text-lg">Top 3</h3>
+          </div>
+          <Trophy size={17} className="text-[#D5A33A]" />
+        </div>
+
+        <div className="space-y-2">
+          {topThree.map((player, index) => (
+            <Link
+              key={player.id}
+              to={`/players/${player.id}`}
+              className="interactive-row rounded-xl p-3 flex items-center gap-3"
+            >
+              <div className="font-mono text-xs font-bold text-muted-foreground w-5">#{index + 1}</div>
+              <PlayerAvatar
+                name={player.name}
+                elo={player.currentElo}
+                size={36}
+                avatarUrl={playerAvatars[player.id]}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="font-semibold text-sm truncate">{player.name}</div>
+                <div className="mt-1"><RankBadge elo={player.currentElo} compact /></div>
+              </div>
+              <EloBadge elo={player.currentElo} />
+            </Link>
+          ))}
+          {topThree.length === 0 && (
+            <div className="text-sm text-muted-foreground py-8 text-center">No ranking data yet.</div>
+          )}
+        </div>
+
+        <Link to="/ranking" className="inline-flex items-center gap-1 text-xs text-magma mt-4">
+          Full ranking <ArrowUpRight size={13} />
+        </Link>
+      </section>
+
+      <section className="card-surface rounded-2xl p-5">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div>
+            <div className="brand-kicker mb-1">Latest</div>
+            <h3 className="font-display font-bold text-lg">Results</h3>
+          </div>
+          <Gamepad2 size={17} className="text-magma" />
+        </div>
+
+        <div className="space-y-2">
+          {recentMatches.map((match) => {
+            const winnerIds = match.winner === "A" ? match.teamA : match.teamB;
+            return (
+              <Link
+                to="/matches"
+                key={match.id}
+                className="interactive-row rounded-xl p-3 flex items-center gap-3"
+              >
+                <div className="w-9 h-9 rounded-lg bg-magma/10 border border-magma/20 flex items-center justify-center shrink-0">
+                  <Trophy size={15} className="text-magma" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold">
+                    {match.winner === "A" ? "Team A" : "Team B"} won
+                    {(Number(match.scoreA || 0) > 0 || Number(match.scoreB || 0) > 0)
+                      ? ` · ${Number(match.scoreA || 0)}-${Number(match.scoreB || 0)}`
+                      : ""}
+                  </div>
+                  <div className="text-xs text-muted-foreground truncate mt-0.5">
+                    {(winnerIds || []).map((id) => playerMap[id]?.name).filter(Boolean).join(", ")}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+          {recentMatches.length === 0 && (
+            <div className="text-sm text-muted-foreground py-8 text-center">No matches yet.</div>
+          )}
+        </div>
+
+        <Link to="/matches" className="inline-flex items-center gap-1 text-xs text-magma mt-4">
+          View all matches <ArrowUpRight size={13} />
+        </Link>
+      </section>
+
+      <section className="card-surface rounded-2xl p-5">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div>
+            <div className="brand-kicker mb-1">Live</div>
+            <h3 className="font-display font-bold text-lg">Active Chall</h3>
+          </div>
+          <Radio size={17} className="text-emerald-400" />
+        </div>
+
+        <div className="space-y-2">
+          {liveChallenges.map((challenge) => {
+            const challenger = playerMap[challenge.challenger_player_id];
+            const challenged = playerMap[challenge.challenged_player_id];
+
+            return (
+              <div key={challenge.id} className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+                <div className="text-sm font-semibold truncate">
+                  {challenger?.name || "Player"} <span className="text-[#596170]">vs</span> {challenged?.name || "Player"}
+                </div>
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground mt-1.5">
+                  <span>{euro(challengeAmount(challenge))}</span>
+                  <span>·</span>
+                  <span>{String(challenge.platform || "").toUpperCase()}</span>
+                  <span className="ml-auto text-emerald-400">{String(challenge.status || "").replace("_", " ")}</span>
+                </div>
+              </div>
+            );
+          })}
+          {liveChallenges.length === 0 && (
+            <div className="text-sm text-muted-foreground py-8 text-center">No active challs right now.</div>
+          )}
+        </div>
+
+        <div className="mt-4">
+          {loggedIn ? (
+            <Link to="/challenges" className="inline-flex items-center gap-1 text-xs text-magma">
+              Manage my challenges <ArrowUpRight size={13} />
+            </Link>
+          ) : (
+            <div className="text-xs text-muted-foreground">
+              Login with Discord to manage your own challenges.
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+};
+
 const GuestDashboard = ({
   players,
   matches,
@@ -108,130 +252,13 @@ const GuestDashboard = ({
         </div>
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <section className="card-surface rounded-2xl p-5">
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <div>
-              <div className="brand-kicker mb-1">Competition</div>
-              <h3 className="font-display font-bold text-lg">Top 3</h3>
-            </div>
-            <Trophy size={17} className="text-[#D5A33A]" />
-          </div>
-
-          <div className="space-y-2">
-            {topThree.map((player, index) => (
-              <Link
-                key={player.id}
-                to={`/players/${player.id}`}
-                className="interactive-row rounded-xl p-3 flex items-center gap-3"
-              >
-                <div className="font-mono text-xs font-bold text-muted-foreground w-5">#{index + 1}</div>
-                <PlayerAvatar
-                  name={player.name}
-                  elo={player.currentElo}
-                  size={36}
-                  avatarUrl={playerAvatars[player.id]}
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-sm truncate">{player.name}</div>
-                  <div className="mt-1"><RankBadge elo={player.currentElo} compact /></div>
-                </div>
-                <EloBadge elo={player.currentElo} />
-              </Link>
-            ))}
-            {topThree.length === 0 && (
-              <div className="text-sm text-muted-foreground py-8 text-center">No ranking data yet.</div>
-            )}
-          </div>
-
-          <Link to="/ranking" className="inline-flex items-center gap-1 text-xs text-magma mt-4">
-            Full ranking <ArrowUpRight size={13} />
-          </Link>
-        </section>
-
-        <section className="card-surface rounded-2xl p-5">
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <div>
-              <div className="brand-kicker mb-1">Latest</div>
-              <h3 className="font-display font-bold text-lg">Results</h3>
-            </div>
-            <Gamepad2 size={17} className="text-magma" />
-          </div>
-
-          <div className="space-y-2">
-            {recentMatches.map((match) => {
-              const winnerIds = match.winner === "A" ? match.teamA : match.teamB;
-              return (
-                <Link
-                  to="/matches"
-                  key={match.id}
-                  className="interactive-row rounded-xl p-3 flex items-center gap-3"
-                >
-                  <div className="w-9 h-9 rounded-lg bg-magma/10 border border-magma/20 flex items-center justify-center shrink-0">
-                    <Trophy size={15} className="text-magma" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-semibold">
-                      {match.winner === "A" ? "Team A" : "Team B"} won
-                      {(Number(match.scoreA || 0) > 0 || Number(match.scoreB || 0) > 0)
-                        ? ` · ${Number(match.scoreA || 0)}-${Number(match.scoreB || 0)}`
-                        : ""}
-                    </div>
-                    <div className="text-xs text-muted-foreground truncate mt-0.5">
-                      {winnerIds.map((id) => playerMap[id]?.name).filter(Boolean).join(", ")}
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-            {recentMatches.length === 0 && (
-              <div className="text-sm text-muted-foreground py-8 text-center">No matches yet.</div>
-            )}
-          </div>
-
-          <Link to="/matches" className="inline-flex items-center gap-1 text-xs text-magma mt-4">
-            View all matches <ArrowUpRight size={13} />
-          </Link>
-        </section>
-
-        <section className="card-surface rounded-2xl p-5">
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <div>
-              <div className="brand-kicker mb-1">Live</div>
-              <h3 className="font-display font-bold text-lg">Active Chall</h3>
-            </div>
-            <Radio size={17} className="text-emerald-400" />
-          </div>
-
-          <div className="space-y-2">
-            {liveChallenges.map((challenge) => {
-              const challenger = playerMap[challenge.challenger_player_id];
-              const challenged = playerMap[challenge.challenged_player_id];
-
-              return (
-                <div key={challenge.id} className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
-                  <div className="text-sm font-semibold truncate">
-                    {challenger?.name || "Player"} <span className="text-[#596170]">vs</span> {challenged?.name || "Player"}
-                  </div>
-                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground mt-1.5">
-                    <span>{euro(challengeAmount(challenge))}</span>
-                    <span>·</span>
-                    <span>{String(challenge.platform || "").toUpperCase()}</span>
-                    <span className="ml-auto text-emerald-400">{String(challenge.status || "").replace("_", " ")}</span>
-                  </div>
-                </div>
-              );
-            })}
-            {liveChallenges.length === 0 && (
-              <div className="text-sm text-muted-foreground py-8 text-center">No active challs right now.</div>
-            )}
-          </div>
-
-          <div className="text-xs text-muted-foreground mt-4">
-            Login with Discord to manage your own challenges.
-          </div>
-        </section>
-      </div>
+      <CompetitionOverview
+        players={players}
+        matches={matches}
+        playerMap={playerMap}
+        playerAvatars={playerAvatars}
+        activeChallenges={activeChallenges}
+      />
     </div>
   );
 };
@@ -245,6 +272,8 @@ const PersonalDashboard = ({
   season,
   isAdmin,
   adminChallengeAlertCount,
+  players,
+  activeChallenges,
 }) => {
   const personalMatches = useMemo(
     () =>
@@ -485,6 +514,15 @@ const PersonalDashboard = ({
           </div>
         )}
       </section>
+
+      <CompetitionOverview
+        players={players}
+        matches={matches}
+        playerMap={playerMap}
+        playerAvatars={playerAvatars}
+        activeChallenges={activeChallenges}
+        loggedIn
+      />
     </div>
   );
 };
@@ -534,6 +572,8 @@ export default function Dashboard() {
       season={season}
       isAdmin={isAdmin}
       adminChallengeAlertCount={adminChallengeAlertCount}
+      players={players}
+      activeChallenges={activeChallenges}
     />
   );
 }
