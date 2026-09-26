@@ -452,6 +452,7 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       verified_at: verifiedAt,
       locked_at: verifiedAt,
       mvp_id: awardedMvpIds[0] || null,
+      mvp_ids: awardedMvpIds,
       merda_id: awardedMerdaIds[0] || null,
       dispute_note: null,
     })
@@ -578,6 +579,7 @@ Deno.serve(async (req: Request) => {
         score_a: Math.round(scoreA),
         score_b: Math.round(scoreB),
         mvp_id: null,
+        mvp_ids: [],
         merda_id: null,
         game: String(body?.game || ""),
         mode: String(body?.mode || ""),
