@@ -50,7 +50,6 @@ export default function ChallengeLeaderboard() {
             wins: 0,
             losses: 0,
             volume: 0,
-            profit: 0,
             points: 0,
             played: 0,
             settled: 0,
