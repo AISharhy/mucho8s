@@ -36,7 +36,7 @@ export const RecordMatchDialog = ({
   const [query, setQuery] = useState("");
   const [moneySettings, setMoneySettings] = useState({});
   const [pairingOrder, setPairingOrder] = useState([]);
-  const [rechall, setRechall] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -54,7 +54,6 @@ export const RecordMatchDialog = ({
     setMode(editData?.mode || defaultMode || MATCH_MODES[0]);
     setGame(editData?.game || defaultGame || GAMES[0]);
     setQuery("");
-    setRechall(false);
 
     const nextMoney = {};
     const nextPairingOrder = [];
@@ -203,7 +202,8 @@ export const RecordMatchDialog = ({
     Boolean(effectiveCaptainA && effectiveCaptainB) &&
     moneyValid;
 
-  const submit = async () => {
+  const submit = async (withRechall = false) => {
+    if (submitting) return;
     if (!valid) {
       toast.error(
         teamA.length !== teamB.length || teamA.length < 2 || teamA.length > 4
@@ -212,6 +212,8 @@ export const RecordMatchDialog = ({
       );
       return;
     }
+
+    setSubmitting(true);
 
     if (editData) {
       const payload = reportOnly
@@ -237,7 +239,10 @@ export const RecordMatchDialog = ({
           };
 
       const ok = await editMatch(editData.id, payload);
-      if (!ok) return;
+      if (!ok) {
+        setSubmitting(false);
+        return;
+      }
 
       toast.success(
         reportOnly
@@ -259,10 +264,13 @@ export const RecordMatchDialog = ({
         captainBPlayerId: effectiveCaptainB,
         liveMatchId: liveMatchId || undefined,
       });
-      if (!report) return;
+      if (!report) {
+        setSubmitting(false);
+        return;
+      }
 
       let rechallLiveMatch = null;
-      if (rechall && liveMatchId) {
+      if (withRechall && liveMatchId) {
         rechallLiveMatch = await createLiveMatch({
           teamA,
           teamB,
@@ -275,13 +283,14 @@ export const RecordMatchDialog = ({
       toast.success(
         rechallLiveMatch
           ? "Result submitted — ReChall is now live"
-          : rechall
+          : withRechall
             ? "Result submitted — ReChall could not be created"
             : "Result submitted — waiting for Admin verification"
       );
       onReported?.(report, rechallLiveMatch);
     }
 
+    setSubmitting(false);
     onOpenChange(false);
   };
 
@@ -494,43 +503,6 @@ export const RecordMatchDialog = ({
             )}
           </div>
 
-          {!editData && liveMatchId && (
-            <button
-              type="button"
-              onClick={() => setRechall((value) => !value)}
-              className={`w-full rounded-xl border p-4 text-left transition-all ${
-                rechall
-                  ? "border-[#D5A33A]/45 bg-[#D5A33A]/[0.07]"
-                  : "border-[#242A35] bg-[#0F1218] hover:border-[#343B48]"
-              }`}
-              aria-pressed={rechall}
-              data-testid="rechall-toggle"
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-lg border flex items-center justify-center ${
-                  rechall
-                    ? "border-[#D5A33A]/40 bg-[#D5A33A]/10 text-[#D5A33A]"
-                    : "border-[#2A303B] text-muted-foreground"
-                }`}>
-                  <RotateCcw size={16} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold flex items-center gap-2">
-                    ReChall
-                    <span className={`text-[9px] uppercase tracking-widest ${
-                      rechall ? "text-[#D5A33A]" : "text-muted-foreground"
-                    }`}>
-                      {rechall ? "ON" : "OFF"}
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-muted-foreground mt-0.5 leading-5">
-                    After submitting this result, create the same matchup again in Live Matches.
-                  </div>
-                </div>
-              </div>
-            </button>
-          )}
-
           <div className="rounded-xl bg-[#0F1218] border border-[#2A303B] px-3 py-3">
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
               Automatic Rules
@@ -577,23 +549,46 @@ export const RecordMatchDialog = ({
 
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-2 sm:gap-2 sm:flex-wrap">
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
+            disabled={submitting}
             data-testid="record-cancel-btn"
             className="w-full sm:w-auto"
           >
             Cancel
           </Button>
+
+          {!editData && liveMatchId && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void submit(true)}
+              disabled={!valid || submitting}
+              className="w-full sm:w-auto rounded-xl border-[#D5A33A]/40 bg-[#D5A33A]/[0.06] text-[#D5A33A] hover:bg-[#D5A33A]/10 hover:text-[#E3B95E]"
+              data-testid="record-rechall-btn"
+            >
+              <RotateCcw size={16} className="mr-1.5" />
+              {submitting ? "Submitting..." : "Submit + ReChall"}
+            </Button>
+          )}
+
           <Button
-            onClick={submit}
-            disabled={!valid}
+            type="button"
+            onClick={() => void submit(false)}
+            disabled={!valid || submitting}
             className="w-full sm:w-auto rounded-xl bg-magma hover:bg-[#ff3c4c] text-white"
             data-testid="record-save-btn"
           >
             <Crown size={16} className="mr-1" />
-            {reportOnly ? "Update Result" : editData ? "Update Match" : "Submit for Verification"}
+            {submitting
+              ? "Submitting..."
+              : reportOnly
+                ? "Update Result"
+                : editData
+                  ? "Update Match"
+                  : "Submit for Verification"}
           </Button>
         </DialogFooter>
       </DialogContent>
