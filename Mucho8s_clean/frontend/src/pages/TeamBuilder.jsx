@@ -71,7 +71,7 @@ const BalanceBadge = ({ score, verdict }) => {
 };
 
 const TeamCard = ({ label, team, chemistry, playerAvatars, game, matchMode }) => (
-  <div className="card-surface rounded-2xl p-5">
+  <div className="m8-panel rounded-2xl p-5">
     <div className="flex items-center justify-between gap-3 mb-4">
       <div>
         <div className="brand-kicker mb-1">Draft Team</div>
@@ -394,11 +394,11 @@ export default function TeamBuilder() {
   const manualCount = manualA.length + manualB.length;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+    <div className="m8-page-stack">
+      <section className="m8-panel rounded-2xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
         <div>
           <div className="brand-kicker mb-1">Competition Lab</div>
-          <h2 className="font-display text-3xl font-extrabold">Team Builder</h2>
+          <h2 className="font-display text-3xl font-black tracking-[-0.03em]">Team Builder</h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
             Build teams with pure balance, chemistry-based drafting or complete manual control.
           </p>
@@ -412,9 +412,9 @@ export default function TeamBuilder() {
             <RotateCcw size={15} className="mr-2" /> Clear
           </Button>
         </div>
-      </div>
+      </section>
 
-      <section className="card-surface rounded-2xl p-4 sm:p-5">
+      <section className="m8-panel rounded-2xl p-4 sm:p-5">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div>
             <div className="brand-kicker mb-1">Game Context</div>
@@ -489,14 +489,14 @@ export default function TeamBuilder() {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 max-w-3xl">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 max-w-4xl">
         <button
           type="button"
           onClick={() => changeMode("balance")}
           className={`rounded-xl border p-4 text-left transition-all ${
             mode === "balance"
-              ? "bg-magma/10 border-magma/40"
-              : "bg-[#0F1218] border-[#222834] text-muted-foreground"
+              ? "bg-magma/10 border-magma/40 shadow-[0_12px_28px_rgba(255,42,59,.08)]"
+              : "bg-[#0F1218] border-[#222834] text-muted-foreground hover:border-[#394150]"
           }`}
         >
           <div className="flex items-center gap-2 font-bold">
@@ -510,8 +510,8 @@ export default function TeamBuilder() {
           onClick={() => changeMode("chemistry")}
           className={`rounded-xl border p-4 text-left transition-all ${
             mode === "chemistry"
-              ? "bg-[#D5A33A]/10 border-[#D5A33A]/35"
-              : "bg-[#0F1218] border-[#222834] text-muted-foreground"
+              ? "bg-[#D5A33A]/10 border-[#D5A33A]/35 shadow-[0_12px_28px_rgba(213,163,58,.07)]"
+              : "bg-[#0F1218] border-[#222834] text-muted-foreground hover:border-[#394150]"
           }`}
         >
           <div className="flex items-center gap-2 font-bold">
@@ -526,7 +526,7 @@ export default function TeamBuilder() {
           className={`rounded-xl border p-4 text-left transition-all ${
             mode === "manual"
               ? "bg-white/[0.06] border-white/25"
-              : "bg-[#0F1218] border-[#222834] text-muted-foreground"
+              : "bg-[#0F1218] border-[#222834] text-muted-foreground hover:border-[#394150]"
           }`}
         >
           <div className="flex items-center gap-2 font-bold">
@@ -537,7 +537,7 @@ export default function TeamBuilder() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
-        <div className="xl:col-span-5 card-surface rounded-2xl p-5">
+        <div className="xl:col-span-5 m8-panel rounded-2xl p-5">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-2">
               <UsersRound size={18} className="text-magma" />
@@ -683,7 +683,7 @@ export default function TeamBuilder() {
         </div>
 
         <div className="xl:col-span-7 space-y-5">
-          <div className="card-surface rounded-2xl p-5">
+          <div className="m8-panel rounded-2xl p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="brand-kicker mb-1">Chemistry Scan</div>
@@ -724,7 +724,7 @@ export default function TeamBuilder() {
           </div>
 
           {!result ? (
-            <div className="card-surface rounded-2xl min-h-[330px] flex flex-col items-center justify-center text-center p-8">
+            <div className="m8-panel rounded-2xl min-h-[330px] flex flex-col items-center justify-center text-center p-8">
               <div className="w-14 h-14 rounded-2xl bg-[#0F1218] border border-[#282E39] flex items-center justify-center">
                 <Gauge size={24} className="text-magma" />
               </div>
@@ -741,7 +741,7 @@ export default function TeamBuilder() {
             </div>
           ) : (
             <>
-              <div className="card-surface rounded-2xl p-5">
+              <div className="m8-panel rounded-2xl p-5">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
                     <div className="brand-kicker mb-1">
@@ -772,7 +772,7 @@ export default function TeamBuilder() {
                     ["Role Balance", result.roleBalanceScore, result.roleConfidence > 0 ? "text-[#D5A33A]" : "text-muted-foreground"],
                     ["Freshness", result.freshnessScore, "text-[#65D5D3]"],
                   ].map(([label, value, tone]) => (
-                    <div key={label} className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+                    <div key={label} className="m8-stat-card">
                       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
                       <div className={`font-mono font-bold text-lg mt-1 ${tone}`}>{value}%</div>
                     </div>
@@ -780,15 +780,15 @@ export default function TeamBuilder() {
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 mt-2">
-                  <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+                  <div className="m8-stat-card">
                     <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Team A Power</div>
                     <div className="font-mono font-bold text-lg mt-1">{result.strengthA}</div>
                   </div>
-                  <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+                  <div className="m8-stat-card">
                     <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Power Gap</div>
                     <div className="font-mono font-bold text-lg mt-1">{result.strengthDiff}</div>
                   </div>
-                  <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+                  <div className="m8-stat-card">
                     <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Team B Power</div>
                     <div className="font-mono font-bold text-lg mt-1">{result.strengthB}</div>
                   </div>
@@ -846,7 +846,7 @@ export default function TeamBuilder() {
                 />
               </div>
 
-              <div className="card-surface rounded-2xl p-5" data-testid="match-bounties">
+              <div className="m8-panel rounded-2xl p-5" data-testid="match-bounties">
                 <div className="flex items-center justify-between gap-3 mb-4">
                   <div>
                     <div className="brand-kicker mb-1">Match Objectives</div>
@@ -896,7 +896,7 @@ export default function TeamBuilder() {
                 )}
               </div>
 
-              <div className="card-surface rounded-2xl p-5">
+              <div className="m8-panel rounded-2xl p-5">
                 <div className="flex items-center justify-between gap-3 mb-4">
                   <div>
                     <div className="brand-kicker mb-1">Suggested Matchups</div>
