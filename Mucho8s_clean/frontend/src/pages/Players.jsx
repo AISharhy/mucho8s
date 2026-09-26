@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar, EloBadge, RankBadge, RankProgress, Last10, StreakBadge, WinRatePill, MvpBadge } from "@/components/shared";
 import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/ProductState";
 import { Search, Flame, ArrowUpRight, Users } from "lucide-react";
 
 const FILTERS = [
@@ -120,7 +121,13 @@ export default function Players() {
       </div>
 
       {list.length === 0 && (
-        <div className="m8-panel rounded-2xl text-center text-muted-foreground py-16">No players found.</div>
+        <EmptyState
+          icon={Users}
+          title={players.length === 0 ? "No players yet" : "No players match these filters"}
+          description={players.length === 0
+            ? "The competitive ladder is ready. Players will appear here as soon as they are added."
+            : "Try a different name or remove one of the active filters."}
+        />
       )}
     </div>
   );
