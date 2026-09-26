@@ -14,7 +14,7 @@ const pairsOf = (ids = []) => {
 
 const opponentKey = (playerId, opponentId) => `${playerId}:${opponentId}`;
 
-const playerName = (playerMap, id) => playerMap?.[id]?.name || "Giocatore";
+const playerName = (playerMap, id) => playerMap?.[id]?.name || "Player";
 
 const wasUpsetWin = (match, playerMap = {}) => {
   const teamA = (match?.teamA || []).map((id) => playerMap?.[String(id)]).filter(Boolean);
@@ -85,8 +85,8 @@ export const analyzeBountyHistory = (playerId, players = [], matches = []) => {
         id: `streak_breaker:${match.id}:${id}`,
         matchId: match.id,
         type: "streak_breaker",
-        title: "Spezza serie",
-        detail: `Interrotta la serie di ${target.streak} vittorie di ${playerName(playerMap, target.id)}`,
+        title: "Streak Breaker",
+        detail: `Ended ${playerName(playerMap, target.id)}'s ${target.streak}-win streak`,
         points,
         date,
         meta: { targetPlayerId: target.id, streak: target.streak },
@@ -108,8 +108,8 @@ export const analyzeBountyHistory = (playerId, players = [], matches = []) => {
         id: `duo_breaker:${match.id}:${id}`,
         matchId: match.id,
         type: "duo_breaker",
-        title: "Spezza duo",
-        detail: `Battuto il duo imbattuto ${playerName(playerMap, duo.a)} + ${playerName(playerMap, duo.b)} (${duo.games}-0)`,
+        title: "Duo Breaker",
+        detail: `Beat undefeated duo ${playerName(playerMap, duo.a)} + ${playerName(playerMap, duo.b)} (${duo.games}-0)`,
         points: 6,
         date,
         meta: { playerAId: duo.a, playerBId: duo.b, games: duo.games },
@@ -122,8 +122,8 @@ export const analyzeBountyHistory = (playerId, players = [], matches = []) => {
         id: `underdog:${match.id}:${id}`,
         matchId: match.id,
         type: "underdog",
-        title: "Ammazzagrandi",
-        detail: "Vinta una partita partendo da sfavoriti",
+        title: "Giant Killer",
+        detail: "Won a verified underdog matchup",
         points: 5,
         date,
         meta: {},
@@ -146,8 +146,8 @@ export const analyzeBountyHistory = (playerId, players = [], matches = []) => {
         id: `revenge:${match.id}:${id}`,
         matchId: match.id,
         type: "revenge",
-        title: "Rivincita",
-        detail: `Vinta la rivincita contro ${playerName(playerMap, target.opponentId)}`,
+        title: "Payback",
+        detail: `Won the rematch against ${playerName(playerMap, target.opponentId)}`,
         points: 2,
         date,
         meta: { opponentPlayerId: target.opponentId },
@@ -174,8 +174,8 @@ export const analyzeBountyHistory = (playerId, players = [], matches = []) => {
         id: `rivalry:${match.id}:${id}`,
         matchId: match.id,
         type: "rivalry",
-        title: "Vantaggio rivalità",
-        detail: `Vinta una rivalità equilibrata contro ${playerName(playerMap, rivalry.opponentId)}`,
+        title: "Rivalry Edge",
+        detail: `Won a close rivalry match vs ${playerName(playerMap, rivalry.opponentId)}`,
         points: 2,
         date,
         meta: { opponentPlayerId: rivalry.opponentId, games: rivalry.games },
@@ -245,21 +245,21 @@ export const buildBountyAchievementCatalog = (history) => {
   const biggestStreakBroken = Number(history?.biggestStreakBroken || 0);
 
   return [
-    { key: "bounty-hunter", label: "Primo encomio", detail: "Completa il tuo primo encomio partita", category: "Encomi", unlocked: completed >= 1, progress: Math.min(completed, 1), target: 1 },
-    { key: "contract-killer", label: "Cacciatore", detail: "Completa 4 encomi partita", category: "Encomi", unlocked: completed >= 4, progress: Math.min(completed, 4), target: 4 },
-    { key: "elite-hunter", label: "Cacciatore élite", detail: "Completa 10 encomi partita", category: "Encomi", unlocked: completed >= 10, progress: Math.min(completed, 10), target: 10 },
-    { key: "streak-breaker", label: "Spezza serie", detail: "Interrompi una serie avversaria di almeno 3 vittorie", category: "Serie", unlocked: Number(counts.streak_breaker || 0) >= 1, progress: Math.min(Number(counts.streak_breaker || 0), 1), target: 1 },
-    { key: "heat-check", label: "Raffredda la serie", detail: "Interrompi una serie avversaria di almeno 5 vittorie", category: "Serie", unlocked: biggestStreakBroken >= 5, progress: Math.min(biggestStreakBroken, 5), target: 5 },
-    { key: "duo-breaker", label: "Spezza duo", detail: "Batti un duo imbattuto con almeno 3 partite insieme", category: "Duo", unlocked: Number(counts.duo_breaker || 0) >= 1, progress: Math.min(Number(counts.duo_breaker || 0), 1), target: 1 },
-    { key: "pair-wrecker", label: "Demolitore di duo", detail: "Interrompi 3 serie di duo imbattuti", category: "Duo", unlocked: Number(counts.duo_breaker || 0) >= 3, progress: Math.min(Number(counts.duo_breaker || 0), 3), target: 3 },
-    { key: "giant-killer", label: "Ammazzagrandi", detail: "Vinci una partita partendo da sfavoriti", category: "Sfavoriti", unlocked: Number(counts.underdog || 0) >= 1, progress: Math.min(Number(counts.underdog || 0), 1), target: 1 },
-    { key: "upset-specialist", label: "Specialista imprese", detail: "Vinci 3 partite partendo da sfavoriti", category: "Sfavoriti", unlocked: Number(counts.underdog || 0) >= 3, progress: Math.min(Number(counts.underdog || 0), 3), target: 3 },
-    { key: "payback", label: "Rivincita", detail: "Vinci la partita successiva contro chi ti aveva appena battuto", category: "Rivalità", unlocked: Number(counts.revenge || 0) >= 1, progress: Math.min(Number(counts.revenge || 0), 1), target: 1 },
-    { key: "nemesis", label: "Nemesi", detail: "Completa 3 encomi Rivincita", category: "Rivalità", unlocked: Number(counts.revenge || 0) >= 3, progress: Math.min(Number(counts.revenge || 0), 3), target: 3 },
-    { key: "rivalry-edge", label: "Vantaggio rivalità", detail: "Vinci una sfida testa a testa molto equilibrata", category: "Rivalità", unlocked: Number(counts.rivalry || 0) >= 1, progress: Math.min(Number(counts.rivalry || 0), 1), target: 1 },
-    { key: "rivalry-king", label: "Re delle rivalità", detail: "Vinci 4 encomi Rivalità", category: "Rivalità", unlocked: Number(counts.rivalry || 0) >= 4, progress: Math.min(Number(counts.rivalry || 0), 4), target: 4 },
-    { key: "bounty-collector", label: "Collezionista", detail: "Raggiungi 20 punti encomio", category: "Punti", unlocked: points >= 20, progress: Math.min(points, 20), target: 20 },
-    { key: "bounty-legend", label: "Leggenda", detail: "Raggiungi 50 punti encomio", category: "Punti", unlocked: points >= 50, progress: Math.min(points, 50), target: 50 },
+    { key: "bounty-hunter", label: "Bounty Hunter", detail: "Complete your first match bounty", category: "Bounties", unlocked: completed >= 1, progress: Math.min(completed, 1), target: 1 },
+    { key: "contract-killer", label: "Contract Killer", detail: "Complete 4 match bounties", category: "Bounties", unlocked: completed >= 4, progress: Math.min(completed, 4), target: 4 },
+    { key: "elite-hunter", label: "Elite Hunter", detail: "Complete 10 match bounties", category: "Bounties", unlocked: completed >= 10, progress: Math.min(completed, 10), target: 10 },
+    { key: "streak-breaker", label: "Streak Breaker", detail: "End an opponent win streak of at least 3", category: "Streaks", unlocked: Number(counts.streak_breaker || 0) >= 1, progress: Math.min(Number(counts.streak_breaker || 0), 1), target: 1 },
+    { key: "heat-check", label: "Heat Check", detail: "End an opponent win streak of at least 5", category: "Streaks", unlocked: biggestStreakBroken >= 5, progress: Math.min(biggestStreakBroken, 5), target: 5 },
+    { key: "duo-breaker", label: "Duo Breaker", detail: "Beat an undefeated duo with at least 3 games together", category: "Duo", unlocked: Number(counts.duo_breaker || 0) >= 1, progress: Math.min(Number(counts.duo_breaker || 0), 1), target: 1 },
+    { key: "pair-wrecker", label: "Pair Wrecker", detail: "Break 3 undefeated duo streaks", category: "Duo", unlocked: Number(counts.duo_breaker || 0) >= 3, progress: Math.min(Number(counts.duo_breaker || 0), 3), target: 3 },
+    { key: "giant-killer", label: "Giant Killer", detail: "Win a verified underdog matchup", category: "Underdog", unlocked: Number(counts.underdog || 0) >= 1, progress: Math.min(Number(counts.underdog || 0), 1), target: 1 },
+    { key: "upset-specialist", label: "Upset Specialist", detail: "Win 3 verified underdog matchups", category: "Underdog", unlocked: Number(counts.underdog || 0) >= 3, progress: Math.min(Number(counts.underdog || 0), 3), target: 3 },
+    { key: "payback", label: "Payback", detail: "Win the next matchup against the player who just beat you", category: "Rivalry", unlocked: Number(counts.revenge || 0) >= 1, progress: Math.min(Number(counts.revenge || 0), 1), target: 1 },
+    { key: "nemesis", label: "Nemesis", detail: "Complete 3 Payback bounties", category: "Rivalry", unlocked: Number(counts.revenge || 0) >= 3, progress: Math.min(Number(counts.revenge || 0), 3), target: 3 },
+    { key: "rivalry-edge", label: "Rivalry Edge", detail: "Win a very close head-to-head matchup", category: "Rivalry", unlocked: Number(counts.rivalry || 0) >= 1, progress: Math.min(Number(counts.rivalry || 0), 1), target: 1 },
+    { key: "rivalry-king", label: "Rivalry King", detail: "Win 4 Rivalry bounties", category: "Rivalry", unlocked: Number(counts.rivalry || 0) >= 4, progress: Math.min(Number(counts.rivalry || 0), 4), target: 4 },
+    { key: "bounty-collector", label: "Bounty Collector", detail: "Reach 20 bounty points", category: "Points", unlocked: points >= 20, progress: Math.min(points, 20), target: 20 },
+    { key: "bounty-legend", label: "Bounty Legend", detail: "Reach 50 bounty points", category: "Points", unlocked: points >= 50, progress: Math.min(points, 50), target: 50 },
   ];
 };
 
@@ -324,8 +324,8 @@ export const detectLobbyBounties = (teamA = [], teamB = [], matches = []) => {
     if (streakTarget) {
       add({
         key: `streak:${targetSide}:${streakTarget.player.id}`,
-        title: "Spezza la serie",
-        detail: `${streakTarget.player.name} è in serie da ${streakTarget.streak} vittorie`,
+        title: "End the Streak",
+        detail: `${streakTarget.player.name} is on a ${streakTarget.streak}-win streak`,
         reward: 3 + Math.min(3, Math.max(0, streakTarget.streak - 3)),
         hunterSide,
         type: "streak",
@@ -340,8 +340,8 @@ export const detectLobbyBounties = (teamA = [], teamB = [], matches = []) => {
     if (undefeated) {
       add({
         key: `duo:${targetSide}:${pairKey(undefeated.a, undefeated.b)}`,
-        title: "Spezza il duo",
-        detail: `${playerName(playerMap, undefeated.a)} + ${playerName(playerMap, undefeated.b)} sono ${undefeated.games}-0 insieme`,
+        title: "Break the Duo",
+        detail: `${playerName(playerMap, undefeated.a)} + ${playerName(playerMap, undefeated.b)} are ${undefeated.games}-0 together`,
         reward: 6,
         hunterSide,
         type: "duo",
@@ -360,8 +360,8 @@ export const detectLobbyBounties = (teamA = [], teamB = [], matches = []) => {
   if (diffPct >= 0.08) {
     add({
       key: "underdog",
-      title: "Ammazzagrandi",
-      detail: `La squadra ${strengthA < strengthB ? "A" : "B"} parte sfavorita`,
+      title: "Giant Killer",
+      detail: `Team ${strengthA < strengthB ? "A" : "B"} enters as the underdog`,
       reward: 5,
       hunterSide: strengthA < strengthB ? "A" : "B",
       type: "underdog",
@@ -385,7 +385,7 @@ export const detectLobbyBounties = (teamA = [], teamB = [], matches = []) => {
     .slice(0, 1)
     .forEach((rivalry) => add({
       key: `rivalry:${pairKey(rivalry.left.id, rivalry.right.id)}`,
-      title: "Partita rivalità",
+      title: "Rivalry Match",
       detail: `${rivalry.left.name} vs ${rivalry.right.name} · ${rivalry.leftWins}-${rivalry.rightWins} testa a testa`,
       reward: 2,
       hunterSide: "BOTH",
