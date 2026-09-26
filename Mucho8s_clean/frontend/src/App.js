@@ -7,11 +7,10 @@ import { Toaster } from "@/components/ui/sonner";
 import Dashboard from "@/pages/Dashboard";
 import Players from "@/pages/Players";
 import PlayerProfile from "@/pages/PlayerProfile";
-import TeamBalancer from "@/pages/TeamBalancer";
 import Matches from "@/pages/Matches";
 import Ranking from "@/pages/Ranking";
 import RankGuide from "@/pages/RankGuide";
-import DraftHub from "@/pages/DraftHub";
+import TeamBuilder from "@/pages/TeamBuilder";
 import AdminPanel from "@/pages/AdminPanel";
 import ChallengeMatch from "@/pages/ChallengeMatch";
 import ChallengeInbox from "@/pages/ChallengeInbox";
@@ -67,10 +66,11 @@ function App() {
               <Route index element={<Dashboard />} />
               <Route path="players" element={<Players />} />
               <Route path="players/:id" element={<PlayerProfile />} />
-              <Route path="balancer" element={<TeamBalancer />} />
+              <Route path="team-builder" element={<TeamBuilder />} />
+              <Route path="balancer" element={<TeamBuilder />} />
+              <Route path="draft" element={<TeamBuilder />} />
               <Route path="matches" element={<Matches />} />
               <Route path="ranking" element={<Ranking />} />
-              <Route path="draft" element={<DraftHub />} />
               <Route path="leaderboard" element={<Ranking initialTab="leaderboard" />} />
               <Route path="statistics" element={<Ranking initialTab="statistics" />} />
               <Route path="challenge-ranking" element={<Ranking initialTab="challenges" />} />
