@@ -197,11 +197,15 @@ export const analyzeManualTeams = (teamA, teamB, matches = []) => {
   const balance = teamBalance(teamA, teamB);
   const roles = roleBalance(teamA, teamB);
   const freshness = teamFreshness(teamA, teamB, matches);
+  const roleWeight = 0.2 * (roles.confidence / 100);
+  const qualityWeight = 0.45 + 0.25 + 0.1 + roleWeight;
   const lobbyQuality = Math.round(
-    balance.score * 0.45 +
-    chemistryScore * 0.25 +
-    roles.score * 0.2 +
-    freshness.score * 0.1
+    (
+      balance.score * 0.45 +
+      chemistryScore * 0.25 +
+      freshness.score * 0.1 +
+      roles.score * roleWeight
+    ) / qualityWeight
   );
 
   const why = [
