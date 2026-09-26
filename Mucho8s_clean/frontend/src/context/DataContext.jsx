@@ -1523,7 +1523,7 @@ export const DataProvider = ({ children }) => {
     const ok = await persistWholeState([...players, player], matches);
     if (ok) void logAdminAction("player.add", "player", player.id, { name: player.name, elo: player.currentElo });
     return ok;
-  }, [players, matches, backendWrite, persistWholeState, logAdminAction, syncMatchMoneyPairings]);
+  }, [players, matches, backendWrite, persistWholeState, logAdminAction]);
 
   const removePlayer = useCallback(async (id) => {
     if (STORAGE_MODE === "backend") return backendWrite(`/players/${id}`, { method: "DELETE" });
@@ -1531,7 +1531,7 @@ export const DataProvider = ({ children }) => {
     const ok = await persistWholeState(players.filter((p) => p.id !== id), matches);
     if (ok) void logAdminAction("player.delete", "player", id, { name: removed?.name || "" });
     return ok;
-  }, [players, matches, backendWrite, persistWholeState, logAdminAction, syncMatchMoneyPairings]);
+  }, [players, matches, backendWrite, persistWholeState, logAdminAction]);
 
   const editElo = useCallback(async (id, currentElo) => {
     if (STORAGE_MODE === "backend") {
