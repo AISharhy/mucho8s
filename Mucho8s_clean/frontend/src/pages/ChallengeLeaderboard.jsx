@@ -58,23 +58,17 @@ export default function ChallengeLeaderboard() {
 
         const row = map.get(id);
         row.played += 1;
+        row.volume += amount;
+        if (settled) row.settled += 1;
 
         if (challenge.reported_winner_player_id === id) {
           row.wins += 1;
           row.points += amount;
-          if (settled) {
-            row.profit += amount;
-            row.volume += amount;
-            row.settled += 1;
-          }
+          row.profit += amount;
         } else {
           row.losses += 1;
           row.points -= amount;
-          if (settled) {
-            row.profit -= amount;
-            row.volume += amount;
-            row.settled += 1;
-          }
+          row.profit -= amount;
         }
       });
     });
@@ -191,14 +185,14 @@ export default function ChallengeLeaderboard() {
           <Swords size={18} className="text-magma mb-2" />
           <div className="text-xs text-muted-foreground">Money Match Pairings</div>
           <div className="font-display text-2xl font-extrabold mt-1">
-            {seasonChallenges.filter((item) => item.source === "match_pairing" && item.verified_at && item.status === "completed").length}
+            {seasonChallenges.filter((item) => item.source === "match_pairing" && item.verified_at && item.status === "completed" && !(item.payout_disputed_at && !item.payout_dispute_resolved_at)).length}
           </div>
         </div>
         <div className="card-surface rounded-2xl p-4">
           <WalletCards size={18} className="text-[#D5A33A] mb-2" />
           <div className="text-xs text-muted-foreground">Verified Stakes</div>
           <div className="font-display text-2xl font-extrabold mt-1">
-            {euro(seasonChallenges.filter((item) => item.verified_at && item.status === "completed").reduce((sum, item) => sum + Number(item.amount_cents || 0) / 100, 0))}
+            {euro(seasonChallenges.filter((item) => item.verified_at && item.status === "completed" && !(item.payout_disputed_at && !item.payout_dispute_resolved_at)).reduce((sum, item) => sum + Number(item.amount_cents || 0) / 100, 0))}
           </div>
         </div>
         <div className="card-surface rounded-2xl p-4">
