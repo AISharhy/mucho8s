@@ -3,9 +3,9 @@ import { RANKS, rankProgress } from "@/lib/elo";
 import { Shield, Star, Crown, Gem, Trophy } from "lucide-react";
 
 const iconFor = (index) => {
-  if (index >= 7) return Crown;
-  if (index >= 5) return Trophy;
+  if (index >= 5) return Crown;
   if (index >= 4) return Gem;
+  if (index >= 3) return Trophy;
   if (index >= 2) return Star;
   return Shield;
 };
@@ -55,32 +55,42 @@ export const RankEmblem = ({ elo = 1000, compact = false }) => {
 
 export default function RankGuide() {
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="m8-page-stack">
+      <section className="m8-panel rounded-2xl p-5 sm:p-6">
         <div className="brand-kicker mb-1">Competitive Divisions</div>
-        <h3 className="font-display text-2xl font-extrabold">Rank Ladder</h3>
+        <h3 className="font-display text-3xl font-black tracking-[-0.03em]">Rank Ladder</h3>
         <p className="text-sm text-muted-foreground mt-1">
           Competitive rank ladder. Your Elo determines the emblem shown across MuchoMoney8s.
         </p>
-      </div>
+      </section>
 
-      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+      <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
         {RANKS.map((rank, index) => {
           const Icon = iconFor(index);
           const next = RANKS[index + 1];
           return (
-            <div key={rank.name} className="card-surface rounded-2xl p-5 relative overflow-hidden">
-              <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-magma to-transparent opacity-70" />
-              <div className="w-16 h-16 mx-auto rotate-45 rounded-2xl border border-[#D5A33A]/50 bg-[#0F1218] flex items-center justify-center">
+            <div
+              key={rank.name}
+              className="m8-panel rounded-2xl p-5 relative overflow-hidden"
+              style={{ borderColor: rank.color + "38" }}
+            >
+              <div
+                className="absolute inset-x-0 top-0 h-[2px] opacity-85"
+                style={{ background: "linear-gradient(90deg, transparent, " + rank.color + ", transparent)" }}
+              />
+              <div
+                className="w-16 h-16 mx-auto rotate-45 rounded-2xl border bg-[#0F1218] flex items-center justify-center"
+                style={{ borderColor: rank.color + "66", boxShadow: "0 10px 28px " + rank.color + "18" }}
+              >
                 <div className="-rotate-45 text-center">
-                  <Icon size={26} className="mx-auto text-[#D5A33A]" />
+                  <Icon size={26} className="mx-auto" style={{ color: rank.color }} />
                   <div className="text-[9px] font-black mt-0.5">{rank.id === "masters" ? "M" : rank.roman}</div>
                 </div>
               </div>
               <div className="text-center mt-5">
                 <div className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground">Division {rank.roman}</div>
-                <div className="font-display text-xl font-black uppercase mt-1">{rank.name}</div>
-                <div className="font-mono text-sm text-[#D5A33A] mt-2">
+                <div className="font-display text-xl font-black uppercase mt-1" style={{ color: rank.color }}>{rank.name}</div>
+                <div className="font-mono text-sm mt-2" style={{ color: rank.color }}>
                   {next ? `${rank.min} – ${rank.max} ELO` : `${rank.min}+ ELO`}
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
