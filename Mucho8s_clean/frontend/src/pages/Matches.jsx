@@ -935,6 +935,7 @@ export default function Matches() {
           <MatchResultCenter
             reportId={verificationReportId}
             hideHeader
+            onResolved={() => setVerificationReportId("")}
           />
         </DialogContent>
       </Dialog>
