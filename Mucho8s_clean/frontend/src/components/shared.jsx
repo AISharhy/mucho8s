@@ -192,8 +192,8 @@ export const StreakBadge = ({ streak }) => {
 };
 
 export const MvpBadge = ({ count }) => (
-  <span className="inline-flex items-center gap-1 text-[#D5A33A] font-mono font-bold">
-    <Crown size={14} className="text-[#D5A33A]" />
+  <span className="inline-flex items-center gap-1 text-[#D5A33A] font-mono font-bold" title="MVP">
+    <span aria-hidden="true">🏆</span>
     {count}
   </span>
 );
