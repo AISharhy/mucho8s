@@ -1039,3 +1039,71 @@ textarea:focus-visible {
         animation: none !important;
     }
 }
+
+
+/* Play hub */
+.m8-play-card {
+    --play-accent: #FF2A3B;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 340px;
+    padding: 1.35rem;
+    border-radius: 1.35rem;
+    border: 1px solid #242C37;
+    background:
+        linear-gradient(155deg, rgba(255,255,255,.016), transparent 38%),
+        #10151D;
+    box-shadow: 0 18px 48px rgba(0,0,0,.16);
+    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.m8-play-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--play-accent) 34%, #242C37);
+    box-shadow:
+        0 22px 58px rgba(0,0,0,.22),
+        0 0 28px color-mix(in srgb, var(--play-accent) 9%, transparent);
+}
+
+.m8-play-card-glow {
+    --play-accent: #FF2A3B;
+    position: absolute;
+    width: 250px;
+    height: 250px;
+    top: -120px;
+    right: -80px;
+    border-radius: 999px;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--play-accent) 12%, transparent);
+    filter: blur(34px);
+}
+
+.m8-play-icon {
+    position: relative;
+    z-index: 1;
+    width: 58px;
+    height: 58px;
+    border-radius: 1rem;
+    border: 1px solid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 14px 32px rgba(0,0,0,.18);
+}
+
+@media (max-width: 640px) {
+    .m8-play-card {
+        min-height: 300px;
+        padding: 1.1rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .m8-play-card,
+    .m8-play-card * {
+        transition-duration: .01ms !important;
+        transform: none !important;
+    }
+}
