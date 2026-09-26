@@ -653,7 +653,7 @@ export default function PlayerProfile() {
                 className="m8-action m8-action-primary h-11 px-6 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-extrabold tracking-wide"
                 data-testid="challenge-me-btn"
               >
-                <Swords size={17} className="mr-2" /> CHALL ME
+                <Swords size={17} className="mr-2" /> SFIDAMI
               </Button>
             )}
           </div>
