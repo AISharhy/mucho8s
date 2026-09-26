@@ -3,7 +3,6 @@ import { Trophy, BarChart3, CalendarDays, Shield } from "lucide-react";
 import Leaderboard from "@/pages/Leaderboard";
 import Statistics from "@/pages/Statistics";
 import SeasonHistory from "@/pages/SeasonHistory";
-import RankGuide from "@/components/RankGuide";
 import RankGuide from "@/pages/RankGuide";
 
 export default function Ranking({ initialTab = "leaderboard" }) {
