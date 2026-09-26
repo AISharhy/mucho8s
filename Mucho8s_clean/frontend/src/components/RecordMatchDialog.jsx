@@ -277,6 +277,7 @@ export const RecordMatchDialog = ({
           game,
           mode,
           format: `${teamA.length}v${teamB.length}`,
+          pairings: submittedPairings,
         });
       }
 
