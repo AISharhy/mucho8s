@@ -3,6 +3,7 @@ import { Trophy, BarChart3, CalendarDays, Shield } from "lucide-react";
 import Leaderboard from "@/pages/Leaderboard";
 import Statistics from "@/pages/Statistics";
 import SeasonHistory from "@/pages/SeasonHistory";
+import RankGuide from "@/components/RankGuide";
 import RankGuide from "@/pages/RankGuide";
 
 export default function Ranking({ initialTab = "leaderboard" }) {
@@ -41,6 +42,18 @@ export default function Ranking({ initialTab = "leaderboard" }) {
             }`}
           >
             <BarChart3 size={15} /> Statistics
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("ranks")}
+            data-testid="ranking-tab-ranks"
+            className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              tab === "ranks"
+                ? "bg-white text-black"
+                : "text-[#8D95A4] hover:text-white"
+            }`}
+          >
+            <Shield size={15} /> Ranks
           </button>
           <button
             type="button"
