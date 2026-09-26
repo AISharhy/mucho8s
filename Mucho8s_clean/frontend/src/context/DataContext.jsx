@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { load, save, uid } from "@/lib/storage";
-import { playerRating, BASE_ELO, MIN_ELO, WIN_DELTA, LOSS_DELTA, MVP_BONUS, UPSET_BONUS } from "@/lib/elo";
+import { BASE_ELO, MIN_ELO, WIN_DELTA, LOSS_DELTA } from "@/lib/elo";
 import { toast } from "sonner";
 import { supabaseAuth, hasSupabaseAuth } from "@/lib/supabaseClient";
 
@@ -129,20 +129,14 @@ const automaticMerdaIds = (byId, losers) =>
 
 const applyEffects = (byId, teamA, teamB, winner, mvpId, merdaIds = []) => {
   const winners = winner === "A" ? teamA : teamB;
-  const losers = winner === "A" ? teamB : teamA;
   const merdaSet = new Set(merdaIds || []);
-  const winnerStrength = winners.reduce((sum, id) => sum + (byId[id] ? playerRating(byId[id]) : 0), 0);
-  const loserStrength = losers.reduce((sum, id) => sum + (byId[id] ? playerRating(byId[id]) : 0), 0);
-  const upset = winnerStrength < loserStrength;
   const changes = {};
 
   [...teamA, ...teamB].forEach((pid) => {
     const p = byId[pid];
     if (!p) return;
     const won = winners.includes(pid);
-    let delta = won ? WIN_DELTA : -LOSS_DELTA;
-    if (pid === mvpId) delta += MVP_BONUS;
-    if (won && upset) delta += UPSET_BONUS;
+    const delta = won ? WIN_DELTA : -LOSS_DELTA;
 
     const nextElo = Math.max(MIN_ELO, p.currentElo + delta);
     p.currentElo = nextElo;
