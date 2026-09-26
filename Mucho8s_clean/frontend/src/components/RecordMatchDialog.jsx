@@ -8,7 +8,7 @@ import { PlayerAvatar, EloBadge } from "@/components/shared";
 import { GAMES } from "@/lib/demoData";
 
 const MATCH_MODES = ["Hardpoint", "Search & Destroy"];
-import { Crown, Search } from "lucide-react";
+import { ArrowRightLeft, Crown, Search, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 
 export const RecordMatchDialog = ({
@@ -30,6 +30,7 @@ export const RecordMatchDialog = ({
   const [mode, setMode] = useState(MATCH_MODES[0]);
   const [game, setGame] = useState(GAMES[0]);
   const [query, setQuery] = useState("");
+  const [moneySettings, setMoneySettings] = useState({});
 
   useEffect(() => {
     if (!open) return;
@@ -49,11 +50,69 @@ export const RecordMatchDialog = ({
     setMode(editData?.mode || defaultMode || MATCH_MODES[0]);
     setGame(editData?.game || defaultGame || GAMES[0]);
     setQuery("");
+
+    const nextMoney = {};
+    (Array.isArray(source?.pairings) ? source.pairings : []).forEach((pair) => {
+      const playerAId = String(pair?.playerAId || "").trim();
+      const playerBId = String(pair?.playerBId || "").trim();
+      if (!playerAId || !playerBId) return;
+      nextMoney[`${playerAId}:${playerBId}`] = {
+        amount: String(Number(pair?.amount || 5)),
+        platform: ["paypal", "revolut"].includes(String(pair?.platform || "").toLowerCase())
+          ? String(pair.platform).toLowerCase()
+          : "paypal",
+      };
+    });
+    setMoneySettings(nextMoney);
   }, [open, initialTeams, editData, defaultGame, defaultMode]);
 
   const teamA = Object.keys(assign).filter((id) => assign[id] === "A");
   const teamB = Object.keys(assign).filter((id) => assign[id] === "B");
   const assigned = [...teamA, ...teamB];
+
+  const moneyPairings = teamA
+    .map((playerAId, index) => {
+      const playerBId = teamB[index];
+      if (!playerBId) return null;
+      const key = `${playerAId}:${playerBId}`;
+      const saved = moneySettings[key] || {};
+      return {
+        key,
+        playerAId,
+        playerBId,
+        amount: saved.amount ?? "5",
+        platform: ["paypal", "revolut"].includes(saved.platform) ? saved.platform : "paypal",
+      };
+    })
+    .filter(Boolean);
+
+  const updateMoneyPairing = (key, field, value) => {
+    setMoneySettings((prev) => ({
+      ...prev,
+      [key]: {
+        amount: prev[key]?.amount ?? "5",
+        platform: prev[key]?.platform || "paypal",
+        [field]: value,
+      },
+    }));
+  };
+
+  const submittedPairings = moneyPairings.map((pair) => ({
+    playerAId: pair.playerAId,
+    playerBId: pair.playerBId,
+    amount: Number(String(pair.amount).replace(",", ".")),
+    platform: pair.platform,
+  }));
+
+  const moneyValid =
+    submittedPairings.length === teamA.length &&
+    submittedPairings.length === teamB.length &&
+    submittedPairings.every(
+      (pair) =>
+        Number.isFinite(pair.amount) &&
+        pair.amount > 0 &&
+        ["paypal", "revolut"].includes(pair.platform)
+    );
 
   const cycle = (id) => {
     setAssign((prev) => {
@@ -85,11 +144,16 @@ export const RecordMatchDialog = ({
     teamA.length === teamB.length &&
     teamA.length >= 2 &&
     teamA.length <= 4 &&
-    Boolean(effectiveCaptainA && effectiveCaptainB);
+    Boolean(effectiveCaptainA && effectiveCaptainB) &&
+    moneyValid;
 
   const submit = async () => {
     if (!valid) {
-      toast.error("Both teams must be equal (2, 3 or 4 players each)");
+      toast.error(
+        teamA.length !== teamB.length || teamA.length < 2 || teamA.length > 4
+          ? "Both teams must be equal (2, 3 or 4 players each)"
+          : "Every matchup needs a valid money amount"
+      );
       return;
     }
 
@@ -105,7 +169,7 @@ export const RecordMatchDialog = ({
             game: editData.game || game,
             map: editData.map || "",
             date: editData.date,
-            pairings: Array.isArray(editData.pairings) ? editData.pairings : [],
+            pairings: submittedPairings,
           }
         : {
             teamA,
@@ -117,7 +181,7 @@ export const RecordMatchDialog = ({
             game,
             map,
             date: editData.date,
-            pairings: Array.isArray(editData.pairings) ? editData.pairings : [],
+            pairings: submittedPairings,
           };
 
       const ok = await editMatch(editData.id, payload);
@@ -140,7 +204,7 @@ export const RecordMatchDialog = ({
         map,
         mode,
         game,
-        pairings: [],
+        pairings: submittedPairings,
         captainAPlayerId: effectiveCaptainA,
         captainBPlayerId: effectiveCaptainB,
       });
@@ -246,6 +310,65 @@ export const RecordMatchDialog = ({
 
             </>
           )}
+
+          <div className="rounded-2xl bg-[#0F1218] border border-[#222834] p-4" data-testid="match-money-settings">
+            <div className="flex items-center gap-2 mb-3">
+              <WalletCards size={16} className="text-[#D5A33A]" />
+              <div>
+                <div className="text-sm font-bold">Money Match</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Set the amount and payment method for each matchup.
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {moneyPairings.map((pair) => {
+                const alpha = players.find((player) => player.id === pair.playerAId);
+                const bravo = players.find((player) => player.id === pair.playerBId);
+
+                return (
+                  <div
+                    key={pair.key}
+                    className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_100px_120px] gap-2 items-center rounded-xl bg-[#151923] border border-[#242A35] p-2.5"
+                  >
+                    <div className="text-sm font-semibold truncate">{alpha?.name || "Alpha"}</div>
+                    <ArrowRightLeft size={13} className="text-muted-foreground" />
+                    <div className="text-sm font-semibold truncate sm:text-left">{bravo?.name || "Bravo"}</div>
+
+                    <div className="relative col-span-2 sm:col-span-1">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">€</span>
+                      <Input
+                        type="number"
+                        min="0.5"
+                        step="0.5"
+                        value={pair.amount}
+                        onChange={(event) => updateMoneyPairing(pair.key, "amount", event.target.value)}
+                        className="h-9 pl-6 bg-[#0F1218] border-[#2A303B] text-xs"
+                        aria-label={`Amount for ${alpha?.name || "Alpha"} vs ${bravo?.name || "Bravo"}`}
+                      />
+                    </div>
+
+                    <select
+                      value={pair.platform}
+                      onChange={(event) => updateMoneyPairing(pair.key, "platform", event.target.value)}
+                      className="h-9 rounded-lg bg-[#0F1218] border border-[#2A303B] px-2 text-xs col-span-3 sm:col-span-1"
+                      aria-label={`Payment method for ${alpha?.name || "Alpha"} vs ${bravo?.name || "Bravo"}`}
+                    >
+                      <option value="paypal">PayPal</option>
+                      <option value="revolut">Revolut</option>
+                    </select>
+                  </div>
+                );
+              })}
+            </div>
+
+            {moneyPairings.length === 0 && (
+              <div className="text-xs text-muted-foreground text-center py-2">
+                Select both teams to configure the money match.
+              </div>
+            )}
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
