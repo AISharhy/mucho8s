@@ -159,24 +159,6 @@ export const Layout = () => {
                   <UserCircle size={19} />
                 </Link>
 
-                <Link
-                  to="/challenges"
-                  title="My Challenges"
-                  aria-label="My Challenges"
-                  data-testid="header-my-challenges"
-                  className={`m8-action relative w-10 h-10 rounded-xl border transition-all flex items-center justify-center ${
-                    loc.pathname.startsWith("/challenges")
-                      ? "border-magma/40 bg-magma/10 text-magma"
-                      : "border-[#242A35] bg-[#12151C] text-[#AAB1BE] hover:text-white hover:bg-white/[0.05]"
-                  }`}
-                >
-                  <Swords size={18} />
-                  {challengeNotificationCount > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 min-w-[19px] h-[19px] px-1 rounded-full bg-magma border-2 border-[#0D1016] text-white text-[9px] font-extrabold flex items-center justify-center">
-                      {challengeNotificationCount > 99 ? "99+" : challengeNotificationCount}
-                    </span>
-                  )}
-                </Link>
               </>
             )}
 
