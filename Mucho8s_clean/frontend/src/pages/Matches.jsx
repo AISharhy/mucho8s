@@ -57,11 +57,11 @@ export default function Matches() {
   }, [safeMatches, query, winnerFilter, gameFilter, safePlayerMap]);
 
   return (
-    <div className="space-y-6">
+    <div className="m8-page-stack">
       <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
         <div>
           <div className="brand-kicker mb-1">History</div>
-          <h2 className="font-display text-2xl font-extrabold">Matches</h2>
+          <h2 className="font-display text-3xl font-black tracking-[-0.03em]">Matches</h2>
           <p className="text-sm text-[#7F8795] mt-1">Search, review and manage every recorded lobby.</p>
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -109,16 +109,16 @@ export default function Matches() {
           <Plus size={18} className="mr-1" /> New Match
         </Button>
         </div>
-      </div>
+      </section>
 
       <MatchResultCenter />
 
       <div className="space-y-3" data-testid="matches-list">
         {filtered.length === 0 && (
-          <div className="card-surface rounded-2xl p-16 text-center text-muted-foreground">No matches found.</div>
+          <div className="m8-panel rounded-2xl p-16 text-center text-muted-foreground">No matches found.</div>
         )}
         {filtered.map((m) => (
-          <div key={m.id} className="card-surface rounded-2xl p-5 animate-fade-up" data-testid={`match-row-${m.id}`}>
+          <div key={m.id} className="m8-panel rounded-2xl p-5 animate-fade-up" data-testid={`match-row-${m.id}`}>
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div className="flex items-center gap-2 text-sm">
                 <span className="font-mono text-muted-foreground">{new Date(m.date).toLocaleString()}</span>
@@ -220,7 +220,7 @@ export default function Matches() {
                     const winner = safePlayerMap[winnerId];
 
                     return (
-                      <div key={pair.playerAId + "-" + pair.playerBId + "-" + index} className="rounded-xl bg-[#0F1218] border border-[#1D222C] px-3 py-2.5">
+                      <div key={pair.playerAId + "-" + pair.playerBId + "-" + index} className="m8-panel-quiet rounded-xl px-3 py-2.5">
                         <div className="flex items-center gap-2 text-sm min-w-0">
                           <span className={`font-semibold truncate ${winnerId === pair.playerAId ? "text-emerald-400" : ""}`}>
                             {alpha?.name || "Alpha"}
