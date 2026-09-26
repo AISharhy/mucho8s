@@ -405,10 +405,10 @@ export default function TeamBuilder() {
         </div>
 
         <div className="flex gap-2">
-          <Button variant="ghost" onClick={autoPick} className="border border-[#222834] bg-[#0F1218]">
+          <Button variant="ghost" onClick={autoPick} className="m8-action border border-[#222834] bg-[#0F1218] hover:border-[#394150]">
             <Sparkles size={15} className="mr-2" /> Auto-pick players
           </Button>
-          <Button variant="ghost" onClick={resetDraft} className="border border-[#222834] bg-[#0F1218]">
+          <Button variant="ghost" onClick={resetDraft} className="m8-action border border-[#222834] bg-[#0F1218] hover:border-[#394150]">
             <RotateCcw size={15} className="mr-2" /> Clear
           </Button>
         </div>
@@ -418,7 +418,7 @@ export default function TeamBuilder() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div>
             <div className="brand-kicker mb-1">Game Context</div>
-            <h3 className="font-display font-bold text-lg">Balance by game</h3>
+            <h3 className="font-display font-black text-lg tracking-[-0.015em]">Balance by game</h3>
             <p className="text-xs text-muted-foreground mt-1">
               Ratings and chemistry use only matches from the selected game. Choose All Games for the global profile.
             </p>
@@ -541,7 +541,7 @@ export default function TeamBuilder() {
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-2">
               <UsersRound size={18} className="text-magma" />
-              <h3 className="font-display font-bold text-lg">
+              <h3 className="font-display font-black text-lg tracking-[-0.015em]">
                 {mode === "manual" ? "Build Teams" : "Player Pool"}
               </h3>
             </div>
@@ -605,7 +605,7 @@ export default function TeamBuilder() {
                   className={`flex items-center gap-3 rounded-xl border p-3 transition-all ${
                     active || inA || inB
                       ? "bg-white/[0.04] border-[#343B48]"
-                      : "bg-[#0F1218] border-[#1D222C]"
+                      : "m8-panel-quiet"
                   }`}
                 >
                   {mode !== "manual" ? (
@@ -676,7 +676,7 @@ export default function TeamBuilder() {
               {mode === "balance" ? "Generate Balanced Teams" : "Generate Chemistry Draft"}
             </Button>
           ) : (
-            <div className="mt-4 rounded-xl bg-[#0F1218] border border-[#1D222C] p-3 text-xs text-muted-foreground">
+            <div className="mt-4 m8-panel-quiet rounded-xl p-3 text-xs text-muted-foreground">
               Manual mode updates automatically as soon as both teams are complete.
             </div>
           )}
@@ -687,7 +687,7 @@ export default function TeamBuilder() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="brand-kicker mb-1">Chemistry Scan</div>
-                <h3 className="font-display text-xl font-bold">Compatibility</h3>
+                <h3 className="font-display text-xl font-black tracking-[-0.02em]">Compatibility</h3>
                 <div className="text-xs text-muted-foreground mt-1">
                   {game === "ALL" && matchMode === "ALL"
                     ? "All-game history"
@@ -704,7 +704,7 @@ export default function TeamBuilder() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
                 {chemistryPreview.slice(0, 6).map((pair) => (
-                  <div key={`${pair.a.id}:${pair.b.id}`} className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-4">
+                  <div key={`${pair.a.id}:${pair.b.id}`} className="m8-panel-quiet rounded-xl p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div className="font-semibold truncate">{pair.a.name} + {pair.b.name}</div>
                       <ChemistryBadge score={pair.score} />
@@ -725,7 +725,7 @@ export default function TeamBuilder() {
 
           {!result ? (
             <div className="m8-panel rounded-2xl min-h-[330px] flex flex-col items-center justify-center text-center p-8">
-              <div className="w-14 h-14 rounded-2xl bg-[#0F1218] border border-[#282E39] flex items-center justify-center">
+              <div className="w-14 h-14 rounded-2xl m8-panel-quiet flex items-center justify-center shadow-[0_12px_28px_rgba(0,0,0,.18)]">
                 <Gauge size={24} className="text-magma" />
               </div>
               <h3 className="font-display text-2xl font-bold mt-4">
@@ -748,7 +748,7 @@ export default function TeamBuilder() {
                       {mode === "manual" ? "Manual Team Analysis" : mode === "balance" ? "Balanced Teams" : "Chemistry Draft"}
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-display text-2xl font-extrabold">
+                      <h3 className="font-display text-2xl font-black tracking-[-0.03em]">
                         {result.balanceVerdict}
                       </h3>
                       <span className="px-2 py-1 rounded-lg bg-[#171B23] border border-[#2B313E] text-[10px] font-bold text-[#D5A33A]">
@@ -803,7 +803,7 @@ export default function TeamBuilder() {
                 </button>
 
                 {whyOpen && (
-                  <div className="mt-3 rounded-xl bg-[#0F1218] border border-[#1D222C] p-4">
+                  <div className="mt-3 m8-panel-quiet rounded-xl p-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {(result.why || []).map((reason) => (
                         <div key={reason} className="text-xs text-muted-foreground">
@@ -850,7 +850,7 @@ export default function TeamBuilder() {
                 <div className="flex items-center justify-between gap-3 mb-4">
                   <div>
                     <div className="brand-kicker mb-1">Match Objectives</div>
-                    <h3 className="font-display text-xl font-bold">Match Bounties</h3>
+                    <h3 className="font-display text-xl font-black tracking-[-0.02em]">Match Bounties</h3>
                     <p className="text-xs text-muted-foreground mt-1">
                       Generated from real streaks, duo history, underdog status and rivalries. Maximum 3 active objectives.
                     </p>
@@ -900,7 +900,7 @@ export default function TeamBuilder() {
                 <div className="flex items-center justify-between gap-3 mb-4">
                   <div>
                     <div className="brand-kicker mb-1">Suggested Matchups</div>
-                    <h3 className="font-display text-xl font-bold">Cross-team pairings</h3>
+                    <h3 className="font-display text-xl font-black tracking-[-0.02em]">Cross-team pairings</h3>
                   </div>
                   <Swords size={19} className="text-magma" />
                 </div>
