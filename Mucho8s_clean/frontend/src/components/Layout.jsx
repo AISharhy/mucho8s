@@ -48,20 +48,20 @@ class PageErrorBoundary extends Component {
 
 const TITLES = {
   "/": "Dashboard",
-  "/play": "Play",
-  "/players": "Players",
-  "/team-builder": "Team Builder",
-  "/balancer": "Team Builder",
-  "/draft": "Team Builder",
-  "/matches": "Matches",
-  "/ranking": "Ranking",
-  "/leaderboard": "Ranking",
-  "/statistics": "Ranking",
-  "/rank-guide": "Rank Guide",
-  "/ranks": "Rank Guide",
-  "/admin": "Admin Panel",
-  "/challenges": "Challenge Inbox",
-  "/challenge-ranking": "Chall Ranking",
+  "/play": "Gioca",
+  "/players": "Giocatori",
+  "/team-builder": "Creazione squadre",
+  "/balancer": "Creazione squadre",
+  "/draft": "Creazione squadre",
+  "/matches": "Partite",
+  "/ranking": "Classifica",
+  "/leaderboard": "Classifica",
+  "/statistics": "Classifica",
+  "/rank-guide": "Guida",
+  "/ranks": "Guida",
+  "/admin": "Pannello Admin",
+  "/challenges": "Le mie sfide",
+  "/challenge-ranking": "Classifica sfide",
 };
 
 export const Layout = () => {
@@ -189,7 +189,7 @@ export const Layout = () => {
     return ids;
   }, [challenges]);
 
-  const title = TITLES[loc.pathname] || (loc.pathname.startsWith("/players/") ? "Player Profile" : loc.pathname.startsWith("/challenges/") ? "Challenge Match" : "MuchoMoney8s");
+  const title = TITLES[loc.pathname] || (loc.pathname.startsWith("/players/") ? "Profilo giocatore" : loc.pathname.startsWith("/challenges/") ? "Partita sfida" : "MuchoMoney8s");
 
   useEffect(() => {
     document.title = title === "MuchoMoney8s" ? "MuchoMoney8s" : `${title} · MuchoMoney8s`;
