@@ -4,13 +4,12 @@ import { PlayerAvatar } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RecordMatchDialog } from "@/components/RecordMatchDialog";
-import MatchResultCenter from "@/components/MatchResultCenter";
 import { EmptyState } from "@/components/ProductState";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Trophy, Filter, Pencil, Trash2, WalletCards, ArrowRightLeft, Lock, Gamepad2, RotateCcw } from "lucide-react";
+import { Search, Trophy, Filter, Pencil, Trash2, WalletCards, ArrowRightLeft, Lock, Gamepad2, RotateCcw } from "lucide-react";
 import { GAMES } from "@/lib/demoData";
 import { toast } from "sonner";
 
@@ -65,7 +64,6 @@ export default function Matches() {
     () => (playerMap && typeof playerMap === "object" ? playerMap : {}),
     [playerMap]
   );
-  const [open, setOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [query, setQuery] = useState("");
   const [winnerFilter, setWinnerFilter] = useState("all");
@@ -118,7 +116,7 @@ export default function Matches() {
         <div>
           <div className="brand-kicker mb-1">History</div>
           <h2 className="font-display text-3xl font-black tracking-[-0.03em]">Matches</h2>
-          <p className="text-sm text-[#7F8795] mt-1">Search, review and manage every recorded lobby.</p>
+          <p className="text-sm text-[#7F8795] mt-1">Final verified match history only.</p>
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="relative flex-1 max-w-md">
@@ -162,13 +160,8 @@ export default function Matches() {
             </button>
           ))}
         </div>
-        <Button onClick={() => setOpen(true)} data-testid="new-match-btn" disabled={!isAdmin} title={isAdmin ? "" : "Admin only"} className="w-full sm:w-auto bg-magma hover:bg-[#ff3c4c] text-white font-semibold h-11 rounded-xl disabled:opacity-40">
-          <Plus size={18} className="mr-1" /> New Match
-        </Button>
         </div>
       </section>
-
-      <MatchResultCenter />
 
       <div className="space-y-3" data-testid="matches-list">
         {filtered.length === 0 && (
@@ -369,7 +362,6 @@ export default function Matches() {
         ))}
       </div>
 
-      <RecordMatchDialog open={open} onOpenChange={setOpen} title="New Match" />
       <RecordMatchDialog
         open={!!editData}
         onOpenChange={(o) => !o && setEditData(null)}
