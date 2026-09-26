@@ -149,7 +149,7 @@ export default function AdminPanel() {
     disputedChallenges.length +
     Number(adminChallengeAlertCount || 0);
 
-  if (adminAuthLoading) {
+  if (adminAuthLoading && !isAdmin) {
     return (
       <div className="card-surface rounded-2xl p-8 min-h-[220px] flex flex-col items-center justify-center text-center">
         <div className="w-12 h-12 rounded-2xl bg-[#0F1218] border border-[#242A35] flex items-center justify-center mb-4">
