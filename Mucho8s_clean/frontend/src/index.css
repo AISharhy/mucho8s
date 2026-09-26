@@ -840,3 +840,141 @@ textarea:focus-visible {
         border-bottom: 0;
     }
 }
+
+
+/* Competitive progression event effects */
+@keyframes m8EventIn {
+    0% { opacity: 0; transform: translate(-50%, -14px) scale(.96); }
+    70% { opacity: 1; transform: translate(-50%, 3px) scale(1.01); }
+    100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+@keyframes m8EventGlow {
+    0%, 100% { opacity: .3; transform: scale(.95); }
+    50% { opacity: .75; transform: scale(1.08); }
+}
+
+.m8-event-layer {
+    position: fixed;
+    top: 5.4rem;
+    left: 50%;
+    z-index: 120;
+    width: min(92vw, 430px);
+    pointer-events: none;
+    animation: m8EventIn .28s cubic-bezier(.2,.8,.2,1) both;
+}
+
+.m8-event-card {
+    --event-accent: #D5A33A;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    padding: .9rem 1rem;
+    border-radius: 1rem;
+    border: 1px solid color-mix(in srgb, var(--event-accent) 34%, #252D39);
+    background:
+        radial-gradient(circle at 0% 50%, color-mix(in srgb, var(--event-accent) 12%, transparent), transparent 11rem),
+        rgba(12,16,22,.96);
+    backdrop-filter: blur(18px);
+    box-shadow:
+        0 18px 50px rgba(0,0,0,.34),
+        0 0 30px color-mix(in srgb, var(--event-accent) 14%, transparent);
+}
+
+.m8-event-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--event-accent);
+    box-shadow: 0 0 18px var(--event-accent);
+}
+
+.m8-event-flare {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    left: -36px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--event-accent) 16%, transparent);
+    filter: blur(22px);
+    animation: m8EventGlow 1.3s ease-in-out infinite;
+}
+
+.m8-event-icon {
+    position: relative;
+    z-index: 1;
+    width: 46px;
+    height: 46px;
+    border-radius: .85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    color: var(--event-accent);
+    border: 1px solid color-mix(in srgb, var(--event-accent) 28%, #2A303B);
+    background: color-mix(in srgb, var(--event-accent) 9%, #0D1118);
+}
+
+.m8-event-kicker {
+    color: #7F8999;
+    font-size: .58rem;
+    font-weight: 800;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+}
+
+.m8-event-title {
+    margin-top: .1rem;
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: .78rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+    color: #F4F6F8;
+}
+
+.m8-event-value {
+    margin-top: .12rem;
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 1.15rem;
+    font-weight: 900;
+    line-height: 1.1;
+    color: var(--event-accent);
+}
+
+.m8-event-detail {
+    margin-top: .25rem;
+    color: #737D8D;
+    font-size: .66rem;
+}
+
+.m8-event-spark {
+    color: var(--event-accent);
+    opacity: .65;
+    flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+    .m8-event-layer {
+        top: 4.65rem;
+    }
+
+    .m8-event-card {
+        gap: .75rem;
+        padding: .8rem .85rem;
+    }
+
+    .m8-event-icon {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .m8-event-layer,
+    .m8-event-flare {
+        animation: none !important;
+    }
+}
