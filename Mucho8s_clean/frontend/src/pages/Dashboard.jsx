@@ -43,6 +43,13 @@ const CompetitionOverview = ({
   activeChallenges,
   loggedIn = false,
 }) => {
+  const topThree = useMemo(
+    () => [...(players || [])].sort((a, b) => Number(b.currentElo || 0) - Number(a.currentElo || 0)).slice(0, 3),
+    [players]
+  );
+  const recentMatches = (matches || []).slice(0, 3);
+  const liveChallenges = (activeChallenges || []).slice(0, 3);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <section className="card-surface rounded-2xl p-5">
@@ -189,13 +196,6 @@ const GuestDashboard = ({
   signInWithDiscord,
   discordLoading,
 }) => {
-  const topThree = useMemo(
-    () => [...players].sort((a, b) => b.currentElo - a.currentElo).slice(0, 3),
-    [players]
-  );
-  const recentMatches = matches.slice(0, 3);
-  const liveChallenges = activeChallenges.slice(0, 3);
-
   return (
     <div className="space-y-5">
       <section className="brand-card rounded-2xl p-6 sm:p-8">
