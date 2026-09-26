@@ -597,297 +597,183 @@ export default function PlayerProfile() {
       )}
 
       {(!isOwnProfile || profileTab === "overview") && (
-      <div className="m8-panel rounded-2xl p-4 sm:p-5 order-4" data-testid="challenge-profile-stats">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <div className="brand-kicker mb-1">Competitive Stats</div>
-            <h3 className="font-display text-xl font-black tracking-[-0.02em]">Chall Performance · {challengeStats.wins}W - {challengeStats.losses}L</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Every verified match keeps its real win/loss value. ReChall settlement is tracked separately.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full lg:w-auto">
-            <div className="m8-stat-card">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Win Rate</div>
-              <div className="font-mono font-bold text-lg mt-1">{challengeStats.winRate}%</div>
+        <>
+          <div className="m8-panel rounded-2xl p-4 sm:p-5 order-4" data-testid="competitive-overview">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div>
+                <div className="brand-kicker mb-1">Competitive</div>
+                <h3 className="font-display font-black text-xl tracking-[-0.02em]">Overview</h3>
+              </div>
+              <span className="m8-pill">{challengeStats.wins}W · {challengeStats.losses}L</span>
             </div>
-            <div className="m8-stat-card border-emerald-500/15">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Money Won</div>
-              <div className="font-mono font-bold text-lg mt-1 text-emerald-400">€{challengeStats.wonValue.toFixed(2)}</div>
-            </div>
-            <div className="m8-stat-card border-red-500/15">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Money Lost</div>
-              <div className="font-mono font-bold text-lg mt-1 text-red-400">€{challengeStats.lostValue.toFixed(2)}</div>
-            </div>
-            <div className="m8-stat-card">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Match Pairings</div>
-              <div className="font-mono font-bold text-lg mt-1 text-magma">{challengeStats.matchPairings}</div>
-            </div>
-          </div>
-        </div>
 
-        {challengeStats.completed.length > 0 && (
-          <div className="flex items-center gap-1.5 mt-4">
-            <span className="text-xs text-muted-foreground mr-1">Last 5</span>
-            {challengeStats.completed.slice(0, 5).map((challenge) => {
-              const won = challenge.reported_winner_player_id === id;
-              return (
-                <span
-                  key={challenge.id}
-                  title={won ? "Vinta" : "Persa"}
-                  className={`w-7 h-7 rounded-lg border flex items-center justify-center text-[10px] font-black ${
-                    won
-                      ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
-                      : "bg-red-500/10 border-red-500/25 text-red-400"
-                  }`}
-                >
-                  {won ? "W" : "L"}
-                </span>
-              );
-            })}
-          </div>
-        )}
-      </div>
-      )}
+            <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2">
+              <div className="m8-stat-card">
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Win Rate</div>
+                <div className="font-mono font-black text-lg mt-1">{challengeStats.winRate}%</div>
+              </div>
 
-      {(!isOwnProfile || profileTab === "overview") && (
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 order-5" data-testid="challenge-insights">
-        <div className="m8-panel rounded-2xl p-5">
-          <div className="brand-kicker mb-1">Momentum</div>
-          <h3 className="font-display font-bold text-lg">Challenge Streak</h3>
-          <div className={`font-display text-4xl font-black mt-4 ${
-            challengeInsights.currentType === "W"
-              ? "text-emerald-400"
-              : challengeInsights.currentType === "L"
-                ? "text-red-400"
-                : "text-white"
-          }`}>
-            {challengeInsights.currentStreak
-              ? `${challengeInsights.currentStreak}${challengeInsights.currentType}`
-              : "—"}
-          </div>
-          <div className="text-xs text-muted-foreground mt-2">
-            Best win streak: {challengeInsights.bestWinStreak}
-          </div>
-        </div>
-
-        <div className="m8-panel rounded-2xl p-5">
-          <div className="brand-kicker mb-1">Trust</div>
-          <h3 className="font-display font-bold text-lg">Challenge Reputation</h3>
-          <div className="flex items-end gap-2 mt-4">
-            <div className={`font-display text-4xl font-black ${
-              challengeInsights.reputation >= 90 ? "text-emerald-400" : challengeInsights.reputation >= 70 ? "text-[#D5A33A]" : "text-red-400"
-            }`}>
-              {challengeInsights.reputation}%
-            </div>
-            <BadgeCheck size={20} className="text-emerald-400 mb-1.5" />
-          </div>
-          <div className="text-xs text-muted-foreground mt-2">
-            {challengeInsights.settled} settled payouts · {challengeInsights.payoutDisputes} payout disputes
-          </div>
-        </div>
-
-        <div className="m8-panel rounded-2xl p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="brand-kicker mb-1">Milestones</div>
-              <h3 className="font-display font-black text-lg">Achievements</h3>
-            </div>
-            <span className="font-mono text-xs text-[#D5A33A]">
-              {challengeInsights.achievements.length}/{challengeInsights.achievementCatalog.length}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 mt-4 max-h-56 overflow-y-auto pr-1">
-            {challengeInsights.achievementCatalog.map((achievement) => {
-              const Icon = achievement.icon;
-              return (
-                <div
-                  key={achievement.label}
-                  title={achievement.detail}
-                  className={`rounded-xl border p-2.5 flex items-center gap-2 transition-all ${
-                    achievement.unlocked
-                      ? "bg-[#D5A33A]/[0.06] border-[#D5A33A]/25"
-                      : "bg-[#0F1218] border-[#1D222C] opacity-40"
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                    achievement.unlocked ? "bg-[#D5A33A]/10" : "bg-white/[0.03]"
-                  }`}>
-                    <Icon size={14} className={achievement.unlocked ? "text-[#D5A33A]" : "text-muted-foreground"} />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-[11px] font-bold truncate">{achievement.label}</div>
-                    <div className="text-[9px] text-muted-foreground truncate mt-0.5">{achievement.detail}</div>
-                  </div>
+              <div className="m8-stat-card">
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Net Money</div>
+                <div className={`font-mono font-black text-lg mt-1 ${
+                  challengeStats.wonValue - challengeStats.lostValue >= 0
+                    ? "text-emerald-400"
+                    : "text-red-400"
+                }`}>
+                  {challengeStats.wonValue - challengeStats.lostValue >= 0 ? "+" : ""}
+                  €{(challengeStats.wonValue - challengeStats.lostValue).toFixed(2)}
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-      )}
+              </div>
 
-      {(!isOwnProfile || profileTab === "overview") && (
-      <div className="m8-panel rounded-2xl p-4 sm:p-5 order-7" data-testid="bounty-achievements">
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-5">
-          <div>
-            <div className="brand-kicker mb-1">Match Bounties</div>
-            <h3 className="font-display font-bold text-xl">Bounty Achievements</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Special achievements earned by breaking streaks, undefeated duos, underdog matchups and rivalries.
-            </p>
-          </div>
+              <div className="m8-stat-card">
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Streak</div>
+                <div className={`font-mono font-black text-lg mt-1 ${
+                  challengeInsights.currentType === "W"
+                    ? "text-emerald-400"
+                    : challengeInsights.currentType === "L"
+                      ? "text-red-400"
+                      : ""
+                }`}>
+                  {challengeInsights.currentStreak
+                    ? `${challengeInsights.currentStreak}${challengeInsights.currentType}`
+                    : "—"}
+                </div>
+              </div>
 
-          <div className="flex gap-2 shrink-0">
-            <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] px-4 py-2 text-center">
-              <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Unlocked</div>
-              <div className="font-mono font-bold text-[#D5A33A] mt-0.5">
-                {unlockedBountyAchievements.length}/{bountyAchievements.length}
+              <div className="m8-stat-card">
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Reputation</div>
+                <div className="font-mono font-black text-lg mt-1">{challengeInsights.reputation}%</div>
+              </div>
+
+              <div className="m8-stat-card">
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">MVP</div>
+                <div className="font-mono font-black text-lg mt-1 text-[#D5A33A]">🏆 {player.mvpCount || 0}</div>
+              </div>
+
+              <div className="m8-stat-card">
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">MERDA</div>
+                <div className="font-mono font-black text-lg mt-1 text-[#C79A6B]">💩 {player.merdaCount || 0}</div>
+              </div>
+
+              <div className="m8-stat-card">
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Bounties</div>
+                <div className="font-mono font-black text-lg mt-1">{unlockedBountyAchievements.length}/{bountyAchievements.length}</div>
+              </div>
+
+              <div className="m8-stat-card">
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Points</div>
+                <div className="font-mono font-black text-lg mt-1 text-[#D5A33A]">{bountyHistory.points}</div>
               </div>
             </div>
-            <div className="rounded-xl bg-[#D5A33A]/[0.06] border border-[#D5A33A]/20 px-4 py-2 text-center">
-              <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Bounty Points</div>
-              <div className="font-mono font-bold text-[#D5A33A] mt-0.5">{bountyHistory.points}</div>
-            </div>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
-          {bountyAchievements.map((achievement) => {
-            const progressPct = achievement.target
-              ? Math.min(100, Math.round((achievement.progress / achievement.target) * 100))
-              : 0;
-
-            return (
-              <div
-                key={achievement.key}
-                className={`rounded-xl border p-3 transition-all ${
-                  achievement.unlocked
-                    ? "bg-[#D5A33A]/[0.06] border-[#D5A33A]/25"
-                    : "bg-[#0F1218] border-[#1D222C]"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                    achievement.unlocked
-                      ? "bg-[#D5A33A]/10 text-[#D5A33A]"
-                      : "bg-white/[0.03] text-[#596170]"
-                  }`}>
-                    {achievement.category === "Duo"
-                      ? <UsersRound size={16} />
-                      : achievement.category === "Streak"
-                        ? <Flame size={16} />
-                        : achievement.category === "Upset"
-                          ? <Rocket size={16} />
-                          : achievement.category === "Rivalry"
-                            ? <Swords size={16} />
-                            : achievement.category === "Points"
-                              ? <Coins size={16} />
-                              : <Target size={16} />}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="font-bold text-sm truncate">{achievement.label}</div>
-                      {achievement.unlocked && <BadgeCheck size={14} className="text-emerald-400 shrink-0" />}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5">{achievement.detail}</div>
-                  </div>
-                </div>
-
-                <div className="mt-3">
-                  <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-muted-foreground mb-1.5">
-                    <span>{achievement.category}</span>
-                    <span>{achievement.progress}/{achievement.target}</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-[#1D222C] overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${
-                        achievement.unlocked ? "bg-[#D5A33A]" : "bg-[#596170]"
+            {challengeStats.completed.length > 0 && (
+              <div className="flex items-center gap-1.5 mt-4 pt-3 border-t border-[#1D222C]">
+                <span className="text-[10px] uppercase tracking-widest text-muted-foreground mr-1">Last 5</span>
+                {challengeStats.completed.slice(0, 5).map((challenge) => {
+                  const won = challenge.reported_winner_player_id === id;
+                  return (
+                    <span
+                      key={challenge.id}
+                      title={won ? "Win" : "Loss"}
+                      className={`w-7 h-7 rounded-lg border flex items-center justify-center text-[10px] font-black ${
+                        won
+                          ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
+                          : "bg-red-500/10 border-red-500/25 text-red-400"
                       }`}
-                      style={{ width: `${progressPct}%` }}
-                    />
+                    >
+                      {won ? "W" : "L"}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 order-6">
+            <div className="m8-panel rounded-2xl p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div>
+                  <div className="brand-kicker mb-1">Rivals</div>
+                  <h3 className="font-display font-bold text-lg">Head-to-Head</h3>
+                </div>
+                <UsersRound size={18} className="text-[#697181]" />
+              </div>
+
+              {challengeInsights.headToHead.length === 0 ? (
+                <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-6 text-center text-xs text-muted-foreground">
+                  No verified rivals yet.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {challengeInsights.headToHead.slice(0, 3).map((row) => {
+                    const opponent = playerMap[row.opponentId];
+                    return (
+                      <Link
+                        key={row.opponentId}
+                        to={`/players/${row.opponentId}`}
+                        className="interactive-row rounded-xl p-3 flex items-center gap-3"
+                      >
+                        <PlayerAvatar
+                          name={opponent?.name || "Player"}
+                          elo={opponent?.currentElo || 1000}
+                          size={34}
+                          avatarUrl={playerAvatars[row.opponentId]}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-sm truncate">{opponent?.name || "Player"}</div>
+                          <div className="text-[10px] text-muted-foreground">{row.played} matches</div>
+                        </div>
+                        <div className="font-mono text-sm font-black">
+                          <span className="text-emerald-400">{row.wins}W</span>
+                          <span className="text-muted-foreground mx-1">-</span>
+                          <span className="text-red-400">{row.losses}L</span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="m8-panel rounded-2xl p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div>
+                  <div className="brand-kicker mb-1">Achievements</div>
+                  <h3 className="font-display font-bold text-lg">Bounties</h3>
+                </div>
+                <div className="text-right">
+                  <div className="font-mono font-black text-[#D5A33A]">
+                    {unlockedBountyAchievements.length}/{bountyAchievements.length}
+                  </div>
+                  <div className="text-[9px] uppercase tracking-widest text-muted-foreground">
+                    {bountyHistory.points} pts
                   </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
 
-        {bountyHistory.events.length > 0 && (
-          <div className="mt-5 pt-5 border-t border-[#1D222C]">
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3">Latest completed bounties</div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
-              {bountyHistory.events.slice(0, 3).map((event) => (
-                <div key={event.id} className="m8-stat-card">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="font-semibold text-sm">{event.title}</div>
-                    <div className="font-mono text-xs font-bold text-[#D5A33A]">+{event.points}</div>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">{event.detail}</div>
-                  {event.date && (
-                    <div className="text-[9px] uppercase tracking-widest text-[#596170] mt-2">
-                      {new Date(event.date).toLocaleDateString()}
-                    </div>
-                  )}
+              {bountyHistory.events.length === 0 ? (
+                <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-6 text-center text-xs text-muted-foreground">
+                  No completed bounties yet.
                 </div>
-              ))}
+              ) : (
+                <div className="space-y-2">
+                  {bountyHistory.events.slice(0, 3).map((event) => (
+                    <div key={event.id} className="rounded-xl bg-[#0F1218] border border-[#1D222C] px-3 py-2.5 flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-[#D5A33A]/10 border border-[#D5A33A]/15 flex items-center justify-center text-[#D5A33A]">
+                        <Target size={14} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold text-sm truncate">{event.title}</div>
+                        <div className="text-[10px] text-muted-foreground truncate">{event.detail}</div>
+                      </div>
+                      <div className="font-mono text-xs font-black text-[#D5A33A]">+{event.points}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-        )}
-      </div>
-      )}
-
-      {(!isOwnProfile || profileTab === "overview") && (
-      <div className="m8-panel rounded-2xl p-4 sm:p-5 order-6">
-        <div className="flex items-center justify-between gap-3 mb-4">
-          <div>
-            <div className="brand-kicker mb-1">Rivals</div>
-            <h3 className="font-display font-bold text-lg">Head-to-Head</h3>
-          </div>
-          <UsersRound size={18} className="text-[#697181]" />
-        </div>
-
-        {challengeInsights.headToHead.length === 0 ? (
-          <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-8 text-center text-sm text-muted-foreground">
-            No verified challenge rivals yet.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {challengeInsights.headToHead.map((row) => {
-              const opponent = playerMap[row.opponentId];
-              return (
-                <Link
-                  key={row.opponentId}
-                  to={`/players/${row.opponentId}`}
-                  className="interactive-row rounded-xl p-3 flex items-center gap-3"
-                >
-                  <PlayerAvatar
-                    name={opponent?.name || "Player"}
-                    elo={opponent?.currentElo || 1000}
-                    size={38}
-                    avatarUrl={playerAvatars[row.opponentId]}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold truncate">{opponent?.name || "Player"}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">{row.played} challs played</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-mono font-bold">
-                      <span className="text-emerald-400">{row.wins}W</span>
-                      <span className="text-muted-foreground mx-1">-</span>
-                      <span className="text-red-400">{row.losses}L</span>
-                    </div>
-
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </div>
+        </>
       )}
 
       {(!isOwnProfile || profileTab === "overview") && (
@@ -1132,9 +1018,14 @@ export default function PlayerProfile() {
 
       {(!isOwnProfile || profileTab === "overview") && (
       <div className="m8-panel rounded-2xl p-4 sm:p-5 order-8">
-        <div className="brand-kicker mb-1">Progression</div>
-        <h3 className="font-display font-black text-xl tracking-[-0.02em] mb-4">Elo History</h3>
-        <div className="h-64">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <div className="brand-kicker mb-1">Progression</div>
+            <h3 className="font-display font-black text-lg tracking-[-0.02em]">Elo History</h3>
+          </div>
+          <span className="m8-pill">{player.currentElo} Elo</span>
+        </div>
+        <div className="h-44">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={player.eloHistory || []}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1D222C" vertical={false} />
