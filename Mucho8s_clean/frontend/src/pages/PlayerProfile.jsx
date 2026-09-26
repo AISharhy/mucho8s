@@ -189,20 +189,20 @@ export default function PlayerProfile() {
       .slice(0, 5);
 
     const achievementCatalog = [
-      { label: "First Match", detail: "Play 1 match", icon: Gamepad2, unlocked: player.totalMatches >= 1 },
-      { label: "Regular", detail: "Play 10 matches", icon: Gamepad2, unlocked: player.totalMatches >= 10 },
-      { label: "Veteran", detail: "Play 25 matches", icon: Medal, unlocked: player.totalMatches >= 25 },
-      { label: "Grinder", detail: "Play 50 matches", icon: Flame, unlocked: player.totalMatches >= 50 },
-      { label: "Centurion", detail: "Play 100 matches", icon: Award, unlocked: player.totalMatches >= 100 },
+      { label: "First Match", detail: "Play 1 match", icon: Gamepad2, unlocked: (player?.totalMatches || 0) >= 1 },
+      { label: "Regular", detail: "Play 10 matches", icon: Gamepad2, unlocked: (player?.totalMatches || 0) >= 10 },
+      { label: "Veteran", detail: "Play 25 matches", icon: Medal, unlocked: (player?.totalMatches || 0) >= 25 },
+      { label: "Grinder", detail: "Play 50 matches", icon: Flame, unlocked: (player?.totalMatches || 0) >= 50 },
+      { label: "Centurion", detail: "Play 100 matches", icon: Award, unlocked: (player?.totalMatches || 0) >= 100 },
 
-      { label: "First Blood", detail: "Win 1 match", icon: Trophy, unlocked: player.wins >= 1 },
-      { label: "Winner", detail: "Win 10 matches", icon: Trophy, unlocked: player.wins >= 10 },
-      { label: "Elite Winner", detail: "Win 25 matches", icon: Crown, unlocked: player.wins >= 25 },
-      { label: "Dominant", detail: "Win 50 matches", icon: Star, unlocked: player.wins >= 50 },
+      { label: "First Blood", detail: "Win 1 match", icon: Trophy, unlocked: (player?.wins || 0) >= 1 },
+      { label: "Winner", detail: "Win 10 matches", icon: Trophy, unlocked: (player?.wins || 0) >= 10 },
+      { label: "Elite Winner", detail: "Win 25 matches", icon: Crown, unlocked: (player?.wins || 0) >= 25 },
+      { label: "Dominant", detail: "Win 50 matches", icon: Star, unlocked: (player?.wins || 0) >= 50 },
 
-      { label: "MVP", detail: "Earn 1 MVP", icon: Crown, unlocked: player.mvpCount >= 1 },
-      { label: "MVP x5", detail: "Earn 5 MVPs", icon: Crown, unlocked: player.mvpCount >= 5 },
-      { label: "MVP x10", detail: "Earn 10 MVPs", icon: Award, unlocked: player.mvpCount >= 10 },
+      { label: "MVP", detail: "Earn 1 MVP", icon: Crown, unlocked: (player?.mvpCount || 0) >= 1 },
+      { label: "MVP x5", detail: "Earn 5 MVPs", icon: Crown, unlocked: (player?.mvpCount || 0) >= 5 },
+      { label: "MVP x10", detail: "Earn 10 MVPs", icon: Award, unlocked: (player?.mvpCount || 0) >= 10 },
 
       { label: "Hot Streak", detail: "3 wins in a row", icon: Flame, unlocked: bestWinStreak >= 3 },
       { label: "On Fire", detail: "5 wins in a row", icon: Flame, unlocked: bestWinStreak >= 5 },
@@ -221,8 +221,8 @@ export default function PlayerProfile() {
       { label: "Clean Payout", detail: "3 clean settled payouts", icon: ShieldCheck, unlocked: reputation === 100 && settled.length >= 3 },
       { label: "Trusted", detail: "10 clean settled payouts", icon: Shield, unlocked: reputation === 100 && settled.length >= 10 },
 
-      { label: "Platinum", detail: "Reach 1200 Elo", icon: Medal, unlocked: player.currentElo >= 1200 },
-      { label: "Masters", detail: "Reach 1350 Elo", icon: Crown, unlocked: player.currentElo >= 1350 },
+      { label: "Platinum", detail: "Reach 1200 Elo", icon: Medal, unlocked: (player?.currentElo || 0) >= 1200 },
+      { label: "Masters", detail: "Reach 1350 Elo", icon: Crown, unlocked: (player?.currentElo || 0) >= 1350 },
     ];
 
     const achievements = achievementCatalog.filter((item) => item.unlocked);
