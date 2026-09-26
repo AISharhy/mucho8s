@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar, EloBadge } from "@/components/shared";
-import { MODES, GAMES } from "@/lib/demoData";
+import { GAMES } from "@/lib/demoData";
+
+const MATCH_MODES = ["Hardpoint", "Search & Destroy"];
 import { Crown, Search, WalletCards, ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 
@@ -15,6 +17,7 @@ export const RecordMatchDialog = ({
   initialTeams,
   editData,
   defaultGame,
+  defaultMode,
   title = "Record Match",
   reportOnly = false,
 }) => {
@@ -23,7 +26,7 @@ export const RecordMatchDialog = ({
   const [winner, setWinner] = useState("A");
   const [mvpId, setMvpId] = useState("");
   const [map, setMap] = useState("");
-  const [mode, setMode] = useState(MODES[0]);
+  const [mode, setMode] = useState(MATCH_MODES[0]);
   const [game, setGame] = useState(GAMES[0]);
   const [query, setQuery] = useState("");
   const [pairings, setPairings] = useState([]);
@@ -46,7 +49,7 @@ export const RecordMatchDialog = ({
     setWinner(editData?.winner || "A");
     setMvpId(editData?.mvpId || "");
     setMap(editData?.map || "");
-    setMode(editData?.mode || defaultMode || MODES[0]);
+    setMode(editData?.mode || defaultMode || MATCH_MODES[0]);
     setGame(editData?.game || defaultGame || GAMES[0]);
     setPairings(Array.isArray(source?.pairings) ? source.pairings : []);
     setScoreA(String(editData?.scoreA ?? 0));
@@ -416,7 +419,7 @@ export const RecordMatchDialog = ({
                     onChange={(e) => setMode(e.target.value)}
                     className="mt-1 w-full h-10 rounded-xl bg-[#0F1218] border border-[#222834] px-3 text-sm"
                   >
-                    {MODES.map((m) => <option key={m}>{m}</option>)}
+                    {MATCH_MODES.map((m) => <option key={m}>{m}</option>)}
                   </select>
                 </div>
 
