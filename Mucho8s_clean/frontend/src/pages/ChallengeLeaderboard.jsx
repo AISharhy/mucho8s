@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { useData } from "@/context/DataContext";
-import { PlayerAvatar } from "@/components/shared";
+import { PlayerAvatar, RankBadge } from "@/components/shared";
 import { Trophy, TrendingUp, WalletCards } from "lucide-react";
 
 const euro = (value) =>
@@ -127,6 +127,7 @@ export default function ChallengeLeaderboard() {
                   />
                   <div className="min-w-0">
                     <div className="font-semibold truncate">{row.player.name}</div>
+                    <div className="mt-1"><RankBadge elo={row.player.currentElo || 1000} compact /></div>
                     <div className="text-xs text-muted-foreground md:hidden mt-1">
                       {row.wins}W - {row.losses}L · {row.winRate}%
                     </div>
