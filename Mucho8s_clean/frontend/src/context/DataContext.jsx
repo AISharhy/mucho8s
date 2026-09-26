@@ -841,9 +841,17 @@ export const DataProvider = ({ children }) => {
   const verifyChallengeResult = useCallback(async (id, decision, note = "") => {
     const data = await challengeRequest({ action: "verify-result", id, decision, note });
     if (!data?.challenge) return null;
-    await refreshChallenges();
+
+    versionRef.current = -1;
+    await Promise.all([
+      fetchState(),
+      refreshChallenges(),
+      fetchPublicChallenges(),
+      fetchDashboardData(),
+    ]);
+
     return data.challenge;
-  }, [challengeRequest, refreshChallenges]);
+  }, [challengeRequest, fetchDashboardData, fetchPublicChallenges, fetchState, refreshChallenges]);
 
   const cancelChallenge = useCallback(async (id) => {
     const data = await challengeRequest({ action: "cancel", id });
@@ -952,7 +960,9 @@ export const DataProvider = ({ children }) => {
 
     if (!data?.ok) return false;
 
+    versionRef.current = -1;
     await Promise.all([
+      fetchState(),
       fetchPublicChallenges(),
       fetchDashboardData(),
       refreshAdminChallengeAlerts(),
@@ -967,6 +977,7 @@ export const DataProvider = ({ children }) => {
     discordAccount?.player_id,
     fetchDashboardData,
     fetchPublicChallenges,
+    fetchState,
     refreshAdminChallengeAlerts,
     refreshChallenges,
   ]);
@@ -980,15 +991,31 @@ export const DataProvider = ({ children }) => {
         ? prev.map((item) => (item.id === id ? data.challenge : item))
         : [data.challenge, ...prev];
     });
+
+    versionRef.current = -1;
+    await Promise.all([
+      fetchState(),
+      fetchPublicChallenges(),
+      fetchDashboardData(),
+    ]);
+
     return data.challenge;
-  }, [adminChallengeRequest]);
+  }, [adminChallengeRequest, fetchDashboardData, fetchPublicChallenges, fetchState]);
 
   const adminDeleteChallenge = useCallback(async (id) => {
     const data = await adminChallengeRequest({ action: "admin-delete", id });
     if (!data?.ok) return false;
+
     setChallenges((prev) => prev.filter((item) => item.id !== id));
+    versionRef.current = -1;
+    await Promise.all([
+      fetchState(),
+      fetchPublicChallenges(),
+      fetchDashboardData(),
+    ]);
+
     return true;
-  }, [adminChallengeRequest]);
+  }, [adminChallengeRequest, fetchDashboardData, fetchPublicChallenges, fetchState]);
 
   const challengeNotificationCount = useMemo(() => {
     if (!discordAccount?.id) return 0;
