@@ -139,7 +139,7 @@ export default function RankGuide() {
           </RuleCard>
 
           <RuleCard icon={CheckCircle2} title="Verified results only" accent="text-emerald-400">
-            La classifica cambia soltanto quando il risultato è verificato and bloccato.
+            The ranking changes only when the result is verified and locked.
             Technical Admin changes do not generate player notifications.
           </RuleCard>
 
@@ -186,7 +186,7 @@ export default function RankGuide() {
         <h2 className="font-display text-xl font-black">How Auto Balance works</h2>
         <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
           Auto Balance is only used to create more balanced teams: it does not directly change
-          l'Elo. Tiene conto soprattutto del picco Elo, poi dell'Current Elo and della percentuale di
+          Elo. It mainly considers peak Elo, then current Elo and win
           rate. When you choose a game or mode, it also uses history from that specific context;
           the more matches you have in that context, the more that data matters.
         </p>
@@ -211,7 +211,7 @@ export default function RankGuide() {
         <div className="brand-kicker mb-1">Bounties</div>
         <h2 className="font-display text-xl font-black">Match rewards separated from Elo</h2>
         <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-          Gli encomi premiano situazioni particolari and danno punti encomio, ma
+          Bounties reward special situations and grant bounty points, but
           <strong className="text-white"> do not change Elo</strong>. They have been
           balanced to be rarer than normal results without affecting the ranking.
         </p>
@@ -295,10 +295,10 @@ export default function RankGuide() {
         <div className="brand-kicker mb-1">Summary</div>
         <h2 className="font-display text-xl font-black">How to climb</h2>
         <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-          Vinci partite verificate and costruisci serie positive: ogni blocco di 4 consecutive wins
-          ti assegna automaticamente un MVP and +3 Elo. Il valore virtuale della sfida aumenta allo stesso
+          Win verified matches and build positive streaks: every block of 4 consecutive wins
+          automatically awards an MVP and +3 Elo. The virtual challenge value increases
           both the gain and the loss by the same amount.
-          La MERDA è invece un indicatore di serie negativa and non modifica l'Elo.
+          MERDA is instead a negative-streak indicator and does not change Elo.
         </p>
       </section>
     </div>
