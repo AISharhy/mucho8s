@@ -10,10 +10,10 @@ import PlayerProfile from "@/pages/PlayerProfile";
 import TeamBalancer from "@/pages/TeamBalancer";
 import Matches from "@/pages/Matches";
 import Ranking from "@/pages/Ranking";
+import RankGuide from "@/pages/RankGuide";
 import AdminPanel from "@/pages/AdminPanel";
 import ChallengeMatch from "@/pages/ChallengeMatch";
 import ChallengeInbox from "@/pages/ChallengeInbox";
-import ChallengeLeaderboard from "@/pages/ChallengeLeaderboard";
 
 function IntroSplash({ onDone }) {
   useEffect(() => {
@@ -71,10 +71,11 @@ function App() {
               <Route path="ranking" element={<Ranking />} />
               <Route path="leaderboard" element={<Ranking initialTab="leaderboard" />} />
               <Route path="statistics" element={<Ranking initialTab="statistics" />} />
-              <Route path="ranks" element={<Ranking initialTab="ranks" />} />
+              <Route path="challenge-ranking" element={<Ranking initialTab="challenges" />} />
+              <Route path="rank-guide" element={<RankGuide />} />
+              <Route path="ranks" element={<RankGuide />} />
               <Route path="admin" element={<AdminPanel />} />
               <Route path="challenges" element={<ChallengeInbox />} />
-              <Route path="challenge-ranking" element={<ChallengeLeaderboard />} />
               <Route path="challenges/:id" element={<ChallengeMatch />} />
             </Route>
           </Routes>
