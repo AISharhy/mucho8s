@@ -236,3 +236,46 @@ on conflict (id) do update set
   public = excluded.public,
   file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
+
+
+-- Team match result verification. A captain/Admin reports the result; the opposite captain confirms.
+create table if not exists public.team_match_reports (
+  id uuid primary key default gen_random_uuid(),
+  match_id text not null unique,
+  team_a jsonb not null default '[]'::jsonb,
+  team_b jsonb not null default '[]'::jsonb,
+  winner text not null check (winner in ('A','B')),
+  score_a integer not null default 0 check (score_a >= 0),
+  score_b integer not null default 0 check (score_b >= 0),
+  mvp_id text,
+  game text,
+  mode text,
+  map text,
+  pairings jsonb not null default '[]'::jsonb,
+  season_number integer not null default 1,
+  captain_a_player_id text not null,
+  captain_b_player_id text not null,
+  reporter_account_id uuid references auth.users(id) on delete set null,
+  reporter_player_id text,
+  reporter_is_admin boolean not null default false,
+  status text not null default 'pending' check (status in ('pending','completed','disputed','cancelled')),
+  verifier_account_id uuid references auth.users(id) on delete set null,
+  verifier_player_id text,
+  dispute_note text,
+  played_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  verified_at timestamptz,
+  locked_at timestamptz
+);
+
+create index if not exists team_match_reports_status_idx
+  on public.team_match_reports (status, created_at desc);
+
+create index if not exists team_match_reports_captain_a_idx
+  on public.team_match_reports (captain_a_player_id, created_at desc);
+
+create index if not exists team_match_reports_captain_b_idx
+  on public.team_match_reports (captain_b_player_id, created_at desc);
+
+alter table public.team_match_reports enable row level security;
+revoke all on table public.team_match_reports from anon, authenticated;
