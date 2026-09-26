@@ -184,6 +184,8 @@ const PLATFORM_COLUMNS: Record<string, string> = {
   cmg: "cmg_url",
 };
 
+const SUPPORTED_MATCH_PLATFORMS = new Set(["paypal", "revolut"]);
+
 const syncMoneyPairings = async (supabase: any, report: any, verifiedAt: string) => {
   const raw = Array.isArray(report.pairings) ? report.pairings : [];
   const pairings = raw
@@ -451,6 +453,12 @@ Deno.serve(async (req: Request) => {
       const captainB = String(body?.captainBPlayerId || teamB[0] || "").trim();
       const scoreA = Math.max(0, Number(body?.scoreA) || 0);
       const scoreB = Math.max(0, Number(body?.scoreB) || 0);
+      const pairings = (Array.isArray(body?.pairings) ? body.pairings : []).map((pair: any) => ({
+        playerAId: String(pair?.playerAId || "").trim(),
+        playerBId: String(pair?.playerBId || "").trim(),
+        amount: Number(pair?.amount),
+        platform: String(pair?.platform || "").trim().toLowerCase(),
+      }));
 
       if (teamA.length < 2 || teamA.length > 4 || teamA.length !== teamB.length) {
         return json({ error: "Teams must contain the same number of players (2-4)" }, 400);
@@ -461,6 +469,24 @@ Deno.serve(async (req: Request) => {
       }
       if (!isAdmin && ![captainA, captainB].includes(String(account.player_id))) {
         return json({ error: "Only a team captain or Admin can report this result" }, 403);
+      }
+      if (pairings.length !== teamA.length) {
+        return json({ error: "Every player matchup needs a money amount" }, 400);
+      }
+      const seenA = new Set<string>();
+      const seenB = new Set<string>();
+      for (const pair of pairings) {
+        const validPlayers = teamA.includes(pair.playerAId) && teamB.includes(pair.playerBId);
+        const validAmount = Number.isFinite(pair.amount) && pair.amount > 0;
+        const validPlatform = SUPPORTED_MATCH_PLATFORMS.has(pair.platform);
+        if (!validPlayers || !validAmount || !validPlatform) {
+          return json({ error: "Each matchup must use a valid amount with PayPal or Revolut" }, 400);
+        }
+        if (seenA.has(pair.playerAId) || seenB.has(pair.playerBId)) {
+          return json({ error: "Each player can appear only once in the money matchups" }, 400);
+        }
+        seenA.add(pair.playerAId);
+        seenB.add(pair.playerBId);
       }
       if (scoreA === scoreB && (scoreA > 0 || scoreB > 0)) {
         return json({ error: "A verified match cannot end in a draw" }, 400);
@@ -487,7 +513,7 @@ Deno.serve(async (req: Request) => {
         game: String(body?.game || ""),
         mode: String(body?.mode || ""),
         map: String(body?.map || ""),
-        pairings: Array.isArray(body?.pairings) ? body.pairings : [],
+        pairings,
         season_number: seasonNumber,
         captain_a_player_id: captainA,
         captain_b_player_id: captainB,
