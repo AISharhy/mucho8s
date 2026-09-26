@@ -99,7 +99,7 @@ export const Layout = () => {
         const event = String(challenge?.last_event || challenge?.status || "");
         const source = String(challenge?.source || "");
 
-        if (source === "match_pairing") return rows;
+        if (["match_pairing", "balancer_pairing"].includes(source)) return rows;
         if (
           [
             "admin_update",
