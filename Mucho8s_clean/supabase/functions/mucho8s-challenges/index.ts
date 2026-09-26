@@ -620,9 +620,18 @@ Deno.serve(async (req: Request) => {
       };
     };
 
+    const seriesStateCache = new Map<string, Promise<any>>();
+
+    const getCachedSeriesState = (seriesId: string) => {
+      if (!seriesStateCache.has(seriesId)) {
+        seriesStateCache.set(seriesId, getSeriesState(seriesId));
+      }
+      return seriesStateCache.get(seriesId)!;
+    };
+
     const attachSeries = async (challenge: any) => {
       if (!challenge?.series_id) return challenge;
-      const series = await getSeriesState(String(challenge.series_id));
+      const series = await getCachedSeriesState(String(challenge.series_id));
       return { ...challenge, series };
     };
 
