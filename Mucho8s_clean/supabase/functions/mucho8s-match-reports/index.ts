@@ -101,13 +101,14 @@ const normalizePlayer = (player: any) => {
     last10: Array.isArray(player?.last10) ? player.last10.slice(0, 10) : [],
     currentStreak: Number(player?.currentStreak) || 0,
     mvpCount: Math.max(0, Number(player?.mvpCount) || 0),
+    merdaCount: Math.max(0, Number(player?.merdaCount) || 0),
     eloHistory: Array.isArray(player?.eloHistory) && player.eloHistory.length
       ? player.eloHistory
       : [{ match: 0, elo: current }],
   };
 };
 
-const applyEffects = (byId: Record<string, any>, teamA: string[], teamB: string[], winner: string, mvpId?: string | null) => {
+const applyEffects = (byId: Record<string, any>, teamA: string[], teamB: string[], winner: string, mvpId?: string | null, merdaId?: string | null) => {
   const winners = winner === "A" ? teamA : teamB;
   const losers = winner === "A" ? teamB : teamA;
   const winnerStrength = winners.reduce((sum, id) => sum + (byId[id] ? playerRating(byId[id]) : 0), 0);
@@ -131,6 +132,7 @@ const applyEffects = (byId: Record<string, any>, teamA: string[], teamB: string[
     if (won) player.wins = Math.max(0, Number(player.wins || 0)) + 1;
     else player.losses = Math.max(0, Number(player.losses || 0)) + 1;
     if (id === mvpId) player.mvpCount = Math.max(0, Number(player.mvpCount || 0)) + 1;
+    if (id === merdaId) player.merdaCount = Math.max(0, Number(player.merdaCount || 0)) + 1;
     player.eloHistory = [
       ...(Array.isArray(player.eloHistory) ? player.eloHistory : []),
       { match: player.totalMatches, elo: nextElo },
@@ -328,7 +330,7 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
     const missing = [...teamA, ...teamB].filter((id) => !byId[id]);
     if (missing.length) throw new Error("One or more players in this report no longer exist");
 
-    const eloChanges = applyEffects(byId, teamA, teamB, report.winner, report.mvp_id);
+    const eloChanges = applyEffects(byId, teamA, teamB, report.winner, report.mvp_id, report.merda_id);
 
     const match = {
       id: report.match_id,
@@ -339,6 +341,7 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       scoreA: Number(report.score_a || 0),
       scoreB: Number(report.score_b || 0),
       mvpId: report.mvp_id || undefined,
+      merdaId: report.merda_id || undefined,
       map: report.map || "",
       mode: report.mode || "",
       game: report.game || "",
@@ -480,6 +483,7 @@ Deno.serve(async (req: Request) => {
         score_a: Math.round(scoreA),
         score_b: Math.round(scoreB),
         mvp_id: body?.mvpId ? String(body.mvpId) : null,
+        merda_id: body?.merdaId ? String(body.merdaId) : null,
         game: String(body?.game || ""),
         mode: String(body?.mode || ""),
         map: String(body?.map || ""),
