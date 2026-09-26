@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { winRate, tierOf } from "@/lib/elo";
 import { PlayerAvatar, EloBadge, Last10, StreakBadge, MvpBadge, RankBadge, RankProgress } from "@/components/shared";
+import { RankEmblem } from "@/components/RankGuide";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
