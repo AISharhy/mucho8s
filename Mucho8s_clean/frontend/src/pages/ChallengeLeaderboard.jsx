@@ -27,6 +27,7 @@ export default function ChallengeLeaderboard() {
         losses: 0,
         volume: 0,
         profit: 0,
+        points: 0,
         played: 0,
         settled: 0,
       });
@@ -45,6 +46,7 @@ export default function ChallengeLeaderboard() {
             losses: 0,
             volume: 0,
             profit: 0,
+            points: 0,
             played: 0,
             settled: 0,
           });
@@ -100,9 +102,10 @@ export default function ChallengeLeaderboard() {
         </div>
       ) : (
         <div className="card-surface rounded-2xl overflow-hidden">
-          <div className="hidden md:grid grid-cols-[70px_1fr_120px_120px_120px_120px] gap-3 px-4 py-3 border-b border-[#1D222C] text-[10px] uppercase tracking-widest text-muted-foreground">
+          <div className="hidden md:grid grid-cols-[70px_1fr_105px_105px_105px_105px_105px] gap-3 px-4 py-3 border-b border-[#1D222C] text-[10px] uppercase tracking-widest text-muted-foreground">
             <div>Rank</div>
             <div>Player</div>
+            <div className="text-right">Points</div>
             <div className="text-right">Record</div>
             <div className="text-right">Win Rate</div>
             <div className="text-right">Volume</div>
@@ -113,7 +116,7 @@ export default function ChallengeLeaderboard() {
             {rows.map((row, index) => (
               <div
                 key={row.player.id}
-                className="grid grid-cols-[44px_1fr] md:grid-cols-[70px_1fr_120px_120px_120px_120px] gap-3 items-center px-4 py-4"
+                className="grid grid-cols-[44px_1fr] md:grid-cols-[70px_1fr_105px_105px_105px_105px_105px] gap-3 items-center px-4 py-4"
               >
                 <div className="font-mono font-bold text-lg">
                   {index === 0 ? <Trophy size={18} className="text-[#D5A33A]" /> : `#${index + 1}`}
@@ -135,6 +138,9 @@ export default function ChallengeLeaderboard() {
                   </div>
                 </div>
 
+                <div className={`hidden md:block text-right font-mono font-extrabold ${row.points > 0 ? "text-emerald-400" : row.points < 0 ? "text-red-400" : "text-white"}`}>
+                  {row.points > 0 ? "+" : ""}{Number.isInteger(row.points) ? row.points : row.points.toFixed(2)} PT
+                </div>
                 <div className="hidden md:block text-right font-mono font-semibold">
                   {row.wins}W - {row.losses}L
                 </div>
@@ -144,7 +150,13 @@ export default function ChallengeLeaderboard() {
                   {row.profit >= 0 ? "+" : ""}{euro(row.profit)}
                 </div>
 
-                <div className="md:hidden col-start-2 grid grid-cols-2 gap-2 mt-1">
+                <div className="md:hidden col-start-2 grid grid-cols-3 gap-2 mt-1">
+                  <div className="rounded-lg bg-[#0F1218] border border-[#1D222C] px-3 py-2">
+                    <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Points</div>
+                    <div className={`font-mono text-sm font-bold mt-0.5 ${row.points > 0 ? "text-emerald-400" : row.points < 0 ? "text-red-400" : ""}`}>
+                      {row.points > 0 ? "+" : ""}{Number.isInteger(row.points) ? row.points : row.points.toFixed(2)}
+                    </div>
+                  </div>
                   <div className="rounded-lg bg-[#0F1218] border border-[#1D222C] px-3 py-2">
                     <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Volume</div>
                     <div className="font-mono text-sm mt-0.5">{euro(row.volume)}</div>
