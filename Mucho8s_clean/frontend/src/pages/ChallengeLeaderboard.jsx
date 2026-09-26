@@ -28,7 +28,6 @@ export default function ChallengeLeaderboard() {
         volume: 0,
         moneyWon: 0,
         moneyLost: 0,
-        netProfit: 0,
         points: 0,
         played: 0,
         settled: 0,
@@ -67,12 +66,10 @@ export default function ChallengeLeaderboard() {
           row.wins += 1;
           row.points += amount;
           row.moneyWon += amount;
-          row.netProfit += amount;
         } else {
           row.losses += 1;
           row.points -= amount;
           row.moneyLost += amount;
-          row.netProfit -= amount;
         }
       });
     });
@@ -86,8 +83,7 @@ export default function ChallengeLeaderboard() {
       .sort((a, b) =>
         b.points - a.points ||
         b.wins - a.wins ||
-        b.winRate - a.winRate ||
-        b.netProfit - a.netProfit
+        b.winRate - a.winRate
       );
   }, [players, playerMap, seasonChallenges]);
 
@@ -97,7 +93,7 @@ export default function ChallengeLeaderboard() {
         <div className="brand-kicker mb-1">Competition</div>
         <h2 className="font-display text-3xl font-extrabold">Challenge Leaderboard</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          {competitionData?.current?.season_name || `Season ${currentSeason}`} · €1 = 1 point. Money Won shows total verified winnings, Money Lost shows verified losses, and Net is the difference between them.
+          {competitionData?.current?.season_name || `Season ${currentSeason}`} · €1 = 1 point. Money Won and Money Lost keep the real value of every verified match.
         </p>
       </div>
 
@@ -107,21 +103,21 @@ export default function ChallengeLeaderboard() {
         </div>
       ) : (
         <div className="card-surface rounded-2xl overflow-hidden">
-          <div className="hidden md:grid grid-cols-[70px_1fr_105px_105px_115px_115px_115px] gap-3 px-4 py-3 border-b border-[#1D222C] text-[10px] uppercase tracking-widest text-muted-foreground">
+          <div className="hidden md:grid grid-cols-[70px_1fr_105px_105px_105px_115px_115px] gap-3 px-4 py-3 border-b border-[#1D222C] text-[10px] uppercase tracking-widest text-muted-foreground">
             <div>Rank</div>
             <div>Player</div>
             <div className="text-right">Points</div>
             <div className="text-right">Record</div>
+            <div className="text-right">Win Rate</div>
             <div className="text-right">Money Won</div>
             <div className="text-right">Money Lost</div>
-            <div className="text-right">Net</div>
           </div>
 
           <div className="divide-y divide-[#1D222C]">
             {rows.map((row, index) => (
               <div
                 key={row.player.id}
-                className="grid grid-cols-[44px_1fr] md:grid-cols-[70px_1fr_105px_105px_115px_115px_115px] gap-3 items-center px-4 py-4"
+                className="grid grid-cols-[44px_1fr] md:grid-cols-[70px_1fr_105px_105px_105px_115px_115px] gap-3 items-center px-4 py-4"
               >
                 <div className="font-mono font-bold text-lg">
                   {index === 0 ? <Trophy size={18} className="text-[#D5A33A]" /> : `#${index + 1}`}
@@ -149,17 +145,15 @@ export default function ChallengeLeaderboard() {
                 <div className="hidden md:block text-right font-mono font-semibold">
                   {row.wins}W - {row.losses}L
                 </div>
+                <div className="hidden md:block text-right font-mono">{row.winRate}%</div>
                 <div className="hidden md:block text-right font-mono font-semibold text-emerald-400">
                   {euro(row.moneyWon)}
                 </div>
                 <div className="hidden md:block text-right font-mono font-semibold text-red-400">
                   {euro(row.moneyLost)}
                 </div>
-                <div className={`hidden md:block text-right font-mono font-bold ${row.netProfit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                  {row.netProfit >= 0 ? "+" : ""}{euro(row.netProfit)}
-                </div>
 
-                <div className="md:hidden col-start-2 grid grid-cols-2 gap-2 mt-1">
+                <div className="md:hidden col-start-2 grid grid-cols-3 gap-2 mt-1">
                   <div className="rounded-lg bg-[#0F1218] border border-[#1D222C] px-3 py-2">
                     <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Points</div>
                     <div className={`font-mono text-sm font-bold mt-0.5 ${row.points > 0 ? "text-emerald-400" : row.points < 0 ? "text-red-400" : ""}`}>
@@ -174,12 +168,7 @@ export default function ChallengeLeaderboard() {
                     <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Money Lost</div>
                     <div className="font-mono text-sm font-bold mt-0.5 text-red-400">{euro(row.moneyLost)}</div>
                   </div>
-                  <div className="rounded-lg bg-[#0F1218] border border-[#1D222C] px-3 py-2">
-                    <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Net</div>
-                    <div className={`font-mono text-sm font-bold mt-0.5 ${row.netProfit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                      {row.netProfit >= 0 ? "+" : ""}{euro(row.netProfit)}
-                    </div>
-                  </div>
+
                 </div>
               </div>
             ))}
