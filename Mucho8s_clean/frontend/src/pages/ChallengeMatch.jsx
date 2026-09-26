@@ -64,9 +64,6 @@ export default function ChallengeMatch() {
     respondToChallenge,
     createRechallenge,
     closeChallengeSeries,
-    markChallengeSeriesPaymentSent,
-    confirmChallengeSeriesPaymentReceived,
-    markChallengePaymentSent,
     confirmChallengePaymentReceived,
     disputeChallengePayout,
     uploadChallengeEvidence,
@@ -157,14 +154,21 @@ export default function ChallengeMatch() {
 
   const completedLost = Boolean(
     challenge?.status === "completed" &&
-    !challenge?.series_id &&
     winnerId &&
     discordPlayer?.id &&
-    winnerId !== discordPlayer.id
+    winnerId !== discordPlayer.id &&
+    !challenge?.payment_received_at
   );
 
   useEffect(() => {
-    if (!challenge || !completedLost || !payoutUrl || challenge.payment_sent_at || redirectRef.current) return;
+    if (
+      !challenge ||
+      !completedLost ||
+      !payoutUrl ||
+      challenge.payment_received_at ||
+      (challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at) ||
+      redirectRef.current
+    ) return;
 
     const key = `m8-payout-redirect-${challenge.id}`;
     if (sessionStorage.getItem(key)) return;
@@ -241,7 +245,6 @@ export default function ChallengeMatch() {
   const verify = async (decision) => {
     const loserAfterConfirm =
       decision === "confirm" &&
-      !challenge.series_id &&
       challenge.reported_winner_player_id &&
       challenge.reported_winner_player_id !== discordPlayer.id;
 
@@ -303,35 +306,7 @@ export default function ChallengeMatch() {
     setBusy("close-series");
     const updated = await closeChallengeSeries(challenge.series_id);
     setBusy("");
-    if (!updated) return;
-    toast.success(
-      Number(updated.settlement_amount_cents || 0) === 0
-        ? "Series closed — no payment needed"
-        : "Series closed — final balance calculated"
-    );
-  };
-
-  const markSeriesPaymentSent = async () => {
-    if (!challenge.series_id) return;
-    setBusy("series-payment-sent");
-    const updated = await markChallengeSeriesPaymentSent(challenge.series_id);
-    setBusy("");
-    if (updated) toast.success("Final series payment marked as sent");
-  };
-
-  const confirmSeriesPaymentReceived = async () => {
-    if (!challenge.series_id) return;
-    setBusy("series-payment-received");
-    const updated = await confirmChallengeSeriesPaymentReceived(challenge.series_id);
-    setBusy("");
-    if (updated) toast.success("Series settled");
-  };
-
-  const markPayoutSent = async () => {
-    setBusy("payout-sent");
-    const updated = await markChallengePaymentSent(challenge.id);
-    setBusy("");
-    if (updated) toast.success("Payment marked as sent");
+    if (updated) toast.success("Series ended");
   };
 
   const confirmPayoutReceived = async () => {
@@ -577,166 +552,112 @@ export default function ChallengeMatch() {
 
       {challenge.status === "completed" && (
         <>
-          {challenge.series_id ? (
+          {challenge.series_id && (
             <ChallengeSeriesCard
               challenge={challenge}
               series={series}
               playerMap={playerMap}
-              discordPlayer={discordPlayer}
               busy={busy}
               onRechallenge={rechallenge}
               onClose={closeSeries}
-              onPaymentSent={markSeriesPaymentSent}
-              onPaymentReceived={confirmSeriesPaymentReceived}
             />
-          ) : (
-          <div className="m8-panel rounded-2xl p-5">
+          )}
+
+          <div className="m8-panel rounded-2xl p-5" data-testid="simple-payout-panel">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="brand-kicker mb-1">Payout</div>
+                <div className="brand-kicker mb-1">Payment</div>
                 <h3 className="font-display text-xl font-bold">
                   {challenge.payment_received_at
                     ? "Payment completed"
-                    : challenge.payment_sent_at
-                      ? "Payment sent"
-                      : completedWon
-                        ? "Payout pending"
-                        : `Pay ${money(challenge)} to the winner`}
+                    : completedWon
+                      ? `Waiting for ${money(challenge)}`
+                      : `Pay ${money(challenge)} to ${winner?.name || "the winner"}`}
                 </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {challenge.payment_received_at
+                    ? `${winner?.name || "Winner"} confirmed the payment.`
+                    : completedWon
+                      ? `${opponent?.name || "The losing player"} pays you via ${platformLabel}. Confirm it only when the money arrives.`
+                      : `The result is verified. Continue directly on ${platformLabel}.`}
+                </p>
               </div>
-              <Banknote size={20} className={challenge.payment_received_at ? "text-emerald-400" : "text-[#D5A33A]"} />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4" data-testid="payout-status-flow">
-              <div className={`rounded-xl border p-3 ${
-                !challenge.payment_sent_at && !challenge.payment_received_at
-                  ? "bg-[#D5A33A]/10 border-[#D5A33A]/30 text-[#D5A33A]"
-                  : "bg-emerald-500/[0.05] border-emerald-500/20 text-emerald-400"
-              }`}>
-                <div className="flex items-center gap-2">
-                  <Clock3 size={15} />
-                  <span className="text-[10px] uppercase tracking-widest font-bold">1 · Da pagare</span>
-                </div>
-              </div>
-              <div className={`rounded-xl border p-3 ${
-                challenge.payment_sent_at || challenge.payment_received_at
-                  ? "bg-emerald-500/[0.05] border-emerald-500/20 text-emerald-400"
-                  : "bg-[#0F1218] border-[#242A35] text-muted-foreground"
-              }`}>
-                <div className="flex items-center gap-2">
-                  <Check size={15} />
-                  <span className="text-[10px] uppercase tracking-widest font-bold">2 · Pagamento inviato</span>
-                </div>
-              </div>
-              <div className={`rounded-xl border p-3 ${
-                challenge.payment_received_at
-                  ? "bg-emerald-500/[0.08] border-emerald-500/25 text-emerald-400"
-                  : "bg-[#0F1218] border-[#242A35] text-muted-foreground"
-              }`}>
-                <div className="flex items-center gap-2">
-                  <ShieldCheck size={15} />
-                  <span className="text-[10px] uppercase tracking-widest font-bold">3 · Pagamento ricevuto</span>
-                </div>
-              </div>
+              <Banknote
+                size={20}
+                className={challenge.payment_received_at ? "text-emerald-400" : "text-[#D5A33A]"}
+              />
             </div>
 
             {challenge.payment_received_at ? (
               <div className="mt-4 rounded-xl bg-emerald-500/10 border border-emerald-500/25 p-4 text-emerald-400 font-semibold flex items-center gap-2">
-                <ShieldCheck size={18} /> {winner?.name || "Winner"} confirmed the payment received.
+                <ShieldCheck size={18} /> Payment received · chall closed.
+              </div>
+            ) : challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at ? (
+              <div className="mt-4 rounded-xl bg-orange-500/10 border border-orange-500/25 p-4">
+                <div className="flex items-center gap-2 text-orange-400 font-bold">
+                  <AlertTriangle size={17} /> PAYMENT DISPUTE OPEN
+                </div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  {challenge.payout_dispute_note || "Admin is reviewing this payment."}
+                </div>
               </div>
             ) : completedWon ? (
-              challenge.payment_sent_at ? (
-                <div className="mt-4">
-                  {challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at ? (
-                    <div className="rounded-xl bg-orange-500/10 border border-orange-500/25 p-4">
-                      <div className="flex items-center gap-2 text-orange-400 font-bold">
-                        <AlertTriangle size={17} /> PAYMENT DISPUTE OPEN
-                      </div>
-                      <div className="text-sm text-muted-foreground mt-1">
-                        {challenge.payout_dispute_note || "Admin is reviewing this payout."}
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="rounded-xl bg-[#D5A33A]/10 border border-[#D5A33A]/25 p-4 text-[#D5A33A] text-sm font-semibold">
-                        The losing player marked {money(challenge)} as paid.
-                      </div>
-
-                      {!showPayoutDispute ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                          <Button
-                            onClick={() => setShowPayoutDispute(true)}
-                            disabled={Boolean(busy)}
-                            className="h-12 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 hover:bg-red-500/15"
-                          >
-                            <AlertTriangle size={16} className="mr-2" /> DISPUTA PAGAMENTO
-                          </Button>
-                          <Button
-                            onClick={confirmPayoutReceived}
-                            disabled={Boolean(busy)}
-                            className="h-12 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold"
-                          >
-                            <ShieldCheck size={17} className="mr-2" /> PAGAMENTO RICEVUTO
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="mt-3 rounded-xl bg-red-500/[0.04] border border-red-500/20 p-4">
-                          <div className="text-xs uppercase tracking-widest text-red-300">Pagamento non ricevuto</div>
-                          <textarea
-                            value={payoutDisputeNote}
-                            onChange={(e) => setPayoutDisputeNote(e.target.value)}
-                            maxLength={240}
-                            placeholder="Scrivi cosa è successo..."
-                            className="mt-2 w-full min-h-24 rounded-xl bg-[#0F1218] border border-[#2A303B] px-3 py-2 text-sm outline-none focus:border-red-500/40"
-                          />
-                          <label className="mt-3 min-h-11 px-3 rounded-xl bg-[#0F1218] border border-[#2A303B] flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-white">
-                            <ImageIcon size={15} />
-                            {payoutDisputeFile ? payoutDisputeFile.name : "Aggiungi screenshot prova (opzionale)"}
-                            <input
-                              type="file"
-                              accept="image/png,image/jpeg,image/webp"
-                              className="hidden"
-                              onChange={(e) => setPayoutDisputeFile(e.target.files?.[0] || null)}
-                            />
-                          </label>
-                          <div className="grid grid-cols-2 gap-2 mt-3">
-                            <Button
-                              variant="ghost"
-                              onClick={() => setShowPayoutDispute(false)}
-                              className="bg-[#181B26] border border-[#2A303B]"
-                            >
-                              Annulla
-                            </Button>
-                            <Button
-                              onClick={openPayoutDispute}
-                              disabled={Boolean(busy) || !payoutDisputeNote.trim()}
-                              className="bg-red-500 hover:bg-red-400 text-white font-bold"
-                            >
-                              Invia disputa
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              ) : (
-                <div className="mt-4 space-y-3">
-                  <div className="m8-panel-quiet rounded-xl p-4 text-sm text-muted-foreground">
-                    {money(challenge)} is owed to you via {platformLabel}. You can confirm receipt as soon as the payment arrives, even if {opponent?.name || "the losing player"} has not marked it as sent.
+              <div className="mt-4">
+                {!showPayoutDispute ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Button
+                      onClick={() => setShowPayoutDispute(true)}
+                      disabled={Boolean(busy)}
+                      className="h-12 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 hover:bg-red-500/15 font-bold"
+                    >
+                      <AlertTriangle size={16} className="mr-2" /> DISPUTE
+                    </Button>
+                    <Button
+                      onClick={confirmPayoutReceived}
+                      disabled={Boolean(busy)}
+                      className="h-12 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold"
+                    >
+                      <ShieldCheck size={17} className="mr-2" /> PAYMENT RECEIVED
+                    </Button>
                   </div>
-                  <Button
-                    onClick={confirmPayoutReceived}
-                    disabled={Boolean(busy)}
-                    className="h-12 w-full rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold"
-                  >
-                    <ShieldCheck size={17} className="mr-2" /> PAGAMENTO RICEVUTO
-                  </Button>
-                </div>
-              )
-            ) : challenge.payment_sent_at ? (
-              <div className="mt-4 rounded-xl bg-[#D5A33A]/10 border border-[#D5A33A]/25 p-4 text-[#D5A33A] font-semibold">
-                Payment marked as sent. Waiting for {winner?.name || "the winner"} to confirm receipt.
+                ) : (
+                  <div className="rounded-xl bg-red-500/[0.04] border border-red-500/20 p-4">
+                    <div className="text-xs uppercase tracking-widest text-red-300">Payment not received</div>
+                    <textarea
+                      value={payoutDisputeNote}
+                      onChange={(e) => setPayoutDisputeNote(e.target.value)}
+                      maxLength={240}
+                      placeholder="What happened?"
+                      className="mt-2 w-full min-h-24 rounded-xl bg-[#0F1218] border border-[#2A303B] px-3 py-2 text-sm outline-none focus:border-red-500/40"
+                    />
+                    <label className="mt-3 min-h-11 px-3 rounded-xl bg-[#0F1218] border border-[#2A303B] flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-white">
+                      <ImageIcon size={15} />
+                      {payoutDisputeFile ? payoutDisputeFile.name : "Add screenshot (optional)"}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        onChange={(e) => setPayoutDisputeFile(e.target.files?.[0] || null)}
+                      />
+                    </label>
+                    <div className="grid grid-cols-2 gap-2 mt-3">
+                      <Button
+                        variant="ghost"
+                        onClick={() => setShowPayoutDispute(false)}
+                        className="bg-[#181B26] border border-[#2A303B]"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={openPayoutDispute}
+                        disabled={Boolean(busy) || !payoutDisputeNote.trim()}
+                        className="bg-red-500 hover:bg-red-400 text-white font-bold"
+                      >
+                        Send dispute
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="mt-4 space-y-3">
@@ -747,26 +668,21 @@ export default function ChallengeMatch() {
                     rel="noopener noreferrer"
                     className="m8-action m8-action-primary w-full h-12 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-extrabold inline-flex items-center justify-center gap-2"
                   >
-                    PAY {winner?.name || "WINNER"} · {money(challenge)} ON {platformLabel}
+                    PAY {money(challenge)} · {platformLabel}
                     <ExternalLink size={15} />
                   </a>
                 ) : (
                   <div className="rounded-xl bg-red-500/10 border border-red-500/25 p-4 text-red-300 text-sm">
-                    The winner has not configured a {platformLabel} payout link. Contact Admin.
+                    {winner?.name || "The winner"} has not configured a {platformLabel} account yet.
                   </div>
                 )}
 
-                <Button
-                  onClick={markPayoutSent}
-                  disabled={Boolean(busy)}
-                  className="m8-action w-full h-12 rounded-xl bg-[#181B26] border border-[#2A303B] text-white font-bold hover:bg-white/[0.05]"
-                >
-                  <Check size={16} className="mr-2" /> I HAVE PAID {money(challenge)}
-                </Button>
+                <div className="text-[11px] text-muted-foreground text-center">
+                  The payment page opens automatically after the result is confirmed. No extra “I paid” step.
+                </div>
               </div>
             )}
           </div>
-          )}
         </>
       )}
 
