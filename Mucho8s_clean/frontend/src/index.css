@@ -44,8 +44,7 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background:
-        radial-gradient(circle at 78% -16%, rgba(244, 63, 94, 0.11), transparent 34rem),
-        radial-gradient(circle at 12% 110%, rgba(124, 131, 253, 0.055), transparent 30rem),
+        radial-gradient(circle at 75% -20%, rgba(255, 42, 59, 0.08), transparent 36rem),
         #0B0D12;
     color: #F3F4F6;
 }
@@ -92,7 +91,7 @@ code, .font-mono {
 }
 
 ::selection {
-    background: rgba(244, 63, 94, 0.28);
+    background: rgba(255, 42, 59, 0.28);
     color: #fff;
 }
 
@@ -106,7 +105,7 @@ code, .font-mono {
 }
 
 .gold-glow {
-    box-shadow: 0 10px 30px rgba(201, 164, 92, 0.12);
+    box-shadow: 0 10px 30px rgba(213, 163, 58, 0.12);
 }
 
 .info-glow {
