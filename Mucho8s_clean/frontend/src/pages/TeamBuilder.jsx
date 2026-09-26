@@ -622,22 +622,6 @@ export default function TeamBuilder() {
             </div>
           </div>
 
-          <div className="rounded-xl bg-[#0F1218] border border-[#222834] p-4 mt-4">
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3">Cross-team matchups</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {result.pairings.map((pair) => (
-                <div key={`${pair.playerA.id}:${pair.playerB.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-[#1D222C] px-3 py-2">
-                  <span className="font-semibold text-sm truncate">{pair.playerA.name}</span>
-                  <span className="text-[10px] text-muted-foreground">↔</span>
-                  <span className="font-semibold text-sm truncate text-right">{pair.playerB.name}</span>
-                </div>
-              ))}
-            </div>
-            <div className="text-[11px] text-muted-foreground mt-2">
-              Money amounts and PayPal/Revolut are set in the result report.
-            </div>
-          </div>
-
           <div className="mt-5">
             <Button
               onClick={() => setRecordOpen(true)}
