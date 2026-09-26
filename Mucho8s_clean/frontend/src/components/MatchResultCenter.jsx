@@ -58,18 +58,21 @@ export default function MatchResultCenter({ teamPlayerIds = null }) {
 
   if (!reports.length) return null;
 
-  const eligibleCaptain = (report) => {
+  const eligibleReviewer = (report) => {
     if (!discordPlayer?.id || report.status !== "pending") return false;
 
+    const teamA = Array.isArray(report.team_a) ? report.team_a.map(String) : [];
+    const teamB = Array.isArray(report.team_b) ? report.team_b.map(String) : [];
+    const reporterId = String(report.reporter_player_id || "");
+
     if (report.reporter_is_admin) {
-      return [report.captain_a_player_id, report.captain_b_player_id].includes(discordPlayer.id);
+      return [...teamA, ...teamB].includes(discordPlayer.id);
     }
 
-    if (report.reporter_player_id === report.captain_a_player_id) {
-      return discordPlayer.id === report.captain_b_player_id;
-    }
+    if (teamA.includes(reporterId)) return teamB.includes(discordPlayer.id);
+    if (teamB.includes(reporterId)) return teamA.includes(discordPlayer.id);
 
-    return discordPlayer.id === report.captain_a_player_id;
+    return false;
   };
 
   const confirm = async (report) => {
@@ -123,7 +126,7 @@ export default function MatchResultCenter({ teamPlayerIds = null }) {
         const teamB = Array.isArray(report.team_b) ? report.team_b : [];
         const mvp = report.mvp_id ? safePlayerMap[report.mvp_id] : null;
         const merda = report.merda_id ? safePlayerMap[report.merda_id] : null;
-        const canReview = eligibleCaptain(report);
+        const canReview = eligibleReviewer(report);
         const winnerName = report.winner === "A" ? "Alpha" : "Bravo";
 
         return (
@@ -170,15 +173,16 @@ export default function MatchResultCenter({ teamPlayerIds = null }) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
-                  <div className="rounded-lg bg-[#0F1218] border border-[#222834] px-3 py-2 text-xs">
-                    <span className="text-muted-foreground">Alpha Captain · </span>
-                    <span className="font-bold">👑 {safePlayerMap[report.captain_a_player_id]?.name || "Player"}</span>
+                <div className="mt-3 rounded-lg bg-[#0F1218] border border-[#222834] px-3 py-2 text-xs flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <span className="text-muted-foreground">Match Captain · </span>
+                    <span className="font-bold">
+                      👑 {safePlayerMap[report.reporter_player_id]?.name || (report.reporter_is_admin ? "Admin" : "Player")}
+                    </span>
                   </div>
-                  <div className="rounded-lg bg-[#0F1218] border border-[#222834] px-3 py-2 text-xs sm:text-right">
-                    <span className="text-muted-foreground">Bravo Captain · </span>
-                    <span className="font-bold">👑 {safePlayerMap[report.captain_b_player_id]?.name || "Player"}</span>
-                  </div>
+                  <span className="text-muted-foreground">
+                    Verification · any player from the opposite team
+                  </span>
                 </div>
 
                 {Array.isArray(report.pairings) && report.pairings.length > 0 && (
@@ -285,7 +289,7 @@ export default function MatchResultCenter({ teamPlayerIds = null }) {
 
                 {report.status === "pending" && !canReview && !isAdmin && (
                   <div className="rounded-xl bg-[#151923] border border-[#242A35] p-3 text-xs text-muted-foreground text-center">
-                    Waiting for the assigned captain to verify
+                    Waiting for the opposite team to verify
                   </div>
                 )}
 
