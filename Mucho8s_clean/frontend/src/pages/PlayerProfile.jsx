@@ -429,7 +429,7 @@ export default function PlayerProfile() {
         id: "mvp",
         type: "mvp",
         title: "MVP",
-        detail: `Ricevuto ${player.mvpCount} ${player.mvpCount === 1 ? "volta" : "volte"}`,
+        detail: `Automatico ogni 4 vittorie consecutive · ${player.mvpCount} ${player.mvpCount === 1 ? "MVP" : "MVP"}`,
         count: Number(player.mvpCount || 0),
         emoji: "🏆",
       });
@@ -1301,7 +1301,7 @@ export default function PlayerProfile() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  {m.mvpId === player.id && <span title="MVP" aria-label="MVP">🏆</span>}
+                  {((Array.isArray(m.mvpIds) ? m.mvpIds : []).includes(player.id) || m.mvpId === player.id) && <span title="MVP automatico" aria-label="MVP automatico">🏆</span>}
                   {((Array.isArray(m.merdaIds) && m.merdaIds.includes(player.id)) || m.merdaId === player.id) && (
                     <span title="MERDA">💩</span>
                   )}
