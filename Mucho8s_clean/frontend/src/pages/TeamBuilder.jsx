@@ -22,7 +22,6 @@ import {
   Sparkles,
   Swords,
   UsersRound,
-  WalletCards,
   Zap,
   MessageCircle,
   Trophy,
@@ -131,7 +130,6 @@ export default function TeamBuilder() {
     matches,
     playerAvatars,
     isAdmin,
-    adminCreateChallengePairings,
     sendDiscordTeams,
   } = useData();
 
@@ -142,9 +140,6 @@ export default function TeamBuilder() {
   const [manualB, setManualB] = useState([]);
   const [query, setQuery] = useState("");
   const [autoResult, setAutoResult] = useState(null);
-  const [stake, setStake] = useState("5");
-  const [platform, setPlatform] = useState("cmg");
-  const [sending, setSending] = useState(false);
   const [recordOpen, setRecordOpen] = useState(false);
   const [game, setGame] = useState("ALL");
   const [matchMode, setMatchMode] = useState("ALL");
@@ -340,30 +335,6 @@ export default function TeamBuilder() {
     setManualB(ids.slice(perTeam, required));
   };
 
-  const createChalls = async () => {
-    if (!result || !isAdmin) return;
-
-    const amount = Number(String(stake).replace(",", "."));
-    if (!Number.isFinite(amount) || amount <= 0) {
-      toast.error("Enter a valid chall amount");
-      return;
-    }
-
-    setSending(true);
-    const created = await adminCreateChallengePairings(
-      result.pairings.map((pair) => ({
-        challengerPlayerId: pair.playerA.id,
-        challengedPlayerId: pair.playerB.id,
-        amount,
-        platform,
-      }))
-    );
-    setSending(false);
-
-    if (!created) return;
-    toast.success(`${created.length} chall pairings created from this team build`);
-  };
-
   const sendCurrentTeamsToDiscord = async () => {
     if (!result) return;
     const ok = await sendDiscordTeams({
@@ -372,23 +343,9 @@ export default function TeamBuilder() {
       game: game === "ALL" ? "All Games" : game,
       mode: matchMode === "ALL" ? "All Modes" : matchMode,
       balanceScore: result.balanceScore,
-      pairings: result.pairings.map((pair) => ({
-        playerA: pair.playerA.name,
-        playerB: pair.playerB.name,
-        amount: Number(String(stake).replace(",", ".")) || 0,
-      })),
     });
     if (ok) toast.success("Teams sent to Discord");
   };
-
-  const reportPairings = result
-    ? result.pairings.map((pair) => ({
-        playerAId: pair.playerA.id,
-        playerBId: pair.playerB.id,
-        amount: Number(String(stake).replace(",", ".")) || 0,
-        platform,
-      }))
-    : [];
 
   const autoCount = selected.length;
   const manualCount = manualA.length + manualB.length;
@@ -857,55 +814,6 @@ export default function TeamBuilder() {
                 )}
               </div>
 
-              <div className="pt-5 border-t border-[#1D222C]">
-                <div>
-                  <div className="brand-kicker mb-1">Pairings</div>
-                  <h3 className="font-display text-xl font-black">Cross-team matchups</h3>
-                </div>
-
-                <div className="space-y-2 mt-3">
-                  {result.pairings.map((pair) => (
-                    <div key={pair.playerA.id} className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
-                      <div className="font-semibold truncate">{pair.playerA.name}</div>
-                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">gap {pair.ratingGap}</div>
-                      <div className="font-semibold truncate text-right">{pair.playerB.name}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {isAdmin && (
-                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1.2fr] gap-3 mt-4">
-                    <select
-                      value={platform}
-                      onChange={(event) => setPlatform(event.target.value)}
-                      className="h-11 rounded-xl bg-[#0F1218] border border-[#222834] px-3 text-sm"
-                    >
-                      <option value="cmg">CMG</option>
-                      <option value="paypal">PayPal</option>
-                      <option value="revolut">Revolut</option>
-                    </select>
-
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
-                      <Input
-                        value={stake}
-                        onChange={(event) => setStake(event.target.value)}
-                        className="pl-7 bg-[#0F1218] border-[#222834]"
-                        inputMode="decimal"
-                      />
-                    </div>
-
-                    <Button
-                      onClick={createChalls}
-                      disabled={sending}
-                      className="h-11 bg-magma hover:bg-[#ff3c4c] font-bold"
-                    >
-                      <WalletCards size={16} className="mr-2" />
-                      {sending ? "Creating..." : "Create Chall Pairings"}
-                    </Button>
-                  </div>
-                )}
-              </div>
             </>
           )}
         </section>
@@ -918,7 +826,6 @@ export default function TeamBuilder() {
         initialTeams={result ? {
           teamA: result.teamA.map((player) => player.id),
           teamB: result.teamB.map((player) => player.id),
-          pairings: reportPairings,
         } : null}
         defaultGame={game !== "ALL" ? game : undefined}
         defaultMode={matchMode !== "ALL" ? matchMode : undefined}
