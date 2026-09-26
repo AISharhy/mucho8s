@@ -51,7 +51,10 @@ const normalizePlayer = (p) => {
     currentStreak: Number(p?.currentStreak) || 0,
     mvpCount: Math.max(0, Number(p?.mvpCount) || 0),
     merdaCount: Math.max(0, Number(p?.merdaCount) || 0),
-    role: ["Main AR", "Flex", "SMG", "Support"].includes(p?.role) ? p.role : "",
+    role:
+      p?.role === "Main AR" ? "AR" :
+      p?.role === "Flex" ? "FLEX" :
+      ["AR", "FLEX", "SMG"].includes(p?.role) ? p.role : "",
     eloHistory: Array.isArray(p?.eloHistory) && p.eloHistory.length
       ? p.eloHistory
       : [{ match: 0, elo: cur }],
@@ -524,7 +527,7 @@ export const DataProvider = ({ children }) => {
     return () => clearInterval(timer);
   }, [discordSession, discordAccount?.player_id, accountRequest]);
 
-  const saveMyChallengeLinks = useCallback(async ({ paypalUrl, revolutUrl }) => {
+  const saveMyChallengeLinks = useCallback(async ({ paypalUrl, revolutUrl, role = "" }) => {
     if (!discordSession) {
       toast.error("Login with Discord first");
       return false;
@@ -535,15 +538,20 @@ export const DataProvider = ({ children }) => {
         action: "update-links",
         paypalUrl,
         revolutUrl,
+        role,
       },
       { session: discordSession },
     );
 
     if (!data?.account) return false;
     setDiscordAccount(data.account);
-    await fetchPlayerAvatars();
+    versionRef.current = -1;
+    await Promise.all([
+      fetchPlayerAvatars(),
+      fetchState(),
+    ]);
     return true;
-  }, [accountRequest, discordSession, fetchPlayerAvatars]);
+  }, [accountRequest, discordSession, fetchPlayerAvatars, fetchState]);
 
   const listDiscordAccounts = useCallback(async () => {
     const data = await accountRequest({ action: "admin-list" });
@@ -1521,7 +1529,7 @@ export const DataProvider = ({ children }) => {
     const cleanName = String(name || "").trim();
     if (!cleanName) return false;
     const elo = Math.max(MIN_ELO, Math.round(Number(currentElo) || BASE_ELO));
-    const cleanRole = ["Main AR", "Flex", "SMG", "Support"].includes(role) ? role : "";
+    const cleanRole = ["AR", "FLEX", "SMG"].includes(role) ? role : "";
 
     if (STORAGE_MODE === "backend") {
       const okName = await backendWrite(`/players/${id}/name`, { method: "PUT", body: { name: cleanName } });
