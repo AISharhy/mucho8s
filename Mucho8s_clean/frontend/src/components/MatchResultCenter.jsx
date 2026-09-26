@@ -150,7 +150,7 @@ export default function MatchResultCenter() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_118px_1fr] gap-3 items-center mt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center mt-4">
                     <div>
                       <div className={`font-display font-bold ${report.winner === "A" ? "text-magma" : ""}`}>
                         Team A
@@ -160,16 +160,6 @@ export default function MatchResultCenter() {
                       </div>
                       <div className="text-[10px] text-[#697181] mt-1">
                         Captain: {captainA?.name || "Player"}
-                      </div>
-                    </div>
-
-                    <div className="m8-panel-quiet rounded-xl px-3 py-3 text-center">
-                      <div className="text-[9px] uppercase tracking-[0.18em] text-[#596170]">Final</div>
-                      <div className="font-display font-black text-3xl tracking-[-0.05em] mt-1">
-                        {Number(report.score_a || 0)}<span className="text-[#4E5665] mx-1">-</span>{Number(report.score_b || 0)}
-                      </div>
-                      <div className="text-[9px] uppercase tracking-widest text-muted-foreground mt-1">
-                        {report.winner === "A" ? "Team A won" : "Team B won"}
                       </div>
                     </div>
 
