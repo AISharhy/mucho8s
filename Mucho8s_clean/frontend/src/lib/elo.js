@@ -3,7 +3,7 @@ export const MIN_ELO = 500;
 export const WIN_DELTA = 25;
 export const LOSS_DELTA = 25;
 export const MVP_BONUS = 3;
-export const MERDA_PENALTY = 3;
+export const MERDA_PENALTY = 0;
 export const UPSET_BONUS = 0;
 
 // Balancing formula weights
