@@ -214,8 +214,10 @@ $$;
 revoke all on function public.adjust_player_elo_json(jsonb, text, numeric, boolean) from public, anon, authenticated;
 revoke all on function public.sync_challenge_elo(uuid) from public, anon, authenticated;
 revoke all on function public.remove_challenge_elo(uuid) from public, anon, authenticated;
+grant execute on function public.sync_challenge_elo(uuid) to service_role;
+grant execute on function public.remove_challenge_elo(uuid) to service_role;
 
-do $$
+do $
 declare
   v_id uuid;
 begin
