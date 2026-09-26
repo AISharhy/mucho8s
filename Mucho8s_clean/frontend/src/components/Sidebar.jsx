@@ -199,7 +199,7 @@ export const MobileNav = () => {
         >
           <Menu size={22} />
         </button>
-        <span className="font-display font-bold truncate">{current?.label || "MuchoMoney8s"}</span>
+        <span className="hidden sm:block font-display font-bold truncate">{current?.label || "MuchoMoney8s"}</span>
       </div>
 
       {open &&
