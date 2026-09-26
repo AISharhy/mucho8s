@@ -29,6 +29,7 @@ const makePlayer = (name, startElo = BASE_ELO) => {
     last10: [],
     currentStreak: 0,
     mvpCount: 0,
+    merdaCount: 0,
     role: "",
     eloHistory: [{ match: 0, elo }],
     createdAt: new Date().toISOString(),
@@ -49,6 +50,7 @@ const normalizePlayer = (p) => {
     last10: Array.isArray(p?.last10) ? p.last10.slice(0, 10) : [],
     currentStreak: Number(p?.currentStreak) || 0,
     mvpCount: Math.max(0, Number(p?.mvpCount) || 0),
+    merdaCount: Math.max(0, Number(p?.merdaCount) || 0),
     role: ["Main AR", "Flex", "SMG", "Support"].includes(p?.role) ? p.role : "",
     eloHistory: Array.isArray(p?.eloHistory) && p.eloHistory.length
       ? p.eloHistory
@@ -66,6 +68,7 @@ const normalizeMatch = (m) => ({
   scoreA: Math.max(0, Number(m?.scoreA) || 0),
   scoreB: Math.max(0, Number(m?.scoreB) || 0),
   mvpId: m?.mvpId || undefined,
+  merdaId: m?.merdaId || undefined,
   map: m?.map || "",
   mode: m?.mode || "",
   game: m?.game || "",
@@ -111,7 +114,7 @@ const recomputeRecent = (byId, matches, ids) => {
   });
 };
 
-const applyEffects = (byId, teamA, teamB, winner, mvpId) => {
+const applyEffects = (byId, teamA, teamB, winner, mvpId, merdaId) => {
   const winners = winner === "A" ? teamA : teamB;
   const losers = winner === "A" ? teamB : teamA;
   const winnerStrength = winners.reduce((sum, id) => sum + (byId[id] ? playerRating(byId[id]) : 0), 0);
@@ -134,6 +137,7 @@ const applyEffects = (byId, teamA, teamB, winner, mvpId) => {
     if (won) p.wins += 1;
     else p.losses += 1;
     if (pid === mvpId) p.mvpCount += 1;
+    if (pid === merdaId) p.merdaCount = Math.max(0, Number(p.merdaCount || 0)) + 1;
     p.eloHistory = [...(p.eloHistory || []), { match: p.totalMatches, elo: nextElo }];
     changes[pid] = delta;
   });
@@ -152,6 +156,7 @@ const revertEffects = (byId, match) => {
     if (winners.includes(pid)) p.wins = Math.max(0, p.wins - 1);
     else p.losses = Math.max(0, p.losses - 1);
     if (pid === match.mvpId) p.mvpCount = Math.max(0, p.mvpCount - 1);
+    if (pid === match.merdaId) p.merdaCount = Math.max(0, Number(p.merdaCount || 0) - 1);
     if ((p.eloHistory || []).length > 1) p.eloHistory = p.eloHistory.slice(0, -1);
   });
 };
@@ -1525,6 +1530,7 @@ export const DataProvider = ({ children }) => {
       last10: [],
       currentStreak: 0,
       mvpCount: 0,
+      merdaCount: 0,
       eloHistory: [{ match: 0, elo: BASE_ELO }],
     }));
     const ok = await persistWholeState(resetPlayers, []);
@@ -1552,7 +1558,7 @@ export const DataProvider = ({ children }) => {
     const byId = Object.fromEntries(nextPlayers.map((p) => [p.id, p]));
     const teamA = [...(data.teamA || [])];
     const teamB = [...(data.teamB || [])];
-    const eloChanges = applyEffects(byId, teamA, teamB, data.winner, data.mvpId);
+    const eloChanges = applyEffects(byId, teamA, teamB, data.winner, data.mvpId, data.merdaId);
     const match = normalizeMatch({
       ...data,
       id: uid(),
@@ -1611,7 +1617,7 @@ export const DataProvider = ({ children }) => {
       id,
       date: data.date || old.date,
     });
-    nextMatch.eloChanges = applyEffects(byId, teamA, teamB, nextMatch.winner, nextMatch.mvpId);
+    nextMatch.eloChanges = applyEffects(byId, teamA, teamB, nextMatch.winner, nextMatch.mvpId, nextMatch.merdaId);
 
     const nextMatches = matches.map((m) => (m.id === id ? nextMatch : m));
     recomputeRecent(byId, nextMatches, new Set([...old.teamA, ...old.teamB, ...teamA, ...teamB]));
