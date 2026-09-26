@@ -1070,6 +1070,16 @@ export const DataProvider = ({ children }) => {
       const isChallenged = challenge.challenged_account_id === discordAccount.id;
       if (!isChallenger && !isChallenged) return;
 
+      const seenStatus = isChallenger
+        ? challenge.challenger_seen_status
+        : challenge.challenged_seen_status;
+      const seenEvent = isChallenger
+        ? challenge.challenger_seen_event
+        : challenge.challenged_seen_event;
+      const currentEvent = challenge.last_event || challenge.status;
+
+      if (seenStatus === challenge.status && seenEvent === currentEvent) return;
+
       if (challenge.status === "pending" && isChallenged) {
         count += 1;
         return;
