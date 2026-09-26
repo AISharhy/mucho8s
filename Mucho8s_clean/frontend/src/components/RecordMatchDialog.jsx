@@ -16,9 +16,9 @@ export const RecordMatchDialog = ({
   onOpenChange,
   initialTeams,
   editData,
-  defaultGioco,
-  defaultModalità,
-  title = "Record Match",
+  defaultGame,
+  defaultMode,
+  title = "Registra partita",
   reportOnly = false,
   lockTeams = false,
   lockContext = false,
@@ -27,7 +27,7 @@ export const RecordMatchDialog = ({
 }) => {
   const { players, createMatchReport, editMatch } = useData();
   const [assign, setAssign] = useState({});
-  const [winner, setVincitore] = useState("A");
+  const [winner, setWinner] = useState("A");
   const [map, setMap] = useState("");
   const [mode, setMode] = useState(MATCH_MODES[0]);
   const [game, setGame] = useState(GAMES[0]);
@@ -448,7 +448,7 @@ export const RecordMatchDialog = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <Label className="text-xs text-muted-foreground">Winner</Label>
+              <Label className="text-xs text-muted-foreground">Vincitore</Label>
               <div className="flex gap-2 mt-1">
                 <Button
                   type="button"
