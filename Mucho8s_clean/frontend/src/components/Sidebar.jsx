@@ -2,19 +2,19 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { NavLink, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Users, Gamepad2, Trophy, Menu, X, MessageCircle, LogOut, Bell, Medal, FlaskConical,
+  LayoutDashboard, Users, Gamepad2, Trophy, Menu, X, MessageCircle, LogOut, Bell, Medal, Swords,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { tierOf } from "@/lib/elo";
 
 const MAIN_NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, testid: "nav-dashboard-link" },
+  { to: "/play", label: "Play", icon: Swords, testid: "nav-play-link" },
   { to: "/players", label: "Players", icon: Users, testid: "nav-players-link" },
   { to: "/matches", label: "Matches", icon: Gamepad2, testid: "nav-matches-link" },
 ];
 
 const COMPETITION_NAV = [
-  { to: "/team-builder", label: "Team Builder", icon: FlaskConical, testid: "nav-team-builder-link" },
   { to: "/ranking", label: "Ranking", icon: Trophy, testid: "nav-ranking-link" },
   { to: "/rank-guide", label: "Rank Guide", icon: Medal, testid: "nav-rank-guide-link" },
 ];
