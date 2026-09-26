@@ -21,7 +21,7 @@ const COLUMNS = [
 ];
 
 export default function Leaderboard() {
-  const { players, matches, playerAvatars } = useData();
+  const { players, matches, playerAvatars, discordPlayer } = useData();
   const [sortKey, setSortKey] = useState("currentElo");
   const [dir, setDir] = useState("desc");
   const [game, setGame] = useState("ALL");
@@ -43,6 +43,13 @@ export default function Leaderboard() {
     });
     return arr;
   }, [pool, sortKey, dir]);
+
+  const podium = useMemo(
+    () => [...pool]
+      .sort((a, b) => Number(b.currentElo || 0) - Number(a.currentElo || 0))
+      .slice(0, 3),
+    [pool]
+  );
 
   const toggleSort = (key) => {
     if (key === sortKey) setDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -107,7 +114,50 @@ export default function Leaderboard() {
         </div>
       </div>
 
-      <div className="card-surface rounded-2xl overflow-hidden">
+      {podium.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {podium.map((p, index) => (
+            <Link
+              key={p.id}
+              to={"/players/" + p.id}
+              className={"m8-panel rounded-2xl p-4 relative overflow-hidden group " + (index === 0 ? "m8-podium-first md:-translate-y-1" : "")}
+            >
+              <div className="absolute right-3 top-3 m8-podium-rank" style={{ color: rankColor(index) }}>
+                {index + 1}
+              </div>
+              <div className="flex items-center gap-3 pr-10">
+                <PlayerAvatar
+                  name={p.name}
+                  elo={p.currentElo}
+                  size={index === 0 ? 54 : 48}
+                  avatarUrl={playerAvatars[p.id]}
+                />
+                <div className="min-w-0">
+                  <div className="brand-kicker mb-1">{index === 0 ? "Leader" : "Top player"}</div>
+                  <div className="font-display font-black text-lg truncate group-hover:text-magma transition-colors">{p.name}</div>
+                  <div className="mt-2"><RankBadge elo={p.currentElo} compact /></div>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 mt-4">
+                <div className="m8-panel-quiet rounded-lg px-2.5 py-2">
+                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">Elo</div>
+                  <div className="font-mono text-sm font-bold mt-0.5">{p.currentElo}</div>
+                </div>
+                <div className="m8-panel-quiet rounded-lg px-2.5 py-2">
+                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">Win</div>
+                  <div className="font-mono text-sm font-bold mt-0.5">{winRate(p)}%</div>
+                </div>
+                <div className="m8-panel-quiet rounded-lg px-2.5 py-2">
+                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">MVP</div>
+                  <div className="font-mono text-sm font-bold mt-0.5 text-[#D5A33A]">{p.mvpCount || 0}</div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      <div className="m8-panel rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm" data-testid="leaderboard-table">
             <thead>
@@ -146,7 +196,11 @@ export default function Leaderboard() {
                 <tr
                   key={p.id}
                   data-testid={`leaderboard-row-${p.id}`}
-                  className="border-b border-[#1D222C] hover:bg-white/[0.03] transition-colors"
+                  className={"border-b transition-colors " + (
+                    p.id === discordPlayer?.id
+                      ? "border-magma/20 bg-magma/[0.045] hover:bg-magma/[0.065]"
+                      : "border-[#1D222C] hover:bg-white/[0.03]"
+                  )}
                 >
                   <td className="px-4 py-3 font-mono font-bold" style={{ color: rankColor(i) }}>
                     {i + 1}
