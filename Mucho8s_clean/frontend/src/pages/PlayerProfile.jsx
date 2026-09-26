@@ -429,7 +429,7 @@ export default function PlayerProfile() {
         id: "mvp",
         type: "mvp",
         title: "MVP",
-        detail: `Automatic every 4 wins in a row · ${player.mvpCount} ${player.mvpCount === 1 ? "MVP" : "MVP"}`,
+        detail: `Automatic every 3 wins in a row · ${player.mvpCount} ${player.mvpCount === 1 ? "MVP" : "MVP"}`,
         count: Number(player.mvpCount || 0),
         emoji: "🏆",
       });
@@ -440,7 +440,7 @@ export default function PlayerProfile() {
         id: "merda",
         type: "merda",
         title: "MERDA",
-        detail: `Active x${player.merdaCount} · ogni 4 wins in a row ne elimini 1`,
+        detail: `Active x${player.merdaCount} · ogni 3 wins in a row ne elimini 1`,
         count: Number(player.merdaCount || 0),
         emoji: "💩",
       });
@@ -804,7 +804,7 @@ export default function PlayerProfile() {
               <div className="m8-stat-card">
                 <div className="text-[9px] uppercase tracking-widest text-muted-foreground">MERDA</div>
                 <div className="font-mono font-black text-lg mt-1 text-[#C79A6B]">💩 {player.merdaCount || 0}</div>
-                <div className="text-[9px] text-muted-foreground mt-1">Ogni 4 wins → -1 💩</div>
+                <div className="text-[9px] text-muted-foreground mt-1">Ogni 3 wins → -1 💩</div>
               </div>
 
               <div className="m8-stat-card">
