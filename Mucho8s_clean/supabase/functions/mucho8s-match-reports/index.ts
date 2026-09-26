@@ -95,6 +95,13 @@ const normalizePlayer = (player: any) => {
   };
 };
 
+const automaticMvpIds = (byId: Record<string, any>, winners: string[]) =>
+  winners.filter((id) => {
+    const current = Number(byId[id]?.currentStreak || 0);
+    const nextWinStreak = current > 0 ? current + 1 : 1;
+    return nextWinStreak >= 4 && nextWinStreak % 4 === 0;
+  });
+
 const automaticMerdaIds = (byId: Record<string, any>, losers: string[]) =>
   losers.filter((id) => {
     const current = Number(byId[id]?.currentStreak || 0);
@@ -116,11 +123,12 @@ const applyEffects = (
   teamA: string[],
   teamB: string[],
   winner: string,
-  mvpId?: string | null,
+  mvpIds: string[] = [],
   merdaIds: string[] = [],
   merdaClearedIds: string[] = [],
 ) => {
   const winners = winner === "A" ? teamA : teamB;
+  const mvpSet = new Set(mvpIds);
   const merdaSet = new Set(merdaIds);
   const clearedSet = new Set(merdaClearedIds);
   const changes: Record<string, number> = {};
@@ -131,7 +139,7 @@ const applyEffects = (
 
     const won = winners.includes(id);
     let delta = won ? WIN_DELTA : -LOSS_DELTA;
-    if (id === mvpId) delta += MVP_BONUS;
+    if (mvpSet.has(id)) delta += MVP_BONUS;
 
     const nextElo = Math.max(MIN_ELO, Number(player.currentElo || BASE_ELO) + delta);
     player.currentElo = nextElo;
@@ -139,7 +147,7 @@ const applyEffects = (
     player.totalMatches = Math.max(0, Number(player.totalMatches || 0)) + 1;
     if (won) player.wins = Math.max(0, Number(player.wins || 0)) + 1;
     else player.losses = Math.max(0, Number(player.losses || 0)) + 1;
-    if (id === mvpId) player.mvpCount = Math.max(0, Number(player.mvpCount || 0)) + 1;
+    if (mvpSet.has(id)) player.mvpCount = Math.max(0, Number(player.mvpCount || 0)) + 1;
     if (merdaSet.has(id)) player.merdaCount = Math.max(0, Number(player.merdaCount || 0)) + 1;
     if (clearedSet.has(id)) player.merdaCount = Math.max(0, Number(player.merdaCount || 0) - 1);
     player.eloHistory = [
@@ -344,12 +352,16 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
   const alreadyExists = existingMatches.some((match: any) => String(match?.id) === String(report.match_id));
 
   const verifiedAt = new Date().toISOString();
+  let awardedMvpIds: string[] = [];
   let awardedMerdaIds: string[] = [];
 
   if (alreadyExists) {
     const storedMatch = existingMatches.find(
       (match: any) => String(match?.id) === String(report.match_id)
     );
+    awardedMvpIds = Array.isArray(storedMatch?.mvpIds)
+      ? storedMatch.mvpIds.map(String)
+      : (storedMatch?.mvpId ? [String(storedMatch.mvpId)] : []);
     awardedMerdaIds = Array.isArray(storedMatch?.merdaIds)
       ? storedMatch.merdaIds.map(String)
       : (storedMatch?.merdaId ? [String(storedMatch.merdaId)] : []);
@@ -366,15 +378,17 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
 
     const winners = report.winner === "A" ? teamA : teamB;
     const losers = report.winner === "A" ? teamB : teamA;
+    const mvpIds = automaticMvpIds(byId, winners);
     const merdaIds = automaticMerdaIds(byId, losers);
     const merdaClearedIds = automaticMerdaClearedIds(byId, winners);
+    awardedMvpIds = mvpIds;
     awardedMerdaIds = merdaIds;
     const eloChanges = applyEffects(
       byId,
       teamA,
       teamB,
       report.winner,
-      report.mvp_id,
+      mvpIds,
       merdaIds,
       merdaClearedIds,
     );
@@ -387,7 +401,8 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       winner: report.winner,
       scoreA: Number(report.score_a || 0),
       scoreB: Number(report.score_b || 0),
-      mvpId: report.mvp_id || undefined,
+      mvpIds,
+      mvpId: mvpIds[0] || undefined,
       merdaIds,
       merdaId: merdaIds[0] || undefined,
       merdaClearedIds,
@@ -436,6 +451,7 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       verifier_player_id: verifierPlayerId,
       verified_at: verifiedAt,
       locked_at: verifiedAt,
+      mvp_id: awardedMvpIds[0] || null,
       merda_id: awardedMerdaIds[0] || null,
       dispute_note: null,
     })
@@ -561,7 +577,7 @@ Deno.serve(async (req: Request) => {
         winner,
         score_a: Math.round(scoreA),
         score_b: Math.round(scoreB),
-        mvp_id: body?.mvpId ? String(body.mvpId) : null,
+        mvp_id: null,
         merda_id: null,
         game: String(body?.game || ""),
         mode: String(body?.mode || ""),
