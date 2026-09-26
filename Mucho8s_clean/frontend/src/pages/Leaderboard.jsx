@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useData } from "@/context/DataContext";
-import { PlayerAvatar, MvpBadge, RankBadge } from "@/components/shared";
+import { PlayerAvatar, MvpBadge } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, ArrowUp, ArrowDown, Download, Medal } from "lucide-react";
 import { toast } from "sonner";
@@ -16,11 +16,11 @@ const euro = (value) =>
 const COLUMNS = [
   { key: "rank", label: "#", sortable: false },
   { key: "name", label: "Player", sortable: true },
-  { key: "division", label: "Rank", sortable: false },
-  { key: "totalPoints", label: "Points", sortable: true },
+  { key: "totalPoints", label: "Elo", sortable: true },
   { key: "matchWins", label: "Record", sortable: true },
-  { key: "challPoints", label: "Chall +/-", sortable: true },
-  { key: "moneyWon", label: "Won", sortable: true },
+  { key: "winRate", label: "Win %", sortable: true },
+  { key: "earnings", label: "Earnings", sortable: true },
+  { key: "currentStreak", label: "Streak", sortable: true },
   { key: "mvpCount", label: "MVP", sortable: true },
 ];
 
@@ -117,6 +117,11 @@ export default function Leaderboard() {
           challPoints: chall.points,
           moneyWon: chall.moneyWon,
           moneyLost: chall.moneyLost,
+          earnings: chall.moneyWon - chall.moneyLost,
+          winRate:
+            Number(player.totalMatches || 0) > 0
+              ? (Number(player.wins || 0) / Number(player.totalMatches || 0)) * 100
+              : 0,
           totalPoints: Number(player.currentElo || 0),
         };
       }),
@@ -142,7 +147,9 @@ export default function Leaderboard() {
   const sorted = useMemo(() => {
     const value = (p) => {
       if (sortKey === "matchWins") return p.matchWins;
-      if (sortKey === "challWins") return p.challWins;
+      if (sortKey === "winRate") return p.winRate;
+      if (sortKey === "earnings") return p.earnings;
+      if (sortKey === "currentStreak") return Math.abs(Number(p.currentStreak || 0));
       return Number(p[sortKey] || 0);
     };
 
@@ -177,12 +184,11 @@ export default function Leaderboard() {
     const header = [
       "Rank",
       "Name",
-      "Total Points",
-      "General Elo",
+      "Elo",
       "Record",
-      "Chall Points",
-      "Money Won",
-      "Money Lost",
+      "Win %",
+      "Earnings",
+      "Streak",
       "MVP",
     ];
 
@@ -190,11 +196,14 @@ export default function Leaderboard() {
       rankById.get(p.id) || "—",
       p.name,
       p.totalPoints,
-      p.currentElo,
-      `${p.matchWins}W-${p.matchLosses}L`,
-      p.challPoints,
-      p.moneyWon,
-      p.moneyLost,
+      `${p.matchWins}-${p.matchLosses}`,
+      p.winRate.toFixed(1),
+      p.earnings,
+      p.currentStreak > 0
+        ? `W${p.currentStreak}`
+        : p.currentStreak < 0
+          ? `L${Math.abs(p.currentStreak)}`
+          : "—",
       p.mvpCount || 0,
     ]);
 
@@ -230,7 +239,7 @@ export default function Leaderboard() {
             </h3>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            General Elo includes Money Chall results: every €1 won adds 1 Elo point and every €1 lost removes 1.
+            Competitive view: Elo, record, win rate, net earnings, streak and MVP.
           </p>
         </div>
 
@@ -277,24 +286,24 @@ export default function Leaderboard() {
 
               <div className="grid grid-cols-3 gap-2 mt-4">
                 <div className="m8-panel-quiet rounded-lg px-2.5 py-2">
-                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">Points</div>
+                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">Elo</div>
                   <div className="font-mono text-sm font-bold mt-0.5">{Number(p.totalPoints).toFixed(Number.isInteger(p.totalPoints) ? 0 : 1)}</div>
                 </div>
                 <div className="m8-panel-quiet rounded-lg px-2.5 py-2">
                   <div className="text-[9px] uppercase tracking-wider text-[#697181]">Record</div>
-                  <div className="font-mono text-sm font-bold mt-0.5">{p.matchWins}W-{p.matchLosses}L</div>
+                  <div className="font-mono text-sm font-bold mt-0.5">{p.matchWins}-{p.matchLosses}</div>
                 </div>
                 <div className="m8-panel-quiet rounded-lg px-2.5 py-2">
-                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">Chall +/-</div>
+                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">Earnings</div>
                   <div className={`font-mono text-sm font-bold mt-0.5 ${
-                    p.challPoints > 0
+                    p.earnings > 0
                       ? "text-emerald-400"
-                      : p.challPoints < 0
+                      : p.earnings < 0
                         ? "text-red-400"
                         : ""
                   }`}>
-                    {p.challPoints > 0 ? "+" : ""}
-                    {Number(p.challPoints).toFixed(Number.isInteger(p.challPoints) ? 0 : 2)}
+                    {p.earnings > 0 ? "+" : p.earnings < 0 ? "-" : ""}
+                    {euro(Math.abs(p.earnings))}
                   </div>
                 </div>
               </div>
@@ -343,12 +352,13 @@ export default function Leaderboard() {
               )}
 
               {sorted.map((p) => {
-                const challTone =
-                  p.challPoints > 0
+                const earningsTone =
+                  p.earnings > 0
                     ? "text-emerald-400"
-                    : p.challPoints < 0
+                    : p.earnings < 0
                       ? "text-red-400"
                       : "text-muted-foreground";
+                const streak = Number(p.currentStreak || 0);
 
                 return (
                   <tr
@@ -381,27 +391,37 @@ export default function Leaderboard() {
                       </Link>
                     </td>
 
-                    <td className="px-4 py-3">
-                      <RankBadge elo={p.totalPoints} compact />
-                    </td>
-
                     <td className="px-4 py-3 font-mono font-black">
                       {Number(p.totalPoints).toFixed(Number.isInteger(p.totalPoints) ? 0 : 1)}
                     </td>
 
                     <td className="px-4 py-3 font-mono">
-                      <span className="text-emerald-400">{p.matchWins}W</span>
+                      <span className="text-emerald-400">{p.matchWins}</span>
                       <span className="text-[#596170] mx-1">-</span>
-                      <span className="text-red-400">{p.matchLosses}L</span>
+                      <span className="text-red-400">{p.matchLosses}</span>
                     </td>
 
-                    <td className={`px-4 py-3 font-mono font-bold ${challTone}`}>
-                      {p.challPoints > 0 ? "+" : ""}
-                      {Number(p.challPoints).toFixed(Number.isInteger(p.challPoints) ? 0 : 2)}
+                    <td className="px-4 py-3 font-mono font-semibold">
+                      {p.winRate.toFixed(1)}%
                     </td>
 
-                    <td className="px-4 py-3 font-mono font-semibold text-emerald-400">
-                      {euro(p.moneyWon)}
+                    <td className={`px-4 py-3 font-mono font-black ${earningsTone}`}>
+                      {p.earnings > 0 ? "+" : p.earnings < 0 ? "-" : ""}
+                      {euro(Math.abs(p.earnings))}
+                    </td>
+
+                    <td className="px-4 py-3">
+                      {streak > 0 ? (
+                        <span className="inline-flex items-center rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-2 py-1 font-mono text-xs font-black text-emerald-400">
+                          W{streak}
+                        </span>
+                      ) : streak < 0 ? (
+                        <span className="inline-flex items-center rounded-lg border border-red-500/20 bg-red-500/[0.06] px-2 py-1 font-mono text-xs font-black text-red-400">
+                          L{Math.abs(streak)}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </td>
 
                     <td className="px-4 py-3">
