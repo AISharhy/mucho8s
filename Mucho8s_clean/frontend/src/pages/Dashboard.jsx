@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useData } from "@/context/DataContext";
-import { PlayerAvatar, EloBadge, RankBadge, RankProgress } from "@/components/shared";
+import { PlayerAvatar, EloBadge, RankBadge } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import {
   ArrowUpRight,
@@ -370,7 +370,7 @@ const PersonalDashboard = ({
     <div className="m8-page-stack">
       <section className="m8-hero rounded-[22px] p-5 sm:p-7 lg:p-8">
         <span className="m8-hero-accent" />
-        <div className="relative z-10 grid grid-cols-1 xl:grid-cols-[1fr_390px] gap-7 items-stretch">
+        <div className="relative z-10">
           <div className="flex flex-col justify-between min-w-0">
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -431,35 +431,6 @@ const PersonalDashboard = ({
             </div>
           </div>
 
-          <div className="m8-rank-spotlight rounded-2xl p-5 flex flex-col justify-between">
-            <div className="relative z-10">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="brand-kicker mb-1">Current division</div>
-                  <div className="font-display text-xl font-black">Rank progression</div>
-                </div>
-                <EloBadge elo={discordPlayer.currentElo} />
-              </div>
-              <div className="mt-5">
-                <RankProgress elo={discordPlayer.currentElo} />
-              </div>
-            </div>
-
-            <div className="relative z-10 grid grid-cols-2 gap-2 mt-5">
-              <div className="m8-panel-quiet rounded-xl p-3">
-                <div className="text-[10px] uppercase tracking-widest text-[#697181]">Match record</div>
-                <div className="font-mono font-bold mt-1">{record}</div>
-              </div>
-              <div className="m8-panel-quiet rounded-xl p-3">
-                <div className="text-[10px] uppercase tracking-widest text-[#697181]">Chall record</div>
-                <div className="font-mono font-bold mt-1">
-                  <span className="text-emerald-400">{challengeWins}W</span>
-                  <span className="text-[#596170] mx-1">-</span>
-                  <span className="text-red-400">{challengeLosses}L</span>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
