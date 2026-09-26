@@ -151,7 +151,7 @@ export default function AdminPanel() {
 
   if (adminAuthLoading && !isAdmin) {
     return (
-      <div className="card-surface rounded-2xl p-8 min-h-[220px] flex flex-col items-center justify-center text-center">
+      <div className="m8-panel rounded-2xl p-8 min-h-[220px] flex flex-col items-center justify-center text-center">
         <div className="w-12 h-12 rounded-2xl bg-[#0F1218] border border-[#242A35] flex items-center justify-center mb-4">
           <Shield size={20} className="text-magma" />
         </div>
@@ -343,22 +343,22 @@ export default function AdminPanel() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-2">
+    <div className="m8-page-stack">
+      <section className="m8-panel rounded-2xl p-5 sm:p-6 flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3">
           <Shield size={20} className="text-magma" />
           <div>
             <div className="brand-kicker mb-1">Administration</div>
-            <h2 className="font-display text-2xl font-extrabold">Admin Console</h2>
+            <h2 className="font-display text-3xl font-black tracking-[-0.03em]">Admin Console</h2>
           </div>
           <span className="text-sm text-muted-foreground">· {admin?.nickname}</span>
         </div>
         <Button variant="ghost" onClick={signOutDiscord} data-testid="admin-logout-btn" className="text-muted-foreground">
           <LogOut size={16} className="mr-1" /> Sign out Discord
         </Button>
-      </div>
+      </section>
 
-      <div className="flex gap-2 overflow-x-auto pb-1" data-testid="admin-tabs">
+      <div className="m8-panel-quiet rounded-xl p-1.5 flex gap-1 overflow-x-auto" data-testid="admin-tabs">
         {ADMIN_TABS.map((tab) => {
           const Icon = tab.icon;
           return (
@@ -380,7 +380,7 @@ export default function AdminPanel() {
 
       {activeTab === "competition" && (
         <>
-      <div className="card-surface rounded-2xl p-5" data-testid="admin-season-control">
+      <div className="m8-panel rounded-2xl p-5" data-testid="admin-season-control">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="brand-kicker mb-1">Competition</div>
@@ -447,7 +447,7 @@ export default function AdminPanel() {
         ].map((item) => {
           const Icon = item.icon;
           return (
-            <div key={item.label} className="card-surface rounded-2xl p-4">
+            <div key={item.label} className="m8-stat-card">
               <div className="flex items-center justify-between gap-2">
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{item.label}</div>
                 <Icon size={16} className="text-[#697181]" />
@@ -464,7 +464,7 @@ export default function AdminPanel() {
 
       {activeTab === "overview" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="card-surface rounded-2xl p-5">
+          <div className="m8-panel rounded-2xl p-5">
             <div className="flex items-center justify-between gap-3 mb-4">
               <div>
                 <div className="brand-kicker mb-1">Needs Attention</div>
@@ -475,18 +475,18 @@ export default function AdminPanel() {
               <AlertTriangle size={19} className={needsAttentionCount ? "text-orange-400" : "text-emerald-400"} />
             </div>
             <div className="space-y-2">
-              <button onClick={() => setActiveTab("matches")} className="w-full text-left rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+              <button onClick={() => setActiveTab("matches")} className="w-full text-left m8-panel-quiet rounded-xl p-3 hover:border-[#353E4C] transition-colors">
                 <div className="text-sm font-semibold">Match verification</div>
                 <div className="text-xs text-muted-foreground mt-1">{pendingMatchReports.length} pending or disputed results</div>
               </button>
-              <button onClick={() => setActiveTab("challenges")} className="w-full text-left rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+              <button onClick={() => setActiveTab("challenges")} className="w-full text-left m8-panel-quiet rounded-xl p-3 hover:border-[#353E4C] transition-colors">
                 <div className="text-sm font-semibold">Money Chall disputes</div>
                 <div className="text-xs text-muted-foreground mt-1">{disputedChallenges.length} disputes to review</div>
               </button>
             </div>
           </div>
 
-          <div className="card-surface rounded-2xl p-5">
+          <div className="m8-panel rounded-2xl p-5">
             <div className="brand-kicker mb-1">Quick Actions</div>
             <h3 className="font-display font-bold text-lg mb-4">Manage competition</h3>
             <div className="grid grid-cols-2 gap-2">
@@ -510,7 +510,7 @@ export default function AdminPanel() {
       {(activeTab === "players" || activeTab === "system") && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Add player */}
-        <div className={`${activeTab === "players" ? "" : "hidden"} card-surface rounded-2xl p-5`}>
+        <div className={`${activeTab === "players" ? "" : "hidden"} m8-panel rounded-2xl p-5`}>
           <div className="flex items-center gap-2 mb-4">
             <UserPlus size={18} className="text-emerald-400" />
             <h3 className="font-display font-bold text-lg">Add Player</h3>
@@ -531,7 +531,7 @@ export default function AdminPanel() {
         </div>
 
         {/* Data actions */}
-        <div className={`${activeTab === "system" ? "lg:col-span-3" : "hidden"} card-surface rounded-2xl p-5`}>
+        <div className={`${activeTab === "system" ? "lg:col-span-3" : "hidden"} m8-panel rounded-2xl p-5`}>
           <div className="flex items-center gap-2 mb-4">
             <Database size={18} className="text-[#D5A33A]" />
             <h3 className="font-display font-bold text-lg">Data & Records</h3>
@@ -566,7 +566,7 @@ export default function AdminPanel() {
 
       {activeTab === "matches" && (
         <>
-      <div className="card-surface rounded-2xl p-5" data-testid="admin-match-management">
+      <div className="m8-panel rounded-2xl p-5" data-testid="admin-match-management">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <div className="brand-kicker mb-1">Match Control</div>
@@ -638,7 +638,7 @@ export default function AdminPanel() {
       )}
 
       {activeTab === "challenges" && disputedChallenges.length > 0 && (
-        <div className="card-surface rounded-2xl p-5 border-orange-500/20" data-testid="admin-dispute-center">
+        <div className="m8-panel rounded-2xl p-5 border-orange-500/20" data-testid="admin-dispute-center">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div>
               <div className="brand-kicker mb-1">Priority Queue</div>
@@ -777,7 +777,7 @@ export default function AdminPanel() {
 
       {activeTab === "challenges" && (
         <>
-      <div className="card-surface rounded-2xl p-5" data-testid="admin-challenge-management">
+      <div className="m8-panel rounded-2xl p-5" data-testid="admin-challenge-management">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <div className="brand-kicker mb-1">Challenge Control</div>
@@ -998,7 +998,7 @@ export default function AdminPanel() {
 
       {activeTab === "discord" && (
         <>
-      <div className="card-surface rounded-2xl p-5" data-testid="discord-settings">
+      <div className="m8-panel rounded-2xl p-5" data-testid="discord-settings">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
@@ -1069,7 +1069,7 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      <div className="card-surface rounded-2xl p-5" data-testid="discord-player-accounts">
+      <div className="m8-panel rounded-2xl p-5" data-testid="discord-player-accounts">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <div className="brand-kicker mb-1">Player Login</div>
@@ -1137,7 +1137,7 @@ export default function AdminPanel() {
       )}
 
       {activeTab === "system" && (
-        <div className="card-surface rounded-2xl p-5">
+        <div className="m8-panel rounded-2xl p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="brand-kicker mb-1">Access Security</div>
@@ -1153,7 +1153,7 @@ export default function AdminPanel() {
 
       {activeTab === "system" && (
         <>
-      <div className="card-surface rounded-2xl p-5" data-testid="admin-audit-log">
+      <div className="m8-panel rounded-2xl p-5" data-testid="admin-audit-log">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <div className="brand-kicker mb-1">Security & History</div>
@@ -1200,7 +1200,7 @@ export default function AdminPanel() {
 
       {activeTab === "players" && (
         <>
-      <div className="card-surface rounded-2xl p-5" data-testid="admin-roster">
+      <div className="m8-panel rounded-2xl p-5" data-testid="admin-roster">
         <h3 className="font-display font-bold text-lg mb-4">Manage Roster ({players.length})</h3>
         <div className="space-y-2">
           {players.map((p) => {
