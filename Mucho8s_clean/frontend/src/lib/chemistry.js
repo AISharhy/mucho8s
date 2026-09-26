@@ -119,6 +119,75 @@ export const teamBalance = (teamA, teamB) => {
   };
 };
 
+const ROLE_KEYS = ["Main AR", "Flex", "SMG", "Support"];
+
+export const roleBalance = (teamA, teamB) => {
+  const all = [...teamA, ...teamB];
+  const assigned = all.filter((player) => ROLE_KEYS.includes(player?.role)).length;
+  const confidence = all.length ? assigned / all.length : 0;
+
+  if (!assigned) {
+    return {
+      score: 50,
+      rawScore: 50,
+      confidence: 0,
+      assigned: 0,
+      total: all.length,
+      teamA: {},
+      teamB: {},
+    };
+  }
+
+  const count = (team) => ROLE_KEYS.reduce((acc, role) => {
+    acc[role] = team.filter((player) => player?.role === role).length;
+    return acc;
+  }, {});
+
+  const countsA = count(teamA);
+  const countsB = count(teamB);
+  const mismatch = ROLE_KEYS.reduce(
+    (sum, role) => sum + Math.abs(Number(countsA[role] || 0) - Number(countsB[role] || 0)),
+    0
+  );
+  const maxMismatch = Math.max(1, teamA.length + teamB.length);
+  const rawScore = Math.round(clamp(100 - (mismatch / maxMismatch) * 100));
+  const score = Math.round(50 * (1 - confidence) + rawScore * confidence);
+
+  return {
+    score,
+    rawScore,
+    confidence: Math.round(confidence * 100),
+    assigned,
+    total: all.length,
+    teamA: countsA,
+    teamB: countsB,
+  };
+};
+
+const sameIds = (left = [], right = []) => {
+  const a = [...left].map(String).sort();
+  const b = [...right].map(String).sort();
+  return a.length === b.length && a.every((id, index) => id === b[index]);
+};
+
+export const teamFreshness = (teamA, teamB, matches = []) => {
+  const aIds = teamA.map((player) => player.id);
+  const bIds = teamB.map((player) => player.id);
+  const recent = [...(matches || [])]
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 10);
+
+  const exactIndex = recent.findIndex((match) =>
+    (sameIds(match.teamA, aIds) && sameIds(match.teamB, bIds)) ||
+    (sameIds(match.teamA, bIds) && sameIds(match.teamB, aIds))
+  );
+
+  if (exactIndex === -1) return { score: 100, repeated: false, recentIndex: -1 };
+  if (exactIndex === 0) return { score: 35, repeated: true, recentIndex: 0 };
+  if (exactIndex <= 2) return { score: 55, repeated: true, recentIndex: exactIndex };
+  return { score: 75, repeated: true, recentIndex: exactIndex };
+};
+
 export const analyzeManualTeams = (teamA, teamB, matches = []) => {
   if (!teamA.length || !teamB.length || teamA.length !== teamB.length) return null;
 
@@ -126,6 +195,25 @@ export const analyzeManualTeams = (teamA, teamB, matches = []) => {
   const chemistryB = teamChemistry(teamB, matches);
   const chemistryScore = Math.round((chemistryA.score + chemistryB.score) / 2);
   const balance = teamBalance(teamA, teamB);
+  const roles = roleBalance(teamA, teamB);
+  const freshness = teamFreshness(teamA, teamB, matches);
+  const lobbyQuality = Math.round(
+    balance.score * 0.45 +
+    chemistryScore * 0.25 +
+    roles.score * 0.2 +
+    freshness.score * 0.1
+  );
+
+  const why = [
+    `Power difference: ${balance.diff}`,
+    `Team chemistry: ${chemistryScore}%`,
+    roles.confidence > 0
+      ? `Role balance: ${roles.score}% · ${roles.confidence}% role data`
+      : "Role balance: waiting for role assignments",
+    freshness.repeated
+      ? `Freshness: ${freshness.score}% · this split appeared recently`
+      : "Freshness: 100% · new team split",
+  ];
 
   return {
     teamA,
@@ -138,7 +226,19 @@ export const analyzeManualTeams = (teamA, teamB, matches = []) => {
     strengthA: balance.strengthA,
     strengthB: balance.strengthB,
     strengthDiff: balance.diff,
-    draftScore: Math.round(chemistryScore * 0.55 + balance.score * 0.45),
+    roleBalanceScore: roles.score,
+    roleConfidence: roles.confidence,
+    roleCountsA: roles.teamA,
+    roleCountsB: roles.teamB,
+    freshnessScore: freshness.score,
+    lobbyQuality,
+    why,
+    draftScore: Math.round(
+      chemistryScore * 0.4 +
+      balance.score * 0.35 +
+      roles.score * 0.15 +
+      freshness.score * 0.1
+    ),
     pairings: buildCrossTeamPairings(teamA, teamB),
   };
 };
@@ -181,6 +281,37 @@ export const buildCrossTeamPairings = (teamA, teamB) => {
       };
     })
     .filter((pair) => pair.playerB);
+};
+
+export const draftTeamsBalanced = (players, matches = []) => {
+  if (!Array.isArray(players) || players.length < 4 || players.length % 2 !== 0) return null;
+
+  const teamSize = players.length / 2;
+  const anchor = players[0];
+  const rest = players.slice(1);
+  const candidates = combinations(rest, teamSize - 1);
+  let best = null;
+  let bestScore = -Infinity;
+
+  candidates.forEach((combo) => {
+    const teamA = [anchor, ...combo];
+    const aIds = new Set(teamA.map((player) => player.id));
+    const teamB = players.filter((player) => !aIds.has(player.id));
+    const analysis = analyzeManualTeams(teamA, teamB, matches);
+    if (!analysis) return;
+
+    const score =
+      analysis.balanceScore * 0.7 +
+      analysis.roleBalanceScore * 0.2 +
+      analysis.freshnessScore * 0.1;
+
+    if (!best || score > bestScore) {
+      best = analysis;
+      bestScore = score;
+    }
+  });
+
+  return best;
 };
 
 export const draftTeamsByChemistry = (players, matches = []) => {
