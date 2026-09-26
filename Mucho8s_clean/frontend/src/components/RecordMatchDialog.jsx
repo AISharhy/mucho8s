@@ -23,6 +23,7 @@ export const RecordMatchDialog = ({
   lockTeams = false,
   lockContext = false,
   initialCaptains = null,
+  creatorPlayerId = "",
   onReported,
 }) => {
   const { players, createMatchReport, editMatch } = useData();
@@ -255,7 +256,7 @@ export const RecordMatchDialog = ({
         captainBPlayerId: effectiveCaptainB,
       });
       if (!report) return;
-      toast.success("Result submitted — waiting for captain verification");
+      toast.success("Result submitted — waiting for opponent verification");
       onReported?.(report);
     }
 
@@ -290,9 +291,11 @@ export const RecordMatchDialog = ({
               <div className="rounded-xl bg-magma/5 border border-magma/20 p-3">
                 <div className="flex items-center justify-between gap-3 mb-2">
                   <div className="text-[10px] uppercase tracking-widest text-magma">Alpha</div>
-                  <div className="text-[10px] font-semibold text-[#D5A33A]">
-                    👑 Captain · {players.find((p) => p.id === effectiveCaptainA)?.name || "—"}
-                  </div>
+                  {creatorPlayerId && teamA.includes(creatorPlayerId) && (
+                    <div className="text-[10px] font-semibold text-[#D5A33A]">
+                      👑 Captain · {players.find((p) => p.id === creatorPlayerId)?.name || "—"}
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-1 text-sm">
                   {teamA.map((id) => (
@@ -305,9 +308,11 @@ export const RecordMatchDialog = ({
               <div className="rounded-xl bg-[#D5A33A]/5 border border-[#D5A33A]/20 p-3">
                 <div className="flex items-center justify-between gap-3 mb-2">
                   <div className="text-[10px] uppercase tracking-widest text-[#D5A33A]">Bravo</div>
-                  <div className="text-[10px] font-semibold text-[#D5A33A]">
-                    👑 Captain · {players.find((p) => p.id === effectiveCaptainB)?.name || "—"}
-                  </div>
+                  {creatorPlayerId && teamB.includes(creatorPlayerId) && (
+                    <div className="text-[10px] font-semibold text-[#D5A33A]">
+                      👑 Captain · {players.find((p) => p.id === creatorPlayerId)?.name || "—"}
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-1 text-sm">
                   {teamB.map((id) => (
