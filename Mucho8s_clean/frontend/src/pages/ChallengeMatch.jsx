@@ -62,6 +62,7 @@ export default function ChallengeMatch() {
     playerAvatars,
     playerProfiles,
     respondToChallenge,
+    cancelChallenge,
     createRechallenge,
     closeChallengeSeries,
     confirmChallengePaymentReceived,
@@ -233,6 +234,18 @@ export default function ChallengeMatch() {
 
     if (decision === "accept") toast.success("Challenge accepted — match started");
     else toast("Challenge declined");
+  };
+
+  const cancelPendingChallenge = async () => {
+    const confirmed = window.confirm("Cancel this challenge?");
+    if (!confirmed) return;
+
+    setBusy("cancel");
+    const updated = await cancelChallenge(challenge.id);
+    setBusy("");
+
+    if (!updated) return;
+    toast.success("Challenge cancelled");
   };
 
   const reportWinner = async (reportedWinnerId) => {
@@ -418,7 +431,24 @@ export default function ChallengeMatch() {
             <div className="text-center py-4">
               <Clock3 size={28} className="text-[#D5A33A] mx-auto mb-3" />
               <h3 className="font-display text-xl font-bold">Waiting for {challenged?.name || "player"}</h3>
-              <p className="text-sm text-muted-foreground mt-1">They must accept the {money(challenge)} challenge.</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                They must accept the {money(challenge)} challenge.
+              </p>
+
+              <Button
+                type="button"
+                onClick={cancelPendingChallenge}
+                disabled={Boolean(busy)}
+                className="mt-5 h-11 px-5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 hover:bg-red-500/15 font-bold"
+                data-testid="cancel-pending-challenge"
+              >
+                <X size={16} className="mr-2" />
+                {busy === "cancel" ? "Cancelling..." : "Cancel Challenge"}
+              </Button>
+
+              <div className="text-[10px] text-muted-foreground mt-2">
+                Available only while the challenge is still waiting for acceptance.
+              </div>
             </div>
           ) : (
             <div>
