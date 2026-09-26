@@ -131,9 +131,9 @@ export default function Matches() {
     playerAvatars,
     deleteMatch,
     isAdmin,
+    createLiveMatch,
     requestCancelLiveMatch,
     cancelLiveMatch,
-    adminCreateChallengePairings,
   } = useData();
 
   const safeMatches = useMemo(
@@ -183,6 +183,8 @@ export default function Matches() {
   const createRematch = async (match) => {
     if (!isAdmin || !match) return;
 
+    const teamA = Array.isArray(match.teamA) ? match.teamA : [];
+    const teamB = Array.isArray(match.teamB) ? match.teamB : [];
     const pairings = (Array.isArray(match.pairings) ? match.pairings : [])
       .filter(
         (pair) =>
@@ -191,8 +193,8 @@ export default function Matches() {
           Number(pair?.amount || 0) > 0
       )
       .map((pair) => ({
-        challengerPlayerId: pair.playerAId,
-        challengedPlayerId: pair.playerBId,
+        playerAId: pair.playerAId,
+        playerBId: pair.playerBId,
         amount: Number(pair.amount || 0),
         platform: ["paypal", "revolut"].includes(
           String(pair.platform || "").toLowerCase()
@@ -201,19 +203,29 @@ export default function Matches() {
           : "paypal",
       }));
 
-    if (!pairings.length) {
-      toast.error("No valid Money Chall pairings found");
+    if (
+      teamA.length < 2 ||
+      teamA.length !== teamB.length ||
+      pairings.length !== teamA.length
+    ) {
+      toast.error("This match does not have a complete rematch setup");
       return;
     }
 
     setRematchBusyId(match.id);
-    const created = await adminCreateChallengePairings(pairings);
+    const created = await createLiveMatch({
+      teamA,
+      teamB,
+      game: match.game || "",
+      mode: match.mode || "",
+      format: `${teamA.length}v${teamB.length}`,
+      pairings,
+    });
     setRematchBusyId(null);
 
     if (!created) return;
-    toast.success(
-      `Rematch created · ${created.length} chall${created.length === 1 ? "" : "s"}`
-    );
+    setView("live");
+    toast.success("Rematch created — now live");
   };
 
   const liveChallenges = useMemo(
@@ -808,7 +820,7 @@ export default function Matches() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Create rematch?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This creates the same money matchups with the same amounts and payment methods.
+                        This creates a new Live Match with the same teams, pairings and amounts.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -819,7 +831,7 @@ export default function Matches() {
                         onClick={() => createRematch(match)}
                         className="bg-magma hover:bg-[#ff3c4c] text-white"
                       >
-                        Create Rematch
+                        Go Live
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
