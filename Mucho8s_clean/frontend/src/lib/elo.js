@@ -42,7 +42,14 @@ export const computeContextStats = (matches, { game = "ALL", mode = "ALL" } = {}
     const winners = m.winner === "A" ? m.teamA : m.teamB;
     [...(m.teamA || []), ...(m.teamB || [])].forEach((id) => {
       const s = ensure(id);
-      const delta = Number(m.eloChanges?.[id] ?? 0);
+      const baseDelta = Number(m.eloChanges?.[id] ?? 0);
+      const pairing = (Array.isArray(m.pairings) ? m.pairings : []).find(
+        (item) => item?.playerAId === id || item?.playerBId === id
+      );
+      const valueBonus = Math.max(0, Math.round(Number(pairing?.amount) || 0));
+      const delta = baseDelta === 0
+        ? 0
+        : baseDelta + (baseDelta > 0 ? valueBonus : -valueBonus);
       s.currentElo = Math.max(MIN_ELO, s.currentElo + delta);
       s.peakElo = Math.max(s.peakElo, s.currentElo);
       s.totalMatches += 1;
