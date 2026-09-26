@@ -186,6 +186,105 @@ const recomputeRecent = (byId: Record<string, any>, matches: any[], ids: string[
   });
 };
 
+const recomputeAwardState = (byId: Record<string, any>, matches: any[]) => {
+  const rebuiltMatches = (matches || []).map((match) => ({ ...match }));
+
+  Object.values(byId).forEach((player: any) => {
+    if (!player) return;
+    player.mvpCount = 0;
+    player.merdaCount = 0;
+    player.currentStreak = 0;
+  });
+
+  [...rebuiltMatches]
+    .sort((a, b) => {
+      const dateDiff = new Date(a?.date || 0).getTime() - new Date(b?.date || 0).getTime();
+      if (dateDiff !== 0) return dateDiff;
+      return String(a?.id || "").localeCompare(String(b?.id || ""));
+    })
+    .forEach((match) => {
+      const teamA = Array.isArray(match?.teamA) ? match.teamA.map(String) : [];
+      const teamB = Array.isArray(match?.teamB) ? match.teamB.map(String) : [];
+      const winners = match?.winner === "B" ? teamB : teamA;
+      const winnerSet = new Set(winners);
+      const mvpIds: string[] = [];
+      const merdaIds: string[] = [];
+      const merdaClearedIds: string[] = [];
+
+      [...teamA, ...teamB].forEach((id) => {
+        const player = byId[id];
+        if (!player) return;
+
+        const won = winnerSet.has(id);
+        const current = Number(player.currentStreak || 0);
+        const nextStreak = won
+          ? (current > 0 ? current + 1 : 1)
+          : (current < 0 ? current - 1 : -1);
+
+        player.currentStreak = nextStreak;
+
+        if (won && nextStreak >= 4 && nextStreak % 4 === 0) {
+          player.mvpCount = Math.max(0, Number(player.mvpCount || 0)) + 1;
+          mvpIds.push(id);
+        }
+
+        if (!won && Math.abs(nextStreak) >= 4 && Math.abs(nextStreak) % 4 === 0) {
+          player.merdaCount = Math.max(0, Number(player.merdaCount || 0)) + 1;
+          merdaIds.push(id);
+        }
+
+        if (won && nextStreak >= 4 && nextStreak % 4 === 0 && Number(player.merdaCount || 0) > 0) {
+          player.merdaCount = Math.max(0, Number(player.merdaCount || 0) - 1);
+          merdaClearedIds.push(id);
+        }
+      });
+
+      const mvpSet = new Set(mvpIds);
+      const nextChanges: Record<string, number> = {};
+
+      [...teamA, ...teamB].forEach((id) => {
+        const player = byId[id];
+        if (!player) return;
+
+        const won = winnerSet.has(id);
+        const nextDelta = (won ? WIN_DELTA : -LOSS_DELTA) + (mvpSet.has(id) ? MVP_BONUS : 0);
+        const oldDelta = Number(match?.eloChanges?.[id]);
+
+        if (Number.isFinite(oldDelta) && oldDelta !== 0 && oldDelta !== nextDelta) {
+          player.currentElo = Math.max(
+            MIN_ELO,
+            Number(player.currentElo || BASE_ELO) + (nextDelta - oldDelta),
+          );
+        }
+
+        nextChanges[id] = nextDelta;
+      });
+
+      match.mvpIds = mvpIds;
+      match.mvpId = mvpIds[0] || undefined;
+      match.merdaIds = merdaIds;
+      match.merdaId = merdaIds[0] || undefined;
+      match.merdaClearedIds = merdaClearedIds;
+      match.eloChanges = nextChanges;
+    });
+
+  Object.values(byId).forEach((player: any) => {
+    if (!player) return;
+    player.peakElo = Math.max(
+      Number(player.peakElo || BASE_ELO),
+      Number(player.currentElo || BASE_ELO),
+    );
+    if (Array.isArray(player.eloHistory) && player.eloHistory.length) {
+      const lastIndex = player.eloHistory.length - 1;
+      player.eloHistory = player.eloHistory.map((row: any, index: number) =>
+        index === lastIndex ? { ...row, elo: player.currentElo } : row
+      );
+    }
+  });
+
+  return rebuiltMatches;
+};
+
 const getCurrentSeason = async (supabase: any) => {
   const { data } = await supabase
     .from("competition_config")
@@ -420,8 +519,19 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       reportId: report.id,
     };
 
-    const nextMatches = [match, ...existingMatches];
+    let nextMatches = [match, ...existingMatches];
+    nextMatches = recomputeAwardState(byId, nextMatches);
     recomputeRecent(byId, nextMatches, [...teamA, ...teamB]);
+
+    const finalizedMatch = nextMatches.find(
+      (item: any) => String(item?.id) === String(report.match_id)
+    );
+    awardedMvpIds = Array.isArray(finalizedMatch?.mvpIds)
+      ? finalizedMatch.mvpIds.map(String)
+      : (finalizedMatch?.mvpId ? [String(finalizedMatch.mvpId)] : []);
+    awardedMerdaIds = Array.isArray(finalizedMatch?.merdaIds)
+      ? finalizedMatch.merdaIds.map(String)
+      : (finalizedMatch?.merdaId ? [String(finalizedMatch.merdaId)] : []);
 
     const { error: updateError } = await supabase
       .from("app_state")
