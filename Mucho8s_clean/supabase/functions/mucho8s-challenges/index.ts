@@ -758,7 +758,7 @@ Deno.serve(async (req: Request) => {
       const previous = await getChallenge(id);
       if (!previous?.series_id) return json({ error: "This challenge is not part of a Chall Series" }, 409);
       if (!isParticipant(previous)) return json({ error: "Not allowed" }, 403);
-      if (previous.status !== "completed") return json({ error: "Verify the current round before starting a ReChall" }, 409);
+      if (previous.status !== "completed") return json({ error: "Verify the current match before starting a ReChall" }, 409);
 
       const series = await getSeries(String(previous.series_id));
       if (!series || !isSeriesParticipant(series)) return json({ error: "Chall Series not found" }, 404);
@@ -771,7 +771,7 @@ Deno.serve(async (req: Request) => {
         .in("status", ["pending", "accepted", "result_pending", "disputed"])
         .limit(1);
       if (activeRoundError) throw activeRoundError;
-      if (activeRound?.length) return json({ error: "Finish the active round before starting another ReChall" }, 409);
+      if (activeRound?.length) return json({ error: "Finish the active match before starting another ReChall" }, 409);
 
       const otherPlayerId = me.player_id === series.player_a_player_id
         ? series.player_b_player_id
@@ -844,8 +844,8 @@ Deno.serve(async (req: Request) => {
       const active = (state?.rounds || []).some((round: any) =>
         ["pending", "accepted", "result_pending", "disputed"].includes(round.status)
       );
-      if (active) return json({ error: "Finish or resolve the active round before closing the series" }, 409);
-      if (!state?.completed_rounds) return json({ error: "The series needs at least one verified round" }, 409);
+      if (active) return json({ error: "Finish or resolve the active match before closing the series" }, 409);
+      if (!state?.completed_rounds) return json({ error: "The series needs at least one verified match" }, 409);
 
       const winnerPlayerId = state.current_winner_player_id;
       const settlementAmount = Number(state.current_amount_cents || 0);
@@ -1038,7 +1038,7 @@ Deno.serve(async (req: Request) => {
       if (!challenge) return json({ error: "Challenge not found" }, 404);
       if (!isParticipant(challenge)) return json({ error: "Not allowed" }, 403);
       if (challenge.status !== "completed") return json({ error: "The result must be verified before payout" }, 409);
-      if (challenge.series_id) return json({ error: "This round belongs to a Chall Series. Close the series to settle the final balance." }, 409);
+      if (challenge.series_id) return json({ error: "This match belongs to a Chall Series. Close the series to settle the final balance." }, 409);
       if (!challenge.reported_winner_player_id) return json({ error: "Winner is missing" }, 409);
       if (me.player_id === challenge.reported_winner_player_id) {
         return json({ error: "Only the losing player can mark the payout as sent" }, 403);
@@ -1067,7 +1067,7 @@ Deno.serve(async (req: Request) => {
       if (!challenge) return json({ error: "Challenge not found" }, 404);
       if (!isParticipant(challenge)) return json({ error: "Not allowed" }, 403);
       if (challenge.status !== "completed") return json({ error: "The result must be verified before payout" }, 409);
-      if (challenge.series_id) return json({ error: "This round belongs to a Chall Series. Settle the series balance instead." }, 409);
+      if (challenge.series_id) return json({ error: "This match belongs to a Chall Series. Settle the series balance instead." }, 409);
       if (me.player_id !== challenge.reported_winner_player_id) {
         return json({ error: "Only the winning player can confirm the payout" }, 403);
       }
