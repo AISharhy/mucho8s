@@ -58,7 +58,7 @@ export default function Matches() {
 
   return (
     <div className="m8-page-stack">
-      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+      <section className="m8-panel rounded-2xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
         <div>
           <div className="brand-kicker mb-1">History</div>
           <h2 className="font-display text-3xl font-black tracking-[-0.03em]">Matches</h2>
