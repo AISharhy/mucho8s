@@ -180,7 +180,7 @@ export default function ChallengeMatch() {
 
   if (!discordSession || !discordPlayer) {
     return (
-      <div className="card-surface rounded-2xl p-10 text-center max-w-xl mx-auto">
+      <div className="m8-panel rounded-2xl p-10 text-center max-w-xl mx-auto">
         <Swords size={34} className="text-magma mx-auto mb-3" />
         <h2 className="font-display text-2xl font-bold">Discord login required</h2>
         <p className="text-sm text-muted-foreground mt-2">
@@ -192,7 +192,7 @@ export default function ChallengeMatch() {
 
   if (!challenge) {
     return (
-      <div className="card-surface rounded-2xl p-10 text-center max-w-xl mx-auto">
+      <div className="m8-panel rounded-2xl p-10 text-center max-w-xl mx-auto">
         <Clock3 size={32} className="text-[#697181] mx-auto mb-3" />
         <h2 className="font-display text-xl font-bold">Loading challenge...</h2>
         <Button onClick={() => refreshChallenges()} className="mt-4 bg-[#181B26] border border-[#2A303B]">
@@ -204,7 +204,7 @@ export default function ChallengeMatch() {
 
   if (!participant) {
     return (
-      <div className="card-surface rounded-2xl p-10 text-center max-w-xl mx-auto">
+      <div className="m8-panel rounded-2xl p-10 text-center max-w-xl mx-auto">
         <AlertTriangle size={32} className="text-orange-400 mx-auto mb-3" />
         <h2 className="font-display text-xl font-bold">Private challenge</h2>
         <p className="text-sm text-muted-foreground mt-2">Only the two players involved can open this page.</p>
@@ -368,12 +368,12 @@ export default function ChallengeMatch() {
   };
 
   return (
-    <div className="space-y-5 max-w-5xl mx-auto">
+    <div className="m8-page-stack max-w-5xl mx-auto">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <button
           type="button"
           onClick={() => navigate("/challenges")}
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-white"
+          className="m8-pill hover:text-white"
         >
           <ArrowLeft size={16} /> Challenge Inbox
         </button>
@@ -382,14 +382,15 @@ export default function ChallengeMatch() {
         </div>
       </div>
 
-      <div className={`brand-card rounded-3xl p-5 sm:p-7 ${
+      <div className={`m8-hero rounded-[22px] p-5 sm:p-7 ${
         challenge.status === "completed"
           ? completedWon
             ? "border-emerald-500/25"
             : "border-red-500/25"
           : ""
       }`}>
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-6">
+        <span className="m8-hero-accent" />
+        <div className="relative z-10 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-6">
           <div className="flex flex-col sm:flex-row items-center gap-3 min-w-0">
             <PlayerAvatar
               name={challenger?.name || "Player"}
@@ -437,7 +438,7 @@ export default function ChallengeMatch() {
       </div>
 
       {challenge.status === "pending" && (
-        <div className="card-surface rounded-2xl p-5">
+        <div className="m8-panel rounded-2xl p-5">
           {isChallenger ? (
             <div className="text-center py-4">
               <Clock3 size={28} className="text-[#D5A33A] mx-auto mb-3" />
@@ -473,10 +474,10 @@ export default function ChallengeMatch() {
       )}
 
       {challenge.status === "accepted" && (
-        <div className="card-surface rounded-2xl p-5 border-magma/20">
+        <div className="m8-panel rounded-2xl p-5 border-magma/20">
           <div className="text-center py-2">
             <div className="brand-kicker mb-1">Match Live</div>
-            <h3 className="font-display text-2xl font-extrabold">PLAY THE CHALLENGE</h3>
+            <h3 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.03em]">PLAY THE CHALLENGE</h3>
             <p className="text-sm text-muted-foreground mt-1">
               When the match ends, report the winner below.
             </p>
@@ -502,7 +503,7 @@ export default function ChallengeMatch() {
       )}
 
       {challenge.status === "result_pending" && (
-        <div className="card-surface rounded-2xl p-5">
+        <div className="m8-panel rounded-2xl p-5">
           <div className="brand-kicker mb-1">Result Verification</div>
           <h3 className="font-display text-xl font-bold">Reported winner: {winner?.name || "Unknown"}</h3>
           <p className="text-sm text-muted-foreground mt-1">
@@ -576,7 +577,7 @@ export default function ChallengeMatch() {
 
       {challenge.status === "completed" && (
         <>
-          <div className={`card-surface rounded-2xl p-7 text-center ${
+          <div className={`m8-rank-spotlight rounded-2xl p-7 text-center ${
             completedWon ? "border-emerald-500/25" : "border-red-500/25"
           }`}>
             <Trophy size={38} className={`${completedWon ? "text-emerald-400" : "text-red-400"} mx-auto mb-3`} />
@@ -602,7 +603,7 @@ export default function ChallengeMatch() {
               onPaymentReceived={confirmSeriesPaymentReceived}
             />
           ) : (
-          <div className="card-surface rounded-2xl p-5">
+          <div className="m8-panel rounded-2xl p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="brand-kicker mb-1">Payout</div>
@@ -774,7 +775,7 @@ export default function ChallengeMatch() {
       )}
 
       {Array.isArray(challenge.evidence) && challenge.evidence.length > 0 && (
-        <div className="card-surface rounded-2xl p-5" data-testid="challenge-evidence-gallery">
+        <div className="m8-panel rounded-2xl p-5" data-testid="challenge-evidence-gallery">
           <div className="brand-kicker mb-1">Evidence</div>
           <h3 className="font-display text-lg font-bold">Screenshots</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
@@ -797,7 +798,7 @@ export default function ChallengeMatch() {
       )}
 
       {challenge.status === "disputed" && (
-        <div className="card-surface rounded-2xl p-6 text-center border-orange-500/20">
+        <div className="m8-panel rounded-2xl p-6 text-center border-orange-500/20">
           <AlertTriangle size={34} className="text-orange-400 mx-auto mb-3" />
           <h3 className="font-display text-xl font-bold">Result disputed</h3>
           <p className="text-sm text-muted-foreground mt-2">
@@ -807,7 +808,7 @@ export default function ChallengeMatch() {
       )}
 
       {["declined", "cancelled"].includes(challenge.status) && (
-        <div className="card-surface rounded-2xl p-6 text-center border-red-500/20">
+        <div className="m8-panel rounded-2xl p-6 text-center border-red-500/20">
           <X size={32} className="text-red-400 mx-auto mb-3" />
           <h3 className="font-display text-xl font-bold">
             {challenge.status === "declined" ? "Challenge declined" : "Challenge cancelled"}
