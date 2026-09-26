@@ -57,11 +57,11 @@ export default function ChallengeSeriesCard({
   const playerBWinnings = Number(winningsByPlayer[series?.player_b_player_id] || 0);
 
   return (
-    <div className="card-surface rounded-2xl p-5" data-testid="chall-series-card">
+    <div className="m8-panel rounded-[22px] p-5 sm:p-6" data-testid="chall-series-card">
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div>
           <div className="brand-kicker mb-1">Chall Series</div>
-          <h3 className="font-display text-xl font-bold">
+          <h3 className="font-display text-2xl font-black tracking-[-0.025em]">
             {rounds.length} {rounds.length === 1 ? "Match" : "Matches"}
           </h3>
           <p className="text-sm text-muted-foreground mt-1">
@@ -69,7 +69,7 @@ export default function ChallengeSeriesCard({
           </p>
         </div>
 
-        <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] px-4 py-3 min-w-[190px]">
+        <div className="m8-rank-spotlight rounded-xl px-4 py-3 min-w-[205px]">
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
             {series?.status === "open" ? "Amount To Settle" : "Final Payment"}
           </div>
@@ -89,14 +89,14 @@ export default function ChallengeSeriesCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-5">
-        <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] px-4 py-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-5">
+        <div className="m8-stat-card">
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Money Won</div>
           <div className="font-display font-bold mt-1">
             {playerA?.name || "Player"} <span className="text-emerald-400">{money(playerAWinnings, series?.currency || "EUR")}</span>
           </div>
         </div>
-        <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] px-4 py-3">
+        <div className="m8-stat-card">
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Money Won</div>
           <div className="font-display font-bold mt-1">
             {playerB?.name || "Player"} <span className="text-emerald-400">{money(playerBWinnings, series?.currency || "EUR")}</span>
@@ -104,40 +104,63 @@ export default function ChallengeSeriesCard({
         </div>
       </div>
 
-      <div className="mt-5 space-y-2">
-        {rounds.map((round) => {
-          const winner = round.reported_winner_player_id
-            ? playerMap[round.reported_winner_player_id]
-            : null;
+      <div className="mt-6">
+        <div className="brand-kicker mb-3">Series timeline</div>
+        <div className="relative">
+          <div className="absolute left-[17px] top-5 bottom-5 w-px bg-[#252C37]" />
+          <div className="space-y-2.5">
+            {rounds.map((round) => {
+              const winner = round.reported_winner_player_id
+                ? playerMap[round.reported_winner_player_id]
+                : null;
+              const completed = round.status === "completed";
+              const wonByMe = completed && round.reported_winner_player_id === discordPlayer?.id;
 
-          return (
-            <div
-              key={round.id}
-              className="grid grid-cols-[52px_1fr_auto] gap-3 items-center rounded-xl bg-[#0F1218] border border-[#1D222C] px-3 py-2.5"
-            >
-              <div className="font-mono text-xs font-bold text-[#697181]">
-                #{round.series_round || "—"}
-              </div>
-              <div className="min-w-0">
-                <div className="text-sm font-semibold truncate">
-                  {round.status === "completed"
-                    ? (winner?.name || "Player") + " won"
-                    : statusLabel[round.status] || round.status}
+              return (
+                <div key={round.id} className="relative pl-11">
+                  <div className={
+                    "absolute left-[9px] top-4 w-[17px] h-[17px] rounded-full border-4 border-[#11151D] z-10 " +
+                    (completed
+                      ? wonByMe
+                        ? "bg-emerald-400 shadow-[0_0_14px_rgba(52,211,153,.35)]"
+                        : "bg-magma shadow-[0_0_14px_rgba(255,42,59,.28)]"
+                      : "bg-[#596170]")
+                  } />
+                  <div className="m8-panel-quiet rounded-xl px-3.5 py-3 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#090C11] border border-[#252C37] flex flex-col items-center justify-center shrink-0">
+                      <span className="text-[8px] uppercase tracking-wider text-[#697181]">Match</span>
+                      <span className="font-mono text-xs font-black">{round.series_round || "—"}</span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-bold truncate">
+                        {completed
+                          ? (winner?.name || "Player") + " won"
+                          : statusLabel[round.status] || round.status}
+                      </div>
+                      <div className="text-[10px] uppercase tracking-wider text-[#697181] mt-0.5">
+                        {completed ? "Verified result" : "Series match"}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="font-mono font-black text-sm">
+                        {money(round.amount_cents, round.currency || series?.currency || "EUR")}
+                      </div>
+                      {completed && (
+                        <div className={"text-[9px] uppercase tracking-wider font-bold mt-0.5 " + (wonByMe ? "text-emerald-400" : "text-[#737D8D]")}>
+                          {wonByMe ? "Your win" : "Result"}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {round.status === "completed" ? "Verified match" : "Series match"}
-                </div>
-              </div>
-              <div className="font-mono font-bold text-sm">
-                {money(round.amount_cents, round.currency || series?.currency || "EUR")}
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {series?.status === "open" && challenge?.status === "completed" && (
-        <div className="mt-5 pt-5 border-t border-[#1D222C]">
+        <div className="mt-6 pt-5 border-t border-[#232A35]">
           <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2">
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">€</span>
@@ -154,7 +177,7 @@ export default function ChallengeSeriesCard({
             <Button
               onClick={() => onRechallenge(Number(amount))}
               disabled={Boolean(busy) || !Number.isFinite(Number(amount)) || Number(amount) <= 0}
-              className="h-11 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-bold"
+              className="m8-action m8-action-primary h-11 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-bold"
             >
               <Plus size={16} className="mr-2" /> RECHALL
             </Button>
