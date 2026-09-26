@@ -26,13 +26,13 @@ export default function Players() {
   }, [players, query, filter]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+    <div className="m8-page-stack">
+      <section className="m8-panel rounded-2xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
         <div>
           <div className="brand-kicker mb-1">Roster</div>
           <div className="flex items-center gap-2">
             <Users size={19} className="text-magma" />
-            <h2 className="font-display text-2xl font-extrabold">Players</h2>
+            <h2 className="font-display text-3xl font-black tracking-[-0.03em]">Players</h2>
           </div>
           <p className="text-sm text-[#7F8795] mt-1">{players.length} players in the active ladder.</p>
         </div>
@@ -66,7 +66,7 @@ export default function Players() {
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4" data-testid="players-grid">
         {list.map((p) => (
@@ -74,7 +74,7 @@ export default function Players() {
             key={p.id}
             to={`/players/${p.id}`}
             data-testid={`player-card-${p.id}`}
-            className="card-surface rounded-2xl p-5 text-left animate-fade-up block group"
+            className="m8-panel rounded-2xl p-5 text-left animate-fade-up block group hover:-translate-y-0.5 transition-transform duration-200"
           >
             <div className="flex items-center gap-3 mb-5">
               <PlayerAvatar name={p.name} elo={p.currentElo} size={46} avatarUrl={playerAvatars[p.id]} />
@@ -119,7 +119,7 @@ export default function Players() {
       </div>
 
       {list.length === 0 && (
-        <div className="card-surface rounded-2xl text-center text-muted-foreground py-16">No players found.</div>
+        <div className="m8-panel rounded-2xl text-center text-muted-foreground py-16">No players found.</div>
       )}
     </div>
   );
