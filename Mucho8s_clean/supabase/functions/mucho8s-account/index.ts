@@ -54,11 +54,24 @@ const validateAdminSession = async (req: Request, supabase: any) => {
   return true;
 };
 
-const cleanPublicUrl = (value: unknown) => {
+const cleanPaymentLink = (value: unknown, provider: "paypal" | "revolut") => {
   const raw = String(value || "").trim();
   if (!raw) return null;
   if (raw.length > 500) throw new Error("Link is too long");
-  const url = new URL(raw);
+
+  let candidate = raw.replace(/^@+/, "").trim();
+  if (!candidate) return null;
+
+  if (!/^https?:\/\//i.test(candidate)) {
+    if (candidate.includes("/")) {
+      candidate = `https://${candidate.replace(/^\/+/, "")}`;
+    } else {
+      const host = provider === "paypal" ? "paypal.me" : "revolut.me";
+      candidate = `https://${host}/${candidate}`;
+    }
+  }
+
+  const url = new URL(candidate);
   if (url.protocol !== "https:" && url.protocol !== "http:") {
     throw new Error("Only http/https links are allowed");
   }
@@ -195,12 +208,10 @@ Deno.serve(async (req: Request) => {
 
         let paypalUrl = null;
         let revolutUrl = null;
-        let cmgUrl = null;
 
         try {
-          paypalUrl = cleanPublicUrl(body?.paypalUrl);
-          revolutUrl = cleanPublicUrl(body?.revolutUrl);
-          cmgUrl = cleanPublicUrl(body?.cmgUrl);
+          paypalUrl = cleanPaymentLink(body?.paypalUrl, "paypal");
+          revolutUrl = cleanPaymentLink(body?.revolutUrl, "revolut");
         } catch (error) {
           return json({ error: String(error).replace(/^Error:\s*/, "") }, 400);
         }
@@ -210,7 +221,7 @@ Deno.serve(async (req: Request) => {
           .update({
             paypal_url: paypalUrl,
             revolut_url: revolutUrl,
-            cmg_url: cmgUrl,
+            cmg_url: null,
             updated_at: new Date().toISOString(),
           })
           .eq("id", user.id);
