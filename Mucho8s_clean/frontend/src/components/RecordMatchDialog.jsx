@@ -24,6 +24,7 @@ export const RecordMatchDialog = ({
   lockContext = false,
   initialCaptains = null,
   creatorPlayerId = "",
+  liveMatchId = "",
   onReported,
 }) => {
   const { players, createMatchReport, editMatch } = useData();
@@ -254,6 +255,7 @@ export const RecordMatchDialog = ({
         pairings: submittedPairings,
         captainAPlayerId: effectiveCaptainA,
         captainBPlayerId: effectiveCaptainB,
+        liveMatchId: liveMatchId || undefined,
       });
       if (!report) return;
       toast.success("Result submitted — waiting for Admin verification");
