@@ -330,6 +330,7 @@ create table if not exists public.team_match_reports (
   score_a integer not null default 0 check (score_a >= 0),
   score_b integer not null default 0 check (score_b >= 0),
   mvp_id text,
+  merda_id text,
   game text,
   mode text,
   map text,
