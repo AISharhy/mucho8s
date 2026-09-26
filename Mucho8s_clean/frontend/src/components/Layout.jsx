@@ -1,9 +1,47 @@
-import React, { useMemo, useState } from "react";
+import React, { Component, useMemo, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { Sidebar, MobileNav } from "@/components/Sidebar";
 import ChallengeCenter from "@/components/ChallengeCenter";
-import { Bell, Swords, Trophy, ShieldAlert, WalletCards, X, Shield } from "lucide-react";
+import { Bell, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, UserCircle } from "lucide-react";
 import { useData } from "@/context/DataContext";
+
+class PageErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+
+  componentDidCatch(error, info) {
+    console.error("Page render error", error, info);
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="card-surface rounded-2xl p-8 min-h-[280px] flex flex-col items-center justify-center text-center">
+          <AlertTriangle size={28} className="text-orange-400 mb-3" />
+          <h2 className="font-display text-xl font-bold">This page could not load</h2>
+          <p className="text-sm text-muted-foreground mt-2 max-w-xl">
+            {this.state.error?.message || "A page error occurred."}
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-5 h-10 px-4 rounded-xl bg-magma text-white text-sm font-bold"
+          >
+            Reload page
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const TITLES = {
   "/": "Dashboard",
@@ -93,6 +131,64 @@ export const Layout = () => {
           </div>
 
           <div className="ml-auto flex items-center gap-2 relative">
+            {discordPlayer && (
+              <>
+                <Link
+                  to={`/players/${discordPlayer.id}`}
+                  title="My Profile"
+                  aria-label="My Profile"
+                  data-testid="header-my-profile"
+                  className={`w-10 h-10 rounded-xl border transition-all flex items-center justify-center ${
+                    loc.pathname === `/players/${discordPlayer.id}`
+                      ? "border-white/30 bg-white/[0.08] text-white"
+                      : "border-[#242A35] bg-[#12151C] text-[#AAB1BE] hover:text-white hover:bg-white/[0.05]"
+                  }`}
+                >
+                  <UserCircle size={19} />
+                </Link>
+
+                <Link
+                  to="/challenges"
+                  title="My Challenges"
+                  aria-label="My Challenges"
+                  data-testid="header-my-challenges"
+                  className={`relative w-10 h-10 rounded-xl border transition-all flex items-center justify-center ${
+                    loc.pathname.startsWith("/challenges")
+                      ? "border-magma/40 bg-magma/10 text-magma"
+                      : "border-[#242A35] bg-[#12151C] text-[#AAB1BE] hover:text-white hover:bg-white/[0.05]"
+                  }`}
+                >
+                  <Swords size={18} />
+                  {challengeNotificationCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[19px] h-[19px] px-1 rounded-full bg-magma border-2 border-[#0D1016] text-white text-[9px] font-extrabold flex items-center justify-center">
+                      {challengeNotificationCount > 99 ? "99+" : challengeNotificationCount}
+                    </span>
+                  )}
+                </Link>
+              </>
+            )}
+
+            {discordPlayer && (
+              <button
+                type="button"
+                onClick={() => setNotificationsOpen((open) => !open)}
+                aria-label={challengeNotificationCount > 0 ? `${challengeNotificationCount} challenge notifications` : "Challenge notifications"}
+                title="Challenge notifications"
+                data-testid="header-challenge-bell"
+                className="relative w-10 h-10 rounded-xl border border-[#242A35] bg-[#12151C] hover:bg-white/[0.05] hover:border-[#343B48] transition-all flex items-center justify-center text-[#AAB1BE] hover:text-white"
+              >
+                <Bell size={19} />
+                {challengeNotificationCount > 0 && (
+                  <span
+                    data-testid="header-challenge-badge"
+                    className="absolute -top-1.5 -right-1.5 min-w-[19px] h-[19px] px-1 rounded-full bg-magma border-2 border-[#0D1016] text-white text-[9px] font-extrabold leading-none flex items-center justify-center shadow-[0_0_14px_rgba(255,42,59,0.45)]"
+                  >
+                    {challengeNotificationCount > 99 ? "99+" : challengeNotificationCount}
+                  </span>
+                )}
+              </button>
+            )}
+
             {isAdmin && (
               <Link
                 to="/admin"
@@ -112,28 +208,7 @@ export const Layout = () => {
                 )}
               </Link>
             )}
-            {discordPlayer && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setNotificationsOpen((open) => !open)}
-                  aria-label={challengeNotificationCount > 0 ? `${challengeNotificationCount} challenge notifications` : "Challenge notifications"}
-                  title="Challenge notifications"
-                  data-testid="header-challenge-bell"
-                  className="relative w-10 h-10 rounded-xl border border-[#242A35] bg-[#12151C] hover:bg-white/[0.05] hover:border-[#343B48] transition-all flex items-center justify-center text-[#AAB1BE] hover:text-white"
-                >
-                  <Bell size={19} />
-                  {challengeNotificationCount > 0 && (
-                    <span
-                      data-testid="header-challenge-badge"
-                      className="absolute -top-1.5 -right-1.5 min-w-[19px] h-[19px] px-1 rounded-full bg-magma border-2 border-[#0D1016] text-white text-[9px] font-extrabold leading-none flex items-center justify-center shadow-[0_0_14px_rgba(255,42,59,0.45)]"
-                    >
-                      {challengeNotificationCount > 99 ? "99+" : challengeNotificationCount}
-                    </span>
-                  )}
-                </button>
-
-                {notificationsOpen && (
+            {discordPlayer && notificationsOpen && (
                   <div className="absolute right-0 top-12 w-[min(92vw,380px)] rounded-2xl border border-[#242A35] bg-[#101319] shadow-2xl overflow-hidden z-50">
                     <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#1D222C]">
                       <div>
@@ -196,13 +271,13 @@ export const Layout = () => {
                       Open Challenge Inbox
                     </Link>
                   </div>
-                )}
-              </>
             )}
           </div>
         </header>
         <main className="page-shell p-4 sm:p-6 lg:p-8">
-          <Outlet />
+          <PageErrorBoundary key={loc.pathname}>
+            <Outlet />
+          </PageErrorBoundary>
         </main>
       </div>
     </div>
