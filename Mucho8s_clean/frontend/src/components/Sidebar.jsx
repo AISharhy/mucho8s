@@ -16,7 +16,7 @@ const MAIN_NAV = [
 
 const COMPETITION_NAV = [
   { to: "/ranking", label: "Classifica", icon: Trophy, testid: "nav-ranking-link" },
-  { to: "/rank-guide", label: "Guida", icon: Medal, testid: "nav-rank-guide-link" },
+  { to: "/rank-guide", label: "Guide", icon: Medal, testid: "nav-rank-guide-link" },
 ];
 
 const CHALLENGES_NAV = {
@@ -189,7 +189,7 @@ export const MobileNav = () => {
   );
   const aliasLabel =
     ["/balancer", "/draft"].includes(loc.pathname) ? "Creazione squadre" :
-    loc.pathname === "/ranks" ? "Guida" :
+    loc.pathname === "/ranks" ? "Guide" :
     loc.pathname === "/leaderboard" || loc.pathname === "/statistics" || loc.pathname === "/challenge-ranking" ? "Classifica" :
     null;
 
