@@ -4,7 +4,8 @@ import { PlayerAvatar, EloBadge } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RecordMatchDialog } from "@/components/RecordMatchDialog";
-import { balanceTeams } from "@/lib/elo";
+import { balanceTeams, computeGameStats, playerForGame } from "@/lib/elo";
+import { GAMES } from "@/lib/demoData";
 import {
   analyzeManualTeams,
   duoChemistry,
@@ -64,7 +65,7 @@ const BalanceBadge = ({ score, verdict }) => {
   );
 };
 
-const TeamCard = ({ label, team, chemistry, playerAvatars }) => (
+const TeamCard = ({ label, team, chemistry, playerAvatars, game }) => (
   <div className="card-surface rounded-2xl p-5">
     <div className="flex items-center justify-between gap-3 mb-4">
       <div>
@@ -85,7 +86,9 @@ const TeamCard = ({ label, team, chemistry, playerAvatars }) => (
           />
           <div className="min-w-0 flex-1">
             <div className="font-semibold truncate">{player.name}</div>
-            <div className="text-xs text-muted-foreground">{player.currentElo} Elo</div>
+            <div className="text-xs text-muted-foreground">
+              {player.currentElo} {game === "ALL" ? "Elo" : `${game} rating`}
+            </div>
           </div>
           <EloBadge elo={player.currentElo} />
         </div>
@@ -132,30 +135,49 @@ export default function TeamBuilder() {
   const [platform, setPlatform] = useState("cmg");
   const [sending, setSending] = useState(false);
   const [recordOpen, setRecordOpen] = useState(false);
+  const [game, setGame] = useState("ALL");
 
   const perTeam = required / 2;
 
+  const gameMatches = useMemo(
+    () => game === "ALL" ? matches : matches.filter((match) => match.game === game),
+    [matches, game]
+  );
+
+  const gameStats = useMemo(
+    () => game === "ALL" ? null : computeGameStats(matches, game),
+    [matches, game]
+  );
+
+  const contextualPlayerMap = useMemo(() => {
+    const map = {};
+    players.forEach((player) => {
+      map[player.id] = game === "ALL" ? player : playerForGame(player, gameStats || {});
+    });
+    return map;
+  }, [players, game, gameStats]);
+
   const selectedPlayers = useMemo(
-    () => selected.map((id) => players.find((player) => player.id === id)).filter(Boolean),
-    [selected, players]
+    () => selected.map((id) => contextualPlayerMap[id]).filter(Boolean),
+    [selected, contextualPlayerMap]
   );
 
   const manualTeamA = useMemo(
-    () => manualA.map((id) => players.find((player) => player.id === id)).filter(Boolean),
-    [manualA, players]
+    () => manualA.map((id) => contextualPlayerMap[id]).filter(Boolean),
+    [manualA, contextualPlayerMap]
   );
 
   const manualTeamB = useMemo(
-    () => manualB.map((id) => players.find((player) => player.id === id)).filter(Boolean),
-    [manualB, players]
+    () => manualB.map((id) => contextualPlayerMap[id]).filter(Boolean),
+    [manualB, contextualPlayerMap]
   );
 
   const manualResult = useMemo(
     () =>
       manualTeamA.length === perTeam && manualTeamB.length === perTeam
-        ? analyzeManualTeams(manualTeamA, manualTeamB, matches)
+        ? analyzeManualTeams(manualTeamA, manualTeamB, gameMatches)
         : null,
-    [manualTeamA, manualTeamB, matches, perTeam]
+    [manualTeamA, manualTeamB, gameMatches, perTeam]
   );
 
   const result = mode === "manual" ? manualResult : autoResult;
@@ -171,12 +193,12 @@ export default function TeamBuilder() {
         pairs.push({
           a: pool[i],
           b: pool[j],
-          ...duoChemistry(pool[i], pool[j], matches),
+          ...duoChemistry(pool[i], pool[j], gameMatches),
         });
       }
     }
     return pairs.sort((a, b) => b.score - a.score);
-  }, [mode, selectedPlayers, manualTeamA, manualTeamB, matches]);
+  }, [mode, selectedPlayers, manualTeamA, manualTeamB, gameMatches]);
 
   const filtered = useMemo(
     () => players.filter((player) => player.name.toLowerCase().includes(query.toLowerCase())),
@@ -198,6 +220,11 @@ export default function TeamBuilder() {
   const changeMode = (nextMode) => {
     setMode(nextMode);
     resetDraft();
+  };
+
+  const changeGame = (nextGame) => {
+    setGame(nextGame);
+    setAutoResult(null);
   };
 
   const toggleAutoPlayer = (id) => {
@@ -251,9 +278,9 @@ export default function TeamBuilder() {
 
     if (mode === "balance") {
       const balanced = balanceTeams(selectedPlayers);
-      if (balanced) draft = analyzeManualTeams(balanced.teamA, balanced.teamB, matches);
+      if (balanced) draft = analyzeManualTeams(balanced.teamA, balanced.teamB, gameMatches);
     } else {
-      draft = draftTeamsByChemistry(selectedPlayers, matches);
+      draft = draftTeamsByChemistry(selectedPlayers, gameMatches);
     }
 
     if (!draft) {
@@ -262,12 +289,19 @@ export default function TeamBuilder() {
     }
 
     setAutoResult(draft);
-    toast.success(`${mode === "balance" ? "Balanced teams" : "Chemistry draft"} generated · ${draft.balanceScore}% balance`);
+    toast.success(
+      game === "ALL"
+        ? `${mode === "balance" ? "Balanced teams" : "Chemistry draft"} generated · ${draft.balanceScore}% balance`
+        : `${mode === "balance" ? "Balanced teams" : "Chemistry draft"} for ${game} · ${draft.balanceScore}% balance`
+    );
   };
 
   const autoPick = () => {
     const ids = [...players]
-      .sort((a, b) => Number(b.totalMatches || 0) - Number(a.totalMatches || 0))
+      .sort((a, b) =>
+        Number(contextualPlayerMap[b.id]?.totalMatches || 0) -
+        Number(contextualPlayerMap[a.id]?.totalMatches || 0)
+      )
       .slice(0, required)
       .map((player) => player.id);
 
@@ -310,7 +344,7 @@ export default function TeamBuilder() {
     const ok = await sendDiscordTeams({
       teamA: result.teamA.map((player) => player.name),
       teamB: result.teamB.map((player) => player.name),
-      game: "Team Builder",
+      game: game === "ALL" ? "All Games" : game,
       balanceScore: result.balanceScore,
       pairings: result.pairings.map((pair) => ({
         playerA: pair.playerA.name,
@@ -353,6 +387,48 @@ export default function TeamBuilder() {
           </Button>
         </div>
       </div>
+
+      <section className="card-surface rounded-2xl p-4 sm:p-5">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div>
+            <div className="brand-kicker mb-1">Game Context</div>
+            <h3 className="font-display font-bold text-lg">Balance by game</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Ratings and chemistry use only matches from the selected game. Choose All Games for the global profile.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5" data-testid="team-builder-game">
+            <button
+              type="button"
+              data-testid="team-builder-game-ALL"
+              onClick={() => changeGame("ALL")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                game === "ALL"
+                  ? "bg-white text-black border-white"
+                  : "bg-[#0F1218] text-muted-foreground border-[#222834] hover:text-white"
+              }`}
+            >
+              All Games
+            </button>
+            {GAMES.map((item) => (
+              <button
+                type="button"
+                key={item}
+                data-testid={`team-builder-game-${item}`}
+                onClick={() => changeGame(item)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                  game === item
+                    ? "bg-white text-black border-white"
+                    : "bg-[#0F1218] text-muted-foreground border-[#222834] hover:text-white"
+                }`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 max-w-3xl">
         <button
@@ -520,7 +596,9 @@ export default function TeamBuilder() {
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold truncate">{player.name}</div>
                     <div className="text-xs text-muted-foreground">
-                      {player.totalMatches || 0} matches · {player.currentElo} Elo
+                      {game === "ALL"
+                        ? `${player.totalMatches || 0} matches · ${player.currentElo} Elo`
+                        : `${contextualPlayerMap[player.id]?.totalMatches || 0} ${game} matches · ${contextualPlayerMap[player.id]?.currentElo || 1000} rating`}
                     </div>
                   </div>
                 </div>
@@ -550,6 +628,9 @@ export default function TeamBuilder() {
               <div>
                 <div className="brand-kicker mb-1">Chemistry Scan</div>
                 <h3 className="font-display text-xl font-bold">Compatibility</h3>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {game === "ALL" ? "All-game history" : `${game} history only · ${gameMatches.length} recorded matches`}
+                </div>
               </div>
               <Zap size={19} className="text-[#D5A33A]" />
             </div>
@@ -604,9 +685,14 @@ export default function TeamBuilder() {
                     <div className="brand-kicker mb-1">
                       {mode === "manual" ? "Manual Team Analysis" : mode === "balance" ? "Balanced Teams" : "Chemistry Draft"}
                     </div>
-                    <h3 className="font-display text-2xl font-extrabold">
-                      {result.balanceVerdict}
-                    </h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-display text-2xl font-extrabold">
+                        {result.balanceVerdict}
+                      </h3>
+                      <span className="px-2 py-1 rounded-lg bg-[#171B23] border border-[#2B313E] text-[10px] font-bold text-[#D5A33A]">
+                        {game === "ALL" ? "ALL GAMES" : game}
+                      </span>
+                    </div>
                     <div className="text-sm text-muted-foreground mt-1">
                       Overall fit {result.draftScore}% · Team chemistry {result.chemistryScore}%
                     </div>
@@ -643,12 +729,14 @@ export default function TeamBuilder() {
                   team={result.teamA}
                   chemistry={result.chemistryA}
                   playerAvatars={playerAvatars}
+                  game={game}
                 />
                 <TeamCard
                   label="Team B"
                   team={result.teamB}
                   chemistry={result.chemistryB}
                   playerAvatars={playerAvatars}
+                  game={game}
                 />
               </div>
 
@@ -741,6 +829,7 @@ export default function TeamBuilder() {
           teamB: result.teamB.map((player) => player.id),
           pairings: reportPairings,
         } : null}
+        defaultGame={game !== "ALL" ? game : undefined}
       />
     </div>
   );
