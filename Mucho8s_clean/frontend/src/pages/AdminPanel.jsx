@@ -497,9 +497,6 @@ export default function AdminPanel() {
               <Button onClick={() => setActiveTab("matches")} className="m8-action h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150]">
                 <Gamepad2 size={15} className="mr-2" /> Matches
               </Button>
-              <Button onClick={() => setActiveTab("matches")} className="m8-action h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150]">
-                <WalletCards size={15} className="mr-2" /> Challs
-              </Button>
               <Button onClick={() => setActiveTab("competition")} className="m8-action h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150]">
                 <Trophy size={15} className="mr-2" /> Season
               </Button>
