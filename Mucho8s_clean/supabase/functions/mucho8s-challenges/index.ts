@@ -159,29 +159,15 @@ Deno.serve(async (req: Request) => {
         (accounts || []).map((account: any) => [String(account.player_id), account])
       );
 
-      for (const playerId of playerIds) {
-        if (!accountByPlayer[playerId]) {
-          return json({ error: `Player ${playerId} has not linked Discord yet`, playerId }, 409);
-        }
-      }
-
       const rows: any[] = [];
       const seasonNumber = await getCurrentSeason();
 
       for (const pair of pairings) {
-        const challenger = accountByPlayer[pair.challengerPlayerId];
-        const challenged = accountByPlayer[pair.challengedPlayerId];
+        const challenger = accountByPlayer[pair.challengerPlayerId] || null;
+        const challenged = accountByPlayer[pair.challengedPlayerId] || null;
         const column = PLATFORM_COLUMNS[pair.platform];
         const challengerUrl = String(challenger?.[column] || "").trim();
         const challengedUrl = String(challenged?.[column] || "").trim();
-
-        if (!challengerUrl || !challengedUrl) {
-          const missingPlayerId = !challengerUrl ? pair.challengerPlayerId : pair.challengedPlayerId;
-          return json({
-            error: `Player ${missingPlayerId} has not configured ${pair.platform.toUpperCase()}`,
-            playerId: missingPlayerId,
-          }, 409);
-        }
 
         const { data: active, error: activeError } = await supabase
           .from("player_challenges")
@@ -198,14 +184,14 @@ Deno.serve(async (req: Request) => {
         }
 
         rows.push({
-          challenger_account_id: challenger.id,
+          challenger_account_id: challenger?.id || null,
           challenger_player_id: pair.challengerPlayerId,
-          challenged_account_id: challenged.id,
+          challenged_account_id: challenged?.id || null,
           challenged_player_id: pair.challengedPlayerId,
           platform: pair.platform,
-          target_url: challengedUrl,
-          challenger_payout_url: challengerUrl,
-          challenged_payout_url: challengedUrl,
+          target_url: challengedUrl || "",
+          challenger_payout_url: challengerUrl || null,
+          challenged_payout_url: challengedUrl || null,
           amount_cents: Math.round(pair.amount * 100),
           currency: "EUR",
           status: "pending",
@@ -672,12 +658,9 @@ Deno.serve(async (req: Request) => {
         .maybeSingle();
 
       if (targetError) throw targetError;
-      if (!target) return json({ error: "This player has not connected Discord yet" }, 404);
 
-      const targetUrl = String(target[linkColumn] || "").trim();
+      const targetUrl = String(target?.[linkColumn] || "").trim();
       const challengerUrl = String(me[linkColumn] || "").trim();
-      if (!targetUrl) return json({ error: "This player has not configured that challenge method" }, 409);
-      if (!challengerUrl) return json({ error: `Configure your ${platform.toUpperCase()} link before sending this challenge` }, 409);
 
       const { data: active, error: activeError } = await supabase
         .from("player_challenges")
@@ -711,7 +694,7 @@ Deno.serve(async (req: Request) => {
         .insert({
           player_a_account_id: user.id,
           player_a_player_id: me.player_id,
-          player_b_account_id: target.id,
+          player_b_account_id: target?.id || null,
           player_b_player_id: targetPlayerId,
           platform,
           currency: "EUR",
@@ -733,12 +716,12 @@ Deno.serve(async (req: Request) => {
         .insert({
           challenger_account_id: user.id,
           challenger_player_id: me.player_id,
-          challenged_account_id: target.id,
+          challenged_account_id: target?.id || null,
           challenged_player_id: targetPlayerId,
           platform,
-          target_url: targetUrl,
-          challenger_payout_url: challengerUrl,
-          challenged_payout_url: targetUrl,
+          target_url: targetUrl || "",
+          challenger_payout_url: challengerUrl || null,
+          challenged_payout_url: targetUrl || null,
           amount_cents: amountCents,
           currency: "EUR",
           status: "pending",
@@ -796,12 +779,10 @@ Deno.serve(async (req: Request) => {
         .eq("player_id", otherPlayerId)
         .maybeSingle();
       if (otherError) throw otherError;
-      if (!other) return json({ error: "The other player is no longer linked to Discord" }, 409);
 
       const linkColumn = PLATFORM_COLUMNS[String(series.platform || "")];
       const myUrl = String(me?.[linkColumn] || "").trim();
       const otherUrl = String(other?.[linkColumn] || "").trim();
-      if (!myUrl || !otherUrl) return json({ error: "Both players need a payout link for this platform" }, 409);
 
       const { data: maxRoundRows, error: roundError } = await supabase
         .from("player_challenges")
@@ -817,12 +798,12 @@ Deno.serve(async (req: Request) => {
         .insert({
           challenger_account_id: user.id,
           challenger_player_id: me.player_id,
-          challenged_account_id: other.id,
+          challenged_account_id: other?.id || null,
           challenged_player_id: otherPlayerId,
           platform: series.platform,
-          target_url: otherUrl,
-          challenger_payout_url: myUrl,
-          challenged_payout_url: otherUrl,
+          target_url: otherUrl || "",
+          challenger_payout_url: myUrl || null,
+          challenged_payout_url: otherUrl || null,
           amount_cents: amountCents,
           currency: series.currency || "EUR",
           status: "pending",
