@@ -108,9 +108,24 @@ const normalizePlayer = (player: any) => {
   };
 };
 
-const applyEffects = (byId: Record<string, any>, teamA: string[], teamB: string[], winner: string, mvpId?: string | null, merdaId?: string | null) => {
+const automaticMerdaIds = (byId: Record<string, any>, losers: string[]) =>
+  losers.filter((id) => {
+    const current = Number(byId[id]?.currentStreak || 0);
+    const nextLossStreak = current < 0 ? Math.abs(current) + 1 : 1;
+    return nextLossStreak >= 4 && nextLossStreak % 4 === 0;
+  });
+
+const applyEffects = (
+  byId: Record<string, any>,
+  teamA: string[],
+  teamB: string[],
+  winner: string,
+  mvpId?: string | null,
+  merdaIds: string[] = [],
+) => {
   const winners = winner === "A" ? teamA : teamB;
   const losers = winner === "A" ? teamB : teamA;
+  const merdaSet = new Set(merdaIds);
   const winnerStrength = winners.reduce((sum, id) => sum + (byId[id] ? playerRating(byId[id]) : 0), 0);
   const loserStrength = losers.reduce((sum, id) => sum + (byId[id] ? playerRating(byId[id]) : 0), 0);
   const upset = winnerStrength < loserStrength;
@@ -132,7 +147,7 @@ const applyEffects = (byId: Record<string, any>, teamA: string[], teamB: string[
     if (won) player.wins = Math.max(0, Number(player.wins || 0)) + 1;
     else player.losses = Math.max(0, Number(player.losses || 0)) + 1;
     if (id === mvpId) player.mvpCount = Math.max(0, Number(player.mvpCount || 0)) + 1;
-    if (id === merdaId) player.merdaCount = Math.max(0, Number(player.merdaCount || 0)) + 1;
+    if (merdaSet.has(id)) player.merdaCount = Math.max(0, Number(player.merdaCount || 0)) + 1;
     player.eloHistory = [
       ...(Array.isArray(player.eloHistory) ? player.eloHistory : []),
       { match: player.totalMatches, elo: nextElo },
@@ -340,7 +355,9 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
     const missing = [...teamA, ...teamB].filter((id) => !byId[id]);
     if (missing.length) throw new Error("One or more players in this report no longer exist");
 
-    const eloChanges = applyEffects(byId, teamA, teamB, report.winner, report.mvp_id, report.merda_id);
+    const losers = report.winner === "A" ? teamB : teamA;
+    const merdaIds = automaticMerdaIds(byId, losers);
+    const eloChanges = applyEffects(byId, teamA, teamB, report.winner, report.mvp_id, merdaIds);
 
     const match = {
       id: report.match_id,
@@ -351,7 +368,8 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       scoreA: Number(report.score_a || 0),
       scoreB: Number(report.score_b || 0),
       mvpId: report.mvp_id || undefined,
-      merdaId: report.merda_id || undefined,
+      merdaIds,
+      merdaId: merdaIds[0] || undefined,
       map: report.map || "",
       mode: report.mode || "",
       game: report.game || "",
@@ -392,6 +410,13 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       verifier_player_id: verifierPlayerId,
       verified_at: verifiedAt,
       locked_at: verifiedAt,
+      merda_id: (() => {
+        const storedMatch = (Array.isArray(state?.matches) ? state.matches : [])
+          .find((match: any) => String(match?.id) === String(report.match_id));
+        if (storedMatch?.merdaId) return storedMatch.merdaId;
+        if (Array.isArray(storedMatch?.merdaIds) && storedMatch.merdaIds[0]) return storedMatch.merdaIds[0];
+        return null;
+      })(),
       dispute_note: null,
     })
     .eq("id", report.id)
@@ -517,7 +542,7 @@ Deno.serve(async (req: Request) => {
         score_a: Math.round(scoreA),
         score_b: Math.round(scoreB),
         mvp_id: body?.mvpId ? String(body.mvpId) : null,
-        merda_id: body?.merdaId ? String(body.merdaId) : null,
+        merda_id: null,
         game: String(body?.game || ""),
         mode: String(body?.mode || ""),
         map: String(body?.map || ""),
