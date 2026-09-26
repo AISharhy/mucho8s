@@ -10,7 +10,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Crown, Trophy, Filter, Pencil, Trash2, WalletCards, ArrowRightLeft, Lock, Gamepad2, RotateCcw } from "lucide-react";
+import { Plus, Search, Trophy, Filter, Pencil, Trash2, WalletCards, ArrowRightLeft, Lock, Gamepad2, RotateCcw } from "lucide-react";
 import { GAMES } from "@/lib/demoData";
 import { toast } from "sonner";
 
