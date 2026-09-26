@@ -16,8 +16,8 @@ const BASE_ELO = 1000;
 const MIN_ELO = 500;
 const WIN_DELTA = 25;
 const LOSS_DELTA = 25;
-const MVP_BONUS = 10;
-const UPSET_BONUS = 15;
+const MVP_BONUS = 0;
+const UPSET_BONUS = 0;
 
 const sha256 = async (value: string) => {
   const bytes = new TextEncoder().encode(value);
@@ -124,11 +124,7 @@ const applyEffects = (
   merdaIds: string[] = [],
 ) => {
   const winners = winner === "A" ? teamA : teamB;
-  const losers = winner === "A" ? teamB : teamA;
   const merdaSet = new Set(merdaIds);
-  const winnerStrength = winners.reduce((sum, id) => sum + (byId[id] ? playerRating(byId[id]) : 0), 0);
-  const loserStrength = losers.reduce((sum, id) => sum + (byId[id] ? playerRating(byId[id]) : 0), 0);
-  const upset = winnerStrength < loserStrength;
   const changes: Record<string, number> = {};
 
   [...teamA, ...teamB].forEach((id) => {
@@ -136,9 +132,7 @@ const applyEffects = (
     if (!player) return;
 
     const won = winners.includes(id);
-    let delta = won ? WIN_DELTA : -LOSS_DELTA;
-    if (id === mvpId) delta += MVP_BONUS;
-    if (won && upset) delta += UPSET_BONUS;
+    const delta = won ? WIN_DELTA : -LOSS_DELTA;
 
     const nextElo = Math.max(MIN_ELO, Number(player.currentElo || BASE_ELO) + delta);
     player.currentElo = nextElo;
