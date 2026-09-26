@@ -164,6 +164,12 @@ create unique index if not exists player_challenges_series_round_unique
   on public.player_challenges (series_id, series_round)
   where series_id is not null and series_round is not null;
 
+create index if not exists player_challenges_reporter_account_idx
+  on public.player_challenges (reporter_account_id);
+
+create index if not exists player_challenges_verifier_account_idx
+  on public.player_challenges (verifier_account_id);
+
 alter table public.player_challenges enable row level security;
 revoke all on table public.player_challenges from anon, authenticated;
 
@@ -254,8 +260,10 @@ create table if not exists public.admin_login_attempts (
   created_at timestamptz not null default now()
 );
 
+create index if not exists admin_credentials_required_account_idx on public.admin_credentials (required_account_id);
 create index if not exists admin_sessions_username_idx on public.admin_sessions (username, expires_at desc);
 create index if not exists admin_sessions_expiry_idx on public.admin_sessions (expires_at);
+create index if not exists admin_sessions_account_idx on public.admin_sessions (account_id);
 create index if not exists admin_login_attempts_rate_idx on public.admin_login_attempts (username, client_key_hash, created_at desc);
 
 alter table public.admin_credentials enable row level security;
@@ -350,6 +358,12 @@ create index if not exists team_match_reports_captain_a_idx
 
 create index if not exists team_match_reports_captain_b_idx
   on public.team_match_reports (captain_b_player_id, created_at desc);
+
+create index if not exists team_match_reports_reporter_account_idx
+  on public.team_match_reports (reporter_account_id);
+
+create index if not exists team_match_reports_verifier_account_idx
+  on public.team_match_reports (verifier_account_id);
 
 alter table public.team_match_reports enable row level security;
 revoke all on table public.team_match_reports from anon, authenticated;
