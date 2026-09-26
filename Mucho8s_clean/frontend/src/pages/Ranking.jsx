@@ -23,11 +23,11 @@ export default function Ranking({ initialTab = "leaderboard" }) {
   }, [initialTab]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+    <div className="m8-page-stack">
+      <section className="m8-panel rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <div className="brand-kicker mb-1">Competition</div>
-          <h2 className="font-display text-2xl font-extrabold">Ranking</h2>
+          <h2 className="font-display text-3xl font-black tracking-[-0.03em]">Ranking</h2>
           <p className="text-sm text-[#7F8795] mt-1">
             Overall standings, challenge ranking and season history.
           </p>
@@ -60,43 +60,37 @@ export default function Ranking({ initialTab = "leaderboard" }) {
             <CalendarDays size={15} /> Seasons
           </button>
         </div>
-      </div>
+      </section>
 
       {section === "seasons" ? (
         <SeasonHistory />
       ) : (
         <div className="space-y-6">
-          <div className="flex items-center gap-1 border-b border-[#1D222C]">
+          <div className="m8-panel-quiet rounded-xl p-1 inline-flex items-center gap-1 self-start">
             <button
               type="button"
               onClick={() => setRankingView("overall")}
               data-testid="ranking-view-overall"
-              className={`relative px-4 py-2.5 text-sm font-semibold transition-colors ${
+              className={`relative px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 rankingView === "overall"
-                  ? "text-white"
-                  : "text-[#7F8795] hover:text-white"
+                  ? "bg-white text-black"
+                  : "text-[#7F8795] hover:text-white hover:bg-white/[0.03]"
               }`}
             >
               Overall
-              {rankingView === "overall" && (
-                <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-magma" />
-              )}
             </button>
 
             <button
               type="button"
               onClick={() => setRankingView("challs")}
               data-testid="ranking-view-challs"
-              className={`relative px-4 py-2.5 text-sm font-semibold transition-colors ${
+              className={`relative px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 rankingView === "challs"
-                  ? "text-white"
-                  : "text-[#7F8795] hover:text-white"
+                  ? "bg-white text-black"
+                  : "text-[#7F8795] hover:text-white hover:bg-white/[0.03]"
               }`}
             >
               Challs
-              {rankingView === "challs" && (
-                <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-magma" />
-              )}
             </button>
           </div>
 
@@ -106,7 +100,7 @@ export default function Ranking({ initialTab = "leaderboard" }) {
             <div className="space-y-8">
               <Leaderboard />
 
-              <section className="space-y-4">
+              <section className="m8-panel rounded-2xl p-5 sm:p-6 space-y-4">
                 <div>
                   <div className="brand-kicker mb-1">Performance</div>
                   <h3 className="font-display text-xl font-bold">Statistics</h3>
