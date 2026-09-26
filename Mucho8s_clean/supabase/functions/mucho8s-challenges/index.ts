@@ -659,6 +659,58 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, challenges: hydrated });
     }
 
+    if (action === "list-messages") {
+      const id = String(body?.id || "").trim();
+      if (!id) return json({ error: "Challenge id is required" }, 400);
+
+      const challenge = await getChallenge(id);
+      if (!challenge) return json({ error: "Challenge not found" }, 404);
+      if (!isParticipant(challenge)) return json({ error: "Not allowed" }, 403);
+      if (!["accepted", "result_pending", "completed", "disputed"].includes(challenge.status)) {
+        return json({ ok: true, messages: [] });
+      }
+
+      const { data, error } = await supabase
+        .from("challenge_messages")
+        .select("id,challenge_id,sender_account_id,sender_player_id,body,created_at")
+        .eq("challenge_id", id)
+        .order("created_at", { ascending: true })
+        .limit(100);
+
+      if (error) throw error;
+      return json({ ok: true, messages: data || [] });
+    }
+
+    if (action === "send-message") {
+      const id = String(body?.id || "").trim();
+      const message = String(body?.message || "").trim();
+
+      if (!id) return json({ error: "Challenge id is required" }, 400);
+      if (!message) return json({ error: "Message is empty" }, 400);
+      if (message.length > 500) return json({ error: "Message is too long" }, 400);
+
+      const challenge = await getChallenge(id);
+      if (!challenge) return json({ error: "Challenge not found" }, 404);
+      if (!isParticipant(challenge)) return json({ error: "Not allowed" }, 403);
+      if (!["accepted", "result_pending"].includes(challenge.status)) {
+        return json({ error: "Chat is available only while the match is live or awaiting verification" }, 409);
+      }
+
+      const { data, error } = await supabase
+        .from("challenge_messages")
+        .insert({
+          challenge_id: id,
+          sender_account_id: user.id,
+          sender_player_id: me.player_id,
+          body: message,
+        })
+        .select("id,challenge_id,sender_account_id,sender_player_id,body,created_at")
+        .single();
+
+      if (error) throw error;
+      return json({ ok: true, message: data });
+    }
+
     if (action === "create") {
       const targetPlayerId = String(body?.targetPlayerId || "").trim();
       const platform = String(body?.platform || "").trim().toLowerCase();
