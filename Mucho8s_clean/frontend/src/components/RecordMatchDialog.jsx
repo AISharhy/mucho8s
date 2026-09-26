@@ -436,7 +436,7 @@ export const RecordMatchDialog = ({
               <div>
                 <div className="text-sm font-bold">Money Match Pairings</div>
                 <div className="text-[11px] text-muted-foreground">
-                  Set player pairings, amount and payment method.
+                  Set player pairings and amount.
                 </div>
               </div>
             </div>
@@ -449,7 +449,7 @@ export const RecordMatchDialog = ({
                 return (
                   <div
                     key={pair.key}
-                    className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_100px_120px] gap-2 items-center rounded-xl bg-[#151923] border border-[#242A35] p-2.5"
+                    className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_100px] gap-2 items-center rounded-xl bg-[#151923] border border-[#242A35] p-2.5"
                   >
                     <div className="text-sm font-semibold truncate">{alpha?.name || "Alpha"}</div>
                     <ArrowRightLeft size={13} className="text-muted-foreground" />
@@ -482,15 +482,6 @@ export const RecordMatchDialog = ({
                       />
                     </div>
 
-                    <select
-                      value={pair.platform}
-                      onChange={(event) => updateMoneyPairing(pair.playerAId, "platform", event.target.value)}
-                      className="h-9 rounded-lg bg-[#0F1218] border border-[#2A303B] px-2 text-xs col-span-3 sm:col-span-1"
-                      aria-label={`Payment method for ${alpha?.name || "Alpha"} vs ${bravo?.name || "Bravo"}`}
-                    >
-                      <option value="paypal">PayPal</option>
-                      <option value="revolut">Revolut</option>
-                    </select>
                   </div>
                 );
               })}
