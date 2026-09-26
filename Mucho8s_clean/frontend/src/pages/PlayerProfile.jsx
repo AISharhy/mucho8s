@@ -31,8 +31,6 @@ import {
   Gamepad2,
   Target,
   Trophy,
-  TrendingUp,
-  ExternalLink,
   Save,
   Link2,
   Swords,
@@ -412,18 +410,6 @@ export default function PlayerProfile() {
 
   const tier = tierOf(player.currentElo);
   const rankPreview = rankProgress(player.currentElo);
-  const stats = [
-    { label: "Current Elo", value: player.currentElo, icon: TrendingUp },
-    { label: "Peak Elo", value: player.peakElo, icon: Trophy },
-    { label: "Matches", value: player.totalMatches, icon: Gamepad2 },
-    { label: "Win Rate", value: `${winRate(player)}%`, icon: Target },
-    { label: "Wins", value: player.wins },
-    { label: "Chall Points", value: `${challengeStats.points > 0 ? "+" : ""}${challengeStats.points}`, icon: Coins },
-    { label: "Bounty Points", value: bountyHistory.points, icon: Target },
-    { label: "Losses", value: player.losses },
-    { label: "MVP", value: player.mvpCount, icon: Crown },
-  ];
-
   const challengeLinks = [
     { key: "paypal", label: "PayPal", url: publicProfile.paypalUrl, className: "bg-[#0070BA] hover:bg-[#0a7bc7]", icon: CreditCard },
     { key: "revolut", label: "Revolut", url: publicProfile.revolutUrl, className: "bg-white hover:bg-[#eceef2] text-black", icon: CreditCard },
@@ -690,8 +676,8 @@ export default function PlayerProfile() {
       <div className="m8-panel rounded-2xl p-4 sm:p-5 order-4" data-testid="challenge-profile-stats">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <div className="brand-kicker mb-1">Challenge Record</div>
-            <h3 className="font-display text-xl font-bold">{challengeStats.wins}W - {challengeStats.losses}L</h3>
+            <div className="brand-kicker mb-1">Competitive Stats</div>
+            <h3 className="font-display text-xl font-black tracking-[-0.02em]">Chall Performance · {challengeStats.wins}W - {challengeStats.losses}L</h3>
             <p className="text-sm text-muted-foreground mt-1">
               Every verified match keeps its real win/loss value. ReChall settlement is tracked separately.
             </p>
@@ -780,7 +766,7 @@ export default function PlayerProfile() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="brand-kicker mb-1">Milestones</div>
-              <h3 className="font-display font-bold text-lg">Achievements</h3>
+              <h3 className="font-display font-black text-lg">Achievements</h3>
             </div>
             <span className="font-mono text-xs text-[#D5A33A]">
               {challengeInsights.achievements.length}/{challengeInsights.achievementCatalog.length}
