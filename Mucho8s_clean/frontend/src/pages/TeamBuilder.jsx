@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar } from "@/components/shared";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,7 @@ const Metric = ({ label, value, tone = "" }) => (
 );
 
 export default function TeamBuilder() {
+  const navigate = useNavigate();
   const {
     players,
     matches,
@@ -65,7 +67,6 @@ export default function TeamBuilder() {
     dashboardData,
     isAdmin,
     createLiveMatch,
-    cancelLiveMatch,
   } = useData();
 
   const [game, setGame] = useState("");
@@ -153,7 +154,6 @@ export default function TeamBuilder() {
   const canReport = Boolean(result && liveMatch?.id && (isAdmin || matchCaptainId));
 
   const resetLobby = ({ keepGame = true } = {}) => {
-    if (liveMatch?.id) void cancelLiveMatch(liveMatch.id);
     setLiveMatch(null);
     setSelected([]);
     setManualA([]);
@@ -290,6 +290,7 @@ export default function TeamBuilder() {
     setLiveMatch(created);
     setConfirmOpen(false);
     toast.success("Match confirmed — now visible in Live Matches");
+    navigate("/matches");
   };
 
   const generateTeams = () => {
