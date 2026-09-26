@@ -103,7 +103,7 @@ export default function RankGuide() {
     <div className="m8-page-stack">
       <section className="m8-panel rounded-2xl p-5 sm:p-6">
         <div className="brand-kicker mb-1">Guida competitiva</div>
-        <h1 className="font-display text-3xl font-black tracking-[-0.03em]">Guida</h1>
+        <h1 className="font-display text-3xl font-black tracking-[-0.03em]">Guide</h1>
         <p className="text-sm text-muted-foreground mt-2 max-w-3xl leading-relaxed">
           Qui trovi tutto il funzionamento della classifica: come guadagni o perdi Elo,
           come incidono il valore della sfida, l'MVP, la MERDA e quali soglie servono
