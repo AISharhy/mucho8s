@@ -2,7 +2,7 @@ import React, { Component, useMemo, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { Sidebar, MobileNav } from "@/components/Sidebar";
 import ChallengeCenter from "@/components/ChallengeCenter";
-import { Bell, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, UserCircle } from "lucide-react";
+import { AlertTriangle, Bell, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, UserCircle } from "lucide-react";
 import { useData } from "@/context/DataContext";
 
 class PageErrorBoundary extends Component {
