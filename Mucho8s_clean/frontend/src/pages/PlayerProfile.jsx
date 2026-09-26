@@ -4,7 +4,7 @@ import { useData } from "@/context/DataContext";
 import { winRate, tierOf, rankProgress, RANKS } from "@/lib/elo";
 import { duoChemistry } from "@/lib/chemistry";
 import { analyzeBountyHistory, buildBountyAchievementCatalog } from "@/lib/bountyAchievements";
-import { PlayerAvatar, EloBadge, Last10, StreakBadge, MvpBadge, RankBadge, RankProgress } from "@/components/shared";
+import { PlayerAvatar, EloBadge, Last10, StreakBadge, MvpBadge, MerdaBadge, RankBadge, RankProgress } from "@/components/shared";
 import { RankEmblem } from "@/components/RankGuide";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -578,6 +578,7 @@ export default function PlayerProfile() {
                 <span>{player.totalMatches || 0} matches</span>
                 <span>{challengeStats.wins + challengeStats.losses} challs</span>
                 <span>{player.mvpCount || 0} MVP</span>
+                <span>{player.merdaCount || 0} 💩</span>
               </div>
             </div>
 
@@ -646,6 +647,7 @@ export default function PlayerProfile() {
             <span className="text-[10px] uppercase tracking-widest text-[#697181]">Recent form</span>
             <Last10 record={player.last10} />
             <MvpBadge count={player.mvpCount} />
+            <MerdaBadge count={player.merdaCount} />
             <span className="ml-auto hidden sm:inline-flex m8-pill">
               {tier.name} · {player.currentElo} Elo
             </span>
@@ -1314,6 +1316,7 @@ export default function PlayerProfile() {
                 </div>
                 <div className="flex items-center gap-3">
                   {m.mvpId === player.id && <Crown size={15} className="text-[#D5A33A]" />}
+                  {m.merdaId === player.id && <span title="MERDA">💩</span>}
                   <span className={`font-mono text-sm ${delta >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                     {delta >= 0 ? "+" : ""}{delta} Elo
                   </span>
