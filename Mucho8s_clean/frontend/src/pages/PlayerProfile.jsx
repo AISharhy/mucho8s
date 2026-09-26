@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { winRate, tierOf, rankProgress, RANKS } from "@/lib/elo";
 import { duoChemistry } from "@/lib/chemistry";
@@ -51,6 +51,7 @@ import { toast } from "sonner";
 
 export default function PlayerProfile() {
   const { id } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     players,
     matches,
@@ -68,6 +69,16 @@ export default function PlayerProfile() {
   const player = players.find((p) => p.id === id);
   const publicProfile = playerProfiles?.[id] || {};
   const isOwnProfile = Boolean(discordSession && discordPlayer?.id === id);
+  const profileTab = isOwnProfile && searchParams.get("tab") === "challenges" ? "challenges" : "overview";
+
+  const setProfileTab = (tab) => {
+    if (!isOwnProfile) return;
+    if (tab === "challenges") {
+      setSearchParams({ tab: "challenges" }, { replace: true });
+    } else {
+      setSearchParams({}, { replace: true });
+    }
+  };
 
   const [links, setLinks] = useState({
     paypalUrl: "",
@@ -642,6 +653,37 @@ export default function PlayerProfile() {
         </div>
       </section>
 
+      {isOwnProfile && (
+        <div className="m8-profile-tabs order-2" role="tablist" aria-label="My Profile sections">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={profileTab === "overview"}
+            onClick={() => setProfileTab("overview")}
+            className={`m8-profile-tab ${profileTab === "overview" ? "is-active" : ""}`}
+            data-testid="profile-tab-overview"
+          >
+            Overview
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={profileTab === "challenges"}
+            onClick={() => setProfileTab("challenges")}
+            className={`m8-profile-tab ${profileTab === "challenges" ? "is-active" : ""}`}
+            data-testid="profile-tab-challenges"
+          >
+            My Challenges
+            {myChallenges.some((challenge) =>
+              ["pending", "accepted", "result_pending", "disputed"].includes(challenge.status)
+            ) && (
+              <span className="w-1.5 h-1.5 rounded-full bg-magma shadow-[0_0_10px_rgba(255,42,59,.65)]" />
+            )}
+          </button>
+        </div>
+      )}
+
+      {(!isOwnProfile || profileTab === "overview") && (
       <section className="m8-rank-spotlight rounded-[22px] p-5 sm:p-7 overflow-hidden relative order-3" data-testid="player-rank-preview">
         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-center">
           <div>
@@ -672,7 +714,9 @@ export default function PlayerProfile() {
           </div>
         </div>
       </section>
+      )}
 
+      {(!isOwnProfile) && (
       <div className="m8-panel rounded-2xl p-4 sm:p-5 order-4" data-testid="challenge-profile-stats">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
@@ -725,7 +769,9 @@ export default function PlayerProfile() {
           </div>
         )}
       </div>
+      )}
 
+      {!isOwnProfile && (
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 order-5" data-testid="challenge-insights">
         <div className="m8-panel rounded-2xl p-5">
           <div className="brand-kicker mb-1">Momentum</div>
@@ -801,7 +847,9 @@ export default function PlayerProfile() {
           </div>
         </div>
       </div>
+      )}
 
+      {!isOwnProfile && (
       <div className="m8-panel rounded-2xl p-4 sm:p-5 order-7" data-testid="bounty-achievements">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-5">
           <div>
@@ -910,7 +958,9 @@ export default function PlayerProfile() {
           </div>
         )}
       </div>
+      )}
 
+      {!isOwnProfile && (
       <div className="m8-panel rounded-2xl p-4 sm:p-5 order-6">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
@@ -958,8 +1008,10 @@ export default function PlayerProfile() {
           </div>
         )}
       </div>
+      )}
 
-      <div className="m8-showcase rounded-[22px] p-4 sm:p-6 order-2" data-testid="trophy-cabinet">
+      {(!isOwnProfile || profileTab === "overview") && (
+      <div className="m8-showcase rounded-[22px] p-4 sm:p-6 order-4" data-testid="trophy-cabinet">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
             <div className="brand-kicker mb-1">Awards</div>
@@ -1038,9 +1090,10 @@ export default function PlayerProfile() {
           </div>
         )}
       </div>
+      )}
 
-      {isOwnProfile && (
-        <div className="m8-panel rounded-2xl p-4 sm:p-5 order-[11]">
+      {isOwnProfile && profileTab === "challenges" && (
+        <div className="m8-panel rounded-2xl p-4 sm:p-5 order-4">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
               <div className="brand-kicker mb-1">Challenge</div>
@@ -1101,8 +1154,8 @@ export default function PlayerProfile() {
         </div>
       )}
 
-      {isOwnProfile && (
-        <div className="m8-panel rounded-2xl p-4 sm:p-5 order-[12]" data-testid="my-challenges-panel">
+      {isOwnProfile && profileTab === "challenges" && (
+        <div className="m8-panel rounded-2xl p-4 sm:p-5 order-3" data-testid="my-challenges-panel">
           <div className="mb-4">
             <div className="brand-kicker mb-1">Challenge Center</div>
             <h3 className="font-display font-bold text-lg">My Challenges</h3>
@@ -1213,6 +1266,7 @@ export default function PlayerProfile() {
         </div>
       )}
 
+      {!isOwnProfile && (
       <div className="m8-panel rounded-2xl p-4 sm:p-5 order-8">
         <div className="brand-kicker mb-1">Progression</div>
         <h3 className="font-display font-black text-xl tracking-[-0.02em] mb-4">Elo History</h3>
@@ -1231,8 +1285,10 @@ export default function PlayerProfile() {
           </ResponsiveContainer>
         </div>
       </div>
+      )}
 
-      <div className="m8-panel rounded-2xl p-4 sm:p-5 order-9">
+      {(!isOwnProfile || profileTab === "overview") && (
+      <div className="m8-panel rounded-2xl p-4 sm:p-5 order-5">
         <div className="brand-kicker mb-1">Recent Activity</div>
         <h3 className="font-display font-black text-xl tracking-[-0.02em] mb-4">Recent Matches</h3>
         <div className="space-y-2">
@@ -1272,6 +1328,7 @@ export default function PlayerProfile() {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }
