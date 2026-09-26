@@ -124,11 +124,18 @@ export default function ChallengeMatch() {
   }, [id, refreshChallenges]);
 
   useEffect(() => {
-    if (challenge && discordAccount?.id) void markChallengeSeen(challenge.id);
+    const challengeId = challenge?.id;
+    if (challengeId && discordAccount?.id) void markChallengeSeen(challengeId);
   }, [challenge?.id, challenge?.status, challenge?.last_event, discordAccount?.id, markChallengeSeen]);
 
   useEffect(() => {
-    if (challenge?.status === "completed") playLossAudioOnce(challenge);
+    if (challenge?.status !== "completed") return;
+    playLossAudioOnce({
+      id: challenge?.id,
+      status: challenge?.status,
+      verified_at: challenge?.verified_at,
+      reported_winner_player_id: challenge?.reported_winner_player_id,
+    });
   }, [
     challenge?.id,
     challenge?.status,
