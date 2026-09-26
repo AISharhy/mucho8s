@@ -1101,19 +1101,11 @@ export const DataProvider = ({ children }) => {
         if (seenSeries.has(challenge.series_id)) return;
         seenSeries.add(challenge.series_id);
 
-        const seenEvent = isChallenger
-          ? challenge.challenger_seen_event
-          : challenge.challenged_seen_event;
-
         if (challenge.last_event && seenEvent !== challenge.last_event) {
           count += 1;
         }
         return;
       }
-
-      const seenEvent = isChallenger
-        ? challenge.challenger_seen_event
-        : challenge.challenged_seen_event;
 
       if (challenge.last_event && seenEvent !== challenge.last_event) {
         count += 1;
