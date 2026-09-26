@@ -28,6 +28,7 @@ export default function ChallengeLeaderboard() {
         volume: 0,
         profit: 0,
         played: 0,
+        settled: 0,
       });
     });
 
