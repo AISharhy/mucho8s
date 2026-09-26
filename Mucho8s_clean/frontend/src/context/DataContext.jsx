@@ -867,7 +867,20 @@ export const DataProvider = ({ children }) => {
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        if (!silent) toast.error(data?.error || "Admin challenge action failed");
+        if (!silent) {
+          const missingPlayer = data?.playerId ? playerMap?.[data.playerId] : null;
+          const rawError = String(data?.error || "Admin challenge action failed");
+          let message = rawError;
+
+          if (missingPlayer && rawError.includes("has not linked Discord yet")) {
+            message = `${missingPlayer.name} must link Discord before creating this challenge.`;
+          } else if (missingPlayer && rawError.includes("has not configured")) {
+            const platform = rawError.split("has not configured")[1]?.trim() || "the selected payment method";
+            message = `${missingPlayer.name} has not configured ${platform} yet.`;
+          }
+
+          toast.error(message);
+        }
         return null;
       }
       return data;
@@ -875,7 +888,7 @@ export const DataProvider = ({ children }) => {
       if (!silent) toast.error("Challenge admin service unavailable");
       return null;
     }
-  }, [admin]);
+  }, [admin, playerMap]);
 
   const refreshAdminChallengeAlerts = useCallback(async () => {
     if (!admin?.sessionToken) {
