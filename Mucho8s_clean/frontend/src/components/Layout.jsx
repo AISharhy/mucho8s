@@ -123,10 +123,10 @@ export const Layout = () => {
       <ChallengeCenter />
       <Sidebar />
       <div className="lg:pl-56">
-        <header className="sticky top-0 z-20 h-16 flex items-center px-4 sm:px-6 bg-[#0D1016]/88 backdrop-blur-xl border-b border-[#1D222C]">
+        <header className="sticky top-0 z-20 h-16 flex items-center px-4 sm:px-6 bg-[#0B0E13]/88 backdrop-blur-2xl border-b border-[#202631] shadow-[0_10px_35px_rgba(0,0,0,.12)]">
           <MobileNav />
           <div className="hidden lg:flex items-center gap-3">
-            <span className="w-1.5 h-1.5 rounded-full bg-magma" />
+            <span className="w-1.5 h-6 rounded-full bg-magma shadow-[0_0_14px_rgba(255,42,59,.35)]" />
             <h1 className="font-display text-[18px] font-bold tracking-tight">{title}</h1>
           </div>
 
@@ -138,7 +138,7 @@ export const Layout = () => {
                   title="My Profile"
                   aria-label="My Profile"
                   data-testid="header-my-profile"
-                  className={`w-10 h-10 rounded-xl border transition-all flex items-center justify-center ${
+                  className={`m8-action w-10 h-10 rounded-xl border transition-all flex items-center justify-center ${
                     loc.pathname === `/players/${discordPlayer.id}`
                       ? "border-white/30 bg-white/[0.08] text-white"
                       : "border-[#242A35] bg-[#12151C] text-[#AAB1BE] hover:text-white hover:bg-white/[0.05]"
@@ -175,7 +175,7 @@ export const Layout = () => {
                 aria-label={challengeNotificationCount > 0 ? `${challengeNotificationCount} challenge notifications` : "Challenge notifications"}
                 title="Challenge notifications"
                 data-testid="header-challenge-bell"
-                className="relative w-10 h-10 rounded-xl border border-[#242A35] bg-[#12151C] hover:bg-white/[0.05] hover:border-[#343B48] transition-all flex items-center justify-center text-[#AAB1BE] hover:text-white"
+                className="m8-action relative w-10 h-10 rounded-xl border border-[#242A35] bg-[#11161E] hover:bg-white/[0.05] hover:border-[#343B48] transition-all flex items-center justify-center text-[#AAB1BE] hover:text-white"
               >
                 <Bell size={19} />
                 {challengeNotificationCount > 0 && (
@@ -209,7 +209,7 @@ export const Layout = () => {
               </Link>
             )}
             {discordPlayer && notificationsOpen && (
-                  <div className="absolute right-0 top-12 w-[min(92vw,380px)] rounded-2xl border border-[#242A35] bg-[#101319] shadow-2xl overflow-hidden z-50">
+                  <div className="absolute right-0 top-12 w-[min(92vw,380px)] m8-panel rounded-2xl shadow-2xl overflow-hidden z-50">
                     <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#1D222C]">
                       <div>
                         <div className="brand-kicker mb-0.5">Notifications</div>
@@ -274,7 +274,7 @@ export const Layout = () => {
             )}
           </div>
         </header>
-        <main className="page-shell p-4 sm:p-6 lg:p-8">
+        <main className="page-shell p-4 sm:p-6 lg:p-8 xl:p-9">
           <PageErrorBoundary key={loc.pathname}>
             <Outlet />
           </PageErrorBoundary>
