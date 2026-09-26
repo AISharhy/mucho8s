@@ -96,10 +96,21 @@ export default function PlayerProfile() {
 
   const challengeStats = useMemo(() => {
     const completed = publicChallenges
-      .filter((challenge) =>
-        challenge.challenger_player_id === id ||
-        challenge.challenged_player_id === id
-      )
+      .filter((challenge) => {
+        const belongsToPlayer =
+          challenge.challenger_player_id === id ||
+          challenge.challenged_player_id === id;
+        const verified = Boolean(
+          challenge.status === "completed" &&
+          challenge.verified_at &&
+          challenge.reported_winner_player_id
+        );
+        const openDispute = Boolean(
+          challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at
+        );
+
+        return belongsToPlayer && verified && !openDispute;
+      })
       .sort((a, b) => new Date(b.verified_at || b.created_at) - new Date(a.verified_at || a.created_at));
 
     let wins = 0;
@@ -109,14 +120,13 @@ export default function PlayerProfile() {
 
     completed.forEach((challenge) => {
       const amount = Number(challenge.amount_cents || 0) / 100;
-      const settled = Boolean(challenge.payment_received_at);
 
       if (challenge.reported_winner_player_id === id) {
         wins += 1;
-        if (settled) wonValue += amount;
+        wonValue += amount;
       } else {
         losses += 1;
-        if (settled) lostValue += amount;
+        lostValue += amount;
       }
     });
 
@@ -131,7 +141,6 @@ export default function PlayerProfile() {
       lostValue,
       profit: wonValue - lostValue,
       points: completed.reduce((total, challenge) => {
-        if (challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at) return total;
         const amount = Number(challenge.amount_cents || 0) / 100;
         return total + (challenge.reported_winner_player_id === id ? amount : -amount);
       }, 0),
@@ -185,10 +194,10 @@ export default function PlayerProfile() {
       row.played += 1;
       if (won) {
         row.wins += 1;
-        if (challenge.payment_received_at) row.profit += amount;
+        row.profit += amount;
       } else {
         row.losses += 1;
-        if (challenge.payment_received_at) row.profit -= amount;
+        row.profit -= amount;
       }
       h2h.set(opponentId, row);
     });
