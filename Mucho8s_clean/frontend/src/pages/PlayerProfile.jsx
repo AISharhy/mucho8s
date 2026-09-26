@@ -1190,7 +1190,9 @@ export default function PlayerProfile() {
                 </div>
                 <div className="flex items-center gap-3">
                   {m.mvpId === player.id && <span title="MVP" aria-label="MVP">🏆</span>}
-                  {m.merdaId === player.id && <span title="MERDA">💩</span>}
+                  {((Array.isArray(m.merdaIds) && m.merdaIds.includes(player.id)) || m.merdaId === player.id) && (
+                    <span title="MERDA">💩</span>
+                  )}
                   <span className={`font-mono text-sm ${delta >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                     {delta >= 0 ? "+" : ""}{delta} Elo
                   </span>
