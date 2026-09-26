@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useData } from "@/context/DataContext";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { EloBadge, PlayerAvatar } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,106 +10,24 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Shield, UserPlus, Trash2, Pencil, RotateCcw, Upload, Download, LogOut, History, Database, Check, Lock, Eye, EyeOff, MessageCircle, Send, Link2, Swords, WalletCards, AlertTriangle, Flag, Trophy, ExternalLink, Users, Gamepad2 } from "lucide-react";
+import { Shield, UserPlus, Trash2, Pencil, RotateCcw, Upload, Download, LogOut, History, Database, Check,  MessageCircle, Send, Link2, Swords, WalletCards, AlertTriangle, Flag, Trophy, ExternalLink, Users, Gamepad2 } from "lucide-react";
 import { toast } from "sonner";
 
-const Gate = () => {
-  const { setAdmin, discordSession, discordAccount, discordLoading, signInWithDiscord } = useData();
-  const [nick, setNick] = useState("");
-  const [pwd, setPwd] = useState("");
-  const [show, setShow] = useState(false);
-  const [busy, setBusy] = useState(false);
-
-  const tryEnter = async () => {
-    if (!discordSession) {
-      toast.error("Login with the authorized Discord account first");
-      return;
-    }
-    if (!nick.trim() || !pwd) return;
-    setBusy(true);
-    const ok = await setAdmin(nick.trim(), pwd);
-    setBusy(false);
-    if (!ok) {
-      toast.error("Access denied — invalid admin credentials");
-      return;
-    }
-    toast.success("Welcome, Admin");
-  };
-
-  return (
-    <div className="max-w-md mx-auto mt-10">
-      <div className="card-surface rounded-2xl p-8 text-center relative overflow-hidden">
-        <div className="w-16 h-16 rounded-2xl bg-[#0B0D12] border border-[#282E39] flex items-center justify-center mx-auto mb-5">
-          <img src={`${process.env.PUBLIC_URL}/logo-mark.svg`} alt="MuchoMoney8s" className="w-14 h-14 object-contain" />
-        </div>
-        <div className="brand-kicker mb-1">Control Room</div><h2 className="font-display text-2xl font-extrabold">Admin Access</h2>
-        <p className="text-muted-foreground text-sm mt-2 mb-6">Restricted area for roster and match management.</p>
-        <div className={`mb-4 rounded-xl border px-3 py-3 text-sm ${
-          discordSession
-            ? "border-emerald-500/25 bg-emerald-500/5 text-emerald-300"
-            : "border-[#2A303B] bg-[#0F1218] text-muted-foreground"
-        }`}>
-          {discordLoading
-            ? "Checking Discord session..."
-            : discordSession
-              ? `Discord connected: ${discordAccount?.display_name || "authorized account"}`
-              : "Authorized Discord required before Admin login."}
-        </div>
-        {!discordSession && !discordLoading && (
-          <Button
-            type="button"
-            onClick={signInWithDiscord}
-            className="w-full mb-3 h-11 bg-[#5865F2] hover:bg-[#6571F4] text-white font-semibold"
-          >
-            <MessageCircle size={16} className="mr-2" /> Login with Discord
-          </Button>
-        )}
-        <Input
-          data-testid="admin-nickname-input"
-          placeholder="Username..."
-          value={nick}
-          onChange={(e) => setNick(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && tryEnter()}
-          className="bg-[#0F1218] border-[#222834] h-12 text-center"
-        />
-        <div className="relative mt-3">
-          <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            data-testid="admin-password-input"
-            type={show ? "text" : "password"}
-            placeholder="Admin password..."
-            value={pwd}
-            onChange={(e) => setPwd(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && tryEnter()}
-            className="bg-[#0F1218] border-[#222834] h-12 text-center px-9"
-          />
-          <button
-            type="button"
-            data-testid="admin-password-toggle"
-            onClick={() => setShow((s) => !s)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white"
-          >
-            {show ? <EyeOff size={16} /> : <Eye size={16} />}
-          </button>
-        </div>
-        <Button
-          data-testid="admin-enter-btn"
-          disabled={!discordSession || !nick.trim() || !pwd || busy}
-          onClick={tryEnter}
-          className="w-full mt-4 h-12 bg-magma hover:bg-magma/90 text-white font-bold"
-        >
-          {busy ? "Checking..." : "Enter Control Room"}
-        </Button>
-      </div>
-    </div>
-  );
-};
+const ADMIN_TABS = [
+  { key: "overview", label: "Overview", icon: Shield },
+  { key: "players", label: "Players", icon: Users },
+  { key: "matches", label: "Matches", icon: Gamepad2 },
+  { key: "challenges", label: "Money Challs", icon: Swords },
+  { key: "discord", label: "Discord", icon: MessageCircle },
+  { key: "competition", label: "Competition", icon: Trophy },
+  { key: "system", label: "System", icon: Database },
+];
 
 export default function AdminPanel() {
   const {
     admin,
     isAdmin,
-    setAdmin,
+    signOutDiscord,
     players,
     matches,
     playerMap,
@@ -131,8 +49,8 @@ export default function AdminPanel() {
     adminUpdateChallenge,
     adminDeleteChallenge,
     listAdminAudit,
-    changeAdminPassword,
-    logoutAllAdminSessions,
+    matchReports,
+    adminChallengeAlertCount,
     competitionData,
     startNewSeason,
   } = useData();
@@ -152,8 +70,7 @@ export default function AdminPanel() {
   const [editMatchData, setEditMatchData] = useState(null);
   const [reportMatchData, setReportMatchData] = useState(null);
   const [auditLogs, setAuditLogs] = useState([]);
-  const [newAdminPassword, setNewAdminPassword] = useState("");
-  const [securityBusy, setSecurityBusy] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
   const [seasonName, setSeasonName] = useState("");
   const [seasonBusy, setSeasonBusy] = useState(false);
   const fileRef = useRef(null);
@@ -221,7 +138,17 @@ export default function AdminPanel() {
     [adminChallenges],
   );
 
-  if (!isAdmin) return <Gate />;
+  const pendingMatchReports = useMemo(
+    () => (matchReports || []).filter((report) => ["pending", "disputed"].includes(report.status)),
+    [matchReports],
+  );
+
+  const needsAttentionCount =
+    pendingMatchReports.length +
+    disputedChallenges.length +
+    Number(adminChallengeAlertCount || 0);
+
+  if (!isAdmin) return <Navigate to="/" replace />;
 
   const handleAdd = () => {
     if (!newName.trim()) return toast.error("Enter a player name");
@@ -396,38 +323,43 @@ export default function AdminPanel() {
     toast.success("New season started and previous season archived");
   };
 
-  const updateAdminPassword = async () => {
-    if (!newAdminPassword) return toast.error("Enter a new password");
-    setSecurityBusy(true);
-    const ok = await changeAdminPassword(newAdminPassword);
-    setSecurityBusy(false);
-    if (!ok) return;
-    setNewAdminPassword("");
-    toast.success("Admin password changed. Other Admin sessions were revoked.");
-  };
-
-  const revokeEveryAdminSession = async () => {
-    setSecurityBusy(true);
-    const ok = await logoutAllAdminSessions();
-    setSecurityBusy(false);
-    if (ok) toast.success("All Admin sessions revoked");
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
           <Shield size={20} className="text-magma" />
-          <div><div className="brand-kicker mb-1">Administration</div><h2 className="font-display text-2xl font-extrabold">Control Room</h2></div>
+          <div>
+            <div className="brand-kicker mb-1">Administration</div>
+            <h2 className="font-display text-2xl font-extrabold">Admin Console</h2>
+          </div>
           <span className="text-sm text-muted-foreground">· {admin?.nickname}</span>
-          <span className="text-[10px] uppercase tracking-widest px-2 py-1 rounded bg-[#0F1218] border border-[#222834] text-muted-foreground">{storageMode}</span>
         </div>
-        <Button variant="ghost" onClick={() => setAdmin(null)} data-testid="admin-logout-btn" className="text-muted-foreground">
-          <LogOut size={16} className="mr-1" /> Sign out
+        <Button variant="ghost" onClick={signOutDiscord} data-testid="admin-logout-btn" className="text-muted-foreground">
+          <LogOut size={16} className="mr-1" /> Sign out Discord
         </Button>
       </div>
 
-      <div className="card-surface rounded-2xl p-5" data-testid="admin-season-control">
+      <div className="flex gap-2 overflow-x-auto pb-1" data-testid="admin-tabs">
+        {ADMIN_TABS.map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={`shrink-0 inline-flex items-center gap-2 h-10 px-3 rounded-xl border text-sm font-semibold transition-all ${
+                activeTab === tab.key
+                  ? "bg-white text-black border-white"
+                  : "bg-[#0F1218] border-[#222834] text-muted-foreground hover:text-white"
+              }`}
+            >
+              <Icon size={15} /> {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {activeTab === "competition" && (\n        <>\n      <div className="card-surface rounded-2xl p-5" data-testid="admin-season-control">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="brand-kicker mb-1">Competition</div>
@@ -474,57 +406,13 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      <div className="card-surface rounded-2xl p-5" data-testid="admin-security-panel">
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div>
-            <div className="brand-kicker mb-1">Security</div>
-            <h3 className="font-display font-bold text-lg">Admin Protection</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Admin access now requires the authorized Discord account plus the Admin password.
-            </p>
-          </div>
-          <Shield size={20} className="text-emerald-400" />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3">
-          <Input
-            type="password"
-            value={newAdminPassword}
-            onChange={(e) => setNewAdminPassword(e.target.value)}
-            placeholder="New Admin password (12+ characters)"
-            className="bg-[#0F1218] border-[#222834] h-11"
-          />
-          <Button
-            disabled={securityBusy || !newAdminPassword}
-            onClick={updateAdminPassword}
-            className="h-11 bg-magma hover:bg-magma/90 text-white"
-          >
-            Change Password
-          </Button>
-        </div>
-
-        <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
-          <div className="text-xs text-muted-foreground">
-            Sessions expire automatically. Use this if you suspect someone else accessed Admin.
-          </div>
-          <Button
-            variant="ghost"
-            disabled={securityBusy}
-            onClick={revokeEveryAdminSession}
-            className="shrink-0 border border-red-500/20 text-red-300 hover:bg-red-500/10"
-          >
-            <LogOut size={14} className="mr-1.5" /> Revoke All Sessions
-          </Button>
-        </div>
-      </div>
-
-      {storageMode === "local" && (
+        </>\n      )}\n\n      {activeTab === "system" && storageMode === "local" && (
         <div className="rounded-xl border border-[#3A3320] bg-[#D5A33A]/5 px-4 py-3 text-sm text-muted-foreground">
           <span className="text-[#D5A33A] font-semibold">Local mode:</span> player e match sono salvati solo in questo browser. Collega Supabase per avere lo stesso database su PC e telefono.
         </div>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" data-testid="admin-overview">
+      {activeTab === "overview" && (\n        <>\n      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" data-testid="admin-overview">
         {[
           { label: "Players", value: players.length, icon: Users, sub: `${discordAccounts.filter((a) => a.player_id).length} Discord linked` },
           { label: "Matches", value: matches.length, icon: Gamepad2, sub: "Recorded results" },
@@ -545,9 +433,54 @@ export default function AdminPanel() {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        </>\n      )}\n\n      {activeTab === "overview" && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="card-surface rounded-2xl p-5">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div>
+                <div className="brand-kicker mb-1">Needs Attention</div>
+                <h3 className="font-display font-bold text-lg">
+                  {needsAttentionCount ? `${needsAttentionCount} items` : "All clear"}
+                </h3>
+              </div>
+              <AlertTriangle size={19} className={needsAttentionCount ? "text-orange-400" : "text-emerald-400"} />
+            </div>
+            <div className="space-y-2">
+              <button onClick={() => setActiveTab("matches")} className="w-full text-left rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+                <div className="text-sm font-semibold">Match verification</div>
+                <div className="text-xs text-muted-foreground mt-1">{pendingMatchReports.length} pending or disputed results</div>
+              </button>
+              <button onClick={() => setActiveTab("challenges")} className="w-full text-left rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+                <div className="text-sm font-semibold">Money Chall disputes</div>
+                <div className="text-xs text-muted-foreground mt-1">{disputedChallenges.length} disputes to review</div>
+              </button>
+            </div>
+          </div>
+
+          <div className="card-surface rounded-2xl p-5">
+            <div className="brand-kicker mb-1">Quick Actions</div>
+            <h3 className="font-display font-bold text-lg mb-4">Manage competition</h3>
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={() => setActiveTab("players")} className="h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04]">
+                <UserPlus size={15} className="mr-2" /> Players
+              </Button>
+              <Button onClick={() => setActiveTab("matches")} className="h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04]">
+                <Gamepad2 size={15} className="mr-2" /> Matches
+              </Button>
+              <Button onClick={() => setActiveTab("challenges")} className="h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04]">
+                <WalletCards size={15} className="mr-2" /> Challs
+              </Button>
+              <Button onClick={() => setActiveTab("competition")} className="h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04]">
+                <Trophy size={15} className="mr-2" /> Season
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {(activeTab === "players" || activeTab === "system") && (\n      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Add player */}
-        <div className="card-surface rounded-2xl p-5">
+        <div className={`${activeTab === "players" ? "" : "hidden"} card-surface rounded-2xl p-5`}>
           <div className="flex items-center gap-2 mb-4">
             <UserPlus size={18} className="text-emerald-400" />
             <h3 className="font-display font-bold text-lg">Add Player</h3>
@@ -568,7 +501,7 @@ export default function AdminPanel() {
         </div>
 
         {/* Data actions */}
-        <div className="card-surface rounded-2xl p-5 lg:col-span-2">
+        <div className={`${activeTab === "system" ? "lg:col-span-3" : "hidden"} card-surface rounded-2xl p-5`}>
           <div className="flex items-center gap-2 mb-4">
             <Database size={18} className="text-[#D5A33A]" />
             <h3 className="font-display font-bold text-lg">Data & Records</h3>
@@ -599,7 +532,7 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      <div className="card-surface rounded-2xl p-5" data-testid="admin-match-management">
+      )}\n\n      {activeTab === "matches" && (\n        <>\n      <div className="card-surface rounded-2xl p-5" data-testid="admin-match-management">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <div className="brand-kicker mb-1">Match Control</div>
@@ -667,7 +600,7 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      {disputedChallenges.length > 0 && (
+        </>\n      )}\n\n      {activeTab === "challenges" && disputedChallenges.length > 0 && (
         <div className="card-surface rounded-2xl p-5 border-orange-500/20" data-testid="admin-dispute-center">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div>
@@ -805,7 +738,7 @@ export default function AdminPanel() {
         </div>
       )}
 
-      <div className="card-surface rounded-2xl p-5" data-testid="admin-challenge-management">
+      {activeTab === "challenges" && (\n        <>\n      <div className="card-surface rounded-2xl p-5" data-testid="admin-challenge-management">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <div className="brand-kicker mb-1">Challenge Control</div>
@@ -1021,7 +954,7 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      <div className="card-surface rounded-2xl p-5" data-testid="discord-settings">
+        </>\n      )}\n\n      {activeTab === "discord" && (\n        <>\n      <div className="card-surface rounded-2xl p-5" data-testid="discord-settings">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
@@ -1156,7 +1089,22 @@ export default function AdminPanel() {
         )}
       </div>
 
-      <div className="card-surface rounded-2xl p-5" data-testid="admin-audit-log">
+        </>\n      )}\n\n      {activeTab === "system" && (
+        <div className="card-surface rounded-2xl p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="brand-kicker mb-1">Access Security</div>
+              <h3 className="font-display font-bold text-lg">Discord allowlist</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Admin access is automatic only for the authorized Discord-linked players: Sharhy and SysMa. No Admin password is required.
+              </p>
+            </div>
+            <Shield size={20} className="text-emerald-400" />
+          </div>
+        </div>
+      )}
+
+      {activeTab === "system" && (\n        <>\n      <div className="card-surface rounded-2xl p-5" data-testid="admin-audit-log">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <div className="brand-kicker mb-1">Security & History</div>
@@ -1198,7 +1146,7 @@ export default function AdminPanel() {
       </div>
 
       {/* Roster management */}
-      <div className="card-surface rounded-2xl p-5" data-testid="admin-roster">
+        </>\n      )}\n\n      {activeTab === "players" && (\n        <>\n      <div className="card-surface rounded-2xl p-5" data-testid="admin-roster">
         <h3 className="font-display font-bold text-lg mb-4">Manage Roster ({players.length})</h3>
         <div className="space-y-2">
           {players.map((p) => {
@@ -1256,7 +1204,7 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      <RecordMatchDialog open={histOpen} onOpenChange={setHistOpen} title="Add Historical Match" />
+        </>\n      )}\n\n      <RecordMatchDialog open={histOpen} onOpenChange={setHistOpen} title="Add Historical Match" />
       <RecordMatchDialog
         open={!!editMatchData}
         onOpenChange={(open) => !open && setEditMatchData(null)}
