@@ -611,15 +611,19 @@ Deno.serve(async (req: Request) => {
         .order("created_at", { ascending: false })
         .limit(60);
 
-      if (!isAdmin) {
-        if (!account?.player_id) return json({ ok: true, reports: [] });
-        query = query.or(
-          `captain_a_player_id.eq.${account.player_id},captain_b_player_id.eq.${account.player_id}`
-        );
-      }
-
       const { data, error } = await query;
       if (error) throw error;
+
+      if (!isAdmin) {
+        if (!account?.player_id) return json({ ok: true, reports: [] });
+        const playerId = String(account.player_id);
+        const visible = (data || []).filter((report: any) =>
+          (Array.isArray(report?.team_a) && report.team_a.map(String).includes(playerId)) ||
+          (Array.isArray(report?.team_b) && report.team_b.map(String).includes(playerId))
+        );
+        return json({ ok: true, reports: visible });
+      }
+
       return json({ ok: true, reports: data || [] });
     }
 
@@ -629,8 +633,15 @@ Deno.serve(async (req: Request) => {
       const teamA = Array.isArray(body?.teamA) ? body.teamA.map((id: unknown) => String(id)) : [];
       const teamB = Array.isArray(body?.teamB) ? body.teamB.map((id: unknown) => String(id)) : [];
       const winner = String(body?.winner || "").toUpperCase();
-      const captainA = String(body?.captainAPlayerId || teamA[0] || "").trim();
-      const captainB = String(body?.captainBPlayerId || teamB[0] || "").trim();
+      const reporterPlayerId = String(account?.player_id || "").trim();
+      const reporterOnA = reporterPlayerId && teamA.includes(reporterPlayerId);
+      const reporterOnB = reporterPlayerId && teamB.includes(reporterPlayerId);
+      const captainA = reporterOnA
+        ? reporterPlayerId
+        : String(body?.captainAPlayerId || teamA[0] || "").trim();
+      const captainB = reporterOnB
+        ? reporterPlayerId
+        : String(body?.captainBPlayerId || teamB[0] || "").trim();
       const scoreA = Math.max(0, Number(body?.scoreA) || 0);
       const scoreB = Math.max(0, Number(body?.scoreB) || 0);
       const pairings = (Array.isArray(body?.pairings) ? body.pairings : []).map((pair: any) => ({
@@ -645,10 +656,10 @@ Deno.serve(async (req: Request) => {
       }
       if (!["A", "B"].includes(winner)) return json({ error: "Winner is required" }, 400);
       if (!teamA.includes(captainA) || !teamB.includes(captainB)) {
-        return json({ error: "Each captain must belong to their team" }, 400);
+        return json({ error: "The report could not assign the verification sides" }, 400);
       }
-      if (!isAdmin && ![captainA, captainB].includes(String(account.player_id))) {
-        return json({ error: "Only a team captain or Admin can report this result" }, 403);
+      if (!isAdmin && !reporterOnA && !reporterOnB) {
+        return json({ error: "The match creator must be one of the players in the lobby" }, 403);
       }
       if (pairings.length !== teamA.length) {
         return json({ error: "Every player matchup needs a money amount" }, 400);
@@ -746,14 +757,19 @@ Deno.serve(async (req: Request) => {
       if (!account?.player_id) return json({ error: "Login with a linked Discord account first" }, 401);
       if (report.status !== "pending") return json({ error: "This result is no longer awaiting confirmation" }, 409);
 
+      const teamA = Array.isArray(report.team_a) ? report.team_a.map(String) : [];
+      const teamB = Array.isArray(report.team_b) ? report.team_b.map(String) : [];
+      const reporterId = String(report.reporter_player_id || "");
       const eligible = report.reporter_is_admin
-        ? [report.captain_a_player_id, report.captain_b_player_id]
-        : report.reporter_player_id === report.captain_a_player_id
-          ? [report.captain_b_player_id]
-          : [report.captain_a_player_id];
+        ? [...teamA, ...teamB]
+        : teamA.includes(reporterId)
+          ? teamB
+          : teamB.includes(reporterId)
+            ? teamA
+            : [];
 
       if (!eligible.includes(String(account.player_id))) {
-        return json({ error: "The opposite team captain must confirm this result" }, 403);
+        return json({ error: "A player from the opposite team must confirm this result" }, 403);
       }
       if (report.reporter_player_id && report.reporter_player_id === account.player_id) {
         return json({ error: "The reporter cannot verify their own result" }, 403);
@@ -767,14 +783,19 @@ Deno.serve(async (req: Request) => {
       if (!account?.player_id) return json({ error: "Login with a linked Discord account first" }, 401);
       if (report.status !== "pending") return json({ error: "This result is no longer awaiting confirmation" }, 409);
 
+      const teamA = Array.isArray(report.team_a) ? report.team_a.map(String) : [];
+      const teamB = Array.isArray(report.team_b) ? report.team_b.map(String) : [];
+      const reporterId = String(report.reporter_player_id || "");
       const eligible = report.reporter_is_admin
-        ? [report.captain_a_player_id, report.captain_b_player_id]
-        : report.reporter_player_id === report.captain_a_player_id
-          ? [report.captain_b_player_id]
-          : [report.captain_a_player_id];
+        ? [...teamA, ...teamB]
+        : teamA.includes(reporterId)
+          ? teamB
+          : teamB.includes(reporterId)
+            ? teamA
+            : [];
 
       if (!eligible.includes(String(account.player_id))) {
-        return json({ error: "The opposite team captain must review this result" }, 403);
+        return json({ error: "A player from the opposite team must review this result" }, 403);
       }
 
       const note = String(body?.note || "").trim().slice(0, 240);
