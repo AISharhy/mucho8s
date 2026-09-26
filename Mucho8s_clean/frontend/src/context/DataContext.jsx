@@ -1197,6 +1197,44 @@ export const DataProvider = ({ children }) => {
   }, [admin, discordSession]);
 
   useEffect(() => {
+    if (discordLoading) return undefined;
+
+    if (!discordSession?.access_token) {
+      if (admin?.sessionToken) {
+        sessionStorage.removeItem("mucho8s_admin_session");
+        setAdminValidated(false);
+        setAdminState(null);
+      }
+      return undefined;
+    }
+
+    if (admin?.sessionToken) return undefined;
+
+    let active = true;
+
+    const autoLogin = async () => {
+      const data = await adminAuthRequest({ action: "auto-login" }, { silent: true });
+      if (!active || !data?.ok || !data?.sessionToken) return;
+
+      const next = {
+        nickname: data.nickname || "Admin",
+        sessionToken: data.sessionToken,
+        expiresAt: data.expiresAt,
+        automatic: true,
+      };
+
+      sessionStorage.setItem("mucho8s_admin_session", JSON.stringify(next));
+      setAdminState(next);
+      setAdminValidated(true);
+    };
+
+    void autoLogin();
+    return () => {
+      active = false;
+    };
+  }, [discordLoading, discordSession?.access_token, admin?.sessionToken, adminAuthRequest]);
+
+  useEffect(() => {
     if (!admin?.sessionToken) {
       setAdminValidated(false);
       return undefined;
