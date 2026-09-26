@@ -263,11 +263,28 @@ const syncMoneyPairings = async (supabase: any, report: any, verifiedAt: string)
 
     if (existingError) throw existingError;
 
-    if (existing?.id) {
+    let current = existing || null;
+
+    if (!current?.id) {
+      const { data: activePairings, error: activePairingError } = await supabase
+        .from("player_challenges")
+        .select("id")
+        .eq("source", "balancer_pairing")
+        .eq("challenger_player_id", pair.playerAId)
+        .eq("challenged_player_id", pair.playerBId)
+        .in("status", ["pending", "accepted", "result_pending"])
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (activePairingError) throw activePairingError;
+      current = activePairings?.[0] || null;
+    }
+
+    if (current?.id) {
       const { data, error } = await supabase
         .from("player_challenges")
         .update(payload)
-        .eq("id", existing.id)
+        .eq("id", current.id)
         .select("*")
         .single();
       if (error) throw error;
