@@ -37,6 +37,8 @@ const TeamList = ({ ids, playerMap, eloChanges, color, mvpId }) => (
 
 export default function Matches() {
   const { matches, playerMap, deleteMatch, isAdmin } = useData();
+  const safeMatches = Array.isArray(matches) ? matches.filter(Boolean) : [];
+  const safePlayerMap = playerMap && typeof playerMap === "object" ? playerMap : {};
   const [open, setOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [query, setQuery] = useState("");
@@ -44,15 +46,15 @@ export default function Matches() {
   const [gameFilter, setGameFilter] = useState("ALL");
 
   const filtered = useMemo(() => {
-    return matches.filter((m) => {
+    return safeMatches.filter((m) => {
       if (winnerFilter !== "all" && m.winner !== winnerFilter) return false;
       if (gameFilter !== "ALL" && m.game !== gameFilter) return false;
       if (!query) return true;
       const q = query.toLowerCase();
-      const names = [...m.teamA, ...m.teamB].map((id) => playerMap[id]?.name?.toLowerCase() || "");
+      const names = [...m.teamA, ...m.teamB].map((id) => safePlayerMap[id]?.name?.toLowerCase() || "");
       return names.some((n) => n.includes(q)) || (m.game || "").toLowerCase().includes(q) || (m.mode || "").toLowerCase().includes(q);
     });
-  }, [matches, query, winnerFilter, gameFilter, playerMap]);
+  }, [safeMatches, query, winnerFilter, gameFilter, safePlayerMap]);
 
   return (
     <div className="space-y-6">
@@ -193,16 +195,16 @@ export default function Matches() {
             <div className="flex flex-col sm:flex-row items-stretch gap-3 sm:gap-4">
               <div className="flex-1 p-3 rounded-lg" style={{ background: m.winner === "A" ? "rgba(255,42,59,0.06)" : "transparent", border: "1px solid #1C202E" }}>
                 <div className="text-xs font-bold uppercase tracking-widest text-magma mb-2">Alpha</div>
-                <TeamList ids={m.teamA} playerMap={playerMap} eloChanges={m.eloChanges} color="#FF2A3B" mvpId={m.mvpId} />
+                <TeamList ids={Array.isArray(m.teamA) ? m.teamA : []} playerMap={safePlayerMap} eloChanges={m.eloChanges} color="#FF2A3B" mvpId={m.mvpId} />
               </div>
               <div className="flex items-center justify-center font-display font-bold text-muted-foreground py-1 sm:py-0">VS</div>
               <div className="flex-1 p-3 rounded-lg" style={{ background: m.winner === "B" ? "rgba(213,163,58,0.05)" : "transparent", border: "1px solid #1C202E" }}>
                 <div className="text-xs font-bold uppercase tracking-widest text-gold mb-2">Bravo</div>
-                <TeamList ids={m.teamB} playerMap={playerMap} eloChanges={m.eloChanges} color="#D5A33A" mvpId={m.mvpId} />
+                <TeamList ids={Array.isArray(m.teamB) ? m.teamB : []} playerMap={safePlayerMap} eloChanges={m.eloChanges} color="#D5A33A" mvpId={m.mvpId} />
               </div>
             </div>
 
-            {Array.isArray(m.pairings) && m.pairings.length > 0 && (
+            {Array.isArray(m.pairings) && m.pairings.filter(Boolean).length > 0 && (
               <div className="mt-4 pt-4 border-t border-[#1D222C]" data-testid={`match-money-pairings-${m.id}`}>
                 <div className="flex items-center gap-2 mb-3">
                   <WalletCards size={15} className="text-[#D5A33A]" />
@@ -211,11 +213,11 @@ export default function Matches() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
-                  {m.pairings.map((pair, index) => {
-                    const alpha = playerMap[pair.playerAId];
-                    const bravo = playerMap[pair.playerBId];
+                  {m.pairings.filter(Boolean).map((pair, index) => {
+                    const alpha = safePlayerMap[pair.playerAId];
+                    const bravo = safePlayerMap[pair.playerBId];
                     const winnerId = m.winner === "A" ? pair.playerAId : pair.playerBId;
-                    const winner = playerMap[winnerId];
+                    const winner = safePlayerMap[winnerId];
 
                     return (
                       <div key={pair.playerAId + "-" + pair.playerBId + "-" + index} className="rounded-xl bg-[#0F1218] border border-[#1D222C] px-3 py-2.5">
