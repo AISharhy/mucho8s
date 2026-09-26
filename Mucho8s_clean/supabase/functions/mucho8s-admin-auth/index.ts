@@ -169,6 +169,82 @@ Deno.serve(async (req: Request) => {
     const body = await req.json().catch(() => ({}));
     const action = String(body?.action || "").trim().toLowerCase();
 
+    if (action === "auto-login") {
+      const authHeader = req.headers.get("authorization") || "";
+      const discordToken = authHeader.replace(/^Bearer\s+/i, "").trim();
+      if (!discordToken) {
+        return json(req, { error: "Discord login required" }, 401);
+      }
+
+      const { data: discordAuth, error: discordAuthError } = await supabase.auth.getUser(discordToken);
+      const discordUser = discordAuth?.user;
+      if (discordAuthError || !discordUser) {
+        return json(req, { error: "Discord session is invalid or expired" }, 401);
+      }
+
+      const { data: account, error: accountError } = await supabase
+        .from("player_accounts")
+        .select("id,player_id,display_name")
+        .eq("id", discordUser.id)
+        .maybeSingle();
+
+      if (accountError) throw accountError;
+      if (!account?.player_id) {
+        return json(req, { error: "Discord account is not linked to a player" }, 403);
+      }
+
+      const { data: access, error: accessError } = await supabase
+        .from("admin_access")
+        .select("player_id,username,display_name,is_active")
+        .eq("player_id", account.player_id)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (accessError) throw accessError;
+      if (!access) {
+        return json(req, { error: "Player account" }, 403);
+      }
+
+      await supabase
+        .from("admin_credentials")
+        .upsert({
+          username: access.username,
+          password_hash: "discord_only",
+          password_scheme: "discord_only",
+          password_salt: null,
+          password_iterations: null,
+          is_active: true,
+          required_account_id: discordUser.id,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "username" });
+
+      const now = new Date();
+      await supabase.from("admin_sessions").delete().lt("expires_at", now.toISOString());
+
+      const token = randomToken();
+      const tokenHash = await sha256(token);
+      const uaHash = await getUserAgentHash(req);
+      const expiresAt = new Date(now.getTime() + SESSION_HOURS * 60 * 60 * 1000).toISOString();
+
+      const { error: sessionError } = await supabase.from("admin_sessions").insert({
+        token_hash: tokenHash,
+        username: access.username,
+        account_id: discordUser.id,
+        user_agent_hash: uaHash,
+        expires_at: expiresAt,
+      });
+
+      if (sessionError) throw sessionError;
+
+      return json(req, {
+        ok: true,
+        sessionToken: token,
+        nickname: access.display_name || account.display_name || "Admin",
+        expiresAt,
+        role: "admin",
+      });
+    }
+
     if (action === "login") {
       const username = String(body?.username || "").trim().toLowerCase();
       const password = String(body?.password || "");
@@ -314,7 +390,7 @@ Deno.serve(async (req: Request) => {
     if (action === "status") {
       return json(req, {
         ok: true,
-        nickname: "Admin",
+        nickname: session.username === "sysma" ? "SysMa" : session.username === "sharhy" ? "Sharhy" : "Admin",
         expiresAt: session.expiresAt,
       });
     }
