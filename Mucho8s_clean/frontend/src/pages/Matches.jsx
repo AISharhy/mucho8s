@@ -50,8 +50,14 @@ const TeamList = ({ ids, playerMap, playerAvatars, eloChanges, mvpId }) => (
 
 export default function Matches() {
   const { matches, playerMap, playerAvatars, deleteMatch, isAdmin } = useData();
-  const safeMatches = Array.isArray(matches) ? matches.filter(Boolean) : [];
-  const safePlayerMap = playerMap && typeof playerMap === "object" ? playerMap : {};
+  const safeMatches = useMemo(
+    () => (Array.isArray(matches) ? matches.filter(Boolean) : []),
+    [matches]
+  );
+  const safePlayerMap = useMemo(
+    () => (playerMap && typeof playerMap === "object" ? playerMap : {}),
+    [playerMap]
+  );
   const [open, setOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [query, setQuery] = useState("");
