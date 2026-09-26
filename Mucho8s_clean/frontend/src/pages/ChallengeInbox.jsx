@@ -78,12 +78,19 @@ export default function ChallengeInbox() {
       return Number.isFinite(timestamp) ? timestamp : 0;
     };
 
-    challenges.forEach((challenge) => {
+    const directChallenges = (Array.isArray(challenges) ? challenges : []).filter(
+      (challenge) =>
+        !["match_pairing", "balancer_pairing"].includes(
+          String(challenge?.source || "").toLowerCase()
+        )
+    );
+
+    directChallenges.forEach((challenge) => {
       if (challenge.series_id) {
         if (seriesSeen.has(challenge.series_id)) return;
         seriesSeen.add(challenge.series_id);
 
-        const group = challenges
+        const group = directChallenges
           .filter((item) => item.series_id === challenge.series_id)
           .sort((a, b) => Number(b.series_round || 0) - Number(a.series_round || 0));
         const latest = group[0] || challenge;
@@ -175,7 +182,7 @@ export default function ChallengeInbox() {
         <EmptyState
           icon={Bell}
           title="Challenge Inbox"
-          description="Login with Discord to see your challenges, ReChall Series and notifications."
+          description="Login with Discord to see direct 1v1 challenges sent between players."
         />
       </div>
     );
