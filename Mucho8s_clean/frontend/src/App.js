@@ -6,6 +6,7 @@ import { Layout } from "@/components/Layout";
 import { Toaster } from "@/components/ui/sonner";
 import Dashboard from "@/pages/Dashboard";
 import Players from "@/pages/Players";
+import Play from "@/pages/Play";
 import PlayerProfile from "@/pages/PlayerProfile";
 import Matches from "@/pages/Matches";
 import Ranking from "@/pages/Ranking";
@@ -83,6 +84,7 @@ function App() {
           <Routes>
             <Route element={<Layout />}>
               <Route index element={<Dashboard />} />
+              <Route path="play" element={<Play />} />
               <Route path="players" element={<Players />} />
               <Route path="players/:id" element={<PlayerProfile />} />
               <Route path="team-builder" element={<TeamBuilder />} />
