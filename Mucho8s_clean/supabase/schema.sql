@@ -59,9 +59,9 @@ revoke all on table public.player_accounts from anon, authenticated;
 -- All access is mediated by the mucho8s-challenges Edge Function.
 create table if not exists public.player_challenges (
   id uuid primary key default gen_random_uuid(),
-  challenger_account_id uuid not null references auth.users(id) on delete cascade,
+  challenger_account_id uuid references auth.users(id) on delete cascade,
   challenger_player_id text not null,
-  challenged_account_id uuid not null references auth.users(id) on delete cascade,
+  challenged_account_id uuid references auth.users(id) on delete cascade,
   challenged_player_id text not null,
   platform text not null check (platform in ('paypal','revolut','cmg')),
   target_url text not null,
@@ -95,7 +95,10 @@ create table if not exists public.player_challenges (
   verifier_account_id uuid references auth.users(id) on delete set null,
   dispute_note text,
   season_number integer not null default 1,
-  evidence jsonb not null default '[]'::jsonb
+  evidence jsonb not null default '[]'::jsonb,
+  source text not null default 'direct',
+  match_id text,
+  pairing_key text
 );
 
 create index if not exists player_challenges_challenged_pending_idx
@@ -103,6 +106,13 @@ create index if not exists player_challenges_challenged_pending_idx
 
 create index if not exists player_challenges_challenger_updates_idx
   on public.player_challenges (challenger_account_id, challenger_seen_at, responded_at desc);
+
+create index if not exists player_challenges_match_pairing_idx
+  on public.player_challenges (source, match_id);
+
+create unique index if not exists player_challenges_match_pairing_unique_idx
+  on public.player_challenges (match_id, pairing_key)
+  where source = 'match_pairing' and match_id is not null and pairing_key is not null;
 
 alter table public.player_challenges enable row level security;
 revoke all on table public.player_challenges from anon, authenticated;
