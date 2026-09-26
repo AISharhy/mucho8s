@@ -119,9 +119,11 @@ const applyEffects = (
   winner: string,
   mvpId?: string | null,
   merdaIds: string[] = [],
+  merdaClearedIds: string[] = [],
 ) => {
   const winners = winner === "A" ? teamA : teamB;
   const merdaSet = new Set(merdaIds);
+  const clearedSet = new Set(merdaClearedIds);
   const changes: Record<string, number> = {};
 
   [...teamA, ...teamB].forEach((id) => {
@@ -129,7 +131,9 @@ const applyEffects = (
     if (!player) return;
 
     const won = winners.includes(id);
-    const delta = won ? WIN_DELTA : -LOSS_DELTA;
+    let delta = won ? WIN_DELTA : -LOSS_DELTA;
+    if (id === mvpId) delta += MVP_BONUS;
+    if (merdaSet.has(id)) delta -= MERDA_PENALTY;
 
     const nextElo = Math.max(MIN_ELO, Number(player.currentElo || BASE_ELO) + delta);
     player.currentElo = nextElo;
@@ -139,6 +143,7 @@ const applyEffects = (
     else player.losses = Math.max(0, Number(player.losses || 0)) + 1;
     if (id === mvpId) player.mvpCount = Math.max(0, Number(player.mvpCount || 0)) + 1;
     if (merdaSet.has(id)) player.merdaCount = Math.max(0, Number(player.merdaCount || 0)) + 1;
+    if (clearedSet.has(id)) player.merdaCount = Math.max(0, Number(player.merdaCount || 0) - 1);
     player.eloHistory = [
       ...(Array.isArray(player.eloHistory) ? player.eloHistory : []),
       { match: player.totalMatches, elo: nextElo },
