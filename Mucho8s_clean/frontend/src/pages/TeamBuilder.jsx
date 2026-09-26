@@ -528,7 +528,7 @@ export default function TeamBuilder() {
             })}
           </div>
 
-          {mode === "auto" ? (
+          {mode !== "manual" ? (
             <Button
               onClick={generateDraft}
               disabled={selected.length !== required}
