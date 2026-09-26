@@ -130,7 +130,11 @@ export default function PlayerProfile() {
       wonValue,
       lostValue,
       profit: wonValue - lostValue,
-      points: wonValue - lostValue,
+      points: completed.reduce((total, challenge) => {
+        if (challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at) return total;
+        const amount = Number(challenge.amount_cents || 0) / 100;
+        return total + (challenge.reported_winner_player_id === id ? amount : -amount);
+      }, 0),
       matchPairings: completed.filter((challenge) => challenge.source === "match_pairing").length,
     };
   }, [publicChallenges, id]);
