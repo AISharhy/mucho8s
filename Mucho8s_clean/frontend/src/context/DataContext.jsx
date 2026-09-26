@@ -61,6 +61,8 @@ const normalizeMatch = (m) => ({
   teamA: Array.isArray(m?.teamA) ? m.teamA : [],
   teamB: Array.isArray(m?.teamB) ? m.teamB : [],
   winner: m?.winner === "B" ? "B" : "A",
+  scoreA: Math.max(0, Number(m?.scoreA) || 0),
+  scoreB: Math.max(0, Number(m?.scoreB) || 0),
   mvpId: m?.mvpId || undefined,
   map: m?.map || "",
   mode: m?.mode || "",
@@ -68,6 +70,12 @@ const normalizeMatch = (m) => ({
   eloChanges: m?.eloChanges && typeof m.eloChanges === "object" ? m.eloChanges : {},
   pairings: Array.isArray(m?.pairings) ? m.pairings : [],
   season: Math.max(1, Number(m?.season) || 1),
+  resultStatus: m?.resultStatus || (m?.locked ? "locked" : ""),
+  locked: Boolean(m?.locked),
+  verifiedAt: m?.verifiedAt || null,
+  captainAPlayerId: m?.captainAPlayerId || null,
+  captainBPlayerId: m?.captainBPlayerId || null,
+  reportId: m?.reportId || null,
 });
 
 const clonePlayers = (players) => players.map((p) => ({
