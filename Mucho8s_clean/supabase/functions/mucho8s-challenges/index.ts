@@ -513,7 +513,7 @@ Deno.serve(async (req: Request) => {
         payment_sent: Boolean(data.payment_sent_at),
         payment_received: Boolean(data.payment_received_at),
       });
-      return json({ ok: true, challenge: data });
+      return json({ ok: true, challenge: await attachSeries(data) });
     }
 
     if (adminRequest && action === "admin-delete") {
@@ -555,6 +555,77 @@ Deno.serve(async (req: Request) => {
     const isParticipant = (challenge: any) =>
       challenge?.challenger_account_id === user.id || challenge?.challenged_account_id === user.id;
 
+    const getSeries = async (seriesId: string) => {
+      if (!seriesId) return null;
+      const { data, error } = await supabase
+        .from("challenge_series")
+        .select("*")
+        .eq("id", seriesId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    };
+
+    const isSeriesParticipant = (series: any) =>
+      series?.player_a_account_id === user.id || series?.player_b_account_id === user.id;
+
+    const getSeriesState = async (seriesId: string) => {
+      const series = await getSeries(seriesId);
+      if (!series) return null;
+
+      const { data: rounds, error } = await supabase
+        .from("player_challenges")
+        .select("id,series_id,series_round,challenger_player_id,challenged_player_id,amount_cents,currency,status,reported_winner_player_id,verified_at,created_at,last_event")
+        .eq("series_id", seriesId)
+        .order("series_round", { ascending: true });
+      if (error) throw error;
+
+      const completed = (rounds || []).filter((round: any) =>
+        round.status === "completed" && round.reported_winner_player_id
+      );
+
+      let balanceA = 0;
+      for (const round of completed) {
+        const amount = Math.max(0, Number(round.amount_cents || 0));
+        if (round.reported_winner_player_id === series.player_a_player_id) balanceA += amount;
+        if (round.reported_winner_player_id === series.player_b_player_id) balanceA -= amount;
+      }
+
+      const currentWinnerPlayerId =
+        balanceA > 0 ? series.player_a_player_id :
+        balanceA < 0 ? series.player_b_player_id :
+        null;
+      const currentAmountCents = Math.abs(balanceA);
+
+      let settlementPayoutUrl: string | null = null;
+      if (series.settlement_winner_player_id && PLATFORM_COLUMNS[series.platform]) {
+        const { data: settlementAccount } = await supabase
+          .from("player_accounts")
+          .select("paypal_url,revolut_url,cmg_url")
+          .eq("player_id", series.settlement_winner_player_id)
+          .maybeSingle();
+        settlementPayoutUrl = settlementAccount
+          ? String(settlementAccount[PLATFORM_COLUMNS[series.platform]] || "").trim() || null
+          : null;
+      }
+
+      return {
+        ...series,
+        rounds: rounds || [],
+        round_count: (rounds || []).length,
+        completed_rounds: completed.length,
+        current_winner_player_id: currentWinnerPlayerId,
+        current_amount_cents: currentAmountCents,
+        settlement_payout_url: settlementPayoutUrl,
+      };
+    };
+
+    const attachSeries = async (challenge: any) => {
+      if (!challenge?.series_id) return challenge;
+      const series = await getSeriesState(String(challenge.series_id));
+      return { ...challenge, series };
+    };
+
     if (action === "list") {
       const { data, error } = await supabase
         .from("player_challenges")
@@ -564,7 +635,8 @@ Deno.serve(async (req: Request) => {
         .limit(40);
       if (error) throw error;
       const signed = await Promise.all((data || []).map(signEvidence));
-      return json({ ok: true, challenges: signed });
+      const hydrated = await Promise.all(signed.map(attachSeries));
+      return json({ ok: true, challenges: hydrated });
     }
 
     if (action === "create") {
@@ -610,7 +682,37 @@ Deno.serve(async (req: Request) => {
       if (activeError) throw activeError;
       if (active?.length) return json({ error: "There is already an active challenge between these players" }, 409);
 
+      const { data: openSeries, error: openSeriesError } = await supabase
+        .from("challenge_series")
+        .select("id,status")
+        .or(
+          `and(player_a_player_id.eq.${me.player_id},player_b_player_id.eq.${targetPlayerId}),and(player_a_player_id.eq.${targetPlayerId},player_b_player_id.eq.${me.player_id})`
+        )
+        .eq("status", "open")
+        .limit(1);
+      if (openSeriesError) throw openSeriesError;
+      if (openSeries?.length) {
+        return json({ error: "There is already an open Chall Series with this player. Use ReChall or close the series first." }, 409);
+      }
+
       const seasonNumber = await getCurrentSeason();
+
+      const { data: series, error: seriesError } = await supabase
+        .from("challenge_series")
+        .insert({
+          player_a_account_id: user.id,
+          player_a_player_id: me.player_id,
+          player_b_account_id: target.id,
+          player_b_player_id: targetPlayerId,
+          platform,
+          currency: "EUR",
+          status: "open",
+          season_number: seasonNumber,
+          last_event: "created",
+        })
+        .select("*")
+        .single();
+      if (seriesError) throw seriesError;
 
       const { data, error } = await supabase
         .from("player_challenges")
@@ -627,6 +729,8 @@ Deno.serve(async (req: Request) => {
           currency: "EUR",
           status: "pending",
           season_number: seasonNumber,
+          series_id: series.id,
+          series_round: 1,
           challenger_seen_status: "pending",
           challenged_seen_status: null,
           last_event: "created",
@@ -636,8 +740,176 @@ Deno.serve(async (req: Request) => {
         .select("*")
         .single();
 
+      if (error) {
+        await supabase.from("challenge_series").delete().eq("id", series.id);
+        throw error;
+      }
+      return json({ ok: true, challenge: await attachSeries(data) });
+    }
+
+    if (action === "rechallenge") {
+      const id = String(body?.id || "").trim();
+      const amount = Number(body?.amount);
+      const amountCents = Math.round(amount * 100);
+      if (!id || !Number.isFinite(amount) || amount <= 0 || amountCents <= 0) {
+        return json({ error: "Enter a valid ReChall amount" }, 400);
+      }
+
+      const previous = await getChallenge(id);
+      if (!previous?.series_id) return json({ error: "This challenge is not part of a Chall Series" }, 409);
+      if (!isParticipant(previous)) return json({ error: "Not allowed" }, 403);
+      if (previous.status !== "completed") return json({ error: "Verify the current round before starting a ReChall" }, 409);
+
+      const series = await getSeries(String(previous.series_id));
+      if (!series || !isSeriesParticipant(series)) return json({ error: "Chall Series not found" }, 404);
+      if (series.status !== "open") return json({ error: "This Chall Series is already closed" }, 409);
+
+      const { data: activeRound, error: activeRoundError } = await supabase
+        .from("player_challenges")
+        .select("id,status")
+        .eq("series_id", series.id)
+        .in("status", ["pending", "accepted", "result_pending", "disputed"])
+        .limit(1);
+      if (activeRoundError) throw activeRoundError;
+      if (activeRound?.length) return json({ error: "Finish the active round before starting another ReChall" }, 409);
+
+      const otherPlayerId = me.player_id === series.player_a_player_id
+        ? series.player_b_player_id
+        : series.player_a_player_id;
+      const { data: other, error: otherError } = await supabase
+        .from("player_accounts")
+        .select("id,player_id,paypal_url,revolut_url,cmg_url")
+        .eq("player_id", otherPlayerId)
+        .maybeSingle();
+      if (otherError) throw otherError;
+      if (!other) return json({ error: "The other player is no longer linked to Discord" }, 409);
+
+      const linkColumn = PLATFORM_COLUMNS[String(series.platform || "")];
+      const myUrl = String(me?.[linkColumn] || "").trim();
+      const otherUrl = String(other?.[linkColumn] || "").trim();
+      if (!myUrl || !otherUrl) return json({ error: "Both players need a payout link for this platform" }, 409);
+
+      const { data: maxRoundRows, error: roundError } = await supabase
+        .from("player_challenges")
+        .select("series_round")
+        .eq("series_id", series.id)
+        .order("series_round", { ascending: false })
+        .limit(1);
+      if (roundError) throw roundError;
+      const nextRound = Math.max(1, Number(maxRoundRows?.[0]?.series_round || 0) + 1);
+
+      const { data, error } = await supabase
+        .from("player_challenges")
+        .insert({
+          challenger_account_id: user.id,
+          challenger_player_id: me.player_id,
+          challenged_account_id: other.id,
+          challenged_player_id: otherPlayerId,
+          platform: series.platform,
+          target_url: otherUrl,
+          challenger_payout_url: myUrl,
+          challenged_payout_url: otherUrl,
+          amount_cents: amountCents,
+          currency: series.currency || "EUR",
+          status: "pending",
+          season_number: series.season_number,
+          series_id: series.id,
+          series_round: nextRound,
+          challenger_seen_status: "pending",
+          challenged_seen_status: null,
+          last_event: "rechallenge_created",
+          challenger_seen_event: "rechallenge_created",
+          challenged_seen_event: null,
+        })
+        .select("*")
+        .single();
       if (error) throw error;
-      return json({ ok: true, challenge: data });
+
+      await supabase.from("challenge_series").update({
+        last_event: "rechallenge_created",
+        updated_at: new Date().toISOString(),
+      }).eq("id", series.id);
+
+      return json({ ok: true, challenge: await attachSeries(data) });
+    }
+
+    if (action === "close-series") {
+      const seriesId = String(body?.seriesId || "").trim();
+      const series = await getSeries(seriesId);
+      if (!series) return json({ error: "Chall Series not found" }, 404);
+      if (!isSeriesParticipant(series)) return json({ error: "Not allowed" }, 403);
+      if (series.status !== "open") return json({ error: "This Chall Series is already closed" }, 409);
+
+      const state = await getSeriesState(seriesId);
+      const active = (state?.rounds || []).some((round: any) =>
+        ["pending", "accepted", "result_pending", "disputed"].includes(round.status)
+      );
+      if (active) return json({ error: "Finish or resolve the active round before closing the series" }, 409);
+      if (!state?.completed_rounds) return json({ error: "The series needs at least one verified round" }, 409);
+
+      const winnerPlayerId = state.current_winner_player_id;
+      const settlementAmount = Number(state.current_amount_cents || 0);
+      const even = settlementAmount === 0;
+
+      const { data, error } = await supabase
+        .from("challenge_series")
+        .update({
+          status: even ? "settled" : "closed",
+          settlement_winner_player_id: winnerPlayerId,
+          settlement_amount_cents: settlementAmount,
+          payment_sent_at: even ? new Date().toISOString() : null,
+          payment_received_at: even ? new Date().toISOString() : null,
+          closed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          last_event: even ? "series_even" : "series_closed",
+        })
+        .eq("id", seriesId)
+        .select("*")
+        .single();
+      if (error) throw error;
+      return json({ ok: true, series: await getSeriesState(data.id) });
+    }
+
+    if (action === "series-payment-sent") {
+      const seriesId = String(body?.seriesId || "").trim();
+      const series = await getSeries(seriesId);
+      if (!series) return json({ error: "Chall Series not found" }, 404);
+      if (!isSeriesParticipant(series)) return json({ error: "Not allowed" }, 403);
+      if (series.status !== "closed" || !series.settlement_winner_player_id || Number(series.settlement_amount_cents || 0) <= 0) {
+        return json({ error: "This series has no payout waiting" }, 409);
+      }
+      if (me.player_id === series.settlement_winner_player_id) {
+        return json({ error: "Only the player who owes the balance can mark it as sent" }, 403);
+      }
+
+      const { error } = await supabase.from("challenge_series").update({
+        payment_sent_at: new Date().toISOString(),
+        payment_received_at: null,
+        updated_at: new Date().toISOString(),
+        last_event: "series_payout_sent",
+      }).eq("id", seriesId);
+      if (error) throw error;
+      return json({ ok: true, series: await getSeriesState(seriesId) });
+    }
+
+    if (action === "series-payment-received") {
+      const seriesId = String(body?.seriesId || "").trim();
+      const series = await getSeries(seriesId);
+      if (!series) return json({ error: "Chall Series not found" }, 404);
+      if (!isSeriesParticipant(series)) return json({ error: "Not allowed" }, 403);
+      if (me.player_id !== series.settlement_winner_player_id) {
+        return json({ error: "Only the player receiving the balance can confirm it" }, 403);
+      }
+      if (!series.payment_sent_at) return json({ error: "The balance has not been marked as sent yet" }, 409);
+
+      const { error } = await supabase.from("challenge_series").update({
+        status: "settled",
+        payment_received_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_event: "series_payout_received",
+      }).eq("id", seriesId);
+      if (error) throw error;
+      return json({ ok: true, series: await getSeriesState(seriesId) });
     }
 
     if (action === "respond") {
@@ -670,7 +942,7 @@ Deno.serve(async (req: Request) => {
         .single();
 
       if (error) throw error;
-      return json({ ok: true, challenge: data });
+      return json({ ok: true, challenge: await attachSeries(data) });
     }
 
     if (action === "upload-evidence") {
@@ -739,6 +1011,7 @@ Deno.serve(async (req: Request) => {
       if (!challenge) return json({ error: "Challenge not found" }, 404);
       if (!isParticipant(challenge)) return json({ error: "Not allowed" }, 403);
       if (challenge.status !== "completed") return json({ error: "The result must be verified before payout" }, 409);
+      if (challenge.series_id) return json({ error: "This round belongs to a Chall Series. Close the series to settle the final balance." }, 409);
       if (!challenge.reported_winner_player_id) return json({ error: "Winner is missing" }, 409);
       if (me.player_id === challenge.reported_winner_player_id) {
         return json({ error: "Only the losing player can mark the payout as sent" }, 403);
@@ -758,7 +1031,7 @@ Deno.serve(async (req: Request) => {
         .single();
 
       if (error) throw error;
-      return json({ ok: true, challenge: data });
+      return json({ ok: true, challenge: await attachSeries(data) });
     }
 
     if (action === "payment-received") {
@@ -767,6 +1040,7 @@ Deno.serve(async (req: Request) => {
       if (!challenge) return json({ error: "Challenge not found" }, 404);
       if (!isParticipant(challenge)) return json({ error: "Not allowed" }, 403);
       if (challenge.status !== "completed") return json({ error: "The result must be verified before payout" }, 409);
+      if (challenge.series_id) return json({ error: "This round belongs to a Chall Series. Settle the series balance instead." }, 409);
       if (me.player_id !== challenge.reported_winner_player_id) {
         return json({ error: "Only the winning player can confirm the payout" }, 403);
       }
@@ -785,7 +1059,7 @@ Deno.serve(async (req: Request) => {
         .single();
 
       if (error) throw error;
-      return json({ ok: true, challenge: data });
+      return json({ ok: true, challenge: await attachSeries(data) });
     }
 
     if (action === "payout-dispute") {
@@ -795,6 +1069,7 @@ Deno.serve(async (req: Request) => {
       if (!challenge) return json({ error: "Challenge not found" }, 404);
       if (!isParticipant(challenge)) return json({ error: "Not allowed" }, 403);
       if (challenge.status !== "completed") return json({ error: "The result must be verified first" }, 409);
+      if (challenge.series_id) return json({ error: "Series payout disputes are handled on the final series balance." }, 409);
       if (me.player_id !== challenge.reported_winner_player_id) return json({ error: "Only the winner can dispute a missing payout" }, 403);
       if (!challenge.payment_sent_at) return json({ error: "The losing player has not marked the payout as sent yet" }, 409);
       if (challenge.payment_received_at) return json({ error: "This payout is already confirmed as received" }, 409);
@@ -819,7 +1094,7 @@ Deno.serve(async (req: Request) => {
 
       if (error) throw error;
       await writeAudit("challenge.payout_dispute", id, { winner_player_id: challenge.reported_winner_player_id, amount_cents: challenge.amount_cents, note });
-      return json({ ok: true, challenge: data });
+      return json({ ok: true, challenge: await attachSeries(data) });
     }
 
     if (action === "set-ready") {
@@ -858,7 +1133,7 @@ Deno.serve(async (req: Request) => {
         .single();
 
       if (error) throw error;
-      return json({ ok: true, challenge: data });
+      return json({ ok: true, challenge: await attachSeries(data) });
     }
 
     if (action === "report-result") {
@@ -891,7 +1166,7 @@ Deno.serve(async (req: Request) => {
         .single();
 
       if (error) throw error;
-      return json({ ok: true, challenge: data });
+      return json({ ok: true, challenge: await attachSeries(data) });
     }
 
     if (action === "verify-result") {
@@ -931,7 +1206,7 @@ Deno.serve(async (req: Request) => {
         .single();
 
       if (error) throw error;
-      return json({ ok: true, challenge: data });
+      return json({ ok: true, challenge: await attachSeries(data) });
     }
 
     if (action === "mark-seen") {
@@ -960,7 +1235,7 @@ Deno.serve(async (req: Request) => {
         .single();
 
       if (error) throw error;
-      return json({ ok: true, challenge: data });
+      return json({ ok: true, challenge: await attachSeries(data) });
     }
 
     if (action === "cancel") {
@@ -984,7 +1259,7 @@ Deno.serve(async (req: Request) => {
         .single();
 
       if (error) throw error;
-      return json({ ok: true, challenge: data });
+      return json({ ok: true, challenge: await attachSeries(data) });
     }
 
     return json({ error: "Unknown action" }, 400);
