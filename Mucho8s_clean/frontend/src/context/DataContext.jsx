@@ -318,6 +318,7 @@ export const DataProvider = ({ children }) => {
   const [challenges, setChallenges] = useState([]);
   const [publicChallenges, setPublicChallenges] = useState([]);
   const [matchReports, setMatchReports] = useState([]);
+  const [liveMatches, setLiveMatches] = useState([]);
   const [adminChallengeAlertCount, setAdminChallengeAlertCount] = useState(0);
   const [dashboardData, setDashboardData] = useState({
     activeChallenges: [],
@@ -787,6 +788,44 @@ export const DataProvider = ({ children }) => {
     }
   }, [admin, discordSession]);
 
+  const refreshLiveMatches = useCallback(async () => {
+    if (!HAS_SUPABASE) {
+      setLiveMatches([]);
+      return [];
+    }
+
+    const data = await matchReportRequest({ action: "list-live" }, { silent: true });
+    const list = Array.isArray(data?.liveMatches) ? data.liveMatches : [];
+    setLiveMatches(list);
+    return list;
+  }, [matchReportRequest]);
+
+  useEffect(() => {
+    if (!HAS_SUPABASE) {
+      setLiveMatches([]);
+      return undefined;
+    }
+
+    void refreshLiveMatches();
+    const timer = setInterval(refreshLiveMatches, 4000);
+    return () => clearInterval(timer);
+  }, [refreshLiveMatches]);
+
+  const createLiveMatch = useCallback(async (payload) => {
+    const data = await matchReportRequest({ action: "create-live", ...payload });
+    if (!data?.liveMatch) return null;
+    await refreshLiveMatches();
+    return data.liveMatch;
+  }, [matchReportRequest, refreshLiveMatches]);
+
+  const cancelLiveMatch = useCallback(async (id) => {
+    if (!id) return false;
+    const data = await matchReportRequest({ action: "cancel-live", id });
+    if (!data?.ok) return false;
+    await refreshLiveMatches();
+    return true;
+  }, [matchReportRequest, refreshLiveMatches]);
+
   const refreshMatchReports = useCallback(async () => {
     if (!HAS_SUPABASE || (!admin?.sessionToken && !discordSession?.access_token)) {
       setMatchReports([]);
@@ -813,9 +852,9 @@ export const DataProvider = ({ children }) => {
   const createMatchReport = useCallback(async (payload) => {
     const data = await matchReportRequest({ action: "create", ...payload });
     if (!data?.report) return null;
-    await refreshMatchReports();
+    await Promise.all([refreshMatchReports(), refreshLiveMatches()]);
     return data.report;
-  }, [matchReportRequest, refreshMatchReports]);
+  }, [matchReportRequest, refreshMatchReports, refreshLiveMatches]);
 
   const confirmMatchReport = useCallback(async (id) => {
     const data = await matchReportRequest({ action: "confirm", id });
@@ -1876,6 +1915,8 @@ export const DataProvider = ({ children }) => {
     adminChallengeAlertCount,
     refreshChallenges,
     refreshMatchReports,
+    createLiveMatch,
+    cancelLiveMatch,
     createMatchReport,
     confirmMatchReport,
     disputeMatchReport,
