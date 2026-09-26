@@ -131,6 +131,8 @@ export default function Matches() {
     playerAvatars,
     deleteMatch,
     isAdmin,
+    requestCancelLiveMatch,
+    cancelLiveMatch,
     adminCreateChallengePairings,
   } = useData();
 
@@ -153,11 +155,30 @@ export default function Matches() {
   const [winnerFilter, setWinnerFilter] = useState("all");
   const [gameFilter, setGameFilter] = useState("ALL");
   const [rematchBusyId, setRematchBusyId] = useState(null);
+  const [liveActionBusyId, setLiveActionBusyId] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => setLiveNow(Date.now()), 30000);
     return () => clearInterval(timer);
   }, []);
+
+  const requestLiveCancellation = async (match) => {
+    if (!match?.id || liveActionBusyId) return;
+    setLiveActionBusyId(match.id);
+    const ok = await requestCancelLiveMatch(match.id);
+    setLiveActionBusyId(null);
+    if (!ok) return;
+    toast.success("Cancellation request sent to Admin");
+  };
+
+  const cancelLiveAsAdmin = async (match) => {
+    if (!match?.id || !isAdmin || liveActionBusyId) return;
+    setLiveActionBusyId(match.id);
+    const ok = await cancelLiveMatch(match.id);
+    setLiveActionBusyId(null);
+    if (!ok) return;
+    toast.success("Live match cancelled");
+  };
 
   const createRematch = async (match) => {
     if (!isAdmin || !match) return;
@@ -322,10 +343,13 @@ export default function Matches() {
     const names = (ids) =>
       ids.map((id) => safePlayerMap[id]?.name || "Player").join(" · ");
     const captain = safePlayerMap[match.captain_player_id];
-    const canReportLive =
-      isAdmin ||
-      (discordPlayer?.id &&
-        String(discordPlayer.id) === String(match.captain_player_id || ""));
+    const isCaptain = Boolean(
+      discordPlayer?.id &&
+      String(discordPlayer.id) === String(match.captain_player_id || "")
+    );
+    const canReportLive = isAdmin || isCaptain;
+    const cancelRequested = Boolean(match.cancel_requested_at);
+    const busy = liveActionBusyId === match.id;
 
     return (
       <div
@@ -348,21 +372,79 @@ export default function Matches() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:justify-end shrink-0">
+        <div className="flex items-center gap-2 sm:justify-end shrink-0 flex-wrap">
           <div className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-400">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             Live
           </div>
+
+          {cancelRequested && (
+            <span className="h-9 px-3 rounded-lg border border-orange-500/20 bg-orange-500/[0.06] text-orange-400 inline-flex items-center text-[10px] font-black uppercase tracking-wider">
+              <AlertTriangle size={13} className="mr-1.5" />
+              Cancel requested
+            </span>
+          )}
+
+          {isCaptain && !isAdmin && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={busy || cancelRequested}
+              onClick={() => requestLiveCancellation(match)}
+              className="h-9 rounded-lg border border-orange-500/20 bg-orange-500/[0.04] text-orange-400 hover:bg-orange-500/[0.08] hover:text-orange-300"
+            >
+              <AlertTriangle size={14} className="mr-1.5" />
+              {cancelRequested ? "Requested" : "Request Cancel"}
+            </Button>
+          )}
+
+          {isAdmin && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  disabled={busy}
+                  className="h-9 rounded-lg border border-red-500/20 bg-red-500/[0.04] text-red-400 hover:bg-red-500/[0.08] hover:text-red-300"
+                >
+                  <Trash2 size={14} className="mr-1.5" />
+                  Cancel Match
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="bg-[#101319] border-[#242A35]">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Cancel this live match?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This closes the live match without recording a result.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="bg-[#181B26] border-[#2A303B]">
+                    Keep Match
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => void cancelLiveAsAdmin(match)}
+                    className="bg-red-500 hover:bg-red-400 text-white"
+                  >
+                    Cancel Match
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
           <Button
             type="button"
             size="sm"
-            disabled={!canReportLive}
+            disabled={!canReportLive || busy}
             onClick={() => setReportLiveMatch(match)}
             className="h-9 rounded-lg bg-magma hover:bg-[#ff3c4c] text-white font-bold"
             title={
               canReportLive
                 ? "Report the final result"
-                : "Only the match creator or Admin can report this result"
+                : "Only the match captain or Admin can report this result"
             }
           >
             <Trophy size={14} className="mr-1.5" />
