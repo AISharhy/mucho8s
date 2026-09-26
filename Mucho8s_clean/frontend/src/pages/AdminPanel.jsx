@@ -28,6 +28,7 @@ export default function AdminPanel() {
     isAdmin,
     adminAuthLoading,
     signOutDiscord,
+    discordPlayer,
     players,
     matches,
     playerMap,
@@ -1373,9 +1374,14 @@ export default function AdminPanel() {
                         <Button
                           type="button"
                           variant="ghost"
-                          disabled={busy}
+                          disabled={busy || String(row.player_id) === String(discordPlayer?.id || "")}
                           onClick={() => void setPlayerAdminAccess(row, false)}
-                          className="h-9 rounded-lg border border-red-500/20 bg-red-500/[0.04] text-red-400 hover:bg-red-500/[0.08] hover:text-red-300"
+                          title={
+                            String(row.player_id) === String(discordPlayer?.id || "")
+                              ? "Another Admin must remove your access"
+                              : "Remove Admin access"
+                          }
+                          className="h-9 rounded-lg border border-red-500/20 bg-red-500/[0.04] text-red-400 hover:bg-red-500/[0.08] hover:text-red-300 disabled:opacity-40"
                         >
                           Remove Admin
                         </Button>
