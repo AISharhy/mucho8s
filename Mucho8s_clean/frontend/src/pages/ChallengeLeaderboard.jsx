@@ -34,6 +34,10 @@ export default function ChallengeLeaderboard() {
     });
 
     seasonChallenges.forEach((challenge) => {
+      const verified = Boolean(challenge.verified_at && challenge.status === "completed");
+      const openDispute = Boolean(challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at);
+      if (!verified || openDispute || !challenge.reported_winner_player_id) return;
+
       const amount = Number(challenge.amount_cents || 0) / 100;
       const settled = Boolean(challenge.payment_received_at);
       const ids = [challenge.challenger_player_id, challenge.challenged_player_id];
@@ -57,6 +61,7 @@ export default function ChallengeLeaderboard() {
 
         if (challenge.reported_winner_player_id === id) {
           row.wins += 1;
+          row.points += amount;
           if (settled) {
             row.profit += amount;
             row.volume += amount;
@@ -64,6 +69,7 @@ export default function ChallengeLeaderboard() {
           }
         } else {
           row.losses += 1;
+          row.points -= amount;
           if (settled) {
             row.profit -= amount;
             row.volume += amount;
@@ -80,6 +86,7 @@ export default function ChallengeLeaderboard() {
         winRate: row.played ? Math.round((row.wins / row.played) * 100) : 0,
       }))
       .sort((a, b) =>
+        b.points - a.points ||
         b.wins - a.wins ||
         b.winRate - a.winRate ||
         b.profit - a.profit
@@ -92,7 +99,7 @@ export default function ChallengeLeaderboard() {
         <div className="brand-kicker mb-1">Competition</div>
         <h2 className="font-display text-3xl font-extrabold">Challenge Leaderboard</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          {competitionData?.current?.season_name || `Season ${currentSeason}`} · W/L includes every verified chall and Money Match Pairing. Ranking prioritizes wins; € profit counts confirmed payouts only.
+          {competitionData?.current?.season_name || `Season ${currentSeason}`} · €1 = 1 point. A verified €10 win gives +10 PT to the winner and -10 PT to the loser. Money Match Pairings count too.
         </p>
       </div>
 
@@ -178,13 +185,13 @@ export default function ChallengeLeaderboard() {
         <div className="card-surface rounded-2xl p-4">
           <TrendingUp size={18} className="text-emerald-400 mb-2" />
           <div className="text-xs text-muted-foreground">Verified Chall</div>
-          <div className="font-display text-2xl font-extrabold mt-1">{seasonChallenges.length}</div>
+          <div className="font-display text-2xl font-extrabold mt-1">{seasonChallenges.filter((item) => item.verified_at && item.status === "completed" && !(item.payout_disputed_at && !item.payout_dispute_resolved_at)).length}</div>
         </div>
         <div className="card-surface rounded-2xl p-4">
           <Swords size={18} className="text-magma mb-2" />
           <div className="text-xs text-muted-foreground">Money Match Pairings</div>
           <div className="font-display text-2xl font-extrabold mt-1">
-            {seasonChallenges.filter((item) => item.source === "match_pairing").length}
+            {seasonChallenges.filter((item) => item.source === "match_pairing" && item.verified_at && item.status === "completed").length}
           </div>
         </div>
         <div className="card-surface rounded-2xl p-4">
