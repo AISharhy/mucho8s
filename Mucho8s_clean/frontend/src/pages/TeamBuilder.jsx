@@ -55,6 +55,8 @@ export default function TeamBuilder() {
     discordPlayer,
     dashboardData,
     isAdmin,
+    createLiveMatch,
+    cancelLiveMatch,
   } = useData();
 
   const [game, setGame] = useState("");
@@ -66,6 +68,7 @@ export default function TeamBuilder() {
   const [query, setQuery] = useState("");
   const [result, setResult] = useState(null);
   const [captains, setCaptains] = useState({ A: "", B: "" });
+  const [liveMatch, setLiveMatch] = useState(null);
   const [recordOpen, setRecordOpen] = useState(false);
 
   const selectedCount = selected.length;
@@ -142,6 +145,8 @@ export default function TeamBuilder() {
     : null;
 
   const resetLobby = ({ keepGame = true } = {}) => {
+    if (liveMatch?.id) void cancelLiveMatch(liveMatch.id);
+    setLiveMatch(null);
     setSelected([]);
     setManualA([]);
     setManualB([]);
@@ -225,7 +230,7 @@ export default function TeamBuilder() {
     setManualB((prev) => [...prev, id]);
   };
 
-  const lockResult = (draft) => {
+  const lockResult = async (draft) => {
     if (!draft) {
       toast.error("Unable to create these teams");
       return;
@@ -240,14 +245,27 @@ export default function TeamBuilder() {
       return;
     }
 
-    setResult(draft);
-    setCaptains({
+    const nextCaptains = {
       A: creatorOnA ? creatorId : (draft.teamA[0]?.id || ""),
       B: creatorOnB ? creatorId : (draft.teamB[0]?.id || ""),
+    };
+
+    const created = await createLiveMatch({
+      teamA: draft.teamA.map((player) => player.id),
+      teamB: draft.teamB.map((player) => player.id),
+      game,
+      mode: matchMode,
+      format: formatForCount(draft.teamA.length + draft.teamB.length),
     });
 
+    if (!created) return;
+
+    setLiveMatch(created);
+    setResult(draft);
+    setCaptains(nextCaptains);
+
     toast.success(
-      `${formatForCount(draft.teamA.length + draft.teamB.length)} ready · ${draft.balanceScore}% balance`
+      `${formatForCount(draft.teamA.length + draft.teamB.length)} live · ${draft.balanceScore}% balance`
     );
   };
 
@@ -270,11 +288,11 @@ export default function TeamBuilder() {
         toast.error(`Assign exactly ${perTeam} players to Alpha and ${perTeam} to Bravo`);
         return;
       }
-      lockResult(analyzeManualTeams(manualTeamA, manualTeamB, context.matches));
+      void lockResult(analyzeManualTeams(manualTeamA, manualTeamB, context.matches));
       return;
     }
 
-    lockResult(draftTeamsBalanced(selectedPlayers, context.matches));
+    void lockResult(draftTeamsBalanced(selectedPlayers, context.matches));
   };
 
   const reportPairings = result
@@ -566,7 +584,7 @@ export default function TeamBuilder() {
               <div className="brand-kicker mb-1">Ready</div>
               <h3 className="font-display text-2xl font-black">Alpha vs Bravo</h3>
               <p className="text-xs text-muted-foreground mt-1">
-                The player who creates the match is the captain. Chemistry is informational only.
+                Live match created. The player who creates it is the captain. Chemistry is informational only.
               </p>
             </div>
 
@@ -665,8 +683,10 @@ export default function TeamBuilder() {
         } : null}
         initialCaptains={captains}
         creatorPlayerId={matchCaptainId}
+        liveMatchId={liveMatch?.id || ""}
         defaultGame={game || undefined}
         defaultMode={matchMode || undefined}
+        onReported={() => setLiveMatch(null)}
       />
     </div>
   );
