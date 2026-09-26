@@ -6,7 +6,6 @@ import {
   Crown,
   Gem,
   Swords,
-  TrendingUp,
   Trophy,
   Flame,
   Scale,
@@ -36,35 +35,29 @@ export const RankEmblem = ({ elo = 1000, compact = false }) => {
           "#343B48",
       }}
     >
-      <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-magma to-transparent opacity-80" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-magma to-transparent opacity-70" />
+
       <div className="flex items-center gap-3">
         <div
-          className={`${compact ? "w-10 h-10" : "w-14 h-14"} shrink-0 rotate-45 rounded-xl border flex items-center justify-center bg-[#151923]`}
-          style={{ borderColor: rankIndex >= 3 ? "#D5A33A" : "#4A5363" }}
+          className={`${compact ? "w-10 h-10" : "w-12 h-12"} shrink-0 rounded-xl border flex items-center justify-center bg-[#151923]`}
+          style={{ borderColor: rankIndex >= 3 ? "#D5A33A55" : "#4A536355" }}
         >
-          <div className="-rotate-45 flex flex-col items-center justify-center">
-            <Icon
-              size={compact ? 18 : 24}
-              className={rankIndex >= 3 ? "text-[#D5A33A]" : "text-white"}
-            />
-            <span className="text-[8px] font-black tracking-tighter">
-              {rank.id === "masters" ? "M" : rank.roman}
-            </span>
-          </div>
+          <Icon
+            size={compact ? 18 : 21}
+            className={rankIndex >= 3 ? "text-[#D5A33A]" : "text-white"}
+          />
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
+          <div className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
             Division {rank.roman}
           </div>
-          <div className={`font-display font-black uppercase tracking-wide ${compact ? "text-sm" : "text-xl"}`}>
+          <div className={`font-display font-black uppercase ${compact ? "text-sm" : "text-lg"}`}>
             {rank.name}
           </div>
-          {!compact && (
-            <div className="text-xs text-muted-foreground mt-0.5">
-              {info.next
-                ? `${info.eloNeeded} Elo mancanti per ${info.next.name}`
-                : "You reached the highest division"}
+          {!compact && info.next && (
+            <div className="text-[11px] text-muted-foreground mt-0.5">
+              {info.eloNeeded} Elo to {info.next.name}
             </div>
           )}
         </div>
@@ -73,9 +66,9 @@ export const RankEmblem = ({ elo = 1000, compact = false }) => {
       </div>
 
       {!compact && (
-        <div className="mt-3 h-1.5 rounded-full bg-[#1D222C] overflow-hidden">
+        <div className="mt-3 h-1 rounded-full bg-[#1D222C] overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-[#D5A33A] to-[#FF2A3B]"
+            className="h-full bg-magma"
             style={{ width: `${info.progress}%` }}
           />
         </div>
@@ -84,157 +77,124 @@ export const RankEmblem = ({ elo = 1000, compact = false }) => {
   );
 };
 
-const RuleCard = ({ icon: Icon, title, children, accent = "text-magma" }) => (
-  <div className="m8-panel rounded-2xl p-4 sm:p-5">
-    <div className="flex items-start gap-3">
-      <div className="w-10 h-10 rounded-xl bg-[#11151C] border border-[#2A303B] flex items-center justify-center shrink-0">
-        <Icon size={18} className={accent} />
+const Rule = ({ icon: Icon, title, value, text, accent = "text-white" }) => (
+  <div className="rounded-xl border border-[#222834] bg-[#0F1218] p-4">
+    <div className="flex items-center gap-2.5">
+      <div className="w-8 h-8 rounded-lg border border-[#2A303B] bg-[#151923] flex items-center justify-center shrink-0">
+        <Icon size={15} className={accent} />
       </div>
-      <div>
-        <div className="font-display font-black text-base">{title}</div>
-        <div className="text-sm text-muted-foreground mt-1 leading-relaxed">{children}</div>
+      <div className="min-w-0">
+        <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{title}</div>
+        <div className={`font-mono font-black text-base mt-0.5 ${accent}`}>{value}</div>
       </div>
     </div>
+    <div className="text-[11px] leading-5 text-muted-foreground mt-3">{text}</div>
   </div>
 );
 
 export default function RankGuide() {
   return (
     <div className="m8-page-stack">
-      <section className="m8-panel rounded-2xl p-5 sm:p-6">
-        <div className="brand-kicker mb-1">Competitive Guide</div>
-        <h1 className="font-display text-3xl font-black tracking-[-0.03em]">Guide</h1>
-        <p className="text-sm text-muted-foreground mt-2 max-w-3xl leading-relaxed">
-          Here you can see how the ranking works: how you gain or lose Elo,
-          how challenge value, MVP, MERDA and rank thresholds affect progression
-          through the divisions.
-        </p>
-      </section>
-
-      <section>
-        <div className="brand-kicker mb-2">How Elo changes</div>
-        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3">
-          <RuleCard icon={Swords} title="Match result">
-            Every verified result starts at <strong className="text-white">+25 Elo</strong> for the winner
-            and <strong className="text-white">-25 Elo</strong> for the loser.
-          </RuleCard>
-
-          <RuleCard icon={TrendingUp} title="Challenge value" accent="text-emerald-400">
-            The virtual challenge value is added to the result. With value 5, the base total becomes
-            <strong className="text-white"> +30 / -30</strong>; with value 20 it becomes
-            <strong className="text-white"> +45 / -45</strong>.
-          </RuleCard>
-
-          <RuleCard icon={Trophy} title="MVP 🏆" accent="text-[#D5A33A]">
-            MVP is not selected manually: it is awarded automatically every
-            <strong className="text-white"> 4 consecutive wins</strong> and vale
-            <strong className="text-white"> +3 Elo</strong>. If the streak continues, you receive it again
-            alla 8ª, 12ª, 16ª win consecutiva and così via.
-          </RuleCard>
-
-          <RuleCard icon={Flame} title="MERDA 💩" accent="text-[#C79A6B]">
-            MERDA does not remove Elo. Every <strong className="text-white">4 consecutive losses</strong>
-            you receive 1 💩; every <strong className="text-white">4 consecutive wins</strong>
-            you remove 1 active 💩.
-          </RuleCard>
-
-          <RuleCard icon={CheckCircle2} title="Verified results only" accent="text-emerald-400">
-            The ranking changes only when the result is verified and locked.
-            Technical Admin changes do not generate player notifications.
-          </RuleCard>
-
-          <RuleCard icon={Scale} title="Minimum floor">
-            Elo cannot drop below <strong className="text-white">500</strong>.
-            Non esistono bonus sorpresa o bonus upset: il calcolo resta leggibile and prevedibile.
-          </RuleCard>
-        </div>
-      </section>
-
-      <section className="m8-panel rounded-2xl p-5 sm:p-6">
-        <div className="brand-kicker mb-1">Quick examples</div>
-        <h2 className="font-display text-xl font-black">How much you gain or lose</h2>
-
-        <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3 mt-4">
-          {[
-            { value: 1, win: 26, loss: -26 },
-            { value: 5, win: 30, loss: -30 },
-            { value: 12, win: 37, loss: -37 },
-            { value: 20, win: 45, loss: -45 },
-          ].map((row) => (
-            <div key={row.value} className="rounded-xl bg-[#0F1218] border border-[#222834] p-4">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                Value {row.value}
-              </div>
-              <div className="flex items-center justify-between mt-3">
-                <span className="font-mono font-black text-emerald-400">+{row.win}</span>
-                <span className="text-xs text-muted-foreground">win</span>
-              </div>
-              <div className="flex items-center justify-between mt-2">
-                <span className="font-mono font-black text-red-400">{row.loss}</span>
-                <span className="text-xs text-muted-foreground">loss</span>
-              </div>
-              <div className="text-[10px] text-muted-foreground mt-3">
-                Se questa è la 4ª, 8ª, 12ª… win consecutiva, aggiungi +3 Elo MVP.
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="m8-panel rounded-2xl p-5 sm:p-6">
-        <div className="brand-kicker mb-1">Team balancing</div>
-        <h2 className="font-display text-xl font-black">How Auto Balance works</h2>
-        <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-          Auto Balance is only used to create more balanced teams: it does not directly change
-          Elo. It mainly considers peak Elo, then current Elo and win
-          rate. When you choose a game or mode, it also uses history from that specific context;
-          the more matches you have in that context, the more that data matters.
-        </p>
-
-        <div className="grid sm:grid-cols-3 gap-3 mt-4">
-          <div className="rounded-xl bg-[#0F1218] border border-[#222834] p-4">
-            <div className="font-mono font-black text-lg">60%</div>
-            <div className="text-xs text-muted-foreground mt-1">Peak Elo</div>
+      <section className="m8-panel rounded-[22px] p-5 sm:p-6">
+        <div className="brand-kicker mb-1">Guide</div>
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3">
+          <div>
+            <h1 className="font-display text-3xl sm:text-4xl font-black tracking-[-0.04em]">
+              Competitive rules
+            </h1>
+            <p className="text-sm text-[#7F8795] mt-2 max-w-2xl">
+              Elo, streak awards, team balance and divisions. Everything you need in one place.
+            </p>
           </div>
-          <div className="rounded-xl bg-[#0F1218] border border-[#222834] p-4">
-            <div className="font-mono font-black text-lg">25%</div>
-            <div className="text-xs text-muted-foreground mt-1">Current Elo</div>
-          </div>
-          <div className="rounded-xl bg-[#0F1218] border border-[#222834] p-4">
-            <div className="font-mono font-black text-lg">15%</div>
-            <div className="text-xs text-muted-foreground mt-1">Win Rate</div>
-          </div>
-        </div>
-      </section>
 
-      <section className="m8-panel rounded-2xl p-5 sm:p-6">
-        <div className="brand-kicker mb-1">Bounties</div>
-        <h2 className="font-display text-xl font-black">Match rewards separated from Elo</h2>
-        <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-          Bounties reward special situations and grant bounty points, but
-          <strong className="text-white"> do not change Elo</strong>. They have been
-          balanced to be rarer than normal results without affecting the ranking.
-        </p>
-
-        <div className="grid sm:grid-cols-2 xl:grid-cols-5 gap-3 mt-4">
-          {[
-            ["Streak Breaker", "3–6 points", "End an opponent streak of at least 3 wins"],
-            ["Duo Breaker", "6 points", "Beat an undefeated duo with at least 3 games together"],
-            ["Giant Killer", "5 points", "Win as the underdog"],
-            ["Payback", "2 points", "Beat the player who just defeated you"],
-            ["Rivalry", "2 points", "Win a close head-to-head matchup"],
-          ].map(([title, points, detail]) => (
-            <div key={title} className="rounded-xl bg-[#0F1218] border border-[#222834] p-4">
-              <div className="font-display font-black text-sm">{title}</div>
-              <div className="font-mono text-xs text-[#D5A33A] mt-2">{points}</div>
-              <div className="text-[11px] text-muted-foreground mt-2 leading-relaxed">{detail}</div>
-            </div>
-          ))}
+          <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-[#697181]">
+            <CheckCircle2 size={14} className="text-emerald-400" />
+            Verified results only
+          </div>
         </div>
       </section>
 
       <section>
-        <div className="brand-kicker mb-2">Divisions</div>
+        <div className="brand-kicker mb-2">Core rules</div>
+        <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+          <Rule
+            icon={Swords}
+            title="Match result"
+            value="+25 / -25"
+            text="Every verified team result starts at +25 Elo for the winner and -25 Elo for the loser."
+            accent="text-magma"
+          />
+
+          <Rule
+            icon={Scale}
+            title="Money value"
+            value="± stake"
+            text="The pairing amount is added to the Elo change. A €5 matchup becomes +30 / -30."
+            accent="text-emerald-400"
+          />
+
+          <Rule
+            icon={Trophy}
+            title="MVP"
+            value="3 W = 🏆 +3"
+            text="Every 3 consecutive wins awards 1 MVP and +3 Elo. At 6 wins you earn another one."
+            accent="text-[#D5A33A]"
+          />
+
+          <Rule
+            icon={Flame}
+            title="MERDA"
+            value="3 L = 💩"
+            text="Every 3 consecutive losses adds 1 MERDA. Every 3-win milestone removes 1 active MERDA."
+            accent="text-[#C79A6B]"
+          />
+        </div>
+
+        <div className="mt-3 rounded-xl border border-[#222834] bg-[#0F1218] px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] text-muted-foreground">
+          <span><strong className="text-white">500 Elo</strong> minimum floor</span>
+          <span>No upset bonus</span>
+          <span>No manual MVP selection</span>
+          <span>Admin verification locks the result</span>
+        </div>
+      </section>
+
+      <section className="m8-panel rounded-[22px] p-5 sm:p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+          <div className="max-w-xl">
+            <div className="brand-kicker mb-1">Auto Balance</div>
+            <h2 className="font-display text-xl font-black">Team strength</h2>
+            <p className="text-sm text-muted-foreground mt-2 leading-6">
+              Auto Balance only builds teams. It does not change Elo. Game and mode history
+              become more relevant as more contextual matches are played.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 w-full lg:w-auto lg:min-w-[420px]">
+            {[
+              ["60%", "Peak Elo"],
+              ["25%", "Current"],
+              ["15%", "Win Rate"],
+            ].map(([value, label]) => (
+              <div key={label} className="rounded-xl border border-[#222834] bg-[#0F1218] px-3 py-4 text-center">
+                <div className="font-mono font-black text-lg">{value}</div>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1">{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div className="flex items-end justify-between gap-3 mb-2">
+          <div>
+            <div className="brand-kicker mb-1">Ranks</div>
+            <h2 className="font-display text-xl font-black">Divisions</h2>
+          </div>
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+            500 → 1350+
+          </div>
+        </div>
+
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
           {RANKS.map((rank, index) => {
             const Icon = iconFor(index);
@@ -242,47 +202,32 @@ export default function RankGuide() {
 
             return (
               <div
-                key={rank.name}
-                className="m8-panel rounded-2xl p-5 relative overflow-hidden"
-                style={{ borderColor: rank.color + "38" }}
+                key={rank.id}
+                className="rounded-2xl border bg-[#0F1218] p-4 flex items-center gap-3"
+                style={{ borderColor: rank.color + "32" }}
               >
                 <div
-                  className="absolute inset-x-0 top-0 h-[2px] opacity-85"
-                  style={{ background: "linear-gradient(90deg, transparent, " + rank.color + ", transparent)" }}
-                />
-
-                <div
-                  className="w-16 h-16 mx-auto rotate-45 rounded-2xl border bg-[#0F1218] flex items-center justify-center"
-                  style={{
-                    borderColor: rank.color + "66",
-                    boxShadow: "0 10px 28px " + rank.color + "18",
-                  }}
+                  className="w-11 h-11 rounded-xl border bg-[#151923] flex items-center justify-center shrink-0"
+                  style={{ borderColor: rank.color + "55" }}
                 >
-                  <div className="-rotate-45 text-center">
-                    <Icon size={26} className="mx-auto" style={{ color: rank.color }} />
-                    <div className="text-[9px] font-black mt-0.5">
-                      {rank.id === "masters" ? "M" : rank.roman}
-                    </div>
+                  <Icon size={20} style={{ color: rank.color }} />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
+                    Division {rank.roman}
+                  </div>
+                  <div className="font-display font-black uppercase" style={{ color: rank.color }}>
+                    {rank.name}
                   </div>
                 </div>
 
-                <div className="text-center mt-5">
-                  <div className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground">
-                    Division {rank.roman}
+                <div className="text-right shrink-0">
+                  <div className="font-mono font-black text-xs" style={{ color: rank.color }}>
+                    {next ? `${rank.min}–${rank.max}` : `${rank.min}+`}
                   </div>
-                  <div
-                    className="font-display text-xl font-black uppercase mt-1"
-                    style={{ color: rank.color }}
-                  >
-                    {rank.name}
-                  </div>
-                  <div className="font-mono text-sm mt-2" style={{ color: rank.color }}>
-                    {next ? `${rank.min} – ${rank.max} ELO` : `${rank.min}+ ELO`}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {next
-                      ? `Reach ${next.min} Elo for ${next.name}`
-                      : "Division più alta"}
+                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground mt-1">
+                    Elo
                   </div>
                 </div>
               </div>
@@ -291,15 +236,17 @@ export default function RankGuide() {
         </div>
       </section>
 
-      <section className="m8-panel rounded-2xl p-5 sm:p-6">
-        <div className="brand-kicker mb-1">Summary</div>
-        <h2 className="font-display text-xl font-black">How to climb</h2>
-        <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-          Win verified matches and build positive streaks: every block of 4 consecutive wins
-          automatically awards an MVP and +3 Elo. The virtual challenge value increases
-          both the gain and the loss by the same amount.
-          MERDA is instead a negative-streak indicator and does not change Elo.
-        </p>
+      <section className="rounded-2xl border border-[#222834] bg-[#0F1218] px-4 py-3">
+        <div className="flex items-start gap-3">
+          <Trophy size={16} className="text-[#D5A33A] mt-0.5 shrink-0" />
+          <div>
+            <div className="text-sm font-bold">Bounties stay separate</div>
+            <div className="text-[11px] text-muted-foreground mt-1 leading-5">
+              Streak Breaker, Duo Breaker, Giant Killer, Payback and Rivalry award bounty points only.
+              They never change Elo.
+            </div>
+          </div>
+        </div>
       </section>
     </div>
   );
