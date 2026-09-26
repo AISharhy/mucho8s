@@ -256,7 +256,7 @@ export const RecordMatchDialog = ({
         captainBPlayerId: effectiveCaptainB,
       });
       if (!report) return;
-      toast.success("Result submitted — waiting for opponent verification");
+      toast.success("Result submitted — waiting for Admin verification");
       onReported?.(report);
     }
 
