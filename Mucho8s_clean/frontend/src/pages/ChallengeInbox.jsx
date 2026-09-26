@@ -37,6 +37,7 @@ export default function ChallengeInbox() {
   const navigate = useNavigate();
   const {
     challenges,
+    matches,
     discordSession,
     discordAccount,
     discordPlayer,
@@ -54,6 +55,28 @@ export default function ChallengeInbox() {
 
     const seriesSeen = new Set();
     const result = [];
+    const matchById = new Map(
+      (Array.isArray(matches) ? matches : []).map((match) => [
+        String(match?.id || ""),
+        match,
+      ])
+    );
+
+    const challengeDate = (challenge) => {
+      const linkedMatch = challenge?.match_id
+        ? matchById.get(String(challenge.match_id))
+        : null;
+
+      const raw =
+        linkedMatch?.date ||
+        challenge?.created_at ||
+        challenge?.verified_at ||
+        challenge?.result_reported_at ||
+        0;
+
+      const timestamp = new Date(raw).getTime();
+      return Number.isFinite(timestamp) ? timestamp : 0;
+    };
 
     challenges.forEach((challenge) => {
       if (challenge.series_id) {
@@ -90,6 +113,7 @@ export default function ChallengeInbox() {
           active,
           series,
           roundCount: Number(series?.round_count || group.length),
+          sortAt: challengeDate(latest),
         });
         return;
       }
@@ -109,11 +133,21 @@ export default function ChallengeInbox() {
         ["pending", "accepted", "result_pending", "disputed"].includes(challenge.status) ||
         (challenge.status === "completed" && !challenge.payment_received_at);
 
-      result.push({ challenge, isChallenger, opponentId, opponent, needsAction, active, series: null, roundCount: 0 });
+      result.push({
+        challenge,
+        isChallenger,
+        opponentId,
+        opponent,
+        needsAction,
+        active,
+        series: null,
+        roundCount: 0,
+        sortAt: challengeDate(challenge),
+      });
     });
 
-    return result;
-  }, [challenges, discordAccount, playerMap]);
+    return result.sort((a, b) => Number(b.sortAt || 0) - Number(a.sortAt || 0));
+  }, [challenges, matches, discordAccount, playerMap]);
 
   const visible = rows.filter((row) => {
     if (tab === "action") return row.needsAction;
@@ -193,7 +227,7 @@ export default function ChallengeInbox() {
         />
       ) : (
         <div className="space-y-3">
-          {visible.map(({ challenge, isChallenger, opponentId, opponent, needsAction, series, roundCount }) => {
+          {visible.map(({ challenge, isChallenger, opponentId, opponent, needsAction, series, roundCount, sortAt }) => {
             const completed = challenge.status === "completed";
             const won = completed && challenge.reported_winner_player_id === discordPlayer.id;
             const lost = completed && challenge.reported_winner_player_id && !won;
@@ -236,7 +270,7 @@ export default function ChallengeInbox() {
                           </>
                         ) : (
                           <>
-                            {String(challenge.platform || "").toUpperCase()} · {money(challenge)} · {new Date(challenge.created_at).toLocaleString()}
+                            {String(challenge.platform || "").toUpperCase()} · {money(challenge)} · {new Date(sortAt || challenge.created_at).toLocaleString()}
                           </>
                         )}
                       </div>
