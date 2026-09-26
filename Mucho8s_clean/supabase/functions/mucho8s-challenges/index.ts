@@ -347,11 +347,11 @@ Deno.serve(async (req: Request) => {
           reported_winner_player_id: winnerPlayerId,
           result_reported_at: verifiedAt,
           verified_at: verifiedAt,
-          last_event: "match_pairing_verified",
-          challenger_seen_status: null,
-          challenged_seen_status: null,
-          challenger_seen_event: null,
-          challenged_seen_event: null,
+          last_event: "admin_sync",
+          challenger_seen_status: "completed",
+          challenged_seen_status: "completed",
+          challenger_seen_event: "admin_sync",
+          challenged_seen_event: "admin_sync",
         };
 
         if (payoutMustReset) {
@@ -492,11 +492,12 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      updates.challenger_seen_status = null;
-      updates.challenged_seen_status = null;
-      if (body?.payoutResolution === undefined) updates.last_event = "admin_update";
-      updates.challenger_seen_event = null;
-      updates.challenged_seen_event = null;
+      updates.last_event = "admin_update";
+      const finalStatus = String(updates.status ?? current.status);
+      updates.challenger_seen_status = finalStatus;
+      updates.challenged_seen_status = finalStatus;
+      updates.challenger_seen_event = "admin_update";
+      updates.challenged_seen_event = "admin_update";
 
       const { data, error } = await supabase
         .from("player_challenges")
