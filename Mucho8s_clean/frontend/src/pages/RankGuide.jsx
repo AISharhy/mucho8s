@@ -1,53 +1,14 @@
 import React from "react";
-import { useData } from "@/context/DataContext";
-import { RANKS, rankProgress } from "@/lib/elo";
-import { RankBadge, RankProgress } from "@/components/shared";
+import { RANKS } from "@/lib/elo";
+import { RankBadge } from "@/components/shared";
 import { Shield, ChevronRight, Trophy } from "lucide-react";
 
 const rangeLabel = (rank) =>
   Number.isFinite(rank.max) ? `${rank.min}–${rank.max} ELO` : `${rank.min}+ ELO`;
 
 export default function RankGuide() {
-  const { players, discordPlayer } = useData();
-  const previewPlayer =
-    discordPlayer ||
-    [...players].sort((a, b) => Number(b.currentElo || 0) - Number(a.currentElo || 0))[0] ||
-    { name: "Player", currentElo: 1000 };
-
-  const preview = rankProgress(previewPlayer.currentElo);
-
   return (
     <div className="space-y-5">
-      <section className="brand-card rounded-2xl p-5 sm:p-6 overflow-hidden relative">
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-center">
-          <div>
-            <div className="brand-kicker mb-2">Rank Preview</div>
-            <h3 className="font-display text-2xl sm:text-3xl font-extrabold">
-              {previewPlayer.name} is <span style={{ color: preview.rank.color }}>{preview.rank.name}</span>
-            </h3>
-            <p className="text-sm text-muted-foreground mt-2 max-w-xl">
-              Competitive divisions based directly on your current Elo.
-            </p>
-
-            <div className="mt-5 max-w-xl">
-              <RankProgress elo={previewPlayer.currentElo} />
-            </div>
-
-            <div className="mt-3 text-sm text-muted-foreground">
-              {preview.next
-                ? `You need ${preview.eloNeeded} Elo to reach ${preview.next.name}.`
-                : "You reached the highest MuchoMoney8s division."}
-            </div>
-          </div>
-
-          <div className="rounded-2xl bg-[#0B0D12]/70 border border-[#2A303B] p-5 flex items-center justify-center min-h-[170px]">
-            <div className="scale-[1.35] sm:scale-150">
-              <RankBadge elo={previewPlayer.currentElo} />
-            </div>
-          </div>
-        </div>
-      </section>
-
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className="brand-kicker mb-1">Division Ladder</div>
