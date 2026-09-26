@@ -4,12 +4,13 @@ import { PlayerAvatar, EloBadge } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RecordMatchDialog } from "@/components/RecordMatchDialog";
-import { balanceTeams, computeGameStats, playerForGame } from "@/lib/elo";
+import { computeContextStats, playerForContext } from "@/lib/elo";
 import { GAMES } from "@/lib/demoData";
 import {
   analyzeManualTeams,
   duoChemistry,
   draftTeamsByChemistry,
+  draftTeamsBalanced,
 } from "@/lib/chemistry";
 import {
   Check,
@@ -26,6 +27,8 @@ import {
   Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
+
+const MATCH_MODES = ["Hardpoint", "Search & Destroy"];
 
 const FORMATS = [
   { key: 4, label: "2v2" },
@@ -65,7 +68,7 @@ const BalanceBadge = ({ score, verdict }) => {
   );
 };
 
-const TeamCard = ({ label, team, chemistry, playerAvatars, game }) => (
+const TeamCard = ({ label, team, chemistry, playerAvatars, game, matchMode }) => (
   <div className="card-surface rounded-2xl p-5">
     <div className="flex items-center justify-between gap-3 mb-4">
       <div>
@@ -86,8 +89,14 @@ const TeamCard = ({ label, team, chemistry, playerAvatars, game }) => (
           />
           <div className="min-w-0 flex-1">
             <div className="font-semibold truncate">{player.name}</div>
-            <div className="text-xs text-muted-foreground">
-              {player.currentElo} {game === "ALL" ? "Elo" : `${game} rating`}
+            <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-1.5">
+              <span>
+                {player.currentElo} {game === "ALL" && matchMode === "ALL" ? "Elo" : "context rating"}
+              </span>
+              {player.role && <span>· {player.role}</span>}
+              {Number.isFinite(Number(player.contextConfidence)) && (game !== "ALL" || matchMode !== "ALL") && (
+                <span>· {player.contextConfidence}% confidence</span>
+              )}
             </div>
           </div>
           <EloBadge elo={player.currentElo} />
@@ -136,26 +145,28 @@ export default function TeamBuilder() {
   const [sending, setSending] = useState(false);
   const [recordOpen, setRecordOpen] = useState(false);
   const [game, setGame] = useState("ALL");
+  const [matchMode, setMatchMode] = useState("ALL");
+  const [whyOpen, setWhyOpen] = useState(false);
 
   const perTeam = required / 2;
 
-  const gameMatches = useMemo(
-    () => game === "ALL" ? matches : matches.filter((match) => match.game === game),
-    [matches, game]
+  const context = useMemo(
+    () => computeContextStats(matches, { game, mode: matchMode }),
+    [matches, game, matchMode]
   );
 
-  const gameStats = useMemo(
-    () => game === "ALL" ? null : computeGameStats(matches, game),
-    [matches, game]
-  );
+  const contextMatches = context.matches;
 
   const contextualPlayerMap = useMemo(() => {
     const map = {};
     players.forEach((player) => {
-      map[player.id] = game === "ALL" ? player : playerForGame(player, gameStats || {});
+      map[player.id] =
+        game === "ALL" && matchMode === "ALL"
+          ? player
+          : playerForContext(player, context.stats || {});
     });
     return map;
-  }, [players, game, gameStats]);
+  }, [players, game, matchMode, context.stats]);
 
   const selectedPlayers = useMemo(
     () => selected.map((id) => contextualPlayerMap[id]).filter(Boolean),
@@ -175,9 +186,9 @@ export default function TeamBuilder() {
   const manualResult = useMemo(
     () =>
       manualTeamA.length === perTeam && manualTeamB.length === perTeam
-        ? analyzeManualTeams(manualTeamA, manualTeamB, gameMatches)
+        ? analyzeManualTeams(manualTeamA, manualTeamB, contextMatches)
         : null,
-    [manualTeamA, manualTeamB, gameMatches, perTeam]
+    [manualTeamA, manualTeamB, contextMatches, perTeam]
   );
 
   const result = mode === "manual" ? manualResult : autoResult;
@@ -193,12 +204,12 @@ export default function TeamBuilder() {
         pairs.push({
           a: pool[i],
           b: pool[j],
-          ...duoChemistry(pool[i], pool[j], gameMatches),
+          ...duoChemistry(pool[i], pool[j], contextMatches),
         });
       }
     }
     return pairs.sort((a, b) => b.score - a.score);
-  }, [mode, selectedPlayers, manualTeamA, manualTeamB, gameMatches]);
+  }, [mode, selectedPlayers, manualTeamA, manualTeamB, contextMatches]);
 
   const filtered = useMemo(
     () => players.filter((player) => player.name.toLowerCase().includes(query.toLowerCase())),
@@ -225,6 +236,13 @@ export default function TeamBuilder() {
   const changeGame = (nextGame) => {
     setGame(nextGame);
     setAutoResult(null);
+    setWhyOpen(false);
+  };
+
+  const changeMatchMode = (nextMode) => {
+    setMatchMode(nextMode);
+    setAutoResult(null);
+    setWhyOpen(false);
   };
 
   const toggleAutoPlayer = (id) => {
@@ -277,10 +295,9 @@ export default function TeamBuilder() {
     let draft = null;
 
     if (mode === "balance") {
-      const balanced = balanceTeams(selectedPlayers);
-      if (balanced) draft = analyzeManualTeams(balanced.teamA, balanced.teamB, gameMatches);
+      draft = draftTeamsBalanced(selectedPlayers, contextMatches);
     } else {
-      draft = draftTeamsByChemistry(selectedPlayers, gameMatches);
+      draft = draftTeamsByChemistry(selectedPlayers, contextMatches);
     }
 
     if (!draft) {
@@ -289,6 +306,7 @@ export default function TeamBuilder() {
     }
 
     setAutoResult(draft);
+    setWhyOpen(false);
     toast.success(
       game === "ALL"
         ? `${mode === "balance" ? "Balanced teams" : "Chemistry draft"} generated · ${draft.balanceScore}% balance`
@@ -345,6 +363,7 @@ export default function TeamBuilder() {
       teamA: result.teamA.map((player) => player.name),
       teamB: result.teamB.map((player) => player.name),
       game: game === "ALL" ? "All Games" : game,
+      mode: matchMode === "ALL" ? "All Modes" : matchMode,
       balanceScore: result.balanceScore,
       pairings: result.pairings.map((pair) => ({
         playerA: pair.playerA.name,
@@ -426,6 +445,39 @@ export default function TeamBuilder() {
                 {item}
               </button>
             ))}
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-[#1D222C]">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
+              Mode context
+            </div>
+            <div className="flex flex-wrap gap-1.5" data-testid="team-builder-mode">
+              <button
+                type="button"
+                onClick={() => changeMatchMode("ALL")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                  matchMode === "ALL"
+                    ? "bg-white text-black border-white"
+                    : "bg-[#0F1218] text-muted-foreground border-[#222834] hover:text-white"
+                }`}
+              >
+                All Modes
+              </button>
+              {MATCH_MODES.map((item) => (
+                <button
+                  type="button"
+                  key={item}
+                  onClick={() => changeMatchMode(item)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                    matchMode === item
+                      ? "bg-white text-black border-white"
+                      : "bg-[#0F1218] text-muted-foreground border-[#222834] hover:text-white"
+                  }`}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -596,9 +648,10 @@ export default function TeamBuilder() {
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold truncate">{player.name}</div>
                     <div className="text-xs text-muted-foreground">
-                      {game === "ALL"
+                      {game === "ALL" && matchMode === "ALL"
                         ? `${player.totalMatches || 0} matches · ${player.currentElo} Elo`
-                        : `${contextualPlayerMap[player.id]?.totalMatches || 0} ${game} matches · ${contextualPlayerMap[player.id]?.currentElo || 1000} rating`}
+                        : `${contextualPlayerMap[player.id]?.contextMatches || 0} context matches · ${contextualPlayerMap[player.id]?.currentElo || 1000} rating · ${contextualPlayerMap[player.id]?.contextConfidence || 0}% confidence`}
+                      {player.role ? ` · ${player.role}` : ""}
                     </div>
                   </div>
                 </div>
@@ -629,7 +682,9 @@ export default function TeamBuilder() {
                 <div className="brand-kicker mb-1">Chemistry Scan</div>
                 <h3 className="font-display text-xl font-bold">Compatibility</h3>
                 <div className="text-xs text-muted-foreground mt-1">
-                  {game === "ALL" ? "All-game history" : `${game} history only · ${gameMatches.length} recorded matches`}
+                  {game === "ALL" && matchMode === "ALL"
+                    ? "All-game history"
+                    : `${game === "ALL" ? "All games" : game} · ${matchMode === "ALL" ? "All modes" : matchMode} · ${contextMatches.length} recorded matches`}
                 </div>
               </div>
               <Zap size={19} className="text-[#D5A33A]" />
@@ -692,6 +747,9 @@ export default function TeamBuilder() {
                       <span className="px-2 py-1 rounded-lg bg-[#171B23] border border-[#2B313E] text-[10px] font-bold text-[#D5A33A]">
                         {game === "ALL" ? "ALL GAMES" : game}
                       </span>
+                      <span className="px-2 py-1 rounded-lg bg-[#171B23] border border-[#2B313E] text-[10px] font-bold text-[#65D5D3]">
+                        {matchMode === "ALL" ? "ALL MODES" : matchMode}
+                      </span>
                     </div>
                     <div className="text-sm text-muted-foreground mt-1">
                       Overall fit {result.draftScore}% · Team chemistry {result.chemistryScore}%
@@ -700,7 +758,21 @@ export default function TeamBuilder() {
                   <BalanceBadge score={result.balanceScore} verdict={result.balanceVerdict} />
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 mt-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-4">
+                  {[
+                    ["Lobby Quality", result.lobbyQuality, "text-white"],
+                    ["Balance", result.balanceScore, "text-emerald-400"],
+                    ["Role Balance", result.roleBalanceScore, result.roleConfidence > 0 ? "text-[#D5A33A]" : "text-muted-foreground"],
+                    ["Freshness", result.freshnessScore, "text-[#65D5D3]"],
+                  ].map(([label, value, tone]) => (
+                    <div key={label} className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
+                      <div className={`font-mono font-bold text-lg mt-1 ${tone}`}>{value}%</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 mt-2">
                   <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
                     <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Team A Power</div>
                     <div className="font-mono font-bold text-lg mt-1">{result.strengthA}</div>
@@ -714,6 +786,31 @@ export default function TeamBuilder() {
                     <div className="font-mono font-bold text-lg mt-1">{result.strengthB}</div>
                   </div>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => setWhyOpen((open) => !open)}
+                  className="mt-4 text-xs font-bold text-[#D5A33A] hover:text-white transition-colors"
+                >
+                  {whyOpen ? "Hide explanation" : "Why this split?"}
+                </button>
+
+                {whyOpen && (
+                  <div className="mt-3 rounded-xl bg-[#0F1218] border border-[#1D222C] p-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {(result.why || []).map((reason) => (
+                        <div key={reason} className="text-xs text-muted-foreground">
+                          <span className="text-emerald-400 mr-2">✓</span>{reason}
+                        </div>
+                      ))}
+                    </div>
+                    {result.roleConfidence === 0 && (
+                      <div className="text-[10px] text-[#D5A33A] mt-3">
+                        Assign player roles in Admin → Players to make Role Balance fully active.
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="h-2 rounded-full bg-[#1D222C] overflow-hidden mt-4">
                   <div
@@ -730,6 +827,7 @@ export default function TeamBuilder() {
                   chemistry={result.chemistryA}
                   playerAvatars={playerAvatars}
                   game={game}
+                  matchMode={matchMode}
                 />
                 <TeamCard
                   label="Team B"
@@ -737,6 +835,7 @@ export default function TeamBuilder() {
                   chemistry={result.chemistryB}
                   playerAvatars={playerAvatars}
                   game={game}
+                  matchMode={matchMode}
                 />
               </div>
 
@@ -830,6 +929,7 @@ export default function TeamBuilder() {
           pairings: reportPairings,
         } : null}
         defaultGame={game !== "ALL" ? game : undefined}
+        defaultMode={matchMode !== "ALL" ? matchMode : undefined}
       />
     </div>
   );
