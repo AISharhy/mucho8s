@@ -1,3 +1,5 @@
+import { playerRating } from "@/lib/elo";
+
 const pairKey = (a, b) => [String(a), String(b)].sort().join(":");
 
 const pairsOf = (ids = []) => {
@@ -42,15 +44,22 @@ export const analyzeBountyHistory = (playerId, players = [], matches = []) => {
   const winStreaks = new Map();
   const duoHistory = new Map();
   const lastHeadToHead = new Map();
+  const headToHeadStats = new Map();
   const eventsByPlayer = new Map();
+  const lastAwardIndex = new Map();
 
-  const addEvent = (id, event) => {
+  const addEvent = (id, event, matchIndex) => {
+    const cooldownKey = `${id}:${event.cooldownKey || event.type}`;
+    const previousIndex = lastAwardIndex.get(cooldownKey);
+    if (Number.isFinite(previousIndex) && matchIndex - previousIndex < 3) return;
+
     const list = eventsByPlayer.get(id) || [];
     list.push(event);
     eventsByPlayer.set(id, list);
+    lastAwardIndex.set(cooldownKey, matchIndex);
   };
 
-  ordered.forEach((match) => {
+  ordered.forEach((match, matchIndex) => {
     const teamA = (match.teamA || []).map(String);
     const teamB = (match.teamB || []).map(String);
     const winnerSide = match.winner === "B" ? "B" : "A";
@@ -75,7 +84,8 @@ export const analyzeBountyHistory = (playerId, players = [], matches = []) => {
         points,
         date,
         meta: { targetPlayerId: target.id, streak: target.streak },
-      }));
+        cooldownKey: `streak_breaker:${target.id}`,
+      }, matchIndex));
     }
 
     const undefeatedDuos = pairsOf(losers)
@@ -97,7 +107,8 @@ export const analyzeBountyHistory = (playerId, players = [], matches = []) => {
         points: 8,
         date,
         meta: { playerAId: duo.a, playerBId: duo.b, games: duo.games },
-      }));
+        cooldownKey: `duo_breaker:${pairKey(duo.a, duo.b)}`,
+      }, matchIndex));
     }
 
     if (wasUpsetWin(match, winners)) {
@@ -110,7 +121,8 @@ export const analyzeBountyHistory = (playerId, players = [], matches = []) => {
         points: 5,
         date,
         meta: {},
-      }));
+        cooldownKey: "underdog",
+      }, matchIndex));
     }
 
     winners.forEach((id) => {
@@ -133,7 +145,36 @@ export const analyzeBountyHistory = (playerId, players = [], matches = []) => {
         points: 4,
         date,
         meta: { opponentPlayerId: target.opponentId },
-      });
+        cooldownKey: `revenge:${target.opponentId}`,
+      }, matchIndex);
+    });
+
+    winners.forEach((id) => {
+      const rivalryTargets = losers
+        .map((opponentId) => {
+          const history = headToHeadStats.get(pairKey(id, opponentId));
+          if (!history || history.games < 3) return null;
+          const idWins = Number(history.wins?.[id] || 0);
+          const opponentWins = Number(history.wins?.[opponentId] || 0);
+          if (Math.abs(idWins - opponentWins) > 1) return null;
+          return { opponentId, games: history.games, idWins, opponentWins };
+        })
+        .filter(Boolean)
+        .sort((a, b) => b.games - a.games);
+
+      if (!rivalryTargets.length) return;
+      const rivalry = rivalryTargets[0];
+      addEvent(id, {
+        id: `rivalry:${match.id}:${id}`,
+        matchId: match.id,
+        type: "rivalry",
+        title: "Rivalry Edge",
+        detail: `Won a close rivalry match vs ${playerName(playerMap, rivalry.opponentId)}`,
+        points: 3,
+        date,
+        meta: { opponentPlayerId: rivalry.opponentId, games: rivalry.games },
+        cooldownKey: `rivalry:${rivalry.opponentId}`,
+      }, matchIndex);
     });
 
     winners.forEach((id) => {
@@ -161,6 +202,13 @@ export const analyzeBountyHistory = (playerId, players = [], matches = []) => {
         const aWon = winnerSide === "A";
         lastHeadToHead.set(opponentKey(a, b), { result: aWon ? "W" : "L", date });
         lastHeadToHead.set(opponentKey(b, a), { result: aWon ? "L" : "W", date });
+
+        const key = pairKey(a, b);
+        const row = headToHeadStats.get(key) || { games: 0, wins: {} };
+        row.games += 1;
+        row.wins[a] = Number(row.wins[a] || 0) + (aWon ? 1 : 0);
+        row.wins[b] = Number(row.wins[b] || 0) + (aWon ? 0 : 1);
+        headToHeadStats.set(key, row);
       });
     });
   });
@@ -291,6 +339,24 @@ export const buildBountyAchievementCatalog = (history) => {
       target: 3,
     },
     {
+      key: "rivalry-edge",
+      label: "Rivalry Edge",
+      detail: "Win a close rivalry matchup",
+      category: "Rivalry",
+      unlocked: Number(counts.rivalry || 0) >= 1,
+      progress: Math.min(Number(counts.rivalry || 0), 1),
+      target: 1,
+    },
+    {
+      key: "rivalry-king",
+      label: "Rivalry King",
+      detail: "Win 5 close rivalry bounties",
+      category: "Rivalry",
+      unlocked: Number(counts.rivalry || 0) >= 5,
+      progress: Math.min(Number(counts.rivalry || 0), 5),
+      target: 5,
+    },
+    {
       key: "bounty-collector",
       label: "Bounty Collector",
       detail: "Earn 25 Bounty Points",
@@ -309,4 +375,138 @@ export const buildBountyAchievementCatalog = (history) => {
       target: 75,
     },
   ];
+};
+
+
+export const detectLobbyBounties = (teamA = [], teamB = [], matches = []) => {
+  if (!teamA.length || !teamB.length) return [];
+
+  const playerMap = Object.fromEntries([...teamA, ...teamB].map((player) => [String(player.id), player]));
+  const ordered = [...(matches || [])]
+    .filter((match) => Array.isArray(match?.teamA) && Array.isArray(match?.teamB))
+    .sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+
+  const streaks = new Map();
+  const duoHistory = new Map();
+  const h2h = new Map();
+
+  ordered.forEach((match) => {
+    const a = (match.teamA || []).map(String);
+    const b = (match.teamB || []).map(String);
+    const winners = match.winner === "B" ? b : a;
+    const losers = match.winner === "B" ? a : b;
+
+    winners.forEach((id) => streaks.set(id, Math.max(0, Number(streaks.get(id) || 0)) + 1));
+    losers.forEach((id) => streaks.set(id, 0));
+
+    const updateDuo = (team, won) => {
+      pairsOf(team).forEach(([left, right]) => {
+        const key = pairKey(left, right);
+        const row = duoHistory.get(key) || { games: 0, wins: 0, losses: 0 };
+        row.games += 1;
+        if (won) row.wins += 1;
+        else row.losses += 1;
+        duoHistory.set(key, row);
+      });
+    };
+    updateDuo(a, match.winner !== "B");
+    updateDuo(b, match.winner === "B");
+
+    a.forEach((left) => {
+      b.forEach((right) => {
+        const key = pairKey(left, right);
+        const row = h2h.get(key) || { games: 0, wins: {} };
+        row.games += 1;
+        row.wins[left] = Number(row.wins[left] || 0) + (match.winner === "A" ? 1 : 0);
+        row.wins[right] = Number(row.wins[right] || 0) + (match.winner === "B" ? 1 : 0);
+        h2h.set(key, row);
+      });
+    });
+  });
+
+  const result = [];
+  const add = (item) => {
+    if (!result.some((existing) => existing.key === item.key)) result.push(item);
+  };
+
+  const inspectTargets = (targetTeam, hunterTeam, targetSide, hunterSide) => {
+    const streakTarget = [...targetTeam]
+      .map((player) => ({ player, streak: Number(streaks.get(String(player.id)) || 0) }))
+      .filter((row) => row.streak >= 3)
+      .sort((a, b) => b.streak - a.streak)[0];
+
+    if (streakTarget) {
+      add({
+        key: `streak:${targetSide}:${streakTarget.player.id}`,
+        title: "End the Streak",
+        detail: `${streakTarget.player.name} is on a ${streakTarget.streak}-win streak`,
+        reward: 4 + Math.min(4, Math.max(0, streakTarget.streak - 3)),
+        hunterSide,
+        type: "streak",
+      });
+    }
+
+    const undefeated = pairsOf(targetTeam.map((player) => String(player.id)))
+      .map(([a, b]) => ({ a, b, ...(duoHistory.get(pairKey(a, b)) || { games: 0, wins: 0, losses: 0 }) }))
+      .filter((row) => row.games >= 3 && row.losses === 0)
+      .sort((a, b) => b.games - a.games)[0];
+
+    if (undefeated) {
+      add({
+        key: `duo:${targetSide}:${pairKey(undefeated.a, undefeated.b)}`,
+        title: "Break the Duo",
+        detail: `${playerName(playerMap, undefeated.a)} + ${playerName(playerMap, undefeated.b)} are ${undefeated.games}-0 together`,
+        reward: 8,
+        hunterSide,
+        type: "duo",
+      });
+    }
+  };
+
+  inspectTargets(teamA, teamB, "A", "B");
+  inspectTargets(teamB, teamA, "B", "A");
+
+  const strengthA = teamA.reduce((sum, player) => sum + playerRating(player), 0);
+  const strengthB = teamB.reduce((sum, player) => sum + playerRating(player), 0);
+  const averageStrength = Math.max(1, (strengthA + strengthB) / 2);
+  const diffPct = Math.abs(strengthA - strengthB) / averageStrength;
+
+  if (diffPct >= 0.08) {
+    add({
+      key: "underdog",
+      title: "Giant Killer",
+      detail: `Team ${strengthA < strengthB ? "A" : "B"} enters as the underdog`,
+      reward: 5,
+      hunterSide: strengthA < strengthB ? "A" : "B",
+      type: "underdog",
+    });
+  }
+
+  const rivalries = [];
+  teamA.forEach((left) => {
+    teamB.forEach((right) => {
+      const row = h2h.get(pairKey(left.id, right.id));
+      if (!row || row.games < 3) return;
+      const leftWins = Number(row.wins?.[String(left.id)] || row.wins?.[left.id] || 0);
+      const rightWins = Number(row.wins?.[String(right.id)] || row.wins?.[right.id] || 0);
+      if (Math.abs(leftWins - rightWins) > 1) return;
+      rivalries.push({ left, right, games: row.games, leftWins, rightWins });
+    });
+  });
+
+  rivalries
+    .sort((a, b) => b.games - a.games)
+    .slice(0, 1)
+    .forEach((rivalry) => add({
+      key: `rivalry:${pairKey(rivalry.left.id, rivalry.right.id)}`,
+      title: "Rivalry Match",
+      detail: `${rivalry.left.name} vs ${rivalry.right.name} · ${rivalry.leftWins}-${rivalry.rightWins} H2H`,
+      reward: 3,
+      hunterSide: "BOTH",
+      type: "rivalry",
+    }));
+
+  return result
+    .sort((a, b) => b.reward - a.reward)
+    .slice(0, 3);
 };
