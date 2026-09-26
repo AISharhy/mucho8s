@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar, EloBadge } from "@/components/shared";
 import ChallengeSeriesCard from "@/components/ChallengeSeriesCard";
+import ChallengeChat from "@/components/ChallengeChat";
 import { CHALL_LOSS_AUDIO_SRC } from "@/assets/challLossAudio";
 import { Button } from "@/components/ui/button";
 import {
@@ -479,31 +480,35 @@ export default function ChallengeMatch() {
       )}
 
       {challenge.status === "accepted" && (
-        <div className="m8-panel rounded-2xl p-5 border-magma/20">
-          <div className="text-center py-2">
-            <div className="brand-kicker mb-1">Match Live</div>
-            <h3 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.03em]">PLAY THE CHALLENGE</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              When the match ends, report the winner below.
-            </p>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4 items-start">
+          <div className="m8-panel rounded-2xl p-5 border-magma/20">
+            <div className="text-center py-2">
+              <div className="brand-kicker mb-1">Match Live</div>
+              <h3 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.03em]">PLAY THE CHALLENGE</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Arrange the match in chat, then report the result.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5">
+              <Button
+                onClick={() => reportWinner(discordPlayer.id)}
+                disabled={Boolean(busy)}
+                className="h-14 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold"
+              >
+                <Trophy size={18} className="mr-2" /> VITTORIA
+              </Button>
+              <Button
+                onClick={() => reportWinner(opponent?.id)}
+                disabled={Boolean(busy) || !opponent?.id}
+                className="h-14 rounded-xl bg-red-500 hover:bg-red-400 text-white font-extrabold"
+              >
+                <X size={18} className="mr-2" /> SCONFITTA
+              </Button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5">
-            <Button
-              onClick={() => reportWinner(discordPlayer.id)}
-              disabled={Boolean(busy)}
-              className="h-14 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold"
-            >
-              <Trophy size={18} className="mr-2" /> VITTORIA
-            </Button>
-            <Button
-              onClick={() => reportWinner(opponent?.id)}
-              disabled={Boolean(busy) || !opponent?.id}
-              className="h-14 rounded-xl bg-red-500 hover:bg-red-400 text-white font-extrabold"
-            >
-              <X size={18} className="mr-2" /> SCONFITTA
-            </Button>
-          </div>
+          <ChallengeChat challengeId={challenge.id} />
         </div>
       )}
 
@@ -578,6 +583,10 @@ export default function ChallengeMatch() {
             </div>
           )}
         </div>
+      )}
+
+      {challenge.status === "result_pending" && (
+        <ChallengeChat challengeId={challenge.id} />
       )}
 
       {challenge.status === "completed" && (
