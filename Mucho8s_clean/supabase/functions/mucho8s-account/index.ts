@@ -65,6 +65,41 @@ const cleanPublicUrl = (value: unknown) => {
   return url.toString();
 };
 
+const attachPlayerCompetitionRows = async (
+  supabase: any,
+  accountId: string,
+  playerId: string,
+) => {
+  if (!accountId || !playerId) return;
+
+  const updates = [
+    supabase
+      .from("player_challenges")
+      .update({ challenger_account_id: accountId })
+      .eq("challenger_player_id", playerId)
+      .is("challenger_account_id", null),
+    supabase
+      .from("player_challenges")
+      .update({ challenged_account_id: accountId })
+      .eq("challenged_player_id", playerId)
+      .is("challenged_account_id", null),
+    supabase
+      .from("challenge_series")
+      .update({ player_a_account_id: accountId })
+      .eq("player_a_player_id", playerId)
+      .is("player_a_account_id", null),
+    supabase
+      .from("challenge_series")
+      .update({ player_b_account_id: accountId })
+      .eq("player_b_player_id", playerId)
+      .is("player_b_account_id", null),
+  ];
+
+  const results = await Promise.all(updates);
+  const failed = results.find((result: any) => result?.error);
+  if (failed?.error) throw failed.error;
+};
+
 const metadataFromUser = (user: any) => {
   const identity = Array.isArray(user?.identities)
     ? user.identities.find((x: any) => x?.provider === "discord") || user.identities[0]
@@ -191,6 +226,7 @@ Deno.serve(async (req: Request) => {
       if (accountError) throw accountError;
 
       if (account?.player_id) {
+        await attachPlayerCompetitionRows(supabase, user.id, String(account.player_id));
         await supabase.from("player_presence").upsert({
           account_id: user.id,
           player_id: account.player_id,
@@ -236,6 +272,10 @@ Deno.serve(async (req: Request) => {
           return json({ error: "This player is already linked to another Discord account" }, 409);
         }
         throw error;
+      }
+
+      if (data?.player_id) {
+        await attachPlayerCompetitionRows(supabase, String(data.id), String(data.player_id));
       }
 
       return json({ ok: true, account: data });
