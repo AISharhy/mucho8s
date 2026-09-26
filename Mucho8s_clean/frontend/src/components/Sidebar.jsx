@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -187,6 +187,20 @@ export const MobileNav = () => {
   const current = ALL_NAV.find((item) =>
     item.end ? loc.pathname === "/" : loc.pathname.startsWith(item.to) && item.to !== "/"
   );
+  const aliasLabel =
+    ["/balancer", "/draft"].includes(loc.pathname) ? "Team Builder" :
+    loc.pathname === "/ranks" ? "Rank Guide" :
+    loc.pathname === "/leaderboard" || loc.pathname === "/statistics" || loc.pathname === "/challenge-ranking" ? "Ranking" :
+    null;
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open]);
 
   return (
     <>
@@ -196,17 +210,19 @@ export const MobileNav = () => {
           onClick={() => setOpen(true)}
           className="p-2 -ml-2 rounded-md hover:bg-white/5"
           aria-label="Open menu"
+          aria-expanded={open}
+          aria-controls="mobile-navigation-drawer"
         >
           <Menu size={22} />
         </button>
-        <span className="hidden sm:block font-display font-bold truncate">{current?.label || "MuchoMoney8s"}</span>
+        <span className="hidden sm:block font-display font-bold truncate">{current?.label || aliasLabel || "MuchoMoney8s"}</span>
       </div>
 
       {open &&
         createPortal(
-          <div className="lg:hidden fixed inset-0 z-[100]">
+          <div className="lg:hidden fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label="Navigation menu">
             <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={() => setOpen(false)} />
-            <div className="absolute top-0 bottom-0 left-0 w-64 max-w-[86vw] bg-[#0B0E13] border-r border-[#202631] flex flex-col shadow-2xl">
+            <div id="mobile-navigation-drawer" className="absolute top-0 bottom-0 left-0 w-64 max-w-[86vw] bg-[#0B0E13] border-r border-[#202631] flex flex-col shadow-2xl">
               <div className="relative shrink-0">
                 <Brand />
                 <button
