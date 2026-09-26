@@ -365,8 +365,10 @@ const syncMoneyPairings = async (
       reported_winner_player_id: winnerPlayerId,
       result_reported_at: verifiedAt,
       verified_at: verifiedAt,
-      payment_sent_at: null,
-      payment_received_at: null,
+      // Admin verification closes report-based Money Match settlement too.
+      // Players must not need to confirm payment again after the report is locked.
+      payment_sent_at: verifiedAt,
+      payment_received_at: verifiedAt,
       payout_disputed_at: null,
       payout_dispute_note: null,
       payout_dispute_resolved_at: null,
