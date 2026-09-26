@@ -14,13 +14,14 @@ import { Plus, Search, Crown, Trophy, Filter, Pencil, Trash2, WalletCards, Arrow
 import { GAMES } from "@/lib/demoData";
 import { toast } from "sonner";
 
-const TeamList = ({ ids, playerMap, playerAvatars, eloChanges, mvpId }) => (
+const TeamList = ({ ids, playerMap, playerAvatars, eloChanges, mvpId, merdaId }) => (
   <div className="flex-1 space-y-2">
     {ids.map((id) => {
       const p = playerMap[id];
       if (!p) return null;
       const delta = Number(eloChanges?.[id] ?? 0);
       const isMvp = id === mvpId;
+      const isMerda = id === merdaId;
 
       return (
         <div key={id} className="flex items-center gap-2.5 min-w-0">
@@ -31,6 +32,11 @@ const TeamList = ({ ids, playerMap, playerAvatars, eloChanges, mvpId }) => (
               {isMvp && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#D5A33A]/10 border border-[#D5A33A]/20 text-[#D5A33A] text-[8px] font-black uppercase tracking-wider shrink-0">
                   <Crown size={9} /> MVP
+                </span>
+              )}
+              {isMerda && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#8B5E3C]/10 border border-[#8B5E3C]/25 text-[#C79A6B] text-[8px] font-black uppercase tracking-wider shrink-0">
+                  💩 MERDA
                 </span>
               )}
             </div>
@@ -170,7 +176,7 @@ export default function Matches() {
             icon={Gamepad2}
             title={safeMatches.length === 0 ? "No matches yet" : "No matches found"}
             description={safeMatches.length === 0
-              ? "Verified match results will appear here with score, Elo changes and MVP."
+              ? "Verified match results will appear here with Elo changes, MVP and MERDA."
               : "Try changing the search, game or winner filter."}
           />
         )}
@@ -268,7 +274,7 @@ export default function Matches() {
                   <div className="text-xs font-black uppercase tracking-widest text-magma">Alpha</div>
                   {m.winner === "A" && <span className="text-[9px] uppercase tracking-widest text-emerald-400 font-black">Winner</span>}
                 </div>
-                <TeamList ids={Array.isArray(m.teamA) ? m.teamA : []} playerMap={safePlayerMap} playerAvatars={playerAvatars} eloChanges={m.eloChanges} mvpId={m.mvpId} />
+                <TeamList ids={Array.isArray(m.teamA) ? m.teamA : []} playerMap={safePlayerMap} playerAvatars={playerAvatars} eloChanges={m.eloChanges} mvpId={m.mvpId} merdaId={m.merdaId} />
               </div>
 
               <div
@@ -282,7 +288,7 @@ export default function Matches() {
                   <div className="text-xs font-black uppercase tracking-widest text-gold">Bravo</div>
                   {m.winner === "B" && <span className="text-[9px] uppercase tracking-widest text-emerald-400 font-black">Winner</span>}
                 </div>
-                <TeamList ids={Array.isArray(m.teamB) ? m.teamB : []} playerMap={safePlayerMap} playerAvatars={playerAvatars} eloChanges={m.eloChanges} mvpId={m.mvpId} />
+                <TeamList ids={Array.isArray(m.teamB) ? m.teamB : []} playerMap={safePlayerMap} playerAvatars={playerAvatars} eloChanges={m.eloChanges} mvpId={m.mvpId} merdaId={m.merdaId} />
               </div>
             </div>
 
