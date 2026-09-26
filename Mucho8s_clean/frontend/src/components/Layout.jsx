@@ -1,8 +1,9 @@
-import React, { Component, useMemo, useState } from "react";
+import React, { Component, useEffect, useMemo, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { Sidebar, MobileNav } from "@/components/Sidebar";
 import ChallengeCenter from "@/components/ChallengeCenter";
 import CompetitiveEventFX from "@/components/CompetitiveEventFX";
+import { PageSkeleton } from "@/components/ProductState";
 import { AlertTriangle, Bell, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, UserCircle } from "lucide-react";
 import { useData } from "@/context/DataContext";
 
@@ -71,6 +72,7 @@ export const Layout = () => {
     isAdmin,
     challenges,
     playerMap,
+    loaded,
   } = useData();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
@@ -121,6 +123,10 @@ export const Layout = () => {
       .slice(0, 8);
   }, [challenges, discordAccount, discordPlayer, playerMap]);
   const title = TITLES[loc.pathname] || (loc.pathname.startsWith("/players/") ? "Player Profile" : loc.pathname.startsWith("/challenges/") ? "Challenge Match" : "MuchoMoney8s");
+
+  useEffect(() => {
+    document.title = title === "MuchoMoney8s" ? "MuchoMoney8s" : `${title} · MuchoMoney8s`;
+  }, [title]);
 
   return (
     <div className="min-h-screen bg-[#0B0D12]">
@@ -284,9 +290,13 @@ export const Layout = () => {
           </div>
         </header>
         <main className="page-shell p-4 sm:p-6 lg:p-8 xl:p-9">
-          <PageErrorBoundary key={loc.pathname}>
-            <Outlet />
-          </PageErrorBoundary>
+          {!loaded ? (
+            <PageSkeleton />
+          ) : (
+            <PageErrorBoundary key={loc.pathname}>
+              <Outlet />
+            </PageErrorBoundary>
+          )}
         </main>
       </div>
     </div>
