@@ -13,40 +13,82 @@ export const winRate = (p) =>
 
 // Composite player rating driven by main KPIs
 export const playerRating = (p) => {
-  const wr = winRate(p); // 0-100
+  const contextual = Number(p?.contextWinRate);
+  const wr = Number.isFinite(contextual) ? contextual : winRate(p); // 0-100
   return WEIGHTS.peak * p.peakElo + WEIGHTS.current * p.currentElo + WEIGHTS.winRate * (wr * 15);
 };
 
-// Rebuild per-game player stats (Elo/wins) purely from that game's match history.
-export const computeGameStats = (matches, game) => {
+export const CONTEXT_CONFIDENCE_MATCHES = 6;
+
+export const computeContextStats = (matches, { game = "ALL", mode = "ALL" } = {}) => {
   const filtered = (matches || [])
-    .filter((m) => m.game === game)
+    .filter((m) => game === "ALL" || m.game === game)
+    .filter((m) => mode === "ALL" || m.mode === mode)
     .sort((a, b) => new Date(a.date) - new Date(b.date));
+
   const stats = {};
   const ensure = (id) =>
-    stats[id] || (stats[id] = { currentElo: BASE_ELO, peakElo: BASE_ELO, wins: 0, losses: 0, totalMatches: 0, mvpCount: 0 });
+    stats[id] || (stats[id] = {
+      currentElo: BASE_ELO,
+      peakElo: BASE_ELO,
+      wins: 0,
+      losses: 0,
+      totalMatches: 0,
+      mvpCount: 0,
+    });
+
   filtered.forEach((m) => {
     const winners = m.winner === "A" ? m.teamA : m.teamB;
-    [...m.teamA, ...m.teamB].forEach((id) => {
+    [...(m.teamA || []), ...(m.teamB || [])].forEach((id) => {
       const s = ensure(id);
-      const delta = m.eloChanges?.[id] ?? 0;
+      const delta = Number(m.eloChanges?.[id] ?? 0);
       s.currentElo = Math.max(MIN_ELO, s.currentElo + delta);
       s.peakElo = Math.max(s.peakElo, s.currentElo);
       s.totalMatches += 1;
-      if (winners.includes(id)) s.wins += 1;
+      if (winners?.includes(id)) s.wins += 1;
       else s.losses += 1;
       if (m.mvpId === id) s.mvpCount += 1;
     });
   });
-  return stats;
+
+  return { stats, matches: filtered };
 };
 
-// Project a player onto a specific game's stats (falls back to baseline if never played it).
-export const playerForGame = (player, gameStats) => {
-  const g = gameStats[player.id];
-  if (!g) return { ...player, currentElo: BASE_ELO, peakElo: BASE_ELO, wins: 0, losses: 0, totalMatches: 0, mvpCount: 0 };
-  return { ...player, currentElo: g.currentElo, peakElo: g.peakElo, wins: g.wins, losses: g.losses, totalMatches: g.totalMatches, mvpCount: g.mvpCount };
+export const playerForContext = (player, contextStats = {}, minConfidenceMatches = CONTEXT_CONFIDENCE_MATCHES) => {
+  const contextual = contextStats?.[player.id];
+  if (!contextual) {
+    return {
+      ...player,
+      contextMatches: 0,
+      contextConfidence: 0,
+      contextWinRate: winRate(player),
+    };
+  }
+
+  const sample = Math.max(0, Number(contextual.totalMatches || 0));
+  const confidence = Math.max(0, Math.min(1, sample / Math.max(1, minConfidenceMatches)));
+  const globalWr = winRate(player);
+  const contextWr = sample ? (Number(contextual.wins || 0) / sample) * 100 : globalWr;
+  const blendedWr = globalWr * (1 - confidence) + contextWr * confidence;
+
+  return {
+    ...player,
+    currentElo: Math.round(Number(player.currentElo || BASE_ELO) * (1 - confidence) + Number(contextual.currentElo || BASE_ELO) * confidence),
+    peakElo: Math.round(Number(player.peakElo || BASE_ELO) * (1 - confidence) + Number(contextual.peakElo || BASE_ELO) * confidence),
+    contextMatches: sample,
+    contextConfidence: Math.round(confidence * 100),
+    contextWinRate: Math.round(blendedWr * 10) / 10,
+    contextRawWinRate: Math.round(contextWr * 10) / 10,
+  };
 };
+
+// Rebuild per-game player stats (Elo/wins) purely from that game's match history.
+export const computeGameStats = (matches, game) =>
+  computeContextStats(matches, { game }).stats;
+
+// Project a player onto a specific game's stats (falls back to baseline if never played it).
+export const playerForGame = (player, gameStats) =>
+  playerForContext(player, gameStats);
 
 export const RANKS = [
   {
