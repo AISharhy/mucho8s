@@ -2,6 +2,7 @@ import React, { Component, useMemo, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { Sidebar, MobileNav } from "@/components/Sidebar";
 import ChallengeCenter from "@/components/ChallengeCenter";
+import CompetitiveEventFX from "@/components/CompetitiveEventFX";
 import { AlertTriangle, Bell, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, UserCircle } from "lucide-react";
 import { useData } from "@/context/DataContext";
 
@@ -121,6 +122,7 @@ export const Layout = () => {
   return (
     <div className="min-h-screen bg-[#0B0D12]">
       <ChallengeCenter />
+      <CompetitiveEventFX />
       <Sidebar />
       <div className="lg:pl-56">
         <header className="sticky top-0 z-20 h-16 flex items-center px-4 sm:px-6 bg-[#0B0E13]/88 backdrop-blur-2xl border-b border-[#202631] shadow-[0_10px_35px_rgba(0,0,0,.12)]">
