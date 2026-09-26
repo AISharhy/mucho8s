@@ -137,6 +137,54 @@ const automaticMerdaClearedIds = (byId, winners) =>
     return nextWinStreak >= 4 && nextWinStreak % 4 === 0;
   });
 
+const recomputeMerdaState = (byId, matches) => {
+  Object.values(byId).forEach((player) => {
+    if (!player) return;
+    player.merdaCount = 0;
+    player.currentStreak = 0;
+  });
+
+  [...(matches || [])]
+    .sort((a, b) => new Date(a?.date || 0).getTime() - new Date(b?.date || 0).getTime())
+    .forEach((match) => {
+      const teamA = Array.isArray(match?.teamA) ? match.teamA : [];
+      const teamB = Array.isArray(match?.teamB) ? match.teamB : [];
+      const winners = match?.winner === "B" ? teamB : teamA;
+      const winnerSet = new Set(winners);
+      const awarded = [];
+      const cleared = [];
+
+      [...teamA, ...teamB].forEach((pid) => {
+        const player = byId[pid];
+        if (!player) return;
+
+        const won = winnerSet.has(pid);
+        const current = Number(player.currentStreak || 0);
+        const nextStreak = won
+          ? (current > 0 ? current + 1 : 1)
+          : (current < 0 ? current - 1 : -1);
+
+        player.currentStreak = nextStreak;
+
+        if (!won && Math.abs(nextStreak) % 4 === 0) {
+          player.merdaCount = Math.max(0, Number(player.merdaCount || 0)) + 1;
+          awarded.push(pid);
+        }
+
+        if (won && nextStreak % 4 === 0 && Number(player.merdaCount || 0) > 0) {
+          player.merdaCount = Math.max(0, Number(player.merdaCount || 0) - 1);
+          cleared.push(pid);
+        }
+      });
+
+      match.merdaIds = awarded;
+      match.merdaId = awarded[0] || undefined;
+      match.merdaClearedIds = cleared;
+    });
+
+  return matches;
+};
+
 const applyEffects = (byId, teamA, teamB, winner, mvpId, merdaIds = [], merdaClearedIds = []) => {
   const winners = winner === "A" ? teamA : teamB;
   const merdaSet = new Set(merdaIds || []);
@@ -1065,6 +1113,8 @@ export const DataProvider = ({ children }) => {
     let count = 0;
 
     challenges.forEach((challenge) => {
+      if (["admin_update", "admin_sync"].includes(String(challenge?.last_event || ""))) return;
+
       const isChallenger = challenge.challenger_account_id === discordAccount.id;
       const isChallenged = challenge.challenged_account_id === discordAccount.id;
       if (!isChallenger && !isChallenged) return;
@@ -1642,6 +1692,7 @@ export const DataProvider = ({ children }) => {
       eloChanges,
     });
     const nextMatches = [match, ...matches];
+    recomputeMerdaState(byId, nextMatches);
     recomputeRecent(byId, nextMatches, new Set([...teamA, ...teamB]));
     const ok = await persistWholeState(Object.values(byId), nextMatches);
 
@@ -1702,6 +1753,7 @@ export const DataProvider = ({ children }) => {
     nextMatch.eloChanges = applyEffects(byId, teamA, teamB, nextMatch.winner, nextMatch.mvpId, merdaIds, merdaClearedIds);
 
     const nextMatches = matches.map((m) => (m.id === id ? nextMatch : m));
+    recomputeMerdaState(byId, nextMatches);
     recomputeRecent(byId, nextMatches, new Set([...old.teamA, ...old.teamB, ...teamA, ...teamB]));
     const ok = await persistWholeState(Object.values(byId), nextMatches);
     if (ok) {
@@ -1729,6 +1781,7 @@ export const DataProvider = ({ children }) => {
     const byId = Object.fromEntries(nextPlayers.map((p) => [p.id, p]));
     revertEffects(byId, old);
     const nextMatches = matches.filter((m) => m.id !== id);
+    recomputeMerdaState(byId, nextMatches);
     recomputeRecent(byId, nextMatches, new Set([...old.teamA, ...old.teamB]));
     const ok = await persistWholeState(Object.values(byId), nextMatches);
     if (ok) {
