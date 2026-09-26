@@ -222,9 +222,32 @@ export default function PlayerProfile() {
       h2h.set(opponentId, row);
     });
 
-    const headToHead = [...h2h.values()]
+    const allHeadToHead = [...h2h.values()];
+    const headToHead = [...allHeadToHead]
       .sort((a, b) => b.played - a.played || b.wins - a.wins)
       .slice(0, 5);
+
+    const maxH2HPlayed = allHeadToHead.reduce((best, row) => Math.max(best, row.played), 0);
+    const maxH2HWins = allHeadToHead.reduce((best, row) => Math.max(best, row.wins), 0);
+    const maxWonChallenge = completed.reduce((best, challenge) => {
+      if (challenge.reported_winner_player_id !== id) return best;
+      return Math.max(best, Number(challenge.amount_cents || 0) / 100);
+    }, 0);
+
+    let runItBack = false;
+    const lastByOpponent = new Map();
+    [...completed].reverse().forEach((challenge) => {
+      const opponentId =
+        challenge.challenger_player_id === id
+          ? challenge.challenged_player_id
+          : challenge.challenger_player_id;
+      if (!opponentId) return;
+
+      const won = challenge.reported_winner_player_id === id;
+      const previous = lastByOpponent.get(opponentId);
+      if (won && previous === "L") runItBack = true;
+      lastByOpponent.set(opponentId, won ? "W" : "L");
+    });
 
     const achievementCatalog = [
       { label: "First Match", detail: "Play 1 match", icon: Gamepad2, unlocked: (player?.totalMatches || 0) >= 1 },
@@ -276,10 +299,125 @@ export default function PlayerProfile() {
       settled: settled.length,
       payoutDisputes,
       headToHead,
+      maxH2HPlayed,
+      maxH2HWins,
+      maxWonChallenge,
+      runItBack,
       achievements,
       achievementCatalog,
     };
   }, [challengeStats, id, player]);
+
+  const trophyChallenges = useMemo(() => {
+    if (!player) return [];
+
+    const clamp = (value, goal) => Math.min(100, Math.max(0, Math.round((Number(value || 0) / goal) * 100)));
+    const challenge = ({ id: trophyId, title, description, emoji, value, goal, unit = "", unlocked = null }) => ({
+      id: trophyId,
+      title,
+      description,
+      emoji,
+      value: Number(value || 0),
+      goal,
+      unit,
+      unlocked: unlocked === null ? Number(value || 0) >= goal : Boolean(unlocked),
+      progress: unlocked === true ? 100 : clamp(value, goal),
+    });
+
+    return [
+      challenge({
+        id: "on-fire",
+        title: "On Fire",
+        description: "Win 5 matches in a row",
+        emoji: "🔥",
+        value: Math.max(0, Number(player.currentStreak || 0)),
+        goal: 5,
+        unit: " wins",
+      }),
+      challenge({
+        id: "unstoppable",
+        title: "Unstoppable",
+        description: "Win 10 matches in a row",
+        emoji: "☢️",
+        value: Math.max(0, Number(player.currentStreak || 0)),
+        goal: 10,
+        unit: " wins",
+      }),
+      challenge({
+        id: "money-maker",
+        title: "Money Maker",
+        description: "Win €50 in verified Chall",
+        emoji: "💰",
+        value: challengeStats.wonValue,
+        goal: 50,
+        unit: " €",
+      }),
+      challenge({
+        id: "high-roller",
+        title: "High Roller",
+        description: "Win a single Chall worth at least €20",
+        emoji: "💎",
+        value: challengeInsights.maxWonChallenge,
+        goal: 20,
+        unit: " €",
+      }),
+      challenge({
+        id: "rivalry",
+        title: "Rivalry",
+        description: "Play 10 Chall against the same player",
+        emoji: "⚔️",
+        value: challengeInsights.maxH2HPlayed,
+        goal: 10,
+        unit: " challs",
+      }),
+      challenge({
+        id: "nemesis",
+        title: "Nemesis",
+        description: "Beat the same player 5 times",
+        emoji: "👑",
+        value: challengeInsights.maxH2HWins,
+        goal: 5,
+        unit: " wins",
+      }),
+      challenge({
+        id: "clean-sweep",
+        title: "Clean Sweep",
+        description: "Win 5 Chall in a row",
+        emoji: "🧹",
+        value: challengeInsights.currentType === "W" ? challengeInsights.currentStreak : 0,
+        goal: 5,
+        unit: " wins",
+      }),
+      challenge({
+        id: "veteran",
+        title: "Veteran",
+        description: "Play 100 matches",
+        emoji: "🧱",
+        value: Number(player.totalMatches || 0),
+        goal: 100,
+        unit: " matches",
+      }),
+      challenge({
+        id: "run-it-back",
+        title: "Run It Back",
+        description: "Lose to a player, then beat them in the next Chall",
+        emoji: "🔄",
+        value: challengeInsights.runItBack ? 1 : 0,
+        goal: 1,
+        unit: "",
+        unlocked: challengeInsights.runItBack,
+      }),
+    ];
+  }, [player, challengeStats.wonValue, challengeInsights]);
+
+  const nextTrophyChallenges = useMemo(
+    () =>
+      trophyChallenges
+        .filter((item) => !item.unlocked)
+        .sort((a, b) => b.progress - a.progress || a.goal - b.goal)
+        .slice(0, 3),
+    [trophyChallenges]
+  );
 
   const trophyCabinet = useMemo(() => {
     if (!player) return [];
@@ -308,8 +446,21 @@ export default function PlayerProfile() {
       });
     }
 
+    trophyChallenges
+      .filter((item) => item.unlocked)
+      .forEach((item) => {
+        awards.push({
+          id: item.id,
+          type: "achievement",
+          title: item.title,
+          detail: item.description,
+          count: null,
+          emoji: item.emoji,
+        });
+      });
+
     return awards;
-  }, [player]);
+  }, [player, trophyChallenges]);
 
   if (!player) {
     return (
@@ -776,6 +927,78 @@ export default function PlayerProfile() {
         </>
       )}
 
+      {isOwnProfile && profileTab === "overview" && (
+        <div className="m8-panel rounded-[22px] p-4 sm:p-5 order-4" data-testid="next-trophy-challenges">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <div className="brand-kicker mb-1">Challenges</div>
+              <h3 className="font-display font-black text-xl tracking-[-0.02em]">Next Trophies</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                The closest trophies to unlock based on your current progress.
+              </p>
+            </div>
+            <Target size={20} className="text-[#D5A33A] shrink-0 mt-1" />
+          </div>
+
+          {nextTrophyChallenges.length === 0 ? (
+            <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-7 px-4 text-center">
+              <div className="text-2xl mb-2">🏆</div>
+              <div className="font-semibold">All trophy challenges completed</div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+              {nextTrophyChallenges.map((item) => {
+                const remaining = Math.max(0, item.goal - item.value);
+                const displayValue =
+                  item.unit === " €"
+                    ? `€${item.value.toFixed(0)} / €${item.goal}`
+                    : `${Math.floor(item.value)} / ${item.goal}`;
+
+                return (
+                  <div
+                    key={item.id}
+                    className="rounded-2xl bg-[#0F1218] border border-[#222834] p-4 relative overflow-hidden"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-11 h-11 rounded-xl bg-[#151923] border border-[#2A303B] flex items-center justify-center text-xl shrink-0">
+                        {item.emoji}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-display font-bold">{item.title}</div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5 leading-4">
+                          {item.description}
+                        </div>
+                      </div>
+                      <div className="font-mono text-xs font-black text-[#D5A33A]">
+                        {item.progress}%
+                      </div>
+                    </div>
+
+                    <div className="h-1.5 rounded-full bg-[#1A2029] overflow-hidden mt-4">
+                      <div
+                        className="h-full rounded-full bg-[#D5A33A] transition-all"
+                        style={{ width: `${item.progress}%` }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3 mt-2">
+                      <span className="font-mono text-[10px] text-[#AAB1BE]">{displayValue}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {item.id === "run-it-back"
+                          ? "Lose → rematch → win"
+                          : item.unit === " €"
+                            ? `€${remaining.toFixed(0)} to go`
+                            : `${Math.ceil(remaining)} to go`}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {(!isOwnProfile || profileTab === "overview") && (
       <div className="m8-showcase rounded-[22px] p-4 sm:p-6 order-4" data-testid="trophy-cabinet">
         <div className="flex items-center justify-between gap-3 mb-4">
@@ -783,7 +1006,7 @@ export default function PlayerProfile() {
             <div className="brand-kicker mb-1">Awards</div>
             <h3 className="font-display font-black text-xl tracking-[-0.02em]">Trophy Cabinet</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Only MVP 🏆 and MERDA 💩 awards count here.
+              MVP 🏆 and MERDA 💩 counters, plus every trophy challenge you unlock.
             </p>
           </div>
           <Trophy size={20} className="text-[#D5A33A]" />
@@ -815,9 +1038,11 @@ export default function PlayerProfile() {
                 <div className="w-12 h-12 rounded-xl border border-[#2A303B] bg-[#0F1218] flex items-center justify-center text-2xl shadow-[0_8px_24px_rgba(0,0,0,.22)]">
                   <span aria-hidden="true">{trophy.emoji}</span>
                 </div>
-                <div className="absolute top-3 right-3 px-2 py-1 rounded-lg border border-[#343B48] bg-[#101319] text-xs font-mono font-black">
-                  ×{trophy.count}
-                </div>
+                {trophy.count !== null && trophy.count !== undefined && (
+                  <div className="absolute top-3 right-3 px-2 py-1 rounded-lg border border-[#343B48] bg-[#101319] text-xs font-mono font-black">
+                    ×{trophy.count}
+                  </div>
+                )}
                 <div className="font-display font-bold mt-3">{trophy.title}</div>
                 <div className="text-xs text-muted-foreground mt-1">{trophy.detail}</div>
               </div>
