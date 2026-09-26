@@ -100,15 +100,10 @@ export default function ChallengeInbox() {
         : challenge.challenger_player_id;
       const opponent = playerMap[opponentId];
 
-      const iWon =
-        challenge.status === "completed" &&
-        challenge.reported_winner_player_id === discordAccount.player_id;
-
       const needsAction =
         (challenge.status === "pending" && !isChallenger) ||
         (challenge.status === "result_pending" && challenge.reporter_account_id !== discordAccount.id) ||
-        (challenge.status === "completed" && !iWon && !challenge.payment_sent_at) ||
-        (challenge.status === "completed" && iWon && challenge.payment_sent_at && !challenge.payment_received_at);
+        (challenge.status === "completed" && !challenge.payment_received_at);
 
       const active =
         ["pending", "accepted", "result_pending", "disputed"].includes(challenge.status) ||
