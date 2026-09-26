@@ -1506,6 +1506,20 @@ export const DataProvider = ({ children }) => {
     }
   }, [admin, discordSession]);
 
+  const listAdminAccess = useCallback(async () => {
+    const data = await adminAuthRequest({ action: "list-access" });
+    return Array.isArray(data?.access) ? data.access : null;
+  }, [adminAuthRequest]);
+
+  const updateAdminAccess = useCallback(async (playerId, enabled) => {
+    const data = await adminAuthRequest({
+      action: "set-access",
+      playerId,
+      enabled: Boolean(enabled),
+    });
+    return Boolean(data?.ok);
+  }, [adminAuthRequest]);
+
   useEffect(() => {
     if (discordLoading) {
       setAdminAuthLoading(true);
@@ -1979,6 +1993,8 @@ export const DataProvider = ({ children }) => {
     refreshDiscordAccount,
     listDiscordAccounts,
     linkDiscordAccount,
+    listAdminAccess,
+    updateAdminAccess,
     setAdmin,
     changeAdminPassword,
     logoutAllAdminSessions,
