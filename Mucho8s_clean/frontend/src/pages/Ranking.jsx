@@ -1,12 +1,26 @@
-import React, { useState } from "react";
-import { Trophy, BarChart3, CalendarDays, Swords } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { CalendarDays, Trophy } from "lucide-react";
 import Leaderboard from "@/pages/Leaderboard";
 import Statistics from "@/pages/Statistics";
 import SeasonHistory from "@/pages/SeasonHistory";
 import ChallengeLeaderboard from "@/pages/ChallengeLeaderboard";
 
+const normalizeInitial = (initialTab) => {
+  if (initialTab === "seasons") return { section: "seasons", rankingView: "overall" };
+  if (initialTab === "challenges") return { section: "ranking", rankingView: "challs" };
+  return { section: "ranking", rankingView: "overall" };
+};
+
 export default function Ranking({ initialTab = "leaderboard" }) {
-  const [tab, setTab] = useState(initialTab);
+  const initial = normalizeInitial(initialTab);
+  const [section, setSection] = useState(initial.section);
+  const [rankingView, setRankingView] = useState(initial.rankingView);
+
+  useEffect(() => {
+    const next = normalizeInitial(initialTab);
+    setSection(next.section);
+    setRankingView(next.rankingView);
+  }, [initialTab]);
 
   return (
     <div className="space-y-6">
@@ -15,56 +29,30 @@ export default function Ranking({ initialTab = "leaderboard" }) {
           <div className="brand-kicker mb-1">Competition</div>
           <h2 className="font-display text-2xl font-extrabold">Ranking</h2>
           <p className="text-sm text-[#7F8795] mt-1">
-            Leaderboards, challenge standings and performance analytics in one place.
+            Overall standings, challenge ranking and season history.
           </p>
         </div>
 
-        <div className="inline-flex w-full sm:w-auto rounded-xl border border-[#222834] bg-[#0F1218] p-1 overflow-x-auto">
+        <div className="inline-flex w-full sm:w-auto rounded-xl border border-[#222834] bg-[#0F1218] p-1">
           <button
             type="button"
-            onClick={() => setTab("leaderboard")}
-            data-testid="ranking-tab-leaderboard"
-            className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
-              tab === "leaderboard"
+            onClick={() => setSection("ranking")}
+            data-testid="ranking-section-ranking"
+            className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+              section === "ranking"
                 ? "bg-white text-black"
                 : "text-[#8D95A4] hover:text-white"
             }`}
           >
-            <Trophy size={15} /> Leaderboard
+            <Trophy size={15} /> Ranking
           </button>
 
           <button
             type="button"
-            onClick={() => setTab("statistics")}
-            data-testid="ranking-tab-statistics"
-            className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
-              tab === "statistics"
-                ? "bg-white text-black"
-                : "text-[#8D95A4] hover:text-white"
-            }`}
-          >
-            <BarChart3 size={15} /> Statistics
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setTab("challenges")}
-            data-testid="ranking-tab-challenges"
-            className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
-              tab === "challenges"
-                ? "bg-white text-black"
-                : "text-[#8D95A4] hover:text-white"
-            }`}
-          >
-            <Swords size={15} /> Chall Ranking
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setTab("seasons")}
-            data-testid="ranking-tab-seasons"
-            className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
-              tab === "seasons"
+            onClick={() => setSection("seasons")}
+            data-testid="ranking-section-seasons"
+            className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+              section === "seasons"
                 ? "bg-white text-black"
                 : "text-[#8D95A4] hover:text-white"
             }`}
@@ -74,14 +62,63 @@ export default function Ranking({ initialTab = "leaderboard" }) {
         </div>
       </div>
 
-      {tab === "leaderboard" ? (
-        <Leaderboard />
-      ) : tab === "statistics" ? (
-        <Statistics />
-      ) : tab === "challenges" ? (
-        <ChallengeLeaderboard />
-      ) : (
+      {section === "seasons" ? (
         <SeasonHistory />
+      ) : (
+        <div className="space-y-6">
+          <div className="flex items-center gap-1 border-b border-[#1D222C]">
+            <button
+              type="button"
+              onClick={() => setRankingView("overall")}
+              data-testid="ranking-view-overall"
+              className={`relative px-4 py-2.5 text-sm font-semibold transition-colors ${
+                rankingView === "overall"
+                  ? "text-white"
+                  : "text-[#7F8795] hover:text-white"
+              }`}
+            >
+              Overall
+              {rankingView === "overall" && (
+                <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-magma" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setRankingView("challs")}
+              data-testid="ranking-view-challs"
+              className={`relative px-4 py-2.5 text-sm font-semibold transition-colors ${
+                rankingView === "challs"
+                  ? "text-white"
+                  : "text-[#7F8795] hover:text-white"
+              }`}
+            >
+              Challs
+              {rankingView === "challs" && (
+                <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-magma" />
+              )}
+            </button>
+          </div>
+
+          {rankingView === "challs" ? (
+            <ChallengeLeaderboard />
+          ) : (
+            <div className="space-y-8">
+              <Leaderboard />
+
+              <section className="space-y-4">
+                <div>
+                  <div className="brand-kicker mb-1">Performance</div>
+                  <h3 className="font-display text-xl font-bold">Statistics</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Elo progression, win rates, activity and competitive performance.
+                  </p>
+                </div>
+                <Statistics />
+              </section>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
