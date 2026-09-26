@@ -846,6 +846,16 @@ export const DataProvider = ({ children }) => {
     return data.challenge;
   }, [challengeRequest]);
 
+  const listChallengeMessages = useCallback(async (id, { silent = true } = {}) => {
+    const data = await challengeRequest({ action: "list-messages", id }, { silent });
+    return Array.isArray(data?.messages) ? data.messages : [];
+  }, [challengeRequest]);
+
+  const sendChallengeMessage = useCallback(async (id, message) => {
+    const data = await challengeRequest({ action: "send-message", id, message });
+    return data?.message || null;
+  }, [challengeRequest]);
+
   const setChallengeReady = useCallback(async (id, ready = true) => {
     const data = await challengeRequest({ action: "set-ready", id, ready });
     if (!data?.challenge) return null;
@@ -1750,6 +1760,8 @@ export const DataProvider = ({ children }) => {
     disputeChallengePayout,
     uploadChallengeEvidence,
     markChallengeSeen,
+    listChallengeMessages,
+    sendChallengeMessage,
     setChallengeReady,
     reportChallengeResult,
     verifyChallengeResult,
