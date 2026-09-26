@@ -25,6 +25,7 @@ export const RecordMatchDialog = ({
   const [assign, setAssign] = useState({});
   const [winner, setWinner] = useState("A");
   const [mvpId, setMvpId] = useState("");
+  const [merdaId, setMerdaId] = useState("");
   const [map, setMap] = useState("");
   const [mode, setMode] = useState(MATCH_MODES[0]);
   const [game, setGame] = useState(GAMES[0]);
@@ -43,6 +44,7 @@ export const RecordMatchDialog = ({
     setAssign(next);
     setWinner(editData?.winner || "A");
     setMvpId(editData?.mvpId || "");
+    setMerdaId(editData?.merdaId || "");
     setMap(editData?.map || "");
     setMode(editData?.mode || defaultMode || MATCH_MODES[0]);
     setGame(editData?.game || defaultGame || GAMES[0]);
@@ -98,6 +100,7 @@ export const RecordMatchDialog = ({
             teamB: editData.teamB || [],
             winner,
             mvpId: mvpId || undefined,
+            merdaId: merdaId || undefined,
             mode: editData.mode || mode,
             game: editData.game || game,
             map: editData.map || "",
@@ -109,6 +112,7 @@ export const RecordMatchDialog = ({
             teamB,
             winner,
             mvpId: mvpId || undefined,
+            merdaId: merdaId || undefined,
             mode,
             game,
             map,
@@ -132,6 +136,7 @@ export const RecordMatchDialog = ({
         scoreA: 0,
         scoreB: 0,
         mvpId: mvpId || undefined,
+        merdaId: merdaId || undefined,
         map,
         mode,
         game,
@@ -280,7 +285,23 @@ export const RecordMatchDialog = ({
                 <option value="">No MVP</option>
                 {assigned.map((id) => {
                   const p = players.find((x) => x.id === id);
-                  return <option key={id} value={id}>{p?.name}</option>;
+                  return <option key={id} value={id} disabled={id === merdaId}>{p?.name}</option>;
+                })}
+              </select>
+            </div>
+
+            <div>
+              <Label className="text-xs text-muted-foreground">MERDA 💩 (optional)</Label>
+              <select
+                data-testid="merda-select"
+                value={merdaId}
+                onChange={(e) => setMerdaId(e.target.value)}
+                className="mt-1 w-full h-10 rounded-xl bg-[#0F1218] border border-[#222834] px-3 text-sm"
+              >
+                <option value="">No MERDA</option>
+                {assigned.map((id) => {
+                  const p = players.find((x) => x.id === id);
+                  return <option key={id} value={id} disabled={id === mvpId}>{p?.name}</option>;
                 })}
               </select>
             </div>
