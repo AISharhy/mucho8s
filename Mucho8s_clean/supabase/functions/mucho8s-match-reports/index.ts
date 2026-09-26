@@ -73,12 +73,6 @@ const getUserContext = async (req: Request, supabase: any) => {
   return { user, account: account || null };
 };
 
-const winRate = (player: any) => {
-  const total = Math.max(0, Number(player?.totalMatches) || 0);
-  const wins = Math.max(0, Number(player?.wins) || 0);
-  return total > 0 ? (wins / total) * 100 : 0;
-};
-
 const normalizePlayer = (player: any) => {
   const current = Math.max(MIN_ELO, Math.round(Number(player?.currentElo) || BASE_ELO));
   return {
