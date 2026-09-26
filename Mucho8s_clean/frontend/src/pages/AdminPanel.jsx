@@ -358,13 +358,15 @@ export default function AdminPanel() {
         </Button>
       </section>
 
-      <div className="m8-panel-quiet rounded-xl p-1.5 flex gap-1 overflow-x-auto" data-testid="admin-tabs">
+      <div className="m8-panel-quiet rounded-xl p-1.5 flex gap-1 overflow-x-auto" data-testid="admin-tabs" role="tablist" aria-label="Admin sections">
         {ADMIN_TABS.map((tab) => {
           const Icon = tab.icon;
           return (
             <button
               key={tab.key}
               type="button"
+              role="tab"
+              aria-selected={activeTab === tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`shrink-0 inline-flex items-center gap-2 h-10 px-3 rounded-xl border text-sm font-semibold transition-all ${
                 activeTab === tab.key
