@@ -26,7 +26,7 @@ export default function RankGuide() {
               {previewPlayer.name} is <span style={{ color: preview.rank.color }}>{preview.rank.name}</span>
             </h3>
             <p className="text-sm text-muted-foreground mt-2 max-w-xl">
-              BO2 League Play-inspired divisions. Your rank is based directly on your current Elo.
+              Competitive divisions based directly on your current Elo.
             </p>
 
             <div className="mt-5 max-w-xl">
