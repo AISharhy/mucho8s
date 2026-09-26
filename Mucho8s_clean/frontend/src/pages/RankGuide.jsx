@@ -80,6 +80,7 @@ export default function RankGuide() {
                   >
                     {rank.name}
                   </div>
+                  <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mt-1">Division {rank.roman}</div>
                   <div className="text-xs text-muted-foreground mt-1">{rank.description}</div>
                 </div>
                 {index === RANKS.length - 1 && <Trophy size={19} className="text-[#D5A33A]" />}
