@@ -443,7 +443,7 @@ const PersonalDashboard = ({
                 to={"/players/" + discordPlayer.id}
                 className="m8-action inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl bg-[#0D1118]/85 border border-[#2A303B] text-[#D7DBE2] hover:border-[#3A4350] hover:text-white"
               >
-                <UserCircle size={16} /> Full Profile
+                <UserCircle size={16} /> Profile
               </Link>
             </div>
           </div>
