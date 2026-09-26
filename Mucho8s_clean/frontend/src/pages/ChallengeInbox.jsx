@@ -258,7 +258,7 @@ export default function ChallengeInbox() {
                       <div className="text-xs text-muted-foreground mt-1">
                         {series ? (
                           <>
-                            CHALL SERIES · {roundCount} {roundCount === 1 ? "round" : "rounds"} ·{" "}
+                            CHALL SERIES · {roundCount} {roundCount === 1 ? "match" : "matches"} ·{" "}
                             {series.status === "open"
                               ? Number(series.current_amount_cents || 0) === 0
                                 ? "da regolare €0"
