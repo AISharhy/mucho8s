@@ -62,10 +62,10 @@ export default function ChallengeSeriesCard({
         <div>
           <div className="brand-kicker mb-1">Chall Series</div>
           <h3 className="font-display text-xl font-bold">
-            {rounds.length} {rounds.length === 1 ? "Round" : "Rounds"}
+            {rounds.length} {rounds.length === 1 ? "Match" : "Matches"}
           </h3>
           <p className="text-sm text-muted-foreground mt-1">
-            Every round keeps its full winnings for stats. The settlement only decides how much money still has to move between the two players.
+            Every match keeps its full winnings for stats. The settlement only decides how much money still has to move between the two players.
           </p>
         </div>
 
@@ -125,7 +125,7 @@ export default function ChallengeSeriesCard({
                     : statusLabel[round.status] || round.status}
                 </div>
                 <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {round.status === "completed" ? "Verified round" : "Series round"}
+                  {round.status === "completed" ? "Verified match" : "Series match"}
                 </div>
               </div>
               <div className="font-mono font-bold text-sm">
@@ -188,7 +188,7 @@ export default function ChallengeSeriesCard({
             Remaining payment: {settlementWinner?.name || "Winner"} receives {money(settlementAmountCents, series.currency)}
           </h4>
           <p className="text-sm text-muted-foreground mt-1">
-            This does not change the money won in each round; it only offsets what the two players owe each other.
+            This does not change the money won in each match; it only offsets what the two players owe each other.
           </p>
 
           {series.payment_sent_at ? (
