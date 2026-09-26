@@ -754,28 +754,10 @@ Deno.serve(async (req: Request) => {
     if (!report) return json({ error: "Match report not found" }, 404);
 
     if (action === "confirm") {
-      if (!account?.player_id) return json({ error: "Login with a linked Discord account first" }, 401);
+      if (!isAdmin) return json({ error: "Only Admin can confirm match results" }, 403);
       if (report.status !== "pending") return json({ error: "This result is no longer awaiting confirmation" }, 409);
 
-      const teamA = Array.isArray(report.team_a) ? report.team_a.map(String) : [];
-      const teamB = Array.isArray(report.team_b) ? report.team_b.map(String) : [];
-      const reporterId = String(report.reporter_player_id || "");
-      const eligible = report.reporter_is_admin
-        ? [...teamA, ...teamB]
-        : teamA.includes(reporterId)
-          ? teamB
-          : teamB.includes(reporterId)
-            ? teamA
-            : [];
-
-      if (!eligible.includes(String(account.player_id))) {
-        return json({ error: "A player from the opposite team must confirm this result" }, 403);
-      }
-      if (report.reporter_player_id && report.reporter_player_id === account.player_id) {
-        return json({ error: "The reporter cannot verify their own result" }, 403);
-      }
-
-      const completed = await finalizeReport(supabase, report, user?.id || null, String(account.player_id));
+      const completed = await finalizeReport(supabase, report, user?.id || null, null);
       return json({ ok: true, report: completed, locked: true });
     }
 
