@@ -69,9 +69,9 @@ export default function ChallengeInbox() {
 
       const raw =
         linkedMatch?.date ||
-        challenge?.created_at ||
         challenge?.verified_at ||
         challenge?.result_reported_at ||
+        challenge?.created_at ||
         0;
 
       const timestamp = new Date(raw).getTime();
@@ -195,7 +195,7 @@ export default function ChallengeInbox() {
           <div className="brand-kicker mb-1">Challenge Center</div>
           <h2 className="font-display text-3xl font-black tracking-[-0.03em]">Challenge Inbox</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Accept requests, follow active challs and verify results.
+            Direct 1v1 challenges only: accept requests, follow active challs and verify results.
           </p>
         </div>
 
