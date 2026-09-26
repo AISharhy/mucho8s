@@ -250,43 +250,43 @@ export default function PlayerProfile() {
     });
 
     const achievementCatalog = [
-      { label: "First Match", detail: "Play 1 match", icon: Gamepad2, unlocked: (player?.totalMatches || 0) >= 1 },
-      { label: "Regular", detail: "Play 10 matches", icon: Gamepad2, unlocked: (player?.totalMatches || 0) >= 10 },
-      { label: "Veteran", detail: "Play 25 matches", icon: Medal, unlocked: (player?.totalMatches || 0) >= 25 },
-      { label: "Grinder", detail: "Play 50 matches", icon: Flame, unlocked: (player?.totalMatches || 0) >= 50 },
-      { label: "Centurion", detail: "Play 100 matches", icon: Award, unlocked: (player?.totalMatches || 0) >= 100 },
+      { label: "Prima partita", detail: "Gioca 1 partita", icon: Gamepad2, unlocked: (player?.totalMatches || 0) >= 1 },
+      { label: "Presenza fissa", detail: "Gioca 8 partite", icon: Gamepad2, unlocked: (player?.totalMatches || 0) >= 8 },
+      { label: "Veterano", detail: "Gioca 20 partite", icon: Medal, unlocked: (player?.totalMatches || 0) >= 20 },
+      { label: "Instancabile", detail: "Gioca 40 partite", icon: Flame, unlocked: (player?.totalMatches || 0) >= 40 },
+      { label: "Centurione", detail: "Gioca 75 partite", icon: Award, unlocked: (player?.totalMatches || 0) >= 75 },
 
-      { label: "First Blood", detail: "Win 1 match", icon: Trophy, unlocked: (player?.wins || 0) >= 1 },
-      { label: "Winner", detail: "Win 10 matches", icon: Trophy, unlocked: (player?.wins || 0) >= 10 },
-      { label: "Elite Winner", detail: "Win 25 matches", icon: Crown, unlocked: (player?.wins || 0) >= 25 },
-      { label: "Dominant", detail: "Win 50 matches", icon: Star, unlocked: (player?.wins || 0) >= 50 },
+      { label: "Prima vittoria", detail: "Vinci 1 partita", icon: Trophy, unlocked: (player?.wins || 0) >= 1 },
+      { label: "Vincente", detail: "Vinci 8 partite", icon: Trophy, unlocked: (player?.wins || 0) >= 8 },
+      { label: "Vincente élite", detail: "Vinci 20 partite", icon: Crown, unlocked: (player?.wins || 0) >= 20 },
+      { label: "Dominatore", detail: "Vinci 40 partite", icon: Star, unlocked: (player?.wins || 0) >= 40 },
 
-      { label: "MVP", detail: "Earn 1 MVP", icon: Crown, unlocked: (player?.mvpCount || 0) >= 1 },
-      { label: "MVP x5", detail: "Earn 5 MVPs", icon: Crown, unlocked: (player?.mvpCount || 0) >= 5 },
-      { label: "MVP x10", detail: "Earn 10 MVPs", icon: Award, unlocked: (player?.mvpCount || 0) >= 10 },
+      { label: "MVP", detail: "Ottieni 1 MVP", icon: Crown, unlocked: (player?.mvpCount || 0) >= 1 },
+      { label: "MVP x3", detail: "Ottieni 3 MVP", icon: Crown, unlocked: (player?.mvpCount || 0) >= 3 },
+      { label: "MVP x7", detail: "Ottieni 7 MVP", icon: Award, unlocked: (player?.mvpCount || 0) >= 7 },
 
-      { label: "Hot Streak", detail: "3 wins in a row", icon: Flame, unlocked: bestWinStreak >= 3 },
-      { label: "On Fire", detail: "5 wins in a row", icon: Flame, unlocked: bestWinStreak >= 5 },
-      { label: "Untouchable", detail: "10 wins in a row", icon: Rocket, unlocked: bestWinStreak >= 10 },
+      { label: "In forma", detail: "3 vittorie consecutive", icon: Flame, unlocked: bestWinStreak >= 3 },
+      { label: "In fiamme", detail: "4 vittorie consecutive", icon: Flame, unlocked: bestWinStreak >= 4 },
+      { label: "Intoccabile", detail: "8 vittorie consecutive", icon: Rocket, unlocked: bestWinStreak >= 8 },
 
-      { label: "First Chall", detail: "Win 1 money chall", icon: Swords, unlocked: challengeStats.wins >= 1 },
-      { label: "Chall Grinder", detail: "Win 5 money challs", icon: Swords, unlocked: challengeStats.wins >= 5 },
-      { label: "Chall Veteran", detail: "Win 10 money challs", icon: Medal, unlocked: challengeStats.wins >= 10 },
-      { label: "Chall King", detail: "Win 25 money challs", icon: Crown, unlocked: challengeStats.wins >= 25 },
+      { label: "Prima sfida", detail: "Vinci 1 sfida", icon: Swords, unlocked: challengeStats.wins >= 1 },
+      { label: "Sfide x4", detail: "Vinci 4 sfide", icon: Swords, unlocked: challengeStats.wins >= 4 },
+      { label: "Veterano sfide", detail: "Vinci 10 sfide", icon: Medal, unlocked: challengeStats.wins >= 10 },
+      { label: "Re delle sfide", detail: "Vinci 20 sfide", icon: Crown, unlocked: challengeStats.wins >= 20 },
 
-      { label: "In The Money", detail: "Win €25 in verified challs", icon: Coins, unlocked: challengeStats.wonValue >= 25 },
-      { label: "Money Maker", detail: "Win €50 in verified challs", icon: CreditCard, unlocked: challengeStats.wonValue >= 50 },
-      { label: "Big Earner", detail: "Win €100 in verified challs", icon: Award, unlocked: challengeStats.wonValue >= 100 },
-      { label: "High Roller", detail: "Win €250 in verified challs", icon: Crown, unlocked: challengeStats.wonValue >= 250 },
+      { label: "Primi punti", detail: "Accumula 20 di valore vinto nelle sfide verificate", icon: Coins, unlocked: challengeStats.wonValue >= 20 },
+      { label: "Accumulatore", detail: "Accumula 50 di valore vinto", icon: CreditCard, unlocked: challengeStats.wonValue >= 50 },
+      { label: "Grande bottino", detail: "Accumula 100 di valore vinto", icon: Award, unlocked: challengeStats.wonValue >= 100 },
+      { label: "Fuoriclasse", detail: "Accumula 200 di valore vinto", icon: Crown, unlocked: challengeStats.wonValue >= 200 },
 
-      { label: "Clean Payout", detail: "3 clean settled payouts", icon: ShieldCheck, unlocked: reputation === 100 && settled.length >= 3 },
-      { label: "Trusted", detail: "10 clean settled payouts", icon: Shield, unlocked: reputation === 100 && settled.length >= 10 },
+      { label: "Affidabile", detail: "3 pagamenti chiusi senza contestazioni", icon: ShieldCheck, unlocked: reputation === 100 && settled.length >= 3 },
+      { label: "Fiducia totale", detail: "8 pagamenti chiusi senza contestazioni", icon: Shield, unlocked: reputation === 100 && settled.length >= 8 },
 
-      { label: "Bronze Rank", detail: "Reach 900 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 900 },
-      { label: "Silver Rank", detail: "Reach 1000 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 1000 },
-      { label: "Gold Rank", detail: "Reach 1100 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 1100 },
-      { label: "Platinum Rank", detail: "Reach 1200 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 1200 },
-      { label: "Masters", detail: "Reach 1350 Elo", icon: Crown, unlocked: (player?.peakElo || 0) >= 1350 },
+      { label: "Grado Bronzo", detail: "Raggiungi 900 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 900 },
+      { label: "Grado Argento", detail: "Raggiungi 1000 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 1000 },
+      { label: "Grado Oro", detail: "Raggiungi 1100 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 1100 },
+      { label: "Grado Platino", detail: "Raggiungi 1200 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 1200 },
+      { label: "Master", detail: "Raggiungi 1350 Elo", icon: Crown, unlocked: (player?.peakElo || 0) >= 1350 },
     ];
 
     const achievements = achievementCatalog.filter((item) => item.unlocked);
@@ -327,80 +327,80 @@ export default function PlayerProfile() {
     return [
       challenge({
         id: "on-fire",
-        title: "On Fire",
-        description: "Win 5 matches in a row",
+        title: "In fiamme",
+        description: "Vinci 4 partite consecutive",
         emoji: "🔥",
         value: Math.max(0, Number(player.currentStreak || 0)),
-        goal: 5,
-        unit: " wins",
+        goal: 4,
+        unit: " vittorie",
       }),
       challenge({
         id: "unstoppable",
-        title: "Unstoppable",
-        description: "Win 10 matches in a row",
+        title: "Inarrestabile",
+        description: "Vinci 8 partite consecutive",
         emoji: "☢️",
         value: Math.max(0, Number(player.currentStreak || 0)),
-        goal: 10,
-        unit: " wins",
+        goal: 8,
+        unit: " vittorie",
       }),
       challenge({
         id: "money-maker",
-        title: "Money Maker",
-        description: "Win €50 in verified Chall",
+        title: "Accumulatore",
+        description: "Accumula 50 di valore vinto nelle sfide verificate",
         emoji: "💰",
         value: challengeStats.wonValue,
         goal: 50,
-        unit: " €",
+        unit: " valore",
       }),
       challenge({
         id: "high-roller",
-        title: "High Roller",
-        description: "Win a single Chall worth at least €20",
+        title: "Colpo grosso",
+        description: "Vinci una singola sfida con valore almeno 20",
         emoji: "💎",
         value: challengeInsights.maxWonChallenge,
         goal: 20,
-        unit: " €",
+        unit: " valore",
       }),
       challenge({
         id: "rivalry",
-        title: "Rivalry",
-        description: "Play 10 Chall against the same player",
+        title: "Rivalità",
+        description: "Gioca 8 sfide contro lo stesso giocatore",
         emoji: "⚔️",
         value: challengeInsights.maxH2HPlayed,
-        goal: 10,
-        unit: " challs",
+        goal: 8,
+        unit: " sfide",
       }),
       challenge({
         id: "nemesis",
-        title: "Nemesis",
-        description: "Beat the same player 5 times",
+        title: "Nemesi",
+        description: "Batti lo stesso giocatore 4 volte",
         emoji: "👑",
         value: challengeInsights.maxH2HWins,
-        goal: 5,
-        unit: " wins",
+        goal: 4,
+        unit: " vittorie",
       }),
       challenge({
         id: "clean-sweep",
-        title: "Clean Sweep",
-        description: "Win 5 Chall in a row",
+        title: "Filotto sfide",
+        description: "Vinci 4 sfide consecutive",
         emoji: "🧹",
         value: challengeInsights.currentType === "W" ? challengeInsights.currentStreak : 0,
-        goal: 5,
-        unit: " wins",
+        goal: 4,
+        unit: " vittorie",
       }),
       challenge({
         id: "veteran",
-        title: "Veteran",
-        description: "Play 100 matches",
+        title: "Veterano",
+        description: "Gioca 40 partite",
         emoji: "🧱",
         value: Number(player.totalMatches || 0),
-        goal: 100,
-        unit: " matches",
+        goal: 40,
+        unit: " partite",
       }),
       challenge({
         id: "run-it-back",
-        title: "Run It Back",
-        description: "Lose to a player, then beat them in the next Chall",
+        title: "Rivincita",
+        description: "Perdi contro un giocatore e poi battilo nella sfida successiva",
         emoji: "🔄",
         value: challengeInsights.runItBack ? 1 : 0,
         goal: 1,
@@ -429,7 +429,7 @@ export default function PlayerProfile() {
         id: "mvp",
         type: "mvp",
         title: "MVP",
-        detail: `Received ${player.mvpCount} ${player.mvpCount === 1 ? "time" : "times"}`,
+        detail: `Ricevuto ${player.mvpCount} ${player.mvpCount === 1 ? "volta" : "volte"}`,
         count: Number(player.mvpCount || 0),
         emoji: "🏆",
       });
@@ -440,7 +440,7 @@ export default function PlayerProfile() {
         id: "merda",
         type: "merda",
         title: "MERDA",
-        detail: `Active x${player.merdaCount} · every 4 consecutive wins clears 1`,
+        detail: `Attive x${player.merdaCount} · ogni 4 vittorie consecutive ne elimini 1`,
         count: Number(player.merdaCount || 0),
         emoji: "💩",
       });
@@ -986,10 +986,10 @@ export default function PlayerProfile() {
                       <span className="font-mono text-[10px] text-[#AAB1BE]">{displayValue}</span>
                       <span className="text-[10px] text-muted-foreground">
                         {item.id === "run-it-back"
-                          ? "Lose → rematch → win"
+                          ? "Perdi → rivincita → vinci"
                           : item.unit === " €"
-                            ? `€${remaining.toFixed(0)} to go`
-                            : `${Math.ceil(remaining)} to go`}
+                            ? `€${remaining.toFixed(0)} mancanti`
+                            : `${Math.ceil(remaining)} mancanti`}
                       </span>
                     </div>
                   </div>
@@ -1004,10 +1004,10 @@ export default function PlayerProfile() {
       <div className="m8-showcase rounded-[22px] p-4 sm:p-6 order-4" data-testid="trophy-cabinet">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
-            <div className="brand-kicker mb-1">Awards</div>
-            <h3 className="font-display font-black text-xl tracking-[-0.02em]">Trophy Cabinet</h3>
+            <div className="brand-kicker mb-1">Premi</div>
+            <h3 className="font-display font-black text-xl tracking-[-0.02em]">Bacheca</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              MVP 🏆 and MERDA 💩 counters, plus every trophy challenge you unlock.
+              MVP 🏆, MERDA 💩 attive e traguardi sbloccati.
             </p>
           </div>
           <Trophy size={20} className="text-[#D5A33A]" />
@@ -1016,9 +1016,9 @@ export default function PlayerProfile() {
         {trophyCabinet.length === 0 ? (
           <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-9 px-4 text-center">
             <Trophy size={28} className="text-[#3D4654] mx-auto mb-2" />
-            <div className="font-semibold">No awards yet</div>
+            <div className="font-semibold">Nessun premio ancora</div>
             <div className="text-xs text-muted-foreground mt-1">
-              Earn an MVP 🏆 or a MERDA 💩 to appear here.
+              Ottieni un MVP 🏆 o una MERDA 💩 per comparire qui.
             </div>
           </div>
         ) : (
