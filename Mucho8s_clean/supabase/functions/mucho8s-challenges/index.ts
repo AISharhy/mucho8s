@@ -712,7 +712,12 @@ Deno.serve(async (req: Request) => {
         })
         .select("*")
         .single();
-      if (seriesError) throw seriesError;
+      if (seriesError) {
+        if (String(seriesError?.code || "") === "23505") {
+          return json({ error: "There is already an open Chall Series with this player. Use ReChall or close the series first." }, 409);
+        }
+        throw seriesError;
+      }
 
       const { data, error } = await supabase
         .from("player_challenges")
@@ -823,7 +828,12 @@ Deno.serve(async (req: Request) => {
         })
         .select("*")
         .single();
-      if (error) throw error;
+      if (error) {
+        if (String(error?.code || "") === "23505") {
+          return json({ error: "This ReChall was already created. Refresh the series before trying again." }, 409);
+        }
+        throw error;
+      }
 
       await supabase.from("challenge_series").update({
         last_event: "rechallenge_created",
