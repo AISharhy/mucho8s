@@ -721,3 +721,122 @@ textarea:focus-visible {
         transform: none !important;
     }
 }
+
+
+/* Competitive player profile */
+.m8-profile-hero {
+    background: #10151D;
+    border: 1px solid #252D39;
+    box-shadow: 0 26px 70px rgba(0,0,0,.22);
+}
+
+.m8-profile-banner {
+    position: relative;
+    height: 142px;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 18% 35%, rgba(255,42,59,.19), transparent 19rem),
+        radial-gradient(circle at 84% 10%, rgba(213,163,58,.10), transparent 16rem),
+        linear-gradient(118deg, #1A202A 0%, #10151D 45%, #0A0D12 100%);
+}
+
+.m8-profile-banner::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(120deg, transparent 0 58%, rgba(255,255,255,.018) 58% 59%, transparent 59%),
+        linear-gradient(25deg, transparent 0 70%, rgba(255,42,59,.045) 70% 71%, transparent 71%);
+}
+
+.m8-profile-grid {
+    position: absolute;
+    inset: 0;
+    opacity: .26;
+    background-image:
+        linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 34px 34px;
+    mask-image: linear-gradient(90deg, #000, transparent 90%);
+}
+
+.m8-profile-stat-strip {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    border: 1px solid #232B37;
+    border-radius: 1rem;
+    overflow: hidden;
+    background: rgba(8,11,16,.68);
+}
+
+.m8-profile-stat {
+    min-width: 0;
+    padding: .85rem 1rem;
+    border-right: 1px solid #202733;
+}
+
+.m8-profile-stat:last-child {
+    border-right: 0;
+}
+
+.m8-showcase {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 92% 0%, rgba(213,163,58,.09), transparent 20rem),
+        linear-gradient(145deg, #141923, #0D1118 70%);
+    border: 1px solid rgba(213,163,58,.20);
+    box-shadow: 0 20px 60px rgba(0,0,0,.17);
+}
+
+.m8-showcase::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: .22;
+    background-image: linear-gradient(135deg, rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size: 22px 22px;
+}
+
+.m8-showcase > * {
+    position: relative;
+    z-index: 1;
+}
+
+@media (max-width: 1024px) {
+    .m8-profile-stat-strip {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .m8-profile-stat:nth-child(3) {
+        border-right: 0;
+    }
+
+    .m8-profile-stat:nth-child(-n+3) {
+        border-bottom: 1px solid #202733;
+    }
+}
+
+@media (max-width: 640px) {
+    .m8-profile-banner {
+        height: 112px;
+    }
+
+    .m8-profile-stat-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .m8-profile-stat {
+        padding: .75rem .8rem;
+        border-bottom: 1px solid #202733;
+    }
+
+    .m8-profile-stat:nth-child(2n) {
+        border-right: 0;
+    }
+
+    .m8-profile-stat:nth-last-child(-n+2) {
+        border-bottom: 0;
+    }
+}
