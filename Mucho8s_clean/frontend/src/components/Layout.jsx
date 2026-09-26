@@ -5,7 +5,7 @@ import ChallengeCenter from "@/components/ChallengeCenter";
 import CompetitiveEventFX from "@/components/CompetitiveEventFX";
 import { PageSkeleton } from "@/components/ProductState";
 import { PlayerAvatar, EloBadge } from "@/components/shared";
-import { AlertTriangle, Bell, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, UserCircle } from "lucide-react";
+import { AlertTriangle, Bell, CheckCheck, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, UserCircle } from "lucide-react";
 import { useData } from "@/context/DataContext";
 
 class PageErrorBoundary extends Component {
@@ -70,6 +70,7 @@ export const Layout = () => {
     discordPlayer,
     discordAccount,
     challengeNotificationCount,
+    markChallengeSeen,
     adminChallengeAlertCount,
     isAdmin,
     challenges,
@@ -80,6 +81,7 @@ export const Layout = () => {
   } = useData();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [onlineOpen, setOnlineOpen] = useState(false);
+  const [markingAllRead, setMarkingAllRead] = useState(false);
 
   const notifications = useMemo(() => {
     if (!discordAccount?.id) return [];
@@ -127,6 +129,35 @@ export const Layout = () => {
       .sort((a, b) => new Date(b.challenge.created_at) - new Date(a.challenge.created_at))
       .slice(0, 8);
   }, [challenges, discordAccount, discordPlayer, playerMap]);
+
+  const handleMarkAllRead = async () => {
+    if (!discordAccount?.id || markingAllRead) return;
+
+    const unread = challenges.filter((challenge) => {
+      const isChallenger = challenge.challenger_account_id === discordAccount.id;
+      const isChallenged = challenge.challenged_account_id === discordAccount.id;
+      if (!isChallenger && !isChallenged) return false;
+
+      const seenStatus = isChallenger
+        ? challenge.challenger_seen_status
+        : challenge.challenged_seen_status;
+      const seenEvent = isChallenger
+        ? challenge.challenger_seen_event
+        : challenge.challenged_seen_event;
+      const currentEvent = challenge.last_event || challenge.status;
+
+      return seenStatus !== challenge.status || seenEvent !== currentEvent;
+    });
+
+    if (!unread.length) return;
+
+    setMarkingAllRead(true);
+    try {
+      await Promise.all(unread.map((challenge) => markChallengeSeen(challenge.id)));
+    } finally {
+      setMarkingAllRead(false);
+    }
+  };
 
   const onlinePlayers = useMemo(() => {
     const rows = Array.isArray(dashboardData?.onlinePlayers)
@@ -335,14 +366,26 @@ export const Layout = () => {
                         <div className="brand-kicker mb-0.5">Notifications</div>
                         <div className="font-display font-bold">Challenge Center</div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setNotificationsOpen(false)}
-                        aria-label="Close notifications"
-                        className="w-8 h-8 rounded-lg bg-[#171B23] border border-[#2A303B] flex items-center justify-center text-muted-foreground hover:text-white"
-                      >
-                        <X size={14} />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleMarkAllRead}
+                          disabled={markingAllRead || challengeNotificationCount === 0}
+                          className="h-8 px-2.5 rounded-lg bg-[#171B23] border border-[#2A303B] inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#B8C0CC] hover:text-white hover:bg-white/[0.04] disabled:opacity-40 disabled:cursor-default"
+                          aria-label="Mark all notifications as read"
+                        >
+                          <CheckCheck size={14} className="text-emerald-400" />
+                          <span>Mark All Read</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNotificationsOpen(false)}
+                          aria-label="Close notifications"
+                          className="w-8 h-8 rounded-lg bg-[#171B23] border border-[#2A303B] flex items-center justify-center text-muted-foreground hover:text-white"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="max-h-[420px] overflow-y-auto p-2">
