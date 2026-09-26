@@ -4,6 +4,7 @@ import { Sidebar, MobileNav } from "@/components/Sidebar";
 import ChallengeCenter from "@/components/ChallengeCenter";
 import CompetitiveEventFX from "@/components/CompetitiveEventFX";
 import { PageSkeleton } from "@/components/ProductState";
+import { PlayerAvatar, EloBadge } from "@/components/shared";
 import { AlertTriangle, Bell, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, UserCircle } from "lucide-react";
 import { useData } from "@/context/DataContext";
 
@@ -73,9 +74,12 @@ export const Layout = () => {
     isAdmin,
     challenges,
     playerMap,
+    playerAvatars,
+    dashboardData,
     loaded,
   } = useData();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [onlineOpen, setOnlineOpen] = useState(false);
 
   const notifications = useMemo(() => {
     if (!discordAccount?.id) return [];
@@ -123,6 +127,36 @@ export const Layout = () => {
       .sort((a, b) => new Date(b.challenge.created_at) - new Date(a.challenge.created_at))
       .slice(0, 8);
   }, [challenges, discordAccount, discordPlayer, playerMap]);
+
+  const onlinePlayers = useMemo(() => {
+    const rows = Array.isArray(dashboardData?.onlinePlayers)
+      ? dashboardData.onlinePlayers
+      : [];
+    const seen = new Set();
+
+    return rows
+      .filter((row) => {
+        const id = String(row?.player_id || "").trim();
+        if (!id || seen.has(id) || !playerMap[id]) return false;
+        seen.add(id);
+        return true;
+      })
+      .map((row) => ({
+        ...playerMap[row.player_id],
+        lastSeenAt: row.last_seen_at,
+      }));
+  }, [dashboardData?.onlinePlayers, playerMap]);
+
+  const busyPlayerIds = useMemo(() => {
+    const ids = new Set();
+    challenges.forEach((challenge) => {
+      if (!["accepted", "result_pending"].includes(String(challenge?.status || ""))) return;
+      if (challenge.challenger_player_id) ids.add(String(challenge.challenger_player_id));
+      if (challenge.challenged_player_id) ids.add(String(challenge.challenged_player_id));
+    });
+    return ids;
+  }, [challenges]);
+
   const title = TITLES[loc.pathname] || (loc.pathname.startsWith("/players/") ? "Player Profile" : loc.pathname.startsWith("/challenges/") ? "Challenge Match" : "MuchoMoney8s");
 
   useEffect(() => {
@@ -143,6 +177,27 @@ export const Layout = () => {
           </div>
 
           <div className="ml-auto flex items-center gap-2 relative">
+            <button
+              type="button"
+              onClick={() => {
+                setOnlineOpen((open) => !open);
+                setNotificationsOpen(false);
+              }}
+              aria-label={`${onlinePlayers.length} players online`}
+              title="Players online"
+              aria-expanded={onlineOpen}
+              aria-controls="online-players-panel"
+              data-testid="header-online-players"
+              className="m8-action h-10 px-3 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.055] hover:bg-emerald-500/[0.09] transition-all flex items-center gap-2 text-emerald-400"
+            >
+              <span className="relative flex w-2 h-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-35 animate-ping" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+              </span>
+              <span className="font-mono text-xs font-black">{onlinePlayers.length}</span>
+              <span className="hidden sm:inline text-[10px] uppercase tracking-wider font-bold">Online</span>
+            </button>
+
             {discordPlayer && (
               <>
                 <Link
@@ -165,7 +220,10 @@ export const Layout = () => {
             {discordPlayer && (
               <button
                 type="button"
-                onClick={() => setNotificationsOpen((open) => !open)}
+                onClick={() => {
+                  setNotificationsOpen((open) => !open);
+                  setOnlineOpen(false);
+                }}
                 aria-label={challengeNotificationCount > 0 ? `${challengeNotificationCount} challenge notifications` : "Challenge notifications"}
                 title="Challenge notifications"
                 aria-expanded={notificationsOpen}
@@ -205,6 +263,71 @@ export const Layout = () => {
                 )}
               </Link>
             )}
+            {onlineOpen && (
+              <div
+                id="online-players-panel"
+                role="dialog"
+                aria-label="Players online"
+                className="absolute right-0 top-12 w-[min(92vw,360px)] m8-panel rounded-2xl shadow-2xl overflow-hidden z-50"
+              >
+                <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#1D222C]">
+                  <div>
+                    <div className="brand-kicker mb-0.5">Presence</div>
+                    <div className="font-display font-bold">
+                      {onlinePlayers.length} Online
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setOnlineOpen(false)}
+                    aria-label="Close online players"
+                    className="w-8 h-8 rounded-lg bg-[#171B23] border border-[#2A303B] flex items-center justify-center text-muted-foreground hover:text-white"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+
+                <div className="max-h-[400px] overflow-y-auto p-2">
+                  {onlinePlayers.length === 0 ? (
+                    <div className="py-8 text-center text-sm text-muted-foreground">
+                      No players online right now.
+                    </div>
+                  ) : (
+                    onlinePlayers.map((player) => {
+                      const inMatch = busyPlayerIds.has(String(player.id));
+                      return (
+                        <Link
+                          key={player.id}
+                          to={`/players/${player.id}`}
+                          onClick={() => setOnlineOpen(false)}
+                          className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-white/[0.04] transition-colors"
+                        >
+                          <div className="relative">
+                            <PlayerAvatar
+                              name={player.name}
+                              elo={player.currentElo}
+                              size={34}
+                              avatarUrl={playerAvatars?.[player.id]}
+                            />
+                            <span className="absolute -right-0.5 -bottom-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#101319]" />
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="font-semibold text-sm truncate">{player.name}</div>
+                            <div className={`text-[10px] mt-0.5 ${inMatch ? "text-[#D5A33A]" : "text-emerald-400"}`}>
+                              {inMatch ? "In Match" : "Available"}
+                            </div>
+                          </div>
+
+                          <EloBadge elo={player.currentElo} />
+                        </Link>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+
             {discordPlayer && notificationsOpen && (
                   <div id="challenge-notifications-panel" role="dialog" aria-label="Challenge notifications" className="absolute right-0 top-12 w-[min(92vw,380px)] m8-panel rounded-2xl shadow-2xl overflow-hidden z-50">
                     <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#1D222C]">
