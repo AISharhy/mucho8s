@@ -2,17 +2,8 @@ export const BASE_ELO = 1000;
 export const MIN_ELO = 500;
 export const WIN_DELTA = 25;
 export const LOSS_DELTA = 25;
-// MVP and upset remain profile/stat concepts and no longer modify Elo.
-export const MVP_BONUS = 0;
-export const UPSET_BONUS = 0;
-
-export const stakeElo = (amount) =>
-  Math.max(0, Math.round(Number(amount) || 0));
-
-export const matchEloDelta = (won, amount = 0) => {
-  const magnitude = WIN_DELTA + stakeElo(amount);
-  return won ? magnitude : -magnitude;
-};
+export const MVP_BONUS = 10;
+export const UPSET_BONUS = 15;
 
 // Balancing formula weights
 export const WEIGHTS = { peak: 0.6, current: 0.25, winRate: 0.15 };
