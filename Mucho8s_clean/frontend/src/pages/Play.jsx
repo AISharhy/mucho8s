@@ -174,9 +174,9 @@ export default function Play() {
           <div className="relative z-10">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="brand-kicker mb-2">Quick Chall</div>
+                <div className="brand-kicker mb-2">Challenge</div>
                 <h2 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.035em]">
-                  Money Chall
+                  Chall Singola
                 </h2>
                 <p className="text-sm text-[#8D95A4] mt-2">
                   Pick a player, choose the stake and send it.
