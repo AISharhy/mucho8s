@@ -361,10 +361,20 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
     const missing = [...teamA, ...teamB].filter((id) => !byId[id]);
     if (missing.length) throw new Error("One or more players in this report no longer exist");
 
+    const winners = report.winner === "A" ? teamA : teamB;
     const losers = report.winner === "A" ? teamB : teamA;
     const merdaIds = automaticMerdaIds(byId, losers);
+    const merdaClearedIds = automaticMerdaClearedIds(byId, winners);
     awardedMerdaIds = merdaIds;
-    const eloChanges = applyEffects(byId, teamA, teamB, report.winner, report.mvp_id, merdaIds);
+    const eloChanges = applyEffects(
+      byId,
+      teamA,
+      teamB,
+      report.winner,
+      report.mvp_id,
+      merdaIds,
+      merdaClearedIds,
+    );
 
     const match = {
       id: report.match_id,
@@ -377,6 +387,7 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       mvpId: report.mvp_id || undefined,
       merdaIds,
       merdaId: merdaIds[0] || undefined,
+      merdaClearedIds,
       map: report.map || "",
       mode: report.mode || "",
       game: report.game || "",
