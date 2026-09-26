@@ -189,9 +189,9 @@ export default function ChallengeLeaderboard() {
         </div>
         <div className="card-surface rounded-2xl p-4">
           <WalletCards size={18} className="text-[#D5A33A] mb-2" />
-          <div className="text-xs text-muted-foreground">Verified Volume</div>
+          <div className="text-xs text-muted-foreground">Verified Stakes</div>
           <div className="font-display text-2xl font-extrabold mt-1">
-            {euro(seasonChallenges.filter((item) => item.payment_received_at).reduce((sum, item) => sum + Number(item.amount_cents || 0) / 100, 0))}
+            {euro(seasonChallenges.filter((item) => item.verified_at && item.status === "completed").reduce((sum, item) => sum + Number(item.amount_cents || 0) / 100, 0))}
           </div>
         </div>
         <div className="card-surface rounded-2xl p-4">
