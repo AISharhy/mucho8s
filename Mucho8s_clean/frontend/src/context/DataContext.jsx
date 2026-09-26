@@ -29,6 +29,7 @@ const makePlayer = (name, startElo = BASE_ELO) => {
     last10: [],
     currentStreak: 0,
     mvpCount: 0,
+    role: "",
     eloHistory: [{ match: 0, elo }],
     createdAt: new Date().toISOString(),
   };
@@ -48,6 +49,7 @@ const normalizePlayer = (p) => {
     last10: Array.isArray(p?.last10) ? p.last10.slice(0, 10) : [],
     currentStreak: Number(p?.currentStreak) || 0,
     mvpCount: Math.max(0, Number(p?.mvpCount) || 0),
+    role: ["Main AR", "Flex", "SMG", "Support"].includes(p?.role) ? p.role : "",
     eloHistory: Array.isArray(p?.eloHistory) && p.eloHistory.length
       ? p.eloHistory
       : [{ match: 0, elo: cur }],
@@ -1373,6 +1375,7 @@ export const DataProvider = ({ children }) => {
     if (!p) return false;
     const elo = Math.max(MIN_ELO, Math.round(Number(currentElo) || BASE_ELO));
     p.currentElo = elo;
+    p.role = cleanRole;
     p.peakElo = Math.max(p.peakElo, elo);
     p.eloHistory = [...(p.eloHistory || []), { match: p.eloHistory?.length || 0, elo }];
     return persistWholeState(next, matches);
@@ -1391,10 +1394,11 @@ export const DataProvider = ({ children }) => {
     return persistWholeState(next, matches);
   }, [players, matches, backendWrite, persistWholeState]);
 
-  const editPlayer = useCallback(async (id, { name, currentElo }) => {
+  const editPlayer = useCallback(async (id, { name, currentElo, role = "" }) => {
     const cleanName = String(name || "").trim();
     if (!cleanName) return false;
     const elo = Math.max(MIN_ELO, Math.round(Number(currentElo) || BASE_ELO));
+    const cleanRole = ["Main AR", "Flex", "SMG", "Support"].includes(role) ? role : "";
 
     if (STORAGE_MODE === "backend") {
       const okName = await backendWrite(`/players/${id}/name`, { method: "PUT", body: { name: cleanName } });
@@ -1410,7 +1414,7 @@ export const DataProvider = ({ children }) => {
     p.peakElo = Math.max(p.peakElo, elo);
     p.eloHistory = [...(p.eloHistory || []), { match: p.eloHistory?.length || 0, elo }];
     const ok = await persistWholeState(next, matches);
-    if (ok) void logAdminAction("player.update", "player", id, { name: cleanName, elo });
+    if (ok) void logAdminAction("player.update", "player", id, { name: cleanName, elo, role: cleanRole });
     return ok;
   }, [players, matches, backendWrite, persistWholeState, logAdminAction]);
 
