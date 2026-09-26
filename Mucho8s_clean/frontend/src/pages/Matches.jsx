@@ -33,7 +33,7 @@ import {
 import { GAMES } from "@/lib/demoData";
 import { toast } from "sonner";
 
-const TeamList = ({ ids, playerMap, playerAvatars, eloChanges, pairings = [], mvpId, merdaId, merdaIds = [] }) => (
+const TeamList = ({ ids, playerMap, playerAvatars, eloChanges, pairings = [], mvpId, mvpIds = [], merdaId, merdaIds = [] }) => (
   <div className="flex-1 space-y-2">
     {ids.map((id) => {
       const p = playerMap[id];
@@ -46,7 +46,7 @@ const TeamList = ({ ids, playerMap, playerAvatars, eloChanges, pairings = [], mv
       const delta = baseDelta === 0
         ? 0
         : baseDelta + (baseDelta > 0 ? valueBonus : -valueBonus);
-      const isMvp = id === mvpId;
+      const isMvp = (Array.isArray(mvpIds) ? mvpIds : []).includes(id) || id === mvpId;
       const isMerda = (Array.isArray(merdaIds) ? merdaIds : []).includes(id) || id === merdaId;
 
       return (
@@ -554,6 +554,7 @@ export default function Matches() {
             eloChanges={match.eloChanges}
             pairings={match.pairings}
             mvpId={match.mvpId}
+            mvpIds={match.mvpIds}
             merdaId={match.merdaId}
           />
         </div>
@@ -586,6 +587,7 @@ export default function Matches() {
             eloChanges={match.eloChanges}
             pairings={match.pairings}
             mvpId={match.mvpId}
+            mvpIds={match.mvpIds}
             merdaId={match.merdaId}
           />
         </div>
