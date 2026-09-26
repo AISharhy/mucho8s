@@ -31,7 +31,7 @@ const TeamList = ({ ids, playerMap, playerAvatars, eloChanges, mvpId, merdaId })
               <span className="truncate">{p.name}</span>
               {isMvp && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#D5A33A]/10 border border-[#D5A33A]/20 text-[#D5A33A] text-[8px] font-black uppercase tracking-wider shrink-0">
-                  <Crown size={9} /> MVP
+                  <span aria-hidden="true">🏆</span> MVP
                 </span>
               )}
               {isMerda && (
