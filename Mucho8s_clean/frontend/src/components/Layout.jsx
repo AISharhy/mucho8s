@@ -86,49 +86,97 @@ export const Layout = () => {
   const notifications = useMemo(() => {
     if (!discordAccount?.id) return [];
 
-    return challenges
-      .filter((challenge) => !["admin_update", "admin_sync"].includes(String(challenge?.last_event || "")))
-      .map((challenge) => {
-        const isChallenger = challenge.challenger_account_id === discordAccount.id;
-        const opponentId = isChallenger ? challenge.challenged_player_id : challenge.challenger_player_id;
-        const opponent = playerMap[opponentId];
-        const iWon = challenge.status === "completed" && challenge.reported_winner_player_id === discordPlayer?.id;
+    const seriesSeen = new Set();
 
-        let title = "Challenge updated";
-        let tone = "neutral";
-        if (challenge.last_event === "pairing_assigned") {
-          title = `Money matchup vs ${opponent?.name || "player"}`;
-          tone = "magma";
-        } else if (challenge.status === "pending" && !isChallenger) {
-          title = `New chall from ${opponent?.name || "player"}`;
-          tone = "magma";
-        } else if (challenge.last_event === "accepted") {
-          title = `${opponent?.name || "Player"} accepted the chall`;
-          tone = "green";
-        } else if (challenge.status === "result_pending") {
-          title = "Result waiting for verification";
-          tone = "gold";
-        } else if (challenge.status === "disputed" || challenge.last_event === "payout_disputed") {
-          title = "Challenge dispute opened";
-          tone = "orange";
-        } else if (challenge.last_event === "match_pairing_verified") {
-          title = iWon ? "Challenge won" : "Challenge lost";
-          tone = iWon ? "green" : "red";
-        } else if (challenge.status === "completed") {
-          title = iWon ? "Challenge won" : "Challenge lost";
-          tone = iWon ? "green" : "red";
-        } else if (challenge.last_event === "payout_sent") {
-          title = "Payout marked as sent";
-          tone = "gold";
-        } else if (challenge.last_event === "payout_received") {
-          title = "Payout confirmed";
-          tone = "green";
+    return [...challenges]
+      .filter(Boolean)
+      .sort(
+        (a, b) =>
+          new Date(b?.updated_at || b?.created_at || 0) -
+          new Date(a?.updated_at || a?.created_at || 0)
+      )
+      .reduce((rows, challenge) => {
+        const event = String(challenge?.last_event || challenge?.status || "");
+        const source = String(challenge?.source || "");
+
+        if (source === "match_pairing") return rows;
+        if (
+          [
+            "admin_update",
+            "admin_sync",
+            "pairing_assigned",
+            "challenger_ready",
+            "challenged_ready",
+            "ready_removed",
+            "payout_received",
+            "series_payout_received",
+          ].includes(event)
+        ) return rows;
+
+        const isChallenger = challenge.challenger_account_id === discordAccount.id;
+        const isChallenged = challenge.challenged_account_id === discordAccount.id;
+        if (!isChallenger && !isChallenged) return rows;
+
+        if (challenge.series_id) {
+          if (seriesSeen.has(challenge.series_id)) return rows;
+          seriesSeen.add(challenge.series_id);
         }
 
-        return { challenge, title, opponent, tone };
-      })
-      .sort((a, b) => new Date(b.challenge.created_at) - new Date(a.challenge.created_at))
-      .slice(0, 8);
+        const opponentId = isChallenger
+          ? challenge.challenged_player_id
+          : challenge.challenger_player_id;
+        const opponent = playerMap[opponentId];
+        const iWon =
+          challenge.status === "completed" &&
+          challenge.reported_winner_player_id === discordPlayer?.id;
+
+        let title = "";
+        let tone = "neutral";
+
+        if (challenge.status === "pending" && isChallenged) {
+          title = `New chall from ${opponent?.name || "player"}`;
+          tone = "magma";
+        } else if (event === "accepted" && isChallenger) {
+          title = `${opponent?.name || "Player"} accepted your chall`;
+          tone = "green";
+        } else if (
+          challenge.status === "result_pending" &&
+          challenge.reporter_account_id !== discordAccount.id
+        ) {
+          title = "Result needs verification";
+          tone = "gold";
+        } else if (challenge.status === "disputed" || event === "payout_disputed") {
+          title = "Challenge dispute opened";
+          tone = "orange";
+        } else if (event === "payout_sent") {
+          title = "Payment marked as sent";
+          tone = "gold";
+        } else if (event === "rechallenge_created") {
+          title = `ReChall vs ${opponent?.name || "player"}`;
+          tone = "magma";
+        } else if (event === "series_ended") {
+          title = "Chall Series closed";
+          tone = "neutral";
+        } else if (event === "series_payout_sent") {
+          title = "Series payment sent";
+          tone = "gold";
+        } else if (challenge.status === "completed" && event === "completed") {
+          title = iWon ? "Challenge won" : "Challenge lost";
+          tone = iWon ? "green" : "red";
+        } else if (["declined", "series_declined"].includes(event)) {
+          title = "Challenge declined";
+          tone = "red";
+        } else if (["cancelled", "series_cancelled"].includes(event)) {
+          title = "Challenge cancelled";
+          tone = "red";
+        }
+
+        if (!title) return rows;
+
+        rows.push({ challenge, title, opponent, tone });
+        return rows;
+      }, [])
+      .slice(0, 6);
   }, [challenges, discordAccount, discordPlayer, playerMap]);
 
   const handleMarkAllRead = async () => {
@@ -365,7 +413,7 @@ export const Layout = () => {
                     <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#1D222C]">
                       <div>
                         <div className="brand-kicker mb-0.5">Notifications</div>
-                        <div className="font-display font-bold">Challenge Center</div>
+                        <div className="font-display font-bold">Important updates</div>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
@@ -391,7 +439,7 @@ export const Layout = () => {
 
                     <div className="max-h-[420px] overflow-y-auto p-2">
                       {notifications.length === 0 ? (
-                        <div className="py-8 text-center text-sm text-muted-foreground">No challenge notifications yet.</div>
+                        <div className="py-8 text-center text-sm text-muted-foreground">No important notifications.</div>
                       ) : notifications.map(({ challenge, title, opponent, tone }) => {
                         const Icon =
                           tone === "green" ? Trophy :
