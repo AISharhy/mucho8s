@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar, MvpBadge, RankBadge } from "@/components/shared";
+import { rankProgress } from "@/lib/elo";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, ArrowUp, ArrowDown, Download, Medal } from "lucide-react";
 import { toast } from "sonner";
@@ -16,6 +17,7 @@ const euro = (value) =>
 const COLUMNS = [
   { key: "rank", label: "#", sortable: false },
   { key: "name", label: "Player", sortable: true },
+  { key: "division", label: "Rank", sortable: false },
   { key: "totalPoints", label: "Elo", sortable: true },
   { key: "matchWins", label: "Record", sortable: true },
   { key: "winRate", label: "Win %", sortable: true },
@@ -182,8 +184,9 @@ export default function Leaderboard() {
 
   const exportCsv = () => {
     const header = [
-      "Rank",
+      "Position",
       "Name",
+      "Rank",
       "Elo",
       "Record",
       "Win %",
@@ -195,6 +198,7 @@ export default function Leaderboard() {
     const csvRows = rankingOrder.map((p) => [
       rankById.get(p.id) || "—",
       p.name,
+      p.rank?.name || rankProgress(p.totalPoints).rank.name,
       p.totalPoints,
       `${p.matchWins}-${p.matchLosses}`,
       p.winRate.toFixed(1),
@@ -286,8 +290,8 @@ export default function Leaderboard() {
 
               <div className="grid grid-cols-3 gap-2 mt-4">
                 <div className="m8-panel-quiet rounded-lg px-2.5 py-2">
-                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">Elo</div>
-                  <div className="font-mono text-sm font-bold mt-0.5">{Number(p.totalPoints).toFixed(Number.isInteger(p.totalPoints) ? 0 : 1)}</div>
+                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">Rank</div>
+                  <div className="mt-1"><RankBadge elo={p.totalPoints} compact /></div>
                 </div>
                 <div className="m8-panel-quiet rounded-lg px-2.5 py-2">
                   <div className="text-[9px] uppercase tracking-wider text-[#697181]">Record</div>
@@ -389,6 +393,10 @@ export default function Leaderboard() {
                         />
                         <span className="font-medium">{p.name}</span>
                       </Link>
+                    </td>
+
+                    <td className="px-4 py-3">
+                      <RankBadge elo={p.totalPoints} compact />
                     </td>
 
                     <td className="px-4 py-3 font-mono font-black">
