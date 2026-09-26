@@ -8,7 +8,7 @@ import { PlayerAvatar, EloBadge } from "@/components/shared";
 import { GAMES } from "@/lib/demoData";
 
 const MATCH_MODES = ["Hardpoint", "Search & Destroy"];
-import { Crown, Search, WalletCards, ArrowRightLeft } from "lucide-react";
+import { Crown, Search } from "lucide-react";
 import { toast } from "sonner";
 
 export const RecordMatchDialog = ({
@@ -29,7 +29,6 @@ export const RecordMatchDialog = ({
   const [mode, setMode] = useState(MATCH_MODES[0]);
   const [game, setGame] = useState(GAMES[0]);
   const [query, setQuery] = useState("");
-  const [pairings, setPairings] = useState([]);
 
   useEffect(() => {
     if (!open) return;
@@ -47,7 +46,6 @@ export const RecordMatchDialog = ({
     setMap(editData?.map || "");
     setMode(editData?.mode || defaultMode || MATCH_MODES[0]);
     setGame(editData?.game || defaultGame || GAMES[0]);
-    setPairings(Array.isArray(source?.pairings) ? source.pairings : []);
     setQuery("");
   }, [open, initialTeams, editData, defaultGame, defaultMode]);
 
@@ -87,38 +85,6 @@ export const RecordMatchDialog = ({
     teamA.length <= 4 &&
     Boolean(effectiveCaptainA && effectiveCaptainB);
 
-  const updatePairing = (playerAId, field, value) => {
-    setPairings((prev) => {
-      const existing = prev.find((pair) => pair.playerAId === playerAId);
-      const base = existing || {
-        playerAId,
-        playerBId: "",
-        amount: 5,
-        platform: "cmg",
-      };
-
-      const nextPair = {
-        ...base,
-        [field]: field === "amount" ? Math.max(0, Number(value) || 0) : value,
-      };
-
-      return [...prev.filter((pair) => pair.playerAId !== playerAId), nextPair];
-    });
-  };
-
-  const cleanPairings = pairings
-    .filter((pair) =>
-      teamA.includes(pair.playerAId) &&
-      teamB.includes(pair.playerBId) &&
-      Number(pair.amount || 0) > 0
-    )
-    .map((pair) => ({
-      playerAId: pair.playerAId,
-      playerBId: pair.playerBId,
-      amount: Number(pair.amount || 0),
-      platform: ["cmg", "paypal", "revolut"].includes(pair.platform) ? pair.platform : "cmg",
-    }));
-
   const submit = async () => {
     if (!valid) {
       toast.error("Both teams must be equal (2, 3 or 4 players each)");
@@ -147,7 +113,7 @@ export const RecordMatchDialog = ({
             game,
             map,
             date: editData.date,
-            pairings: cleanPairings,
+            pairings: Array.isArray(editData.pairings) ? editData.pairings : [],
           };
 
       const ok = await editMatch(editData.id, payload);
@@ -169,7 +135,7 @@ export const RecordMatchDialog = ({
         map,
         mode,
         game,
-        pairings: cleanPairings,
+        pairings: [],
         captainAPlayerId: effectiveCaptainA,
         captainBPlayerId: effectiveCaptainB,
       });
@@ -273,79 +239,6 @@ export const RecordMatchDialog = ({
                 </div>
               </div>
 
-              <div className="rounded-2xl bg-[#0F1218] border border-[#1D222C] p-4" data-testid="match-money-pairings">
-                <div className="flex items-center gap-2 mb-3">
-                  <WalletCards size={17} className="text-[#D5A33A]" />
-                  <div>
-                    <div className="font-display font-bold">Money Chall Pairings</div>
-                    <div className="text-xs text-muted-foreground">
-                      Admin can edit who challs who, stake and platform for this match.
-                    </div>
-                  </div>
-                </div>
-
-                {teamA.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">Assign teams first.</div>
-                ) : (
-                  <div className="space-y-2">
-                    {teamA.map((alphaId) => {
-                      const alpha = players.find((p) => p.id === alphaId);
-                      const pairing = pairings.find((pair) => pair.playerAId === alphaId);
-                      const usedBravo = pairings
-                        .filter((pair) => pair.playerAId !== alphaId)
-                        .map((pair) => pair.playerBId);
-
-                      return (
-                        <div
-                          key={alphaId}
-                          className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr_95px_105px] gap-2 sm:items-center rounded-xl bg-[#151923] border border-[#242A35] p-2.5"
-                        >
-                          <div className="text-sm font-semibold truncate">{alpha?.name || "Alpha"}</div>
-                          <ArrowRightLeft size={14} className="hidden sm:block text-muted-foreground" />
-
-                          <select
-                            value={pairing?.playerBId || ""}
-                            onChange={(e) => updatePairing(alphaId, "playerBId", e.target.value)}
-                            className="h-9 rounded-lg bg-[#0F1218] border border-[#2A303B] px-2 text-xs"
-                          >
-                            <option value="">No pairing</option>
-                            {teamB.map((bravoId) => {
-                              const bravo = players.find((p) => p.id === bravoId);
-                              return (
-                                <option key={bravoId} value={bravoId} disabled={usedBravo.includes(bravoId)}>
-                                  {bravo?.name || "Bravo"}
-                                </option>
-                              );
-                            })}
-                          </select>
-
-                          <div className="relative">
-                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">€</span>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.5"
-                              value={pairing?.amount ?? ""}
-                              onChange={(e) => updatePairing(alphaId, "amount", e.target.value)}
-                              className="h-9 pl-6 bg-[#0F1218] border-[#2A303B] text-xs"
-                            />
-                          </div>
-
-                          <select
-                            value={pairing?.platform || "cmg"}
-                            onChange={(e) => updatePairing(alphaId, "platform", e.target.value)}
-                            className="h-9 rounded-lg bg-[#0F1218] border border-[#2A303B] px-2 text-xs"
-                          >
-                            <option value="cmg">CMG</option>
-                            <option value="paypal">PayPal</option>
-                            <option value="revolut">Revolut</option>
-                          </select>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
             </>
           )}
 
