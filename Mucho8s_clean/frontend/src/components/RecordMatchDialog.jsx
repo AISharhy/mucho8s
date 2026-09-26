@@ -18,7 +18,7 @@ export const RecordMatchDialog = ({
   editData,
   defaultGame,
   defaultMode,
-  title = "Registra partita",
+  title = "Record Match",
   reportOnly = false,
   lockTeams = false,
   lockContext = false,
@@ -448,7 +448,7 @@ export const RecordMatchDialog = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <Label className="text-xs text-muted-foreground">Vincitore</Label>
+              <Label className="text-xs text-muted-foreground">Winner</Label>
               <div className="flex gap-2 mt-1">
                 <Button
                   type="button"
@@ -474,16 +474,16 @@ export const RecordMatchDialog = ({
             </div>
 
             <div className="rounded-xl bg-[#D5A33A]/[0.07] border border-[#D5A33A]/20 px-3 py-2.5">
-              <Label className="text-xs text-[#D5A33A]">MVP 🏆 · automatico</Label>
+              <Label className="text-xs text-[#D5A33A]">MVP 🏆 · automatic</Label>
               <div className="text-[11px] text-muted-foreground mt-1 leading-5">
-                Ogni 4 vittorie consecutive assegna automaticamente 1 MVP e +3 Elo.
+                Every 4 consecutive wins automatically awards 1 MVP and +3 Elo.
               </div>
             </div>
 
             <div className="rounded-xl bg-[#8B5E3C]/[0.07] border border-[#8B5E3C]/20 px-3 py-2.5">
-              <Label className="text-xs text-[#C79A6B]">MERDA 💩 · automatica</Label>
+              <Label className="text-xs text-[#C79A6B]">MERDA 💩 · automatic</Label>
               <div className="text-[11px] text-muted-foreground mt-1 leading-5">
-                Assegnata automaticamente ogni 4 sconfitte consecutive: 4, 8, 12, 16…
+                Automatically awarded every 4 consecutive losses: 4, 8, 12, 16…
               </div>
             </div>
 
