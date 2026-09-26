@@ -254,7 +254,7 @@ export default function PlayerProfile() {
 
       { label: "Bronze Rank", detail: "Reach 900 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 900 },
       { label: "Silver Rank", detail: "Reach 1000 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 1000 },
-      { label: "Gold Rank", detail: "Reach 1100 Elo", icon: Trophy, unlocked: (player?.peakElo || 0) >= 1100 },
+      { label: "Gold Rank", detail: "Reach 1100 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 1100 },
       { label: "Platinum Rank", detail: "Reach 1200 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 1200 },
       { label: "Masters", detail: "Reach 1350 Elo", icon: Crown, unlocked: (player?.peakElo || 0) >= 1350 },
     ];
