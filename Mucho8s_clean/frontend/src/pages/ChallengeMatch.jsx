@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar, EloBadge } from "@/components/shared";
+import ChallengeSeriesCard from "@/components/ChallengeSeriesCard";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
@@ -57,6 +58,10 @@ export default function ChallengeMatch() {
     playerAvatars,
     playerProfiles,
     respondToChallenge,
+    createRechallenge,
+    closeChallengeSeries,
+    markChallengeSeriesPaymentSent,
+    confirmChallengeSeriesPaymentReceived,
     markChallengePaymentSent,
     confirmChallengePaymentReceived,
     disputeChallengePayout,
@@ -74,6 +79,7 @@ export default function ChallengeMatch() {
   const [payoutDisputeNote, setPayoutDisputeNote] = useState("");
   const [payoutDisputeFile, setPayoutDisputeFile] = useState(null);
   const challenge = challenges.find((item) => item.id === id);
+  const series = challenge?.series || null;
 
   useEffect(() => {
     void refreshChallenges();
@@ -102,6 +108,7 @@ export default function ChallengeMatch() {
 
   const completedLost = Boolean(
     challenge?.status === "completed" &&
+    !challenge?.series_id &&
     winnerId &&
     discordPlayer?.id &&
     winnerId !== discordPlayer.id
@@ -185,6 +192,7 @@ export default function ChallengeMatch() {
   const verify = async (decision) => {
     const loserAfterConfirm =
       decision === "confirm" &&
+      !challenge.series_id &&
       challenge.reported_winner_player_id &&
       challenge.reported_winner_player_id !== discordPlayer.id;
 
@@ -229,6 +237,44 @@ export default function ChallengeMatch() {
       setDisputeNote("");
       setDisputeFile(null);
     }
+  };
+
+  const rechallenge = async (amount) => {
+    setBusy("rechallenge");
+    const created = await createRechallenge(challenge.id, amount);
+    setBusy("");
+    if (!created) return;
+    toast.success("ReChall created");
+    navigate("/challenges/" + created.id);
+  };
+
+  const closeSeries = async () => {
+    if (!challenge.series_id) return;
+    setBusy("close-series");
+    const updated = await closeChallengeSeries(challenge.series_id);
+    setBusy("");
+    if (!updated) return;
+    toast.success(
+      Number(updated.settlement_amount_cents || 0) === 0
+        ? "Series closed — no payment needed"
+        : "Series closed — final balance calculated"
+    );
+  };
+
+  const markSeriesPaymentSent = async () => {
+    if (!challenge.series_id) return;
+    setBusy("series-payment-sent");
+    const updated = await markChallengeSeriesPaymentSent(challenge.series_id);
+    setBusy("");
+    if (updated) toast.success("Final series payment marked as sent");
+  };
+
+  const confirmSeriesPaymentReceived = async () => {
+    if (!challenge.series_id) return;
+    setBusy("series-payment-received");
+    const updated = await confirmChallengeSeriesPaymentReceived(challenge.series_id);
+    setBusy("");
+    if (updated) toast.success("Series settled");
   };
 
   const markPayoutSent = async () => {
@@ -493,6 +539,19 @@ export default function ChallengeMatch() {
             </p>
           </div>
 
+          {challenge.series_id ? (
+            <ChallengeSeriesCard
+              challenge={challenge}
+              series={series}
+              playerMap={playerMap}
+              discordPlayer={discordPlayer}
+              busy={busy}
+              onRechallenge={rechallenge}
+              onClose={closeSeries}
+              onPaymentSent={markSeriesPaymentSent}
+              onPaymentReceived={confirmSeriesPaymentReceived}
+            />
+          ) : (
           <div className="card-surface rounded-2xl p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -660,6 +719,7 @@ export default function ChallengeMatch() {
               </div>
             )}
           </div>
+          )}
         </>
       )}
 
