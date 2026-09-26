@@ -3,6 +3,16 @@ import { useData } from "@/context/DataContext";
 import { PlayerAvatar } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { RecordMatchDialog } from "@/components/RecordMatchDialog";
 import MatchResultCenter from "@/components/MatchResultCenter";
 import { computeContextStats, playerForContext } from "@/lib/elo";
@@ -69,6 +79,8 @@ export default function TeamBuilder() {
   const [result, setResult] = useState(null);
   const [captains, setCaptains] = useState({ A: "", B: "" });
   const [liveMatch, setLiveMatch] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmBusy, setConfirmBusy] = useState(false);
   const [recordOpen, setRecordOpen] = useState(false);
 
   const selectedCount = selected.length;
@@ -138,7 +150,8 @@ export default function TeamBuilder() {
     : result?.teamB?.some((player) => player.id === matchCaptainId)
       ? "B"
       : "";
-  const canReport = Boolean(result && (isAdmin || matchCaptainId));
+  const canConfirm = Boolean(result && (isAdmin || matchCaptainId));
+  const canReport = Boolean(result && liveMatch?.id && (isAdmin || matchCaptainId));
 
   const currentTeamIds = result
     ? [...result.teamA, ...result.teamB].map((player) => player.id)
@@ -250,23 +263,38 @@ export default function TeamBuilder() {
       B: creatorOnB ? creatorId : (draft.teamB[0]?.id || ""),
     };
 
-    const created = await createLiveMatch({
-      teamA: draft.teamA.map((player) => player.id),
-      teamB: draft.teamB.map((player) => player.id),
-      game,
-      mode: matchMode,
-      format: formatForCount(draft.teamA.length + draft.teamB.length),
-    });
-
-    if (!created) return;
-
-    setLiveMatch(created);
+    setLiveMatch(null);
     setResult(draft);
     setCaptains(nextCaptains);
 
     toast.success(
-      `${formatForCount(draft.teamA.length + draft.teamB.length)} live · ${draft.balanceScore}% balance`
+      `${formatForCount(draft.teamA.length + draft.teamB.length)} teams ready · confirm the match to go live`
     );
+  };
+
+  const confirmMatch = async () => {
+    if (!result || confirmBusy) return;
+
+    if (!canConfirm) {
+      toast.error("Only the match creator or Admin can confirm this match");
+      return;
+    }
+
+    setConfirmBusy(true);
+    const created = await createLiveMatch({
+      teamA: result.teamA.map((player) => player.id),
+      teamB: result.teamB.map((player) => player.id),
+      game,
+      mode: matchMode,
+      format: formatForCount(result.teamA.length + result.teamB.length),
+    });
+    setConfirmBusy(false);
+
+    if (!created) return;
+
+    setLiveMatch(created);
+    setConfirmOpen(false);
+    toast.success("Match confirmed — now visible in Live Matches");
   };
 
   const generateTeams = () => {
@@ -652,28 +680,108 @@ export default function TeamBuilder() {
           </div>
 
           <div className="mt-5">
-            <Button
-              onClick={() => setRecordOpen(true)}
-              disabled={!canReport}
-              className="w-full h-11 bg-magma hover:bg-[#ff3c4c] text-white font-semibold"
-              title={canReport ? "" : "Only the match creator or Admin can report the result"}
-            >
-              <Trophy size={16} className="mr-2" /> Report Result
-            </Button>
+            {!liveMatch?.id ? (
+              <Button
+                onClick={() => setConfirmOpen(true)}
+                disabled={!canConfirm}
+                className="w-full h-11 bg-magma hover:bg-[#ff3c4c] text-white font-semibold"
+                title={canConfirm ? "" : "Only the match creator or Admin can confirm the match"}
+              >
+                <Check size={16} className="mr-2" /> Confirm Match
+              </Button>
+            ) : (
+              <div className="space-y-2">
+                <div className="w-full h-11 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] text-emerald-400 flex items-center justify-center gap-2 text-sm font-black uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  Match Live
+                </div>
+                <Button
+                  onClick={() => setRecordOpen(true)}
+                  disabled={!canReport}
+                  variant="outline"
+                  className="w-full h-11 border-[#303744] bg-[#11151C] hover:bg-[#171C24] font-semibold"
+                  title={canReport ? "" : "Only the match creator or Admin can report the result"}
+                >
+                  <Trophy size={16} className="mr-2" /> Report Result
+                </Button>
+              </div>
+            )}
           </div>
 
-          {!canReport && (
+          {!liveMatch?.id && !canConfirm && (
             <div className="text-[11px] text-muted-foreground text-center mt-2">
-              Result reporting is limited to the match creator or Admin.
+              Match confirmation is limited to the match creator or Admin.
             </div>
           )}
         </section>
       )}
 
+      <AlertDialog open={confirmOpen} onOpenChange={(open) => !confirmBusy && setConfirmOpen(open)}>
+        <AlertDialogContent className="bg-[#101319] border-[#242A35] rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-2xl">Confirm Match</AlertDialogTitle>
+            <AlertDialogDescription>
+              Confirm these teams to publish the match in Live Matches. No winner or result is selected at this stage.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {result && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-2">
+              <div className="rounded-xl border border-magma/20 bg-magma/[0.04] p-4">
+                <div className="text-[10px] uppercase tracking-widest text-magma font-black mb-2">Alpha</div>
+                <div className="space-y-1 text-sm font-semibold">
+                  {result.teamA.map((player) => (
+                    <div key={player.id} className="flex items-center justify-between gap-2">
+                      <span>{player.name}</span>
+                      {player.id === matchCaptainId && (
+                        <span className="text-[9px] uppercase tracking-wider text-[#D5A33A]">Captain</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[#D5A33A]/20 bg-[#D5A33A]/[0.035] p-4">
+                <div className="text-[10px] uppercase tracking-widest text-[#D5A33A] font-black mb-2">Bravo</div>
+                <div className="space-y-1 text-sm font-semibold">
+                  {result.teamB.map((player) => (
+                    <div key={player.id} className="flex items-center justify-between gap-2">
+                      <span>{player.name}</span>
+                      {player.id === matchCaptainId && (
+                        <span className="text-[9px] uppercase tracking-wider text-[#D5A33A]">Captain</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="rounded-xl border border-[#242A35] bg-[#0F1218] px-4 py-3 text-xs text-muted-foreground">
+            {game || "Game"} · {matchMode || "Mode"} · {result ? formatForCount(result.teamA.length + result.teamB.length) : ""}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={confirmBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void confirmMatch();
+              }}
+              disabled={confirmBusy}
+              className="bg-magma hover:bg-[#ff3c4c] text-white"
+            >
+              <Check size={16} className="mr-2" />
+              {confirmBusy ? "Confirming..." : "Confirm Match"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <RecordMatchDialog
         open={recordOpen}
         onOpenChange={setRecordOpen}
-        title="Report Match Result"
+        title="Report Final Result"
         lockTeams
         lockContext
         initialTeams={result ? {
