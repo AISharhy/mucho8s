@@ -101,6 +101,7 @@ export default function Matches() {
     matches,
     publicChallenges,
     matchReports,
+    liveMatches,
     playerMap,
     playerAvatars,
     deleteMatch,
@@ -191,7 +192,19 @@ export default function Matches() {
     [matchReports]
   );
 
-  const liveCount = liveChallenges.length + liveReports.length;
+  const liveTeamMatches = useMemo(
+    () =>
+      (Array.isArray(liveMatches) ? liveMatches : [])
+        .filter((match) => String(match?.status || "") === "live")
+        .sort(
+          (a, b) =>
+            new Date(b.created_at || 0) - new Date(a.created_at || 0)
+        ),
+    [liveMatches]
+  );
+
+  const liveCount =
+    liveTeamMatches.length + liveChallenges.length + liveReports.length;
 
   const history = useMemo(() => {
     const matchIds = new Set(safeMatches.map((match) => String(match.id)));
@@ -269,6 +282,40 @@ export default function Matches() {
       );
     });
   }, [history, query, winnerFilter, gameFilter, safePlayerMap]);
+
+  const renderLiveTeamMatch = (match) => {
+    const teamA = Array.isArray(match.team_a) ? match.team_a : [];
+    const teamB = Array.isArray(match.team_b) ? match.team_b : [];
+    const names = (ids) =>
+      ids.map((id) => safePlayerMap[id]?.name || "Player").join(" · ");
+    const captain = safePlayerMap[match.captain_player_id];
+
+    return (
+      <Link
+        key={`live-team-${match.id}`}
+        to="/team-builder"
+        className="m8-panel rounded-2xl p-4 flex items-center gap-4 hover:border-[#394150] transition-all"
+      >
+        <Gamepad2 size={18} className="text-emerald-400 shrink-0" />
+        <div className="min-w-0 flex-1">
+          <div className="font-display font-bold truncate">
+            {names(teamA)} <span className="text-[#596170]">vs</span> {names(teamB)}
+          </div>
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">
+            LIVE
+            {match.format ? ` · ${match.format}` : ""}
+            {match.game ? ` · ${match.game}` : ""}
+            {match.mode ? ` · ${match.mode}` : ""}
+            {captain?.name ? ` · Captain: ${captain.name}` : ""}
+          </div>
+        </div>
+        <div className="shrink-0 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-400">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          Live
+        </div>
+      </Link>
+    );
+  };
 
   const renderLiveChallenge = (challenge) => {
     const challenger = safePlayerMap[challenge.challenger_player_id];
@@ -792,6 +839,7 @@ export default function Matches() {
             />
           ) : (
             <>
+              {liveTeamMatches.map(renderLiveTeamMatch)}
               {liveReports.map(renderLiveReport)}
               {liveChallenges.map(renderLiveChallenge)}
             </>
