@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   Check,
   Clock3,
-  Crown,
   Swords,
   X,
 } from "lucide-react";
