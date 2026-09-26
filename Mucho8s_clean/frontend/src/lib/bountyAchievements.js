@@ -386,7 +386,7 @@ export const detectLobbyBounties = (teamA = [], teamB = [], matches = []) => {
     .forEach((rivalry) => add({
       key: `rivalry:${pairKey(rivalry.left.id, rivalry.right.id)}`,
       title: "Partita rivalità",
-      detail: `${rivalry.left.name} vs ${rivalry.right.name} · ${rivalry.leftWins}-${rivalry.rightWins} H2H`,
+      detail: `${rivalry.left.name} vs ${rivalry.right.name} · ${rivalry.leftWins}-${rivalry.rightWins} testa a testa`,
       reward: 2,
       hunterSide: "BOTH",
       type: "rivalry",
