@@ -161,7 +161,11 @@ export default function AdminPanel() {
   const savePlayer = async (id) => {
     const draft = editing[id];
     if (!draft?.name?.trim()) return toast.error("Nickname cannot be empty");
-    const ok = await editPlayer(id, { name: draft.name.trim(), currentElo: Number(draft.elo) });
+    const ok = await editPlayer(id, {
+      name: draft.name.trim(),
+      currentElo: Number(draft.elo),
+      role: draft.role || "",
+    });
     if (!ok) return;
     setEditing((prev) => {
       const next = { ...prev };
@@ -1190,7 +1194,7 @@ export default function AdminPanel() {
               <div key={p.id} className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-[#0F1218] border border-[#1D222C]" data-testid={`admin-player-${p.id}`}>
                 <PlayerAvatar name={p.name} elo={p.currentElo} size={34} />
                 {isEditing ? (
-                  <div className="flex-1 min-w-[220px] grid grid-cols-1 sm:grid-cols-[1fr_110px_auto] gap-2">
+                  <div className="flex-1 min-w-[260px] grid grid-cols-1 sm:grid-cols-[1fr_110px_130px_auto] gap-2">
                     <Input
                       data-testid={`admin-edit-name-input-${p.id}`}
                       value={editing[p.id].name}
@@ -1206,6 +1210,21 @@ export default function AdminPanel() {
                       className="h-9 bg-[#0F1218] border-[#222834]"
                       aria-label="Player Elo"
                     />
+                    <select
+                      value={editing[p.id].role || ""}
+                      onChange={(e) => setEditing((prev) => ({
+                        ...prev,
+                        [p.id]: { ...prev[p.id], role: e.target.value },
+                      }))}
+                      className="h-9 rounded-md bg-[#0F1218] border border-[#222834] px-2 text-xs"
+                      aria-label="Player role"
+                    >
+                      <option value="">No role</option>
+                      <option value="Main AR">Main AR</option>
+                      <option value="Flex">Flex</option>
+                      <option value="SMG">SMG</option>
+                      <option value="Support">Support</option>
+                    </select>
                     <Button onClick={() => savePlayer(p.id)} data-testid={`admin-save-player-${p.id}`} className="h-9 bg-emerald-500 hover:bg-emerald-600">
                       <Check size={16} className="mr-1" /> Save
                     </Button>
@@ -1213,11 +1232,16 @@ export default function AdminPanel() {
                 ) : (
                   <>
                     <span className="font-medium flex-1 min-w-[100px] truncate">{p.name}</span>
+                    {p.role && (
+                      <span className="text-[10px] uppercase tracking-wider px-2 py-1 rounded-lg bg-[#171B23] border border-[#2B313E] text-[#D5A33A]">
+                        {p.role}
+                      </span>
+                    )}
                     <EloBadge elo={p.currentElo} />
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => setEditing((prev) => ({ ...prev, [p.id]: { name: p.name, elo: p.currentElo } }))}
+                      onClick={() => setEditing((prev) => ({ ...prev, [p.id]: { name: p.name, elo: p.currentElo, role: p.role || "" } }))}
                       data-testid={`admin-edit-player-btn-${p.id}`}
                       className="h-9 w-9"
                     >
