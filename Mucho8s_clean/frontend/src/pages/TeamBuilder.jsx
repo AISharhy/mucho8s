@@ -395,406 +395,395 @@ export default function TeamBuilder() {
 
   return (
     <div className="m8-page-stack">
-      <section className="m8-panel rounded-2xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
-        <div>
-          <div className="brand-kicker mb-1">Competition Lab</div>
-          <h2 className="font-display text-3xl font-black tracking-[-0.03em]">Team Builder</h2>
-          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Build teams with pure balance, chemistry-based drafting or complete manual control.
-          </p>
-        </div>
-
-        <div className="flex gap-2">
-          <Button variant="ghost" onClick={autoPick} className="m8-action border border-[#222834] bg-[#0F1218] hover:border-[#394150]">
-            <Sparkles size={15} className="mr-2" /> Auto-pick players
-          </Button>
-          <Button variant="ghost" onClick={resetDraft} className="m8-action border border-[#222834] bg-[#0F1218] hover:border-[#394150]">
-            <RotateCcw size={15} className="mr-2" /> Clear
-          </Button>
-        </div>
-      </section>
-
-      <section className="m8-panel rounded-2xl p-4 sm:p-5">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+      <section className="m8-panel rounded-2xl p-5 sm:p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <div className="brand-kicker mb-1">Game Context</div>
-            <h3 className="font-display font-black text-lg tracking-[-0.015em]">Balance by game</h3>
-            <p className="text-xs text-muted-foreground mt-1">
-              Ratings and chemistry use only matches from the selected game. Choose All Games for the global profile.
+            <div className="brand-kicker mb-1">Play</div>
+            <h2 className="font-display text-3xl font-black tracking-[-0.03em]">Team Builder</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Select the lobby, choose how to split it, then generate the teams.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-1.5" data-testid="team-builder-game">
-            <button
-              type="button"
-              data-testid="team-builder-game-ALL"
-              aria-pressed={game === "ALL"}
-              onClick={() => changeGame("ALL")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                game === "ALL"
-                  ? "bg-white text-black border-white"
-                  : "bg-[#0F1218] text-muted-foreground border-[#222834] hover:text-white"
-              }`}
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              onClick={autoPick}
+              className="m8-action border border-[#222834] bg-[#0F1218] hover:border-[#394150]"
             >
-              All Games
-            </button>
-            {GAMES.map((item) => (
-              <button
-                type="button"
-                key={item}
-                data-testid={`team-builder-game-${item}`}
-                aria-pressed={game === item}
-                onClick={() => changeGame(item)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                  game === item
-                    ? "bg-white text-black border-white"
-                    : "bg-[#0F1218] text-muted-foreground border-[#222834] hover:text-white"
-                }`}
-              >
-                {item}
-              </button>
-            ))}
+              <Sparkles size={15} className="mr-2" /> Auto-pick
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={resetDraft}
+              className="m8-action border border-[#222834] bg-[#0F1218] hover:border-[#394150]"
+            >
+              <RotateCcw size={15} className="mr-2" /> Clear
+            </Button>
           </div>
+        </div>
 
-          <div className="mt-4 pt-4 border-t border-[#1D222C]">
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
-              Mode context
-            </div>
-            <div className="flex flex-wrap gap-1.5" data-testid="team-builder-mode">
-              <button
-                type="button"
-                aria-pressed={matchMode === "ALL"}
-                onClick={() => changeMatchMode("ALL")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                  matchMode === "ALL"
-                    ? "bg-white text-black border-white"
-                    : "bg-[#0F1218] text-muted-foreground border-[#222834] hover:text-white"
-                }`}
-              >
-                All Modes
-              </button>
-              {MATCH_MODES.map((item) => (
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-4 mt-5">
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Format</div>
+            <div className="grid grid-cols-3 gap-2">
+              {FORMATS.map((format) => (
                 <button
                   type="button"
-                  key={item}
-                  aria-pressed={matchMode === item}
-                  onClick={() => changeMatchMode(item)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                    matchMode === item
+                  key={format.key}
+                  aria-pressed={required === format.key}
+                  onClick={() => changeFormat(format.key)}
+                  className={`h-11 rounded-xl border text-sm font-bold transition-all ${
+                    required === format.key
                       ? "bg-white text-black border-white"
-                      : "bg-[#0F1218] text-muted-foreground border-[#222834] hover:text-white"
+                      : "bg-[#0F1218] border-[#222834] text-muted-foreground hover:text-white"
                   }`}
                 >
-                  {item}
+                  {format.label}
                 </button>
               ))}
             </div>
           </div>
+
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Team method</div>
+            <select
+              value={mode}
+              onChange={(event) => changeMode(event.target.value)}
+              className="w-full h-11 rounded-xl bg-[#0F1218] border border-[#222834] px-3 text-sm font-semibold"
+              aria-label="Team method"
+            >
+              <option value="balance">Auto Balance</option>
+              <option value="chemistry">Chemistry Draft</option>
+              <option value="manual">Manual Draft</option>
+            </select>
+          </div>
         </div>
       </section>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 max-w-4xl">
-        <button
-          type="button"
-          aria-pressed={mode === "balance"}
-          onClick={() => changeMode("balance")}
-          className={`rounded-xl border p-4 text-left transition-all ${
-            mode === "balance"
-              ? "bg-magma/10 border-magma/40 shadow-[0_12px_28px_rgba(255,42,59,.08)]"
-              : "bg-[#0F1218] border-[#222834] text-muted-foreground hover:border-[#394150]"
-          }`}
-        >
-          <div className="flex items-center gap-2 font-bold">
-            <Gauge size={17} /> Auto Balance
+      <section className="m8-panel rounded-2xl p-5">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div>
+            <div className="brand-kicker mb-1">Lobby</div>
+            <h3 className="font-display text-xl font-black">Choose players</h3>
           </div>
-          <div className="text-xs mt-1">Creates the fairest possible teams.</div>
-        </button>
-
-        <button
-          type="button"
-          aria-pressed={mode === "chemistry"}
-          onClick={() => changeMode("chemistry")}
-          className={`rounded-xl border p-4 text-left transition-all ${
-            mode === "chemistry"
-              ? "bg-[#D5A33A]/10 border-[#D5A33A]/35 shadow-[0_12px_28px_rgba(213,163,58,.07)]"
-              : "bg-[#0F1218] border-[#222834] text-muted-foreground hover:border-[#394150]"
-          }`}
-        >
-          <div className="flex items-center gap-2 font-bold">
-            <FlaskConical size={17} /> Chemistry Draft
-          </div>
-          <div className="text-xs mt-1">Mixes compatibility and competitive balance.</div>
-        </button>
-
-        <button
-          type="button"
-          aria-pressed={mode === "manual"}
-          onClick={() => changeMode("manual")}
-          className={`rounded-xl border p-4 text-left transition-all ${
-            mode === "manual"
-              ? "bg-white/[0.06] border-white/25"
-              : "bg-[#0F1218] border-[#222834] text-muted-foreground hover:border-[#394150]"
-          }`}
-        >
-          <div className="flex items-center gap-2 font-bold">
-            <UsersRound size={17} /> Manual Draft
-          </div>
-          <div className="text-xs mt-1">You choose both teams; the engine evaluates them.</div>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
-        <div className="xl:col-span-5 m8-panel rounded-2xl p-5">
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <div className="flex items-center gap-2">
-              <UsersRound size={18} className="text-magma" />
-              <h3 className="font-display font-black text-lg tracking-[-0.015em]">
-                {mode === "manual" ? "Build Teams" : "Player Pool"}
-              </h3>
-            </div>
-            <span className={`font-mono font-bold ${
-              (mode === "manual" ? manualCount === required : autoCount === required)
-                ? "text-emerald-400"
-                : "text-[#D5A33A]"
-            }`}>
-              {mode === "manual" ? manualCount : autoCount}/{required}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {FORMATS.map((format) => (
-              <button
-                type="button"
-                key={format.key}
-                aria-pressed={required === format.key}
-                onClick={() => changeFormat(format.key)}
-                className={`h-10 rounded-xl border text-sm font-bold transition-all ${
-                  required === format.key
-                    ? "bg-white text-black border-white"
-                    : "bg-[#0F1218] border-[#222834] text-muted-foreground hover:text-white"
-                }`}
-              >
-                {format.label}
-              </button>
-            ))}
-          </div>
-
-          {mode === "manual" && (
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              <div className="rounded-xl bg-magma/[0.06] border border-magma/20 p-3">
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Team A</div>
-                <div className="font-mono font-bold mt-1">{manualA.length}/{perTeam}</div>
-              </div>
-              <div className="rounded-xl bg-[#65D5D3]/[0.05] border border-[#65D5D3]/20 p-3">
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Team B</div>
-                <div className="font-mono font-bold mt-1">{manualB.length}/{perTeam}</div>
-              </div>
-            </div>
-          )}
-
-          <div className="relative mb-3">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search players..."
-              className="pl-9 bg-[#0F1218] border-[#222834] rounded-xl"
-            />
-          </div>
-
-          <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-            {filtered.map((player) => {
-              const active = selected.includes(player.id);
-              const inA = manualA.includes(player.id);
-              const inB = manualB.includes(player.id);
-
-              return (
-                <div
-                  key={player.id}
-                  className={`flex items-center gap-3 rounded-xl border p-3 transition-all ${
-                    active || inA || inB
-                      ? "bg-white/[0.04] border-[#343B48]"
-                      : "m8-panel-quiet"
-                  }`}
-                >
-                  {mode !== "manual" ? (
-                    <button
-                      type="button"
-                      onClick={() => toggleAutoPlayer(player.id)}
-                      className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${
-                        active ? "bg-magma border-magma" : "border-[#343B48]"
-                      }`}
-                      aria-label={active ? "Remove player" : "Add player"}
-                    >
-                      {active && <Check size={13} />}
-                    </button>
-                  ) : (
-                    <div className="flex gap-1 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => assignManual(player.id, "A")}
-                        aria-pressed={inA}
-                        aria-label={`Assign ${player.name} to Team A`}
-                        className={`w-8 h-8 rounded-lg border text-xs font-black ${
-                          inA
-                            ? "bg-magma border-magma text-white"
-                            : "bg-[#151923] border-[#343B48] text-muted-foreground"
-                        }`}
-                      >
-                        A
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => assignManual(player.id, "B")}
-                        aria-pressed={inB}
-                        aria-label={`Assign ${player.name} to Team B`}
-                        className={`w-8 h-8 rounded-lg border text-xs font-black ${
-                          inB
-                            ? "bg-[#65D5D3] border-[#65D5D3] text-black"
-                            : "bg-[#151923] border-[#343B48] text-muted-foreground"
-                        }`}
-                      >
-                        B
-                      </button>
-                    </div>
-                  )}
-
-                  <PlayerAvatar
-                    name={player.name}
-                    elo={player.currentElo}
-                    size={36}
-                    avatarUrl={playerAvatars[player.id]}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="font-semibold truncate">{player.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {game === "ALL" && matchMode === "ALL"
-                        ? `${player.totalMatches || 0} matches · ${player.currentElo} Elo`
-                        : `${contextualPlayerMap[player.id]?.contextMatches || 0} context matches · ${contextualPlayerMap[player.id]?.currentElo || 1000} rating · ${contextualPlayerMap[player.id]?.contextConfidence || 0}% confidence`}
-                      {player.role ? ` · ${player.role}` : ""}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {mode !== "manual" ? (
-            <Button
-              onClick={generateDraft}
-              disabled={selected.length !== required}
-              className="w-full h-12 mt-4 bg-magma hover:bg-[#ff3c4c] font-bold rounded-xl"
-            >
-              {mode === "balance" ? <Gauge size={17} className="mr-2" /> : <FlaskConical size={17} className="mr-2" />}
-              {mode === "balance" ? "Generate Balanced Teams" : "Generate Chemistry Draft"}
-            </Button>
-          ) : (
-            <div className="mt-4 m8-panel-quiet rounded-xl p-3 text-xs text-muted-foreground">
-              Manual mode updates automatically as soon as both teams are complete.
-            </div>
-          )}
+          <span className={`font-mono font-bold ${
+            (mode === "manual" ? manualCount === required : autoCount === required)
+              ? "text-emerald-400"
+              : "text-[#D5A33A]"
+          }`}>
+            {mode === "manual" ? manualCount : autoCount}/{required}
+          </span>
         </div>
 
-        <div className="xl:col-span-7 space-y-5">
-          <div className="m8-panel rounded-2xl p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="brand-kicker mb-1">Chemistry Scan</div>
-                <h3 className="font-display text-xl font-black tracking-[-0.02em]">Compatibility</h3>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {game === "ALL" && matchMode === "ALL"
-                    ? "All-game history"
-                    : `${game === "ALL" ? "All games" : game} · ${matchMode === "ALL" ? "All modes" : matchMode} · ${contextMatches.length} recorded matches`}
+        {mode === "manual" && (
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <div className="rounded-xl bg-magma/[0.06] border border-magma/20 px-3 py-2">
+              <span className="text-xs text-muted-foreground">Alpha</span>
+              <span className="float-right font-mono font-bold">{manualA.length}/{perTeam}</span>
+            </div>
+            <div className="rounded-xl bg-[#65D5D3]/[0.05] border border-[#65D5D3]/20 px-3 py-2">
+              <span className="text-xs text-muted-foreground">Bravo</span>
+              <span className="float-right font-mono font-bold">{manualB.length}/{perTeam}</span>
+            </div>
+          </div>
+        )}
+
+        <div className="relative mb-3">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search players..."
+            className="pl-9 bg-[#0F1218] border-[#222834] rounded-xl"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[390px] overflow-y-auto pr-1">
+          {filtered.map((player) => {
+            const active = selected.includes(player.id);
+            const inA = manualA.includes(player.id);
+            const inB = manualB.includes(player.id);
+
+            return (
+              <div
+                key={player.id}
+                className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all ${
+                  active || inA || inB
+                    ? "bg-white/[0.04] border-[#343B48]"
+                    : "m8-panel-quiet"
+                }`}
+              >
+                {mode !== "manual" ? (
+                  <button
+                    type="button"
+                    onClick={() => toggleAutoPlayer(player.id)}
+                    className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${
+                      active ? "bg-magma border-magma" : "border-[#343B48]"
+                    }`}
+                    aria-label={active ? "Remove player" : "Add player"}
+                  >
+                    {active && <Check size={13} />}
+                  </button>
+                ) : (
+                  <div className="flex gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => assignManual(player.id, "A")}
+                      aria-pressed={inA}
+                      className={`w-8 h-8 rounded-lg border text-xs font-black ${
+                        inA
+                          ? "bg-magma border-magma text-white"
+                          : "bg-[#151923] border-[#343B48] text-muted-foreground"
+                      }`}
+                    >
+                      A
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => assignManual(player.id, "B")}
+                      aria-pressed={inB}
+                      className={`w-8 h-8 rounded-lg border text-xs font-black ${
+                        inB
+                          ? "bg-[#65D5D3] border-[#65D5D3] text-black"
+                          : "bg-[#151923] border-[#343B48] text-muted-foreground"
+                      }`}
+                    >
+                      B
+                    </button>
+                  </div>
+                )}
+
+                <PlayerAvatar
+                  name={player.name}
+                  elo={player.currentElo}
+                  size={34}
+                  avatarUrl={playerAvatars[player.id]}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold truncate">{player.name}</div>
+                  <div className="text-xs text-muted-foreground truncate">
+                    {player.currentElo} Elo{player.role ? ` · ${player.role}` : ""}
+                  </div>
                 </div>
               </div>
-              <Zap size={19} className="text-[#D5A33A]" />
+            );
+          })}
+        </div>
+
+        {mode !== "manual" ? (
+          <Button
+            onClick={generateDraft}
+            disabled={selected.length !== required}
+            className="w-full h-12 mt-4 bg-magma hover:bg-[#ff3c4c] font-bold rounded-xl"
+          >
+            <Swords size={17} className="mr-2" /> Generate Teams
+          </Button>
+        ) : (
+          <div className="mt-4 rounded-xl bg-[#0F1218] border border-[#1D222C] px-4 py-3 text-xs text-muted-foreground text-center">
+            Teams appear automatically when Alpha and Bravo are complete.
+          </div>
+        )}
+      </section>
+
+      {result && (
+        <section className="m8-panel rounded-2xl p-5 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+            <div>
+              <div className="brand-kicker mb-1">Ready</div>
+              <h3 className="font-display text-2xl font-black">Alpha vs Bravo</h3>
+            </div>
+            <BalanceBadge score={result.balanceScore} verdict={result.balanceVerdict} />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-3 lg:items-center">
+            <div className="rounded-2xl bg-magma/[0.04] border border-magma/15 p-4">
+              <div className="text-xs uppercase tracking-widest text-magma font-black mb-3">Alpha</div>
+              <div className="space-y-2">
+                {result.teamA.map((player) => (
+                  <div key={player.id} className="flex items-center gap-3 rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+                    <PlayerAvatar name={player.name} elo={player.currentElo} size={36} avatarUrl={playerAvatars[player.id]} />
+                    <div className="font-semibold truncate flex-1">{player.name}</div>
+                    <span className="font-mono text-xs text-muted-foreground">{player.currentElo}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {chemistryPreview.length === 0 ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">
-                Select at least two players to compare their history.
+            <div className="hidden lg:flex w-12 h-12 rounded-full border border-[#2A303B] bg-[#0F1218] items-center justify-center font-display font-black text-muted-foreground">
+              VS
+            </div>
+
+            <div className="rounded-2xl bg-[#65D5D3]/[0.035] border border-[#65D5D3]/15 p-4">
+              <div className="text-xs uppercase tracking-widest text-[#65D5D3] font-black mb-3">Bravo</div>
+              <div className="space-y-2">
+                {result.teamB.map((player) => (
+                  <div key={player.id} className="flex items-center gap-3 rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+                    <PlayerAvatar name={player.name} elo={player.currentElo} size={36} avatarUrl={playerAvatars[player.id]} />
+                    <div className="font-semibold truncate flex-1">{player.name}</div>
+                    <span className="font-mono text-xs text-muted-foreground">{player.currentElo}</span>
+                  </div>
+                ))}
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+            </div>
+          </div>
+
+          {isAdmin && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-5">
+              <Button
+                onClick={sendCurrentTeamsToDiscord}
+                className="h-11 bg-[#5865F2] hover:bg-[#6875F5] text-white font-semibold"
+              >
+                <MessageCircle size={16} className="mr-2" /> Send to Discord
+              </Button>
+              <Button
+                onClick={() => setRecordOpen(true)}
+                className="h-11 bg-magma hover:bg-[#ff3c4c] text-white font-semibold"
+              >
+                <Trophy size={16} className="mr-2" /> Report Result
+              </Button>
+            </div>
+          )}
+        </section>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setWhyOpen((open) => !open)}
+        className="w-full h-11 rounded-xl border border-[#222834] bg-[#0F1218] text-sm font-bold text-[#AAB1BE] hover:text-white hover:border-[#394150] transition-all"
+      >
+        {whyOpen ? "Hide advanced details" : "Advanced details"}
+      </button>
+
+      {whyOpen && (
+        <section className="m8-panel rounded-2xl p-5 space-y-5">
+          <div>
+            <div className="brand-kicker mb-1">Context</div>
+            <h3 className="font-display text-xl font-black">Game & mode</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Optional: use a specific game or mode history when calculating balance and chemistry.
+            </p>
+
+            <div className="mt-4">
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Game</div>
+              <div className="flex flex-wrap gap-1.5" data-testid="team-builder-game">
+                <button
+                  type="button"
+                  data-testid="team-builder-game-ALL"
+                  aria-pressed={game === "ALL"}
+                  onClick={() => changeGame("ALL")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                    game === "ALL"
+                      ? "bg-white text-black border-white"
+                      : "bg-[#0F1218] text-muted-foreground border-[#222834] hover:text-white"
+                  }`}
+                >
+                  All Games
+                </button>
+                {GAMES.map((item) => (
+                  <button
+                    type="button"
+                    key={item}
+                    data-testid={`team-builder-game-${item}`}
+                    aria-pressed={game === item}
+                    onClick={() => changeGame(item)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                      game === item
+                        ? "bg-white text-black border-white"
+                        : "bg-[#0F1218] text-muted-foreground border-[#222834] hover:text-white"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Mode</div>
+              <div className="flex flex-wrap gap-1.5" data-testid="team-builder-mode">
+                <button
+                  type="button"
+                  aria-pressed={matchMode === "ALL"}
+                  onClick={() => changeMatchMode("ALL")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                    matchMode === "ALL"
+                      ? "bg-white text-black border-white"
+                      : "bg-[#0F1218] text-muted-foreground border-[#222834] hover:text-white"
+                  }`}
+                >
+                  All Modes
+                </button>
+                {MATCH_MODES.map((item) => (
+                  <button
+                    type="button"
+                    key={item}
+                    aria-pressed={matchMode === item}
+                    onClick={() => changeMatchMode(item)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                      matchMode === item
+                        ? "bg-white text-black border-white"
+                        : "bg-[#0F1218] text-muted-foreground border-[#222834] hover:text-white"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {chemistryPreview.length > 0 && (
+            <div className="pt-5 border-t border-[#1D222C]">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="brand-kicker mb-1">Chemistry</div>
+                  <h3 className="font-display text-xl font-black">Compatibility</h3>
+                </div>
+                <Zap size={18} className="text-[#D5A33A]" />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
                 {chemistryPreview.slice(0, 6).map((pair) => (
-                  <div key={`${pair.a.id}:${pair.b.id}`} className="m8-panel-quiet rounded-xl p-4">
+                  <div key={`${pair.a.id}:${pair.b.id}`} className="m8-panel-quiet rounded-xl p-3">
                     <div className="flex items-center justify-between gap-3">
                       <div className="font-semibold truncate">{pair.a.name} + {pair.b.name}</div>
                       <ChemistryBadge score={pair.score} />
                     </div>
-                    <div className="text-xs text-muted-foreground mt-2">
+                    <div className="text-xs text-muted-foreground mt-1">
                       {pair.matchesTogether
-                        ? `${pair.matchesTogether} together · ${pair.winsTogether} wins · ${pair.winRate}% duo WR`
-                        : "No shared matches yet · neutral starting chemistry"}
-                    </div>
-                    <div className="text-[10px] uppercase tracking-widest text-[#697181] mt-2">
-                      {pair.label} · {pair.eloGap} Elo gap
+                        ? `${pair.matchesTogether} together · ${pair.winRate}% duo WR`
+                        : "No shared matches yet"}
                     </div>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-
-          {!result ? (
-            <div className="m8-panel rounded-2xl min-h-[330px] flex flex-col items-center justify-center text-center p-8">
-              <div className="w-14 h-14 rounded-2xl m8-panel-quiet flex items-center justify-center shadow-[0_12px_28px_rgba(0,0,0,.18)]">
-                <Gauge size={24} className="text-magma" />
-              </div>
-              <h3 className="font-display text-2xl font-bold mt-4">
-                {mode === "manual" ? "Build both teams" : "Team Builder Ready"}
-              </h3>
-              <p className="text-sm text-muted-foreground mt-2 max-w-lg">
-                {mode === "manual"
-                  ? `Assign ${perTeam} players to Team A and ${perTeam} to Team B. The balance score will appear automatically.`
-                  : mode === "balance"
-                    ? "The engine searches every split to create the fairest matchup."
-                    : "The engine searches possible splits and combines chemistry with competitive balance."}
-              </p>
             </div>
-          ) : (
-            <>
-              <div className="m8-panel rounded-2xl p-5">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <div className="brand-kicker mb-1">
-                      {mode === "manual" ? "Manual Team Analysis" : mode === "balance" ? "Balanced Teams" : "Chemistry Draft"}
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-display text-2xl font-black tracking-[-0.03em]">
-                        {result.balanceVerdict}
-                      </h3>
-                      <span className="px-2 py-1 rounded-lg bg-[#171B23] border border-[#2B313E] text-[10px] font-bold text-[#D5A33A]">
-                        {game === "ALL" ? "ALL GAMES" : game}
-                      </span>
-                      <span className="px-2 py-1 rounded-lg bg-[#171B23] border border-[#2B313E] text-[10px] font-bold text-[#65D5D3]">
-                        {matchMode === "ALL" ? "ALL MODES" : matchMode}
-                      </span>
-                    </div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      Overall fit {result.draftScore}% · Team chemistry {result.chemistryScore}%
-                    </div>
-                  </div>
-                  <BalanceBadge score={result.balanceScore} verdict={result.balanceVerdict} />
-                </div>
+          )}
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-4">
+          {result && (
+            <>
+              <div className="pt-5 border-t border-[#1D222C]">
+                <div className="brand-kicker mb-1">Analytics</div>
+                <h3 className="font-display text-xl font-black">Lobby details</h3>
+
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-3">
                   {[
-                    ["Lobby Quality", result.lobbyQuality, "text-white"],
-                    ["Balance", result.balanceScore, "text-emerald-400"],
-                    ["Role Balance", result.roleBalanceScore, result.roleConfidence > 0 ? "text-[#D5A33A]" : "text-muted-foreground"],
-                    ["Freshness", result.freshnessScore, "text-[#65D5D3]"],
-                  ].map(([label, value, tone]) => (
+                    ["Lobby Quality", result.lobbyQuality],
+                    ["Balance", result.balanceScore],
+                    ["Role Balance", result.roleBalanceScore],
+                    ["Freshness", result.freshnessScore],
+                  ].map(([label, value]) => (
                     <div key={label} className="m8-stat-card">
                       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
-                      <div className={`font-mono font-bold text-lg mt-1 ${tone}`}>{value}%</div>
+                      <div className="font-mono font-bold text-lg mt-1">{value}%</div>
                     </div>
                   ))}
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 mt-2">
                   <div className="m8-stat-card">
-                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Team A Power</div>
+                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Alpha Power</div>
                     <div className="font-mono font-bold text-lg mt-1">{result.strengthA}</div>
                   </div>
                   <div className="m8-stat-card">
@@ -802,193 +791,126 @@ export default function TeamBuilder() {
                     <div className="font-mono font-bold text-lg mt-1">{result.strengthDiff}</div>
                   </div>
                   <div className="m8-stat-card">
-                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Team B Power</div>
+                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Bravo Power</div>
                     <div className="font-mono font-bold text-lg mt-1">{result.strengthB}</div>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setWhyOpen((open) => !open)}
-                  className="mt-4 text-xs font-bold text-[#D5A33A] hover:text-white transition-colors"
-                >
-                  {whyOpen ? "Hide explanation" : "Why this split?"}
-                </button>
-
-                {whyOpen && (
-                  <div className="mt-3 m8-panel-quiet rounded-xl p-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {(result.why || []).map((reason) => (
-                        <div key={reason} className="text-xs text-muted-foreground">
-                          <span className="text-emerald-400 mr-2">✓</span>{reason}
-                        </div>
-                      ))}
-                    </div>
-                    {result.roleConfidence === 0 && (
-                      <div className="text-[10px] text-[#D5A33A] mt-3">
-                        Assign player roles in Admin → Players to make Role Balance fully active.
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="h-2 rounded-full bg-[#1D222C] overflow-hidden mt-4">
-                  <div
-                    className="h-full bg-gradient-to-r from-[#FF2A3B] to-[#65D5D3]"
-                    style={{ width: `${result.balanceScore}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <TeamCard
-                  label="Team A"
-                  team={result.teamA}
-                  chemistry={result.chemistryA}
-                  playerAvatars={playerAvatars}
-                  game={game}
-                  matchMode={matchMode}
-                />
-                <TeamCard
-                  label="Team B"
-                  team={result.teamB}
-                  chemistry={result.chemistryB}
-                  playerAvatars={playerAvatars}
-                  game={game}
-                  matchMode={matchMode}
-                />
-              </div>
-
-              <div className="m8-panel rounded-2xl p-5" data-testid="match-bounties">
-                <div className="flex items-center justify-between gap-3 mb-4">
-                  <div>
-                    <div className="brand-kicker mb-1">Match Objectives</div>
-                    <h3 className="font-display text-xl font-black tracking-[-0.02em]">Match Bounties</h3>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Generated from real streaks, duo history, underdog status and rivalries. Maximum 3 active objectives.
-                    </p>
-                  </div>
-                  <Target size={20} className="text-[#D5A33A]" />
-                </div>
-
-                {matchBounties.length === 0 ? (
-                  <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-8 text-center text-sm text-muted-foreground">
-                    No special bounty for this lobby. The match still counts normally.
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {matchBounties.map((bounty) => (
-                      <div
-                        key={bounty.key}
-                        className="rounded-2xl bg-gradient-to-b from-[#171A21] to-[#0F1218] border border-[#D5A33A]/20 p-4"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-[#D5A33A]/10 border border-[#D5A33A]/20 flex items-center justify-center">
-                            {bounty.type === "streak"
-                              ? <Flame size={18} className="text-orange-400" />
-                              : bounty.type === "duo"
-                                ? <UsersRound size={18} className="text-[#65D5D3]" />
-                                : bounty.type === "rivalry"
-                                  ? <Swords size={18} className="text-magma" />
-                                  : <Trophy size={18} className="text-[#D5A33A]" />}
-                          </div>
-                          <span className="font-mono text-sm font-black text-[#D5A33A]">
-                            +{bounty.reward}
-                          </span>
-                        </div>
-                        <div className="font-display font-bold mt-3">{bounty.title}</div>
-                        <div className="text-xs text-muted-foreground mt-1">{bounty.detail}</div>
-                        <div className="text-[9px] uppercase tracking-widest text-[#697181] mt-3">
-                          {bounty.hunterSide === "BOTH"
-                            ? "Both sides eligible"
-                            : `Team ${bounty.hunterSide} objective`}
-                        </div>
+                {(result.why || []).length > 0 && (
+                  <div className="m8-panel-quiet rounded-xl p-4 mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {(result.why || []).map((reason) => (
+                      <div key={reason} className="text-xs text-muted-foreground">
+                        <span className="text-emerald-400 mr-2">✓</span>{reason}
                       </div>
                     ))}
                   </div>
                 )}
               </div>
 
-              <div className="m8-panel rounded-2xl p-5">
-                <div className="flex items-center justify-between gap-3 mb-4">
+              <div className="pt-5 border-t border-[#1D222C]">
+                <div className="brand-kicker mb-1">Detailed teams</div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3">
+                  <TeamCard
+                    label="Alpha"
+                    team={result.teamA}
+                    chemistry={result.chemistryA}
+                    playerAvatars={playerAvatars}
+                    game={game}
+                    matchMode={matchMode}
+                  />
+                  <TeamCard
+                    label="Bravo"
+                    team={result.teamB}
+                    chemistry={result.chemistryB}
+                    playerAvatars={playerAvatars}
+                    game={game}
+                    matchMode={matchMode}
+                  />
+                </div>
+              </div>
+
+              <div className="pt-5 border-t border-[#1D222C]" data-testid="match-bounties">
+                <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="brand-kicker mb-1">Suggested Matchups</div>
-                    <h3 className="font-display text-xl font-black tracking-[-0.02em]">Cross-team pairings</h3>
+                    <div className="brand-kicker mb-1">Objectives</div>
+                    <h3 className="font-display text-xl font-black">Match Bounties</h3>
                   </div>
-                  <Swords size={19} className="text-magma" />
+                  <Target size={19} className="text-[#D5A33A]" />
                 </div>
 
-                <div className="space-y-2">
+                {matchBounties.length === 0 ? (
+                  <div className="m8-panel-quiet rounded-xl py-6 text-center text-sm text-muted-foreground mt-3">
+                    No special bounty for this lobby.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+                    {matchBounties.map((bounty) => (
+                      <div key={bounty.key} className="m8-panel-quiet rounded-xl p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="font-display font-bold">{bounty.title}</div>
+                          <span className="font-mono text-sm font-black text-[#D5A33A]">+{bounty.reward}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">{bounty.detail}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-5 border-t border-[#1D222C]">
+                <div>
+                  <div className="brand-kicker mb-1">Pairings</div>
+                  <h3 className="font-display text-xl font-black">Cross-team matchups</h3>
+                </div>
+
+                <div className="space-y-2 mt-3">
                   {result.pairings.map((pair) => (
                     <div key={pair.playerA.id} className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
                       <div className="font-semibold truncate">{pair.playerA.name}</div>
-                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                        gap {pair.ratingGap}
-                      </div>
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">gap {pair.ratingGap}</div>
                       <div className="font-semibold truncate text-right">{pair.playerB.name}</div>
                     </div>
                   ))}
                 </div>
 
                 {isAdmin && (
-                  <div className="mt-5 pt-5 border-t border-[#1D222C]">
-                    <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1.2fr] gap-3">
-                      <select
-                        value={platform}
-                        onChange={(event) => setPlatform(event.target.value)}
-                        className="h-11 rounded-xl bg-[#0F1218] border border-[#222834] px-3 text-sm"
-                      >
-                        <option value="cmg">CMG</option>
-                        <option value="paypal">PayPal</option>
-                        <option value="revolut">Revolut</option>
-                      </select>
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1.2fr] gap-3 mt-4">
+                    <select
+                      value={platform}
+                      onChange={(event) => setPlatform(event.target.value)}
+                      className="h-11 rounded-xl bg-[#0F1218] border border-[#222834] px-3 text-sm"
+                    >
+                      <option value="cmg">CMG</option>
+                      <option value="paypal">PayPal</option>
+                      <option value="revolut">Revolut</option>
+                    </select>
 
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
-                        <Input
-                          value={stake}
-                          onChange={(event) => setStake(event.target.value)}
-                          className="pl-7 bg-[#0F1218] border-[#222834]"
-                          inputMode="decimal"
-                        />
-                      </div>
-
-                      <Button
-                        onClick={createChalls}
-                        disabled={sending}
-                        className="h-11 bg-magma hover:bg-[#ff3c4c] font-bold"
-                      >
-                        <WalletCards size={16} className="mr-2" />
-                        {sending ? "Creating..." : "Create Chall Pairings"}
-                      </Button>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                      <Input
+                        value={stake}
+                        onChange={(event) => setStake(event.target.value)}
+                        className="pl-7 bg-[#0F1218] border-[#222834]"
+                        inputMode="decimal"
+                      />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Challs are created only after this confirmation; the Team Builder never sends them automatically.
-                    </p>
-                  </div>
-                )}
 
-                {isAdmin && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 pt-4 border-t border-[#1D222C]">
                     <Button
-                      onClick={sendCurrentTeamsToDiscord}
-                      className="h-11 bg-[#5865F2] hover:bg-[#6875F5] text-white font-semibold"
+                      onClick={createChalls}
+                      disabled={sending}
+                      className="h-11 bg-magma hover:bg-[#ff3c4c] font-bold"
                     >
-                      <MessageCircle size={16} className="mr-2" /> Send Teams to Discord
-                    </Button>
-                    <Button
-                      onClick={() => setRecordOpen(true)}
-                      className="h-11 bg-[#0F1218] border border-magma/30 text-magma hover:bg-magma/10 font-semibold"
-                    >
-                      <Trophy size={16} className="mr-2" /> Report Match Result
+                      <WalletCards size={16} className="mr-2" />
+                      {sending ? "Creating..." : "Create Chall Pairings"}
                     </Button>
                   </div>
                 )}
               </div>
             </>
           )}
-        </div>
-      </div>
+        </section>
+      )}
+
       <RecordMatchDialog
         open={recordOpen}
         onOpenChange={setRecordOpen}
