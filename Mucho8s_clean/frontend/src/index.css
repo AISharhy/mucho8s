@@ -462,3 +462,183 @@ code, .font-mono {
         animation: none !important;
     }
 }
+
+
+/* Mucho8s visual system v2 */
+:root {
+    --m8-panel: #11151D;
+    --m8-panel-soft: #0E1219;
+    --m8-panel-raised: #151A23;
+    --m8-line: #202632;
+    --m8-line-strong: #303846;
+    --m8-text-soft: #8E97A7;
+    --m8-magma: #FF2A3B;
+    --m8-gold: #D5A33A;
+}
+
+.m8-page-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.m8-hero {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #272E3A;
+    background:
+        linear-gradient(115deg, rgba(255,42,59,.10), transparent 34%),
+        radial-gradient(circle at 90% 10%, rgba(213,163,58,.08), transparent 21rem),
+        linear-gradient(145deg, #141922 0%, #0D1118 68%);
+    box-shadow: 0 24px 70px rgba(0,0,0,.22);
+}
+
+.m8-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: .28;
+    background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size: 28px 28px;
+    mask-image: linear-gradient(90deg, rgba(0,0,0,.9), transparent 80%);
+}
+
+.m8-hero-accent {
+    position: absolute;
+    left: 0;
+    top: 18%;
+    bottom: 18%;
+    width: 3px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, transparent, #FF2A3B 20%, #FF2A3B 80%, transparent);
+    box-shadow: 0 0 24px rgba(255,42,59,.35);
+}
+
+.m8-panel {
+    background: linear-gradient(180deg, rgba(255,255,255,.014), rgba(255,255,255,0)), var(--m8-panel);
+    border: 1px solid var(--m8-line);
+    box-shadow: 0 14px 40px rgba(0,0,0,.14);
+}
+
+.m8-panel-quiet {
+    background: var(--m8-panel-soft);
+    border: 1px solid #1A202A;
+}
+
+.m8-stat-card {
+    position: relative;
+    overflow: hidden;
+    min-height: 96px;
+    padding: .9rem 1rem;
+    border-radius: 1rem;
+    border: 1px solid #1E2530;
+    background: linear-gradient(160deg, #11161E, #0C1016);
+}
+
+.m8-stat-card::after {
+    content: "";
+    position: absolute;
+    inset: auto -20% -70% auto;
+    width: 120px;
+    height: 120px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.025);
+}
+
+.m8-section-head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.m8-section-title {
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: -.015em;
+}
+
+.m8-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    height: 1.9rem;
+    padding: 0 .7rem;
+    border-radius: 999px;
+    border: 1px solid #29313D;
+    background: rgba(11,13,18,.66);
+    color: #AAB1BE;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.m8-action {
+    transition: transform .16s ease, border-color .16s ease, background-color .16s ease, box-shadow .16s ease;
+}
+
+.m8-action:hover {
+    transform: translateY(-1px);
+}
+
+.m8-action-primary {
+    box-shadow: 0 10px 28px rgba(255,42,59,.16);
+}
+
+.m8-rank-spotlight {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 100% 0%, rgba(255,255,255,.05), transparent 15rem),
+        #0D1118;
+    border: 1px solid #222A36;
+}
+
+.m8-rank-spotlight::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.025), transparent 68%);
+}
+
+.m8-podium-first {
+    border-color: rgba(213,163,58,.34) !important;
+    background:
+        radial-gradient(circle at 95% 0%, rgba(213,163,58,.11), transparent 8rem),
+        #10141B !important;
+}
+
+.m8-podium-rank {
+    width: 1.8rem;
+    height: 1.8rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: .65rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .7rem;
+    font-weight: 800;
+    background: #0A0D12;
+    border: 1px solid #252C37;
+}
+
+.m8-live-dot {
+    width: .45rem;
+    height: .45rem;
+    border-radius: 999px;
+    background: #10B981;
+    box-shadow: 0 0 12px rgba(16,185,129,.75);
+}
+
+@media (max-width: 640px) {
+    .m8-page-stack { gap: 1rem; }
+    .m8-hero { border-radius: 1rem; }
+    .m8-section-head { align-items: center; }
+}
