@@ -364,3 +364,102 @@ code, .font-mono {
     animation-delay: 0ms !important;
   }
 }
+
+
+.dashboard-logo-stage {
+    position: relative;
+    width: 230px;
+    min-height: 175px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    isolation: isolate;
+}
+
+.dashboard-logo-stage::before {
+    content: "";
+    position: absolute;
+    width: 155px;
+    height: 155px;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(255,42,59,.14), rgba(255,42,59,0) 68%);
+    filter: blur(3px);
+    animation: dashboardLogoGlow 3.2s ease-in-out infinite;
+    z-index: -2;
+}
+
+.dashboard-logo-orbit {
+    position: absolute;
+    width: 145px;
+    height: 145px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,42,59,.18);
+    box-shadow: inset 0 0 26px rgba(255,42,59,.04);
+    animation: dashboardLogoOrbit 9s linear infinite;
+    z-index: -1;
+}
+
+.dashboard-logo-orbit::after {
+    content: "";
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: #FF2A3B;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 0 14px rgba(255,42,59,.9);
+}
+
+.dashboard-logo-mark {
+    width: 150px;
+    height: 100px;
+    object-fit: contain;
+    filter: drop-shadow(0 15px 28px rgba(0,0,0,.38));
+    animation: dashboardLogoFloat 3.6s ease-in-out infinite;
+}
+
+.dashboard-logo-wordmark {
+    margin-top: -2px;
+    display: flex;
+    gap: .08em;
+    font-family: "Manrope", sans-serif;
+    font-size: .8rem;
+    font-weight: 800;
+    letter-spacing: .13em;
+    color: #F3F4F6;
+    opacity: .9;
+}
+
+.dashboard-logo-wordmark strong {
+    color: #FF2A3B;
+    font-weight: 800;
+}
+
+@keyframes dashboardLogoFloat {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-6px) scale(1.018); }
+}
+
+@keyframes dashboardLogoGlow {
+    0%, 100% { opacity: .58; transform: scale(.94); }
+    50% { opacity: 1; transform: scale(1.08); }
+}
+
+@keyframes dashboardLogoOrbit {
+    to { transform: rotate(360deg); }
+}
+
+.rank-emblem {
+    filter: drop-shadow(0 5px 12px rgba(0,0,0,.35));
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-logo-mark,
+    .dashboard-logo-orbit,
+    .dashboard-logo-stage::before {
+        animation: none !important;
+    }
+}
