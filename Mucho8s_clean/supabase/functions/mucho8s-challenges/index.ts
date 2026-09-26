@@ -1062,6 +1062,9 @@ Deno.serve(async (req: Request) => {
       if (me.player_id === challenge.reported_winner_player_id) {
         return json({ error: "Only the losing player can mark the payout as sent" }, 403);
       }
+      if (challenge.payment_received_at) {
+        return json({ error: "The winner has already confirmed this payout as received" }, 409);
+      }
 
       const { data, error } = await supabase
         .from("player_challenges")
@@ -1090,12 +1093,13 @@ Deno.serve(async (req: Request) => {
       if (me.player_id !== challenge.reported_winner_player_id) {
         return json({ error: "Only the winning player can confirm the payout" }, 403);
       }
-      if (!challenge.payment_sent_at) return json({ error: "The losing player has not marked the payout as sent yet" }, 409);
+      const receivedAt = new Date().toISOString();
 
       const { data, error } = await supabase
         .from("player_challenges")
         .update({
-          payment_received_at: new Date().toISOString(),
+          payment_sent_at: challenge.payment_sent_at || receivedAt,
+          payment_received_at: receivedAt,
           last_event: "payout_received",
           challenger_seen_event: challenge.challenger_account_id === user.id ? "payout_received" : null,
           challenged_seen_event: challenge.challenged_account_id === user.id ? "payout_received" : null,
