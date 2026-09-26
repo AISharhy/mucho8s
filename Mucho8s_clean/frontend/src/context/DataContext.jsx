@@ -172,6 +172,7 @@ export const DataProvider = ({ children }) => {
   const [playerProfiles, setPlayerProfiles] = useState({});
   const [challenges, setChallenges] = useState([]);
   const [publicChallenges, setPublicChallenges] = useState([]);
+  const [matchReports, setMatchReports] = useState([]);
   const [adminChallengeAlertCount, setAdminChallengeAlertCount] = useState(0);
   const [dashboardData, setDashboardData] = useState({
     activeChallenges: [],
@@ -599,6 +600,108 @@ export const DataProvider = ({ children }) => {
     const timer = setInterval(refreshChallenges, 4000);
     return () => clearInterval(timer);
   }, [discordSession, discordAccount, refreshChallenges]);
+
+  const matchReportRequest = useCallback(async (payload, { silent = false } = {}) => {
+    if (!HAS_SUPABASE) {
+      if (!silent) toast.error("Match verification requires Supabase");
+      return null;
+    }
+
+    try {
+      const headers = {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_ANON_KEY,
+      };
+
+      if (discordSession?.access_token) {
+        headers.Authorization = `Bearer ${discordSession.access_token}`;
+      }
+      if (admin?.sessionToken) {
+        headers["X-Admin-Session"] = admin.sessionToken;
+      }
+
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/mucho8s-match-reports`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (!silent) toast.error(data?.error || "Match result action failed");
+        return null;
+      }
+      return data;
+    } catch {
+      if (!silent) toast.error("Match verification service unavailable");
+      return null;
+    }
+  }, [admin, discordSession]);
+
+  const refreshMatchReports = useCallback(async () => {
+    if (!HAS_SUPABASE || (!admin?.sessionToken && !discordSession?.access_token)) {
+      setMatchReports([]);
+      return [];
+    }
+
+    const data = await matchReportRequest({ action: "list" }, { silent: true });
+    const list = Array.isArray(data?.reports) ? data.reports : [];
+    setMatchReports(list);
+    return list;
+  }, [admin?.sessionToken, discordSession?.access_token, matchReportRequest]);
+
+  useEffect(() => {
+    if (!HAS_SUPABASE || (!admin?.sessionToken && !discordSession?.access_token)) {
+      setMatchReports([]);
+      return undefined;
+    }
+
+    void refreshMatchReports();
+    const timer = setInterval(refreshMatchReports, 5000);
+    return () => clearInterval(timer);
+  }, [admin?.sessionToken, discordSession?.access_token, refreshMatchReports]);
+
+  const createMatchReport = useCallback(async (payload) => {
+    const data = await matchReportRequest({ action: "create", ...payload });
+    if (!data?.report) return null;
+    await refreshMatchReports();
+    return data.report;
+  }, [matchReportRequest, refreshMatchReports]);
+
+  const confirmMatchReport = useCallback(async (id) => {
+    const data = await matchReportRequest({ action: "confirm", id });
+    if (!data?.report) return null;
+
+    versionRef.current = -1;
+    await Promise.all([
+      fetchState(),
+      refreshMatchReports(),
+      fetchPublicChallenges(),
+      fetchDashboardData(),
+    ]);
+    return data.report;
+  }, [matchReportRequest, refreshMatchReports, fetchState, fetchPublicChallenges, fetchDashboardData]);
+
+  const disputeMatchReport = useCallback(async (id, note) => {
+    const data = await matchReportRequest({ action: "dispute", id, note });
+    if (!data?.report) return null;
+    await refreshMatchReports();
+    return data.report;
+  }, [matchReportRequest, refreshMatchReports]);
+
+  const adminResolveMatchReport = useCallback(async (id, decision) => {
+    const data = await matchReportRequest({ action: "admin-resolve", id, decision });
+    if (!data?.report) return null;
+
+    versionRef.current = -1;
+    await Promise.all([
+      fetchState(),
+      refreshMatchReports(),
+      fetchPublicChallenges(),
+      fetchDashboardData(),
+    ]);
+    return data.report;
+  }, [matchReportRequest, refreshMatchReports, fetchState, fetchPublicChallenges, fetchDashboardData]);
 
   const createChallenge = useCallback(async (targetPlayerId, platform, amount) => {
     const data = await challengeRequest({
@@ -1419,11 +1522,17 @@ export const DataProvider = ({ children }) => {
     playerProfiles,
     challenges,
     publicChallenges,
+    matchReports,
     dashboardData,
     competitionData,
     challengeNotificationCount,
     adminChallengeAlertCount,
     refreshChallenges,
+    refreshMatchReports,
+    createMatchReport,
+    confirmMatchReport,
+    disputeMatchReport,
+    adminResolveMatchReport,
     createChallenge,
     respondToChallenge,
     markChallengePaymentSent,
