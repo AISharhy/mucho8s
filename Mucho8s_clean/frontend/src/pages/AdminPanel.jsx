@@ -117,6 +117,15 @@ export default function AdminPanel() {
     };
   }, [admin, getDiscordStatus, loadDiscordAccounts, loadAdminChallenges, loadAuditLogs]);
 
+  const sortedAdminChallenges = useMemo(
+    () => [...adminChallenges].sort((a, b) => {
+      const bTime = new Date(b?.created_at || b?.updated_at || 0).getTime();
+      const aTime = new Date(a?.created_at || a?.updated_at || 0).getTime();
+      return bTime - aTime;
+    }),
+    [adminChallenges],
+  );
+
   const challengeStats = useMemo(() => {
     const active = adminChallenges.filter((challenge) =>
       ["pending", "accepted", "result_pending"].includes(challenge.status)
@@ -131,11 +140,11 @@ export default function AdminPanel() {
   }, [adminChallenges]);
 
   const disputedChallenges = useMemo(
-    () => adminChallenges.filter((challenge) =>
+    () => sortedAdminChallenges.filter((challenge) =>
       challenge.status === "disputed" ||
       (challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at)
     ),
-    [adminChallenges],
+    [sortedAdminChallenges],
   );
 
   const pendingMatchReports = useMemo(
@@ -794,7 +803,7 @@ export default function AdminPanel() {
         </div>
 
         <div className="space-y-3 max-h-[700px] overflow-y-auto pr-1">
-          {adminChallenges.map((challenge) => {
+          {sortedAdminChallenges.map((challenge) => {
             const challenger = playerMap[challenge.challenger_player_id];
             const challenged = playerMap[challenge.challenged_player_id];
             const draft = challengeDrafts[challenge.id] || {};
