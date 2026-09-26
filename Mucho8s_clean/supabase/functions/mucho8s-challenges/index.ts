@@ -332,7 +332,15 @@ Deno.serve(async (req: Request) => {
           current = candidates?.[0] || null;
         }
 
-        const payload = {
+        const payoutMustReset = Boolean(
+          current?.id && (
+            current.reported_winner_player_id !== winnerPlayerId ||
+            Number(current.amount_cents || 0) !== Math.round(pair.amount * 100) ||
+            String(current.platform || "") !== pair.platform
+          )
+        );
+
+        const payload: Record<string, unknown> = {
           challenger_account_id: challenger?.id || current?.challenger_account_id || null,
           challenger_player_id: pair.playerAId,
           challenged_account_id: challenged?.id || current?.challenged_account_id || null,
@@ -357,6 +365,15 @@ Deno.serve(async (req: Request) => {
           challenger_seen_event: null,
           challenged_seen_event: null,
         };
+
+        if (payoutMustReset) {
+          payload.payment_sent_at = null;
+          payload.payment_received_at = null;
+          payload.payout_disputed_at = null;
+          payload.payout_dispute_note = null;
+          payload.payout_dispute_resolved_at = null;
+          payload.payout_dispute_resolution = null;
+        }
 
         let row;
         if (current?.id) {
