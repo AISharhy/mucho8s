@@ -528,7 +528,7 @@ export default function PlayerProfile() {
           data-testid="challenge-amount-dialog"
         >
           <DialogHeader>
-            <DialogTitle className="font-display text-xl">CHALL {player.name}</DialogTitle>
+            <DialogTitle className="font-display text-xl">SFIDA {player.name}</DialogTitle>
             <DialogDescription>
               Choose how much you want to challenge for. The other player will see the amount before accepting.
             </DialogDescription>
@@ -640,8 +640,8 @@ export default function PlayerProfile() {
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-xs text-[#8A94A4]">
                 <span><strong className="text-white font-mono">{player.currentElo}</strong> Elo</span>
                 {player.role && <span className="font-bold text-white">{player.role}</span>}
-                <span>{player.totalMatches || 0} matches</span>
-                <span>{challengeStats.wins + challengeStats.losses} challs</span>
+                <span>{player.totalMatches || 0} partite</span>
+                <span>{challengeStats.wins + challengeStats.losses} sfide</span>
                 <span>{player.mvpCount || 0} MVP</span>
                 <span>{player.merdaCount || 0} 💩</span>
               </div>
@@ -660,9 +660,9 @@ export default function PlayerProfile() {
 
           <div className="m8-profile-stat-strip mt-6">
             {[
-              { label: "Current Elo", value: player.currentElo, tone: "text-white" },
-              { label: "Peak Elo", value: player.peakElo, tone: "text-[#D5A33A]" },
-              { label: "Match Record", value: `${player.wins || 0}W - ${player.losses || 0}L`, tone: "text-white" },
+              { label: "Elo attuale", value: player.currentElo, tone: "text-white" },
+              { label: "Picco Elo", value: player.peakElo, tone: "text-[#D5A33A]" },
+              { label: "Record partite", value: `${player.wins || 0}W - ${player.losses || 0}L`, tone: "text-white" },
               { label: "Percentuale vittorie", value: `${winRate(player)}%`, tone: "text-white" },
               { label: "Valore vinto", value: `${challengeStats.wonValue.toFixed(0)}`, tone: "text-emerald-400" },
               { label: "Record sfide", value: `${challengeStats.wins}W - ${challengeStats.losses}L`, tone: "text-white" },
@@ -675,7 +675,7 @@ export default function PlayerProfile() {
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <span className="text-[10px] uppercase tracking-widest text-[#697181]">Recent form</span>
+            <span className="text-[10px] uppercase tracking-widest text-[#697181]">Forma recente</span>
             <Last10 record={player.last10} />
             <MvpBadge count={player.mvpCount} />
             <MerdaBadge count={player.merdaCount} />
@@ -705,7 +705,7 @@ export default function PlayerProfile() {
             data-testid="profile-tab-overview"
           >
             <UserCircle size={16} />
-            Profile
+            Profilo
           </button>
 
           <button
@@ -721,7 +721,7 @@ export default function PlayerProfile() {
             data-testid="profile-tab-edit"
           >
             <Pencil size={15} />
-            Edit Profile
+            Modifica profilo
           </button>
 
           <button
@@ -737,7 +737,7 @@ export default function PlayerProfile() {
             data-testid="profile-tab-challenges"
           >
             <Swords size={16} />
-            My Challenges
+            Le mie sfide
             {myChallenges.some((challenge) =>
               ["pending", "accepted", "result_pending", "disputed"].includes(challenge.status)
             ) && (
@@ -826,7 +826,7 @@ export default function PlayerProfile() {
                   return (
                     <span
                       key={challenge.id}
-                      title={won ? "Win" : "Loss"}
+                      title={won ? "Vittoria" : "Sconfitta"}
                       className={`w-7 h-7 rounded-lg border flex items-center justify-center text-[10px] font-black ${
                         won
                           ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
@@ -873,7 +873,7 @@ export default function PlayerProfile() {
                         />
                         <div className="min-w-0 flex-1">
                           <div className="font-semibold text-sm truncate">{opponent?.name || "Giocatore"}</div>
-                          <div className="text-[10px] text-muted-foreground">{row.played} matches</div>
+                          <div className="text-[10px] text-muted-foreground">{row.played} partite</div>
                         </div>
                         <div className="font-mono text-sm font-black">
                           <span className="text-emerald-400">{row.wins}W</span>
@@ -1199,22 +1199,22 @@ export default function PlayerProfile() {
                           </span>
                         )}
                         {!completed && challenge.status === "pending" && (
-                          <span className="text-xs font-bold uppercase tracking-wider text-[#D5A33A]">Pending</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-[#D5A33A]">In attesa</span>
                         )}
                         {!completed && challenge.status === "accepted" && (
-                          <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Accepted</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Accettata</span>
                         )}
                         {!completed && challenge.status === "result_pending" && (
                           <span className="text-xs font-bold uppercase tracking-wider text-[#8E98FF]">Verification</span>
                         )}
                         {!completed && challenge.status === "declined" && (
-                          <span className="text-xs font-bold uppercase tracking-wider text-red-400">Declined</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-red-400">Rifiutata</span>
                         )}
                         {!completed && challenge.status === "disputed" && (
-                          <span className="text-xs font-bold uppercase tracking-wider text-orange-400">Disputed</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-orange-400">Contestata</span>
                         )}
                         {!completed && challenge.status === "cancelled" && (
-                          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Cancelled</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Annullata</span>
                         )}
 
                         {canOpen && (
@@ -1292,12 +1292,12 @@ export default function PlayerProfile() {
             return (
               <div key={m.id} className="interactive-row flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 rounded-xl p-3">
                 <div className={`font-bold text-sm ${won ? "text-emerald-400" : "text-red-400"}`}>
-                  {won ? "WIN" : "LOSS"}
+                  {won ? "VITTORIA" : "SCONFITTA"}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium">{m.game || "Game"} · {m.mode || "Mode"}</div>
                   <div className="text-xs text-muted-foreground truncate">
-                    With {teammates.length ? teammates.join(", ") : "—"}
+                    Con {teammates.length ? teammates.join(", ") : "—"}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -1315,7 +1315,7 @@ export default function PlayerProfile() {
           })}
 
           {playerMatches.length === 0 && (
-            <div className="py-10 text-center text-muted-foreground">No matches recorded for this player yet.</div>
+            <div className="py-10 text-center text-muted-foreground">Nessuna partita registrata per questo giocatore.</div>
           )}
         </div>
       </div>
