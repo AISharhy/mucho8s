@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useData } from "@/context/DataContext";
-import { PlayerAvatar, EloBadge, TierTag, Last10, StreakBadge, WinRatePill, MvpBadge } from "@/components/shared";
+import { PlayerAvatar, EloBadge, RankBadge, RankProgress, Last10, StreakBadge, WinRatePill, MvpBadge } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Search, Flame, ArrowUpRight, Users } from "lucide-react";
 
@@ -83,7 +83,7 @@ export default function Players() {
                   {p.name}
                   {p.currentStreak >= 3 && <Flame size={14} className="text-magma" />}
                 </div>
-                <TierTag elo={p.currentElo} />
+                <div className="mt-1"><RankBadge elo={p.currentElo} compact /></div>
               </div>
               <ArrowUpRight size={16} className="text-[#596170] group-hover:text-magma transition-colors" />
             </div>
@@ -107,9 +107,12 @@ export default function Players() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between mt-5 pt-4 border-t border-[#1D222C]">
-              <Last10 record={p.last10} />
-              <StreakBadge streak={p.currentStreak} />
+            <div className="mt-5 pt-4 border-t border-[#1D222C]">
+              <RankProgress elo={p.currentElo} compact />
+              <div className="flex items-center justify-between mt-3">
+                <Last10 record={p.last10} />
+                <StreakBadge streak={p.currentStreak} />
+              </div>
             </div>
           </Link>
         ))}
