@@ -18,14 +18,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import {
   ArrowLeft,
   Crown,
   Gamepad2,
@@ -419,11 +411,6 @@ export default function PlayerProfile() {
 
   const tier = tierOf(player.currentElo);
   const rankPreview = rankProgress(player.currentElo);
-  const challengeLinks = [
-    { key: "paypal", label: "PayPal", url: publicProfile.paypalUrl, className: "bg-[#0070BA] hover:bg-[#0a7bc7]", icon: CreditCard },
-    { key: "revolut", label: "Revolut", url: publicProfile.revolutUrl, className: "bg-white hover:bg-[#eceef2] text-black", icon: CreditCard },
-  ].filter((item) => item.url);
-
   const saveLinks = async () => {
     setSavingLinks(true);
     const ok = await saveMyChallengeLinks(links);
@@ -431,12 +418,12 @@ export default function PlayerProfile() {
     if (ok) toast.success("Challenge links updated");
   };
 
-  const openChallengeAmount = (platform) => {
+  const openChallengeAmount = () => {
     if (!discordSession || !discordPlayer) {
       toast.error("Login with Discord and link your player before sending a challenge");
       return;
     }
-    setChallengePlatform(platform);
+    setChallengePlatform("paypal");
     setChallengeAmount("5");
   };
 
@@ -484,12 +471,28 @@ export default function PlayerProfile() {
           </DialogHeader>
 
           <div className="rounded-xl bg-[#0F1218] border border-[#222834] p-4">
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <span className="text-sm text-muted-foreground">Platform</span>
-              <span className="text-sm font-bold uppercase">{challengePlatform || "—"}</span>
+            <Label className="text-xs text-muted-foreground">Payment method</Label>
+            <div className="grid grid-cols-2 gap-2 mt-1 mb-4">
+              {[
+                ["paypal", "PayPal"],
+                ["revolut", "Revolut"],
+              ].map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setChallengePlatform(key)}
+                  className={`h-10 rounded-lg border text-xs font-bold ${
+                    challengePlatform === key
+                      ? "bg-[#D5A33A] text-black border-[#D5A33A]"
+                      : "bg-[#151923] border-[#2A303B] text-[#C8CED8]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
 
-            <Label className="text-xs text-muted-foreground">Challenge amount (€)</Label>
+            <Label className="text-xs text-muted-foreground">Amount (€)</Label>
             <div className="relative mt-1">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">€</span>
               <Input
@@ -579,48 +582,14 @@ export default function PlayerProfile() {
               </div>
             </div>
 
-            {!isOwnProfile && challengeLinks.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    className="m8-action m8-action-primary h-11 px-6 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-extrabold tracking-wide"
-                    data-testid="challenge-me-btn"
-                  >
-                    <Swords size={17} className="mr-2" /> CHALL ME
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  sideOffset={8}
-                  className="w-56 rounded-xl border-[#2A303B] bg-[#101319] p-2 shadow-2xl"
-                >
-                  <DropdownMenuLabel className="px-2 py-2">
-                    <div className="brand-kicker mb-1">Challenge {player.name}</div>
-                    <div className="text-sm font-semibold text-white">Choose platform</div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-[#242A35]" />
-                  {challengeLinks.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <DropdownMenuItem
-                        key={item.key}
-                        onSelect={() => openChallengeAmount(item.key)}
-                        disabled={Boolean(sendingChallenge)}
-                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-[#D7DBE2] focus:bg-white/[0.05] focus:text-white cursor-pointer"
-                        data-testid={`challenge-link-${item.key}`}
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-[#171B23] border border-[#2A303B] flex items-center justify-center">
-                          <Icon size={15} />
-                        </div>
-                        <span className="flex-1">
-                          {sendingChallenge === item.key ? "Sending..." : item.label}
-                        </span>
-                        <Swords size={13} className="text-[#697181]" />
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
+            {!isOwnProfile && (
+              <Button
+                onClick={openChallengeAmount}
+                className="m8-action m8-action-primary h-11 px-6 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-extrabold tracking-wide"
+                data-testid="challenge-me-btn"
+              >
+                <Swords size={17} className="mr-2" /> CHALL ME
+              </Button>
             )}
           </div>
 
