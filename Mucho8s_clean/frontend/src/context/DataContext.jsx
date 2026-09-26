@@ -128,14 +128,14 @@ const automaticMvpIds = (byId, winners) =>
   winners.filter((pid) => {
     const current = Number(byId[pid]?.currentStreak || 0);
     const nextWinStreak = current > 0 ? current + 1 : 1;
-    return nextWinStreak >= 4 && nextWinStreak % 4 === 0;
+    return nextWinStreak >= 3 && nextWinStreak % 3 === 0;
   });
 
 const automaticMerdaIds = (byId, losers) =>
   losers.filter((pid) => {
     const current = Number(byId[pid]?.currentStreak || 0);
     const nextLossStreak = current < 0 ? Math.abs(current) + 1 : 1;
-    return nextLossStreak >= 4 && nextLossStreak % 4 === 0;
+    return nextLossStreak >= 3 && nextLossStreak % 3 === 0;
   });
 
 const automaticMerdaClearedIds = (byId, winners) =>
@@ -144,7 +144,7 @@ const automaticMerdaClearedIds = (byId, winners) =>
     if (!player || Number(player.merdaCount || 0) <= 0) return false;
     const current = Number(player.currentStreak || 0);
     const nextWinStreak = current > 0 ? current + 1 : 1;
-    return nextWinStreak >= 4 && nextWinStreak % 4 === 0;
+    return nextWinStreak >= 3 && nextWinStreak % 3 === 0;
   });
 
 const recomputeAwardState = (byId, matches) => {
@@ -180,17 +180,17 @@ const recomputeAwardState = (byId, matches) => {
 
         player.currentStreak = nextStreak;
 
-        if (won && nextStreak >= 4 && nextStreak % 4 === 0) {
+        if (won && nextStreak >= 3 && nextStreak % 3 === 0) {
           player.mvpCount = Math.max(0, Number(player.mvpCount || 0)) + 1;
           mvpIds.push(pid);
         }
 
-        if (!won && Math.abs(nextStreak) >= 4 && Math.abs(nextStreak) % 4 === 0) {
+        if (!won && Math.abs(nextStreak) >= 3 && Math.abs(nextStreak) % 3 === 0) {
           player.merdaCount = Math.max(0, Number(player.merdaCount || 0)) + 1;
           merdaIds.push(pid);
         }
 
-        if (won && nextStreak >= 4 && nextStreak % 4 === 0 && Number(player.merdaCount || 0) > 0) {
+        if (won && nextStreak >= 3 && nextStreak % 3 === 0 && Number(player.merdaCount || 0) > 0) {
           player.merdaCount = Math.max(0, Number(player.merdaCount || 0) - 1);
           merdaClearedIds.push(pid);
         }
