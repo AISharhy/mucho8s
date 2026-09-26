@@ -384,7 +384,7 @@ export default function AdminPanel() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="brand-kicker mb-1">Competition</div>
-            <h3 className="font-display font-bold text-lg">
+            <h3 className="font-display font-black text-lg tracking-[-0.015em]">
               {competitionData?.current?.season_name || `Season ${competitionData?.current?.season_number || 1}`}
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
@@ -452,7 +452,7 @@ export default function AdminPanel() {
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{item.label}</div>
                 <Icon size={16} className="text-[#697181]" />
               </div>
-              <div className="font-display text-2xl font-extrabold mt-2">{item.value}</div>
+              <div className="font-display text-2xl font-black tracking-[-0.025em] mt-2">{item.value}</div>
               <div className="text-xs text-muted-foreground mt-1">{item.sub}</div>
             </div>
           );
@@ -468,7 +468,7 @@ export default function AdminPanel() {
             <div className="flex items-center justify-between gap-3 mb-4">
               <div>
                 <div className="brand-kicker mb-1">Needs Attention</div>
-                <h3 className="font-display font-bold text-lg">
+                <h3 className="font-display font-black text-lg tracking-[-0.015em]">
                   {needsAttentionCount ? `${needsAttentionCount} items` : "All clear"}
                 </h3>
               </div>
@@ -490,16 +490,16 @@ export default function AdminPanel() {
             <div className="brand-kicker mb-1">Quick Actions</div>
             <h3 className="font-display font-bold text-lg mb-4">Manage competition</h3>
             <div className="grid grid-cols-2 gap-2">
-              <Button onClick={() => setActiveTab("players")} className="h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04]">
+              <Button onClick={() => setActiveTab("players")} className="m8-action h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150]">
                 <UserPlus size={15} className="mr-2" /> Players
               </Button>
-              <Button onClick={() => setActiveTab("matches")} className="h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04]">
+              <Button onClick={() => setActiveTab("matches")} className="m8-action h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150]">
                 <Gamepad2 size={15} className="mr-2" /> Matches
               </Button>
-              <Button onClick={() => setActiveTab("challenges")} className="h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04]">
+              <Button onClick={() => setActiveTab("challenges")} className="m8-action h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150]">
                 <WalletCards size={15} className="mr-2" /> Challs
               </Button>
-              <Button onClick={() => setActiveTab("competition")} className="h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04]">
+              <Button onClick={() => setActiveTab("competition")} className="m8-action h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150]">
                 <Trophy size={15} className="mr-2" /> Season
               </Button>
             </div>
@@ -513,7 +513,7 @@ export default function AdminPanel() {
         <div className={`${activeTab === "players" ? "" : "hidden"} m8-panel rounded-2xl p-5`}>
           <div className="flex items-center gap-2 mb-4">
             <UserPlus size={18} className="text-emerald-400" />
-            <h3 className="font-display font-bold text-lg">Add Player</h3>
+            <h3 className="font-display font-black text-lg tracking-[-0.015em]">Add Player</h3>
           </div>
           <div className="space-y-3">
             <div>
@@ -534,14 +534,14 @@ export default function AdminPanel() {
         <div className={`${activeTab === "system" ? "lg:col-span-3" : "hidden"} m8-panel rounded-2xl p-5`}>
           <div className="flex items-center gap-2 mb-4">
             <Database size={18} className="text-[#D5A33A]" />
-            <h3 className="font-display font-bold text-lg">Data & Records</h3>
+            <h3 className="font-display font-black text-lg tracking-[-0.015em]">Data & Records</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Button onClick={handleExport} data-testid="admin-export-btn" className="justify-start bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] h-14 rounded-xl">
+            <Button onClick={handleExport} data-testid="admin-export-btn" className="m8-action justify-start bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150] h-14 rounded-xl">
               <Download size={18} className="mr-2 text-emerald-400" /> Export Full Database
             </Button>
 
-            <Button onClick={() => fileRef.current?.click()} data-testid="admin-import-btn" className="justify-start bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] h-14 rounded-xl">
+            <Button onClick={() => fileRef.current?.click()} data-testid="admin-import-btn" className="m8-action justify-start bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150] h-14 rounded-xl">
               <Upload size={18} className="mr-2 text-blue-400" /> Import Database Backup
             </Button>
             <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={handleImport} data-testid="admin-import-file" />
@@ -555,7 +555,7 @@ export default function AdminPanel() {
               onConfirm={() => { resetStats(); toast.success("Statistics reset"); }}
             />
 
-            <Button onClick={() => setHistOpen(true)} data-testid="admin-add-historical-btn" className="justify-start bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] h-14 rounded-xl">
+            <Button onClick={() => setHistOpen(true)} data-testid="admin-add-historical-btn" className="m8-action justify-start bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150] h-14 rounded-xl">
               <History size={18} className="mr-2 text-magma" /> Add Historical Match
             </Button>
           </div>
@@ -570,7 +570,7 @@ export default function AdminPanel() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <div className="brand-kicker mb-1">Match Control</div>
-            <h3 className="font-display font-bold text-lg">Manage Matches ({matches.length})</h3>
+            <h3 className="font-display font-black text-lg tracking-[-0.015em]">Manage Matches ({matches.length})</h3>
             <p className="text-sm text-muted-foreground mt-1">Report, edit or delete any recorded match directly from Admin.</p>
           </div>
           <Button onClick={() => setHistOpen(true)} className="bg-magma hover:bg-[#ff3c4c] text-white rounded-xl">
@@ -580,7 +580,7 @@ export default function AdminPanel() {
 
         <div className="space-y-2 max-h-[440px] overflow-y-auto pr-1">
           {matches.map((match) => (
-            <div key={match.id} className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3 flex flex-col lg:flex-row lg:items-center gap-3">
+            <div key={match.id} className="m8-panel-quiet rounded-xl p-3 flex flex-col lg:flex-row lg:items-center gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-semibold text-sm">{match.game || "Game"} · {match.mode || "Mode"}</span>
@@ -627,7 +627,7 @@ export default function AdminPanel() {
             </div>
           ))}
           {matches.length === 0 && (
-            <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-8 text-center text-sm text-muted-foreground">
+            <div className="m8-panel-quiet rounded-xl p-8 text-center text-sm text-muted-foreground">
               No matches recorded.
             </div>
           )}
@@ -642,7 +642,7 @@ export default function AdminPanel() {
           <div className="flex items-center justify-between gap-3 mb-4">
             <div>
               <div className="brand-kicker mb-1">Priority Queue</div>
-              <h3 className="font-display font-bold text-lg">Disputes ({disputedChallenges.length})</h3>
+              <h3 className="font-display font-black text-lg tracking-[-0.015em]">Disputes ({disputedChallenges.length})</h3>
               <p className="text-sm text-muted-foreground mt-1">Review contested challenge results first.</p>
             </div>
             <AlertTriangle size={20} className="text-orange-400" />
@@ -781,7 +781,7 @@ export default function AdminPanel() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <div className="brand-kicker mb-1">Challenge Control</div>
-            <h3 className="font-display font-bold text-lg">Manage Challenges ({adminChallenges.length})</h3>
+            <h3 className="font-display font-black text-lg tracking-[-0.015em]">Manage Challenges ({adminChallenges.length})</h3>
             <p className="text-sm text-muted-foreground mt-1">
               Control status, stake, payment verification, results and disputes.
             </p>
@@ -986,7 +986,7 @@ export default function AdminPanel() {
           })}
 
           {adminChallenges.length === 0 && (
-            <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-8 text-center text-sm text-muted-foreground">
+            <div className="m8-panel-quiet rounded-xl p-8 text-center text-sm text-muted-foreground">
               No challenges yet.
             </div>
           )}
@@ -1003,7 +1003,7 @@ export default function AdminPanel() {
           <div>
             <div className="flex items-center gap-2">
               <MessageCircle size={19} className="text-[#5865F2]" />
-              <h3 className="font-display font-bold text-lg">Discord Integration</h3>
+              <h3 className="font-display font-black text-lg tracking-[-0.015em]">Discord Integration</h3>
               <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full border ${
                 discordConfigured
                   ? "text-emerald-400 border-emerald-500/25 bg-emerald-500/5"
@@ -1073,7 +1073,7 @@ export default function AdminPanel() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <div className="brand-kicker mb-1">Player Login</div>
-            <h3 className="font-display font-bold text-lg">Discord Player Accounts</h3>
+            <h3 className="font-display font-black text-lg tracking-[-0.015em]">Discord Player Accounts</h3>
             <p className="text-sm text-muted-foreground mt-1">
               When a player logs in with Discord for the first time, link that Discord account to the correct MuchoMoney8s player.
             </p>
@@ -1089,7 +1089,7 @@ export default function AdminPanel() {
         </div>
 
         {discordAccounts.length === 0 ? (
-          <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] px-4 py-8 text-center text-sm text-muted-foreground">
+          <div className="m8-panel-quiet rounded-xl px-4 py-8 text-center text-sm text-muted-foreground">
             No player has logged in with Discord yet.
           </div>
         ) : (
@@ -1097,7 +1097,7 @@ export default function AdminPanel() {
             {discordAccounts.map((account) => (
               <div
                 key={account.id}
-                className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl bg-[#0F1218] border border-[#1D222C] p-3"
+                className="m8-panel-quiet rounded-xl p-3 flex flex-col sm:flex-row sm:items-center gap-3"
               >
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   {account.avatar_url ? (
@@ -1141,7 +1141,7 @@ export default function AdminPanel() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="brand-kicker mb-1">Access Security</div>
-              <h3 className="font-display font-bold text-lg">Discord allowlist</h3>
+              <h3 className="font-display font-black text-lg tracking-[-0.015em]">Discord allowlist</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 Admin access is automatic only for the authorized Discord-linked players: Sharhy and SysMa. No Admin password is required.
               </p>
@@ -1157,7 +1157,7 @@ export default function AdminPanel() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <div className="brand-kicker mb-1">Security & History</div>
-            <h3 className="font-display font-bold text-lg">Admin Audit Log</h3>
+            <h3 className="font-display font-black text-lg tracking-[-0.015em]">Admin Audit Log</h3>
             <p className="text-sm text-muted-foreground mt-1">
               Tracks important Admin changes to players, matches and challenges.
             </p>
@@ -1172,13 +1172,13 @@ export default function AdminPanel() {
         </div>
 
         {auditLogs.length === 0 ? (
-          <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-8 text-center text-sm text-muted-foreground">
+          <div className="m8-panel-quiet rounded-xl p-8 text-center text-sm text-muted-foreground">
             No Admin actions recorded yet.
           </div>
         ) : (
           <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
             {auditLogs.map((log) => (
-              <div key={log.id} className="rounded-xl bg-[#0F1218] border border-[#1D222C] px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2">
+              <div key={log.id} className="m8-panel-quiet rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="font-mono text-sm font-semibold truncate">{log.action}</div>
                   <div className="text-xs text-muted-foreground mt-0.5">
@@ -1311,7 +1311,7 @@ const ConfirmButton = ({ label, icon, title, desc, onConfirm, testid, iconOnly, 
           {icon} {label}
         </Button>
       ) : (
-        <Button data-testid={testid} className="justify-start bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] h-14 rounded-xl">
+        <Button data-testid={testid} className="m8-action justify-start bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150] h-14 rounded-xl">
           {icon} {label}
         </Button>
       )}
