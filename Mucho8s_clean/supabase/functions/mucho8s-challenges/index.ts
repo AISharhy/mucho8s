@@ -209,6 +209,7 @@ Deno.serve(async (req: Request) => {
           amount_cents: Math.round(pair.amount * 100),
           currency: "EUR",
           status: "pending",
+          source: "balancer_pairing",
           season_number: seasonNumber,
           challenger_seen_status: null,
           challenged_seen_status: null,
@@ -231,6 +232,173 @@ Deno.serve(async (req: Request) => {
       });
 
       return json({ ok: true, challenges: created || [] });
+    }
+
+    if (adminRequest && action === "admin-sync-match-pairings") {
+      const matchId = String(body?.matchId || "").trim();
+      const matchWinner = String(body?.winner || "").trim().toUpperCase();
+      const rawPairings = Array.isArray(body?.pairings) ? body.pairings : [];
+      const matchDate = String(body?.date || "").trim();
+      const seasonNumber = Math.max(1, Number(body?.seasonNumber) || await getCurrentSeason());
+
+      if (!matchId) return json({ error: "Match id is required" }, 400);
+      if (!["A", "B"].includes(matchWinner) && rawPairings.length) {
+        return json({ error: "Match winner is required" }, 400);
+      }
+
+      const normalized = rawPairings.map((pair: any) => ({
+        playerAId: String(pair?.playerAId || "").trim(),
+        playerBId: String(pair?.playerBId || "").trim(),
+        platform: String(pair?.platform || "cmg").trim().toLowerCase(),
+        amount: Number(pair?.amount),
+      })).filter((pair: any) =>
+        pair.playerAId &&
+        pair.playerBId &&
+        pair.playerAId !== pair.playerBId &&
+        PLATFORM_COLUMNS[pair.platform] &&
+        Number.isFinite(pair.amount) &&
+        pair.amount > 0
+      );
+
+      const keys = normalized.map((pair: any) => `${pair.playerAId}:${pair.playerBId}`);
+
+      const { data: existingRows, error: existingError } = await supabase
+        .from("player_challenges")
+        .select("*")
+        .eq("source", "match_pairing")
+        .eq("match_id", matchId);
+
+      if (existingError) throw existingError;
+
+      const existingByKey = Object.fromEntries(
+        (existingRows || []).map((row: any) => [String(row.pairing_key || ""), row])
+      );
+
+      if (!normalized.length) {
+        if ((existingRows || []).length) {
+          const { error: deleteError } = await supabase
+            .from("player_challenges")
+            .delete()
+            .eq("source", "match_pairing")
+            .eq("match_id", matchId);
+          if (deleteError) throw deleteError;
+        }
+        return json({ ok: true, challenges: [] });
+      }
+
+      const playerIds = [...new Set(normalized.flatMap((pair: any) => [pair.playerAId, pair.playerBId]))];
+      const { data: accounts, error: accountError } = await supabase
+        .from("player_accounts")
+        .select("id,player_id,paypal_url,revolut_url,cmg_url")
+        .in("player_id", playerIds);
+
+      if (accountError) throw accountError;
+
+      const accountByPlayer = Object.fromEntries(
+        (accounts || []).map((account: any) => [String(account.player_id), account])
+      );
+
+      const synced: any[] = [];
+      const verifiedAt = matchDate && !Number.isNaN(new Date(matchDate).getTime())
+        ? new Date(matchDate).toISOString()
+        : new Date().toISOString();
+
+      for (const pair of normalized) {
+        const pairingKey = `${pair.playerAId}:${pair.playerBId}`;
+        const challenger = accountByPlayer[pair.playerAId] || null;
+        const challenged = accountByPlayer[pair.playerBId] || null;
+        const platformColumn = PLATFORM_COLUMNS[pair.platform];
+        const winnerPlayerId = matchWinner === "A" ? pair.playerAId : pair.playerBId;
+        const challengerUrl = String(challenger?.[platformColumn] || "").trim();
+        const challengedUrl = String(challenged?.[platformColumn] || "").trim();
+
+        let current = existingByKey[pairingKey] || null;
+
+        if (!current) {
+          const amountCents = Math.round(pair.amount * 100);
+          const { data: candidates, error: candidateError } = await supabase
+            .from("player_challenges")
+            .select("*")
+            .eq("source", "balancer_pairing")
+            .eq("challenger_player_id", pair.playerAId)
+            .eq("challenged_player_id", pair.playerBId)
+            .eq("platform", pair.platform)
+            .eq("amount_cents", amountCents)
+            .in("status", ["pending", "accepted", "result_pending"])
+            .order("created_at", { ascending: false })
+            .limit(1);
+
+          if (candidateError) throw candidateError;
+          current = candidates?.[0] || null;
+        }
+
+        const payload = {
+          challenger_account_id: challenger?.id || current?.challenger_account_id || null,
+          challenger_player_id: pair.playerAId,
+          challenged_account_id: challenged?.id || current?.challenged_account_id || null,
+          challenged_player_id: pair.playerBId,
+          platform: pair.platform,
+          target_url: challengedUrl || current?.target_url || "",
+          challenger_payout_url: challengerUrl || current?.challenger_payout_url || null,
+          challenged_payout_url: challengedUrl || current?.challenged_payout_url || null,
+          amount_cents: Math.round(pair.amount * 100),
+          currency: "EUR",
+          status: "completed",
+          source: "match_pairing",
+          match_id: matchId,
+          pairing_key: pairingKey,
+          season_number: seasonNumber,
+          reported_winner_player_id: winnerPlayerId,
+          result_reported_at: verifiedAt,
+          verified_at: verifiedAt,
+          last_event: "match_pairing_verified",
+          challenger_seen_status: null,
+          challenged_seen_status: null,
+          challenger_seen_event: null,
+          challenged_seen_event: null,
+        };
+
+        let row;
+        if (current?.id) {
+          const { data, error } = await supabase
+            .from("player_challenges")
+            .update(payload)
+            .eq("id", current.id)
+            .select("*")
+            .single();
+          if (error) throw error;
+          row = data;
+        } else {
+          const { data, error } = await supabase
+            .from("player_challenges")
+            .insert(payload)
+            .select("*")
+            .single();
+          if (error) throw error;
+          row = data;
+        }
+
+        synced.push(row);
+      }
+
+      const staleIds = (existingRows || [])
+        .filter((row: any) => !keys.includes(String(row.pairing_key || "")))
+        .map((row: any) => row.id);
+
+      if (staleIds.length) {
+        const { error: deleteError } = await supabase
+          .from("player_challenges")
+          .delete()
+          .in("id", staleIds);
+        if (deleteError) throw deleteError;
+      }
+
+      await writeAudit("challenge.match_pairings_sync", matchId, {
+        pairing_count: synced.length,
+        winner: matchWinner,
+      });
+
+      return json({ ok: true, challenges: synced });
     }
 
     if (adminRequest && action === "admin-update") {
