@@ -205,6 +205,32 @@ export default function RankGuide() {
         </div>
       </section>
 
+      <section className="m8-panel rounded-2xl p-5 sm:p-6">
+        <div className="brand-kicker mb-1">Encomi</div>
+        <h2 className="font-display text-xl font-black">Premi partita separati dall'Elo</h2>
+        <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+          Gli encomi premiano situazioni particolari e danno punti encomio, ma
+          <strong className="text-white"> non modificano l'Elo</strong>. Sono stati
+          bilanciati per essere più rari dei normali risultati, senza pesare sulla classifica.
+        </p>
+
+        <div className="grid sm:grid-cols-2 xl:grid-cols-5 gap-3 mt-4">
+          {[
+            ["Spezza serie", "3–6 punti", "Interrompi una serie di almeno 3 vittorie"],
+            ["Spezza duo", "6 punti", "Batti un duo imbattuto con almeno 3 partite"],
+            ["Ammazzagrandi", "5 punti", "Vinci partendo da sfavoriti"],
+            ["Rivincita", "2 punti", "Batti chi ti aveva appena sconfitto"],
+            ["Rivalità", "2 punti", "Vinci uno scontro testa a testa equilibrato"],
+          ].map(([title, points, detail]) => (
+            <div key={title} className="rounded-xl bg-[#0F1218] border border-[#222834] p-4">
+              <div className="font-display font-black text-sm">{title}</div>
+              <div className="font-mono text-xs text-[#D5A33A] mt-2">{points}</div>
+              <div className="text-[11px] text-muted-foreground mt-2 leading-relaxed">{detail}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section>
         <div className="brand-kicker mb-2">Divisioni</div>
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
