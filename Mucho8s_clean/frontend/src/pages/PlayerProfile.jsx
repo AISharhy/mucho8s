@@ -61,12 +61,16 @@ export default function PlayerProfile() {
   const player = players.find((p) => p.id === id);
   const publicProfile = playerProfiles?.[id] || {};
   const isOwnProfile = Boolean(discordSession && discordPlayer?.id === id);
-  const profileTab = isOwnProfile && searchParams.get("tab") === "challenges" ? "challenges" : "overview";
+  const requestedTab = searchParams.get("tab");
+  const profileTab =
+    isOwnProfile && ["edit", "challenges"].includes(requestedTab)
+      ? requestedTab
+      : "overview";
 
   const setProfileTab = (tab) => {
     if (!isOwnProfile) return;
-    if (tab === "challenges") {
-      setSearchParams({ tab: "challenges" }, { replace: true });
+    if (["edit", "challenges"].includes(tab)) {
+      setSearchParams({ tab }, { replace: true });
     } else {
       setSearchParams({}, { replace: true });
     }
@@ -77,6 +81,7 @@ export default function PlayerProfile() {
     revolutUrl: "",
   });
   const [savingLinks, setSavingLinks] = useState(false);
+  const [profileRole, setProfileRole] = useState("");
   const [sendingChallenge, setSendingChallenge] = useState("");
   const [challengePlatform, setChallengePlatform] = useState("");
   const [challengeAmount, setChallengeAmount] = useState("5");
@@ -86,7 +91,8 @@ export default function PlayerProfile() {
       paypalUrl: publicProfile.paypalUrl || "",
       revolutUrl: publicProfile.revolutUrl || "",
     });
-  }, [id, publicProfile.paypalUrl, publicProfile.revolutUrl]);
+    setProfileRole(["AR", "FLEX", "SMG"].includes(player?.role) ? player.role : "");
+  }, [id, publicProfile.paypalUrl, publicProfile.revolutUrl, player?.role]);
 
   const playerMatches = useMemo(() => {
     if (!player) return [];
@@ -317,9 +323,12 @@ export default function PlayerProfile() {
   const rankPreview = rankProgress(player.currentElo);
   const saveLinks = async () => {
     setSavingLinks(true);
-    const ok = await saveMyChallengeLinks(links);
+    const ok = await saveMyChallengeLinks({
+      ...links,
+      role: profileRole,
+    });
     setSavingLinks(false);
-    if (ok) toast.success("Challenge links updated");
+    if (ok) toast.success("Profile updated");
   };
 
   const openChallengeAmount = () => {
@@ -479,6 +488,7 @@ export default function PlayerProfile() {
 
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-xs text-[#8A94A4]">
                 <span><strong className="text-white font-mono">{player.currentElo}</strong> Elo</span>
+                {player.role && <span className="font-bold text-white">{player.role}</span>}
                 <span>{player.totalMatches || 0} matches</span>
                 <span>{challengeStats.wins + challengeStats.losses} challs</span>
                 <span>{player.mvpCount || 0} MVP</span>
@@ -535,7 +545,17 @@ export default function PlayerProfile() {
             className={`m8-profile-tab ${profileTab === "overview" ? "is-active" : ""}`}
             data-testid="profile-tab-overview"
           >
-            Overview
+            Profile
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={profileTab === "edit"}
+            onClick={() => setProfileTab("edit")}
+            className={`m8-profile-tab ${profileTab === "edit" ? "is-active" : ""}`}
+            data-testid="profile-tab-edit"
+          >
+            Edit Profile
           </button>
           <button
             type="button"
@@ -933,20 +953,40 @@ export default function PlayerProfile() {
       </div>
       )}
 
-      {isOwnProfile && profileTab === "challenges" && (
-        <div className="m8-panel rounded-2xl p-4 sm:p-5 order-4">
+      {isOwnProfile && profileTab === "edit" && (
+        <div className="m8-panel rounded-2xl p-4 sm:p-5 order-4" data-testid="edit-profile-panel">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
-              <div className="brand-kicker mb-1">Payments</div>
-              <h3 className="font-display font-bold text-lg">Payment Accounts</h3>
+              <div className="brand-kicker mb-1">Edit Profile</div>
+              <h3 className="font-display font-bold text-lg">Profile settings</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Add your PayPal and/or Revolut username. A full link also works.
+                Choose your role and connect PayPal or Revolut for Money Challs.
               </p>
             </div>
             <Link2 size={18} className="text-[#697181] shrink-0 mt-1" />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="sm:col-span-2 rounded-xl bg-[#0F1218] border border-[#222834] p-3">
+              <Label className="text-xs font-semibold">Role</Label>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                {["SMG", "AR", "FLEX"].map((role) => (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => setProfileRole(role)}
+                    className={`h-10 rounded-lg border text-xs font-black transition-all ${
+                      profileRole === role
+                        ? "bg-white text-black border-white"
+                        : "bg-[#151923] border-[#2A303B] text-[#C8CED8] hover:border-[#3A4350]"
+                    }`}
+                    data-testid={`profile-role-${role.toLowerCase()}`}
+                  >
+                    {role}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="rounded-xl bg-[#0F1218] border border-[#222834] p-3">
               <Label className="text-xs font-semibold">PayPal</Label>
               <Input
@@ -980,10 +1020,10 @@ export default function PlayerProfile() {
                 onClick={saveLinks}
                 disabled={savingLinks}
                 className="w-full sm:w-auto bg-magma hover:bg-[#ff3c4c] text-white rounded-xl"
-                data-testid="save-challenge-links"
+                data-testid="save-profile-settings"
               >
                 <Save size={15} className="mr-1.5" />
-                {savingLinks ? "Saving..." : "Save Payment Accounts"}
+                {savingLinks ? "Saving..." : "Save Profile"}
               </Button>
             </div>
           </div>
