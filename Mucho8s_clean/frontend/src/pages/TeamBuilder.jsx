@@ -58,6 +58,7 @@ export default function TeamBuilder() {
     matches,
     playerAvatars,
     discordPlayer,
+    dashboardData,
     isAdmin,
   } = useData();
 
@@ -81,6 +82,16 @@ export default function TeamBuilder() {
   const context = useMemo(
     () => computeContextStats(matches, { game: game || "ALL", mode: matchMode || "ALL" }),
     [matches, game, matchMode]
+  );
+
+  const onlinePlayerIds = useMemo(
+    () =>
+      new Set(
+        (Array.isArray(dashboardData?.onlinePlayers) ? dashboardData.onlinePlayers : [])
+          .map((row) => String(row?.player_id || "").trim())
+          .filter(Boolean)
+      ),
+    [dashboardData?.onlinePlayers]
   );
 
   const contextualPlayerMap = useMemo(() => {
@@ -446,9 +457,19 @@ export default function TeamBuilder() {
                     avatarUrl={playerAvatars[player.id]}
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="font-semibold truncate">{player.name}</div>
+                    <div className="font-semibold truncate flex items-center gap-2">
+                      <span className="truncate">{player.name}</span>
+                      {onlinePlayerIds.has(String(player.id)) && (
+                        <span
+                          className="w-2 h-2 rounded-full bg-emerald-400 shrink-0"
+                          title="Online"
+                          aria-label="Online"
+                        />
+                      )}
+                    </div>
                     <div className="text-xs text-muted-foreground truncate">
                       {player.currentElo} Elo{player.role ? ` · ${player.role}` : ""}
+                      {onlinePlayerIds.has(String(player.id)) ? " · Online" : ""}
                     </div>
                   </div>
                 </button>
