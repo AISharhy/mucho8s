@@ -189,107 +189,6 @@ export default function Dashboard() {
         <StatCard icon={Radio} label="Live Chall" value={activeChallenges.length} sub={onlinePlayers.length + " players online"} />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1.6fr_1fr] gap-4">
-        <section className="card-surface rounded-2xl p-5">
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <div>
-              <div className="brand-kicker mb-1">Live Now</div>
-              <h3 className="font-display font-bold text-lg flex items-center gap-2">
-                <Radio size={17} className="text-magma" /> Active Challs
-              </h3>
-            </div>
-            <Link to="/challenge-ranking" className="text-xs text-muted-foreground hover:text-white">
-              Chall Ranking →
-            </Link>
-          </div>
-
-          {activeChallenges.length === 0 ? (
-            <div className="panel-muted rounded-xl py-10 text-center text-sm text-muted-foreground">
-              No active challs right now.
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {activeChallenges.slice(0, 4).map((challenge) => {
-                const challenger = playerMap[challenge.challenger_player_id];
-                const challenged = playerMap[challenge.challenged_player_id];
-                const belongsToMe =
-                  discordPlayer &&
-                  [challenge.challenger_player_id, challenge.challenged_player_id].includes(discordPlayer.id);
-
-                return (
-                  <Link
-                    key={challenge.id}
-                    to={belongsToMe ? "/challenges/" + challenge.id : "/challenge-ranking"}
-                    className="interactive-row rounded-xl p-3 flex items-center gap-3"
-                  >
-                    <div className="flex -space-x-2 shrink-0">
-                      <PlayerAvatar
-                        name={challenger?.name || "A"}
-                        elo={challenger?.currentElo || 1000}
-                        size={36}
-                        avatarUrl={playerAvatars[challenge.challenger_player_id]}
-                      />
-                      <PlayerAvatar
-                        name={challenged?.name || "B"}
-                        elo={challenged?.currentElo || 1000}
-                        size={36}
-                        avatarUrl={playerAvatars[challenge.challenged_player_id]}
-                      />
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="font-semibold text-sm truncate">
-                        {challenger?.name || "Player"} <span className="text-muted-foreground font-normal">vs</span> {challenged?.name || "Player"}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        {String(challenge.platform || "").toUpperCase()} · {money(challenge)}
-                      </div>
-                    </div>
-
-                    <span className="text-[10px] uppercase tracking-widest font-black text-magma">Live</span>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        <section className="card-surface rounded-2xl p-5">
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <div>
-              <div className="brand-kicker mb-1">Presence</div>
-              <h3 className="font-display font-bold text-lg flex items-center gap-2">
-                <UserCheck size={17} className="text-emerald-400" /> Online
-              </h3>
-            </div>
-            <span className="font-mono text-xs text-emerald-400">{onlinePlayers.length}</span>
-          </div>
-
-          {onlinePlayers.length === 0 ? (
-            <div className="panel-muted rounded-xl py-10 text-center text-sm text-muted-foreground">
-              No players online.
-            </div>
-          ) : (
-            <div className="space-y-1.5">
-              {onlinePlayers.map((player) => (
-                <Link
-                  key={player.id}
-                  to={"/players/" + player.id}
-                  className="interactive-row rounded-xl px-3 py-2.5 flex items-center gap-3"
-                >
-                  <div className="relative">
-                    <PlayerAvatar name={player.name} elo={player.currentElo} size={34} avatarUrl={playerAvatars[player.id]} />
-                    <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#12151C]" />
-                  </div>
-                  <div className="flex-1 min-w-0 font-medium text-sm truncate">{player.name}</div>
-                  <EloBadge elo={player.currentElo} />
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
-
       {discordSession && discordPlayer && (
         <section className="card-surface rounded-2xl p-4 sm:p-5">
           <div className="flex flex-col xl:flex-row xl:items-end gap-3">
@@ -342,7 +241,7 @@ export default function Dashboard() {
         </section>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.4fr] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[0.85fr_1.5fr] gap-4">
         <section className="card-surface rounded-2xl p-5">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div>
