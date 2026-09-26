@@ -359,7 +359,9 @@ export default function AdminPanel() {
         })}
       </div>
 
-      {activeTab === "competition" && (\n        <>\n      <div className="card-surface rounded-2xl p-5" data-testid="admin-season-control">
+      {activeTab === "competition" && (
+        <>
+      <div className="card-surface rounded-2xl p-5" data-testid="admin-season-control">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="brand-kicker mb-1">Competition</div>
@@ -406,13 +408,18 @@ export default function AdminPanel() {
         </div>
       </div>
 
-        </>\n      )}\n\n      {activeTab === "system" && storageMode === "local" && (
+        </>
+      )}
+
+      {activeTab === "system" && storageMode === "local" && (
         <div className="rounded-xl border border-[#3A3320] bg-[#D5A33A]/5 px-4 py-3 text-sm text-muted-foreground">
           <span className="text-[#D5A33A] font-semibold">Local mode:</span> player e match sono salvati solo in questo browser. Collega Supabase per avere lo stesso database su PC e telefono.
         </div>
       )}
 
-      {activeTab === "overview" && (\n        <>\n      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" data-testid="admin-overview">
+      {activeTab === "overview" && (
+        <>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" data-testid="admin-overview">
         {[
           { label: "Players", value: players.length, icon: Users, sub: `${discordAccounts.filter((a) => a.player_id).length} Discord linked` },
           { label: "Matches", value: matches.length, icon: Gamepad2, sub: "Recorded results" },
@@ -433,7 +440,10 @@ export default function AdminPanel() {
         })}
       </div>
 
-        </>\n      )}\n\n      {activeTab === "overview" && (
+        </>
+      )}
+
+      {activeTab === "overview" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="card-surface rounded-2xl p-5">
             <div className="flex items-center justify-between gap-3 mb-4">
@@ -478,7 +488,8 @@ export default function AdminPanel() {
         </div>
       )}
 
-      {(activeTab === "players" || activeTab === "system") && (\n      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {(activeTab === "players" || activeTab === "system") && (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Add player */}
         <div className={`${activeTab === "players" ? "" : "hidden"} card-surface rounded-2xl p-5`}>
           <div className="flex items-center gap-2 mb-4">
@@ -532,7 +543,11 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      )}\n\n      {activeTab === "matches" && (\n        <>\n      <div className="card-surface rounded-2xl p-5" data-testid="admin-match-management">
+      )}
+
+      {activeTab === "matches" && (
+        <>
+      <div className="card-surface rounded-2xl p-5" data-testid="admin-match-management">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <div className="brand-kicker mb-1">Match Control</div>
@@ -600,7 +615,10 @@ export default function AdminPanel() {
         </div>
       </div>
 
-        </>\n      )}\n\n      {activeTab === "challenges" && disputedChallenges.length > 0 && (
+        </>
+      )}
+
+      {activeTab === "challenges" && disputedChallenges.length > 0 && (
         <div className="card-surface rounded-2xl p-5 border-orange-500/20" data-testid="admin-dispute-center">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div>
@@ -738,7 +756,9 @@ export default function AdminPanel() {
         </div>
       )}
 
-      {activeTab === "challenges" && (\n        <>\n      <div className="card-surface rounded-2xl p-5" data-testid="admin-challenge-management">
+      {activeTab === "challenges" && (
+        <>
+      <div className="card-surface rounded-2xl p-5" data-testid="admin-challenge-management">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <div className="brand-kicker mb-1">Challenge Control</div>
@@ -954,7 +974,12 @@ export default function AdminPanel() {
         </div>
       </div>
 
-        </>\n      )}\n\n      {activeTab === "discord" && (\n        <>\n      <div className="card-surface rounded-2xl p-5" data-testid="discord-settings">
+        </>
+      )}
+
+      {activeTab === "discord" && (
+        <>
+      <div className="card-surface rounded-2xl p-5" data-testid="discord-settings">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
@@ -1089,7 +1114,10 @@ export default function AdminPanel() {
         )}
       </div>
 
-        </>\n      )}\n\n      {activeTab === "system" && (
+        </>
+      )}
+
+      {activeTab === "system" && (
         <div className="card-surface rounded-2xl p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -1104,7 +1132,9 @@ export default function AdminPanel() {
         </div>
       )}
 
-      {activeTab === "system" && (\n        <>\n      <div className="card-surface rounded-2xl p-5" data-testid="admin-audit-log">
+      {activeTab === "system" && (
+        <>
+      <div className="card-surface rounded-2xl p-5" data-testid="admin-audit-log">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <div className="brand-kicker mb-1">Security & History</div>
@@ -1146,7 +1176,12 @@ export default function AdminPanel() {
       </div>
 
       {/* Roster management */}
-        </>\n      )}\n\n      {activeTab === "players" && (\n        <>\n      <div className="card-surface rounded-2xl p-5" data-testid="admin-roster">
+        </>
+      )}
+
+      {activeTab === "players" && (
+        <>
+      <div className="card-surface rounded-2xl p-5" data-testid="admin-roster">
         <h3 className="font-display font-bold text-lg mb-4">Manage Roster ({players.length})</h3>
         <div className="space-y-2">
           {players.map((p) => {
@@ -1204,7 +1239,10 @@ export default function AdminPanel() {
         </div>
       </div>
 
-        </>\n      )}\n\n      <RecordMatchDialog open={histOpen} onOpenChange={setHistOpen} title="Add Historical Match" />
+        </>
+      )}
+
+      <RecordMatchDialog open={histOpen} onOpenChange={setHistOpen} title="Add Historical Match" />
       <RecordMatchDialog
         open={!!editMatchData}
         onOpenChange={(open) => !open && setEditMatchData(null)}
