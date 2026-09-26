@@ -1041,20 +1041,21 @@ export const DataProvider = ({ children }) => {
         return;
       }
 
+      if (challenge.status === "completed" && !challenge.payment_received_at) {
+        count += 1;
+        return;
+      }
+
       if (challenge.series_id) {
-        const series = challenge.series;
-        if (!series || seenSeries.has(challenge.series_id)) return;
+        if (seenSeries.has(challenge.series_id)) return;
         seenSeries.add(challenge.series_id);
 
-        const myPlayerId = discordAccount.player_id;
-        if (
-          series.status === "closed" &&
-          Number(series.settlement_amount_cents || 0) > 0 &&
-          series.settlement_winner_player_id
-        ) {
-          const iReceive = series.settlement_winner_player_id === myPlayerId;
-          if (!iReceive && !series.payment_sent_at) count += 1;
-          if (iReceive && series.payment_sent_at && !series.payment_received_at) count += 1;
+        const seenEvent = isChallenger
+          ? challenge.challenger_seen_event
+          : challenge.challenged_seen_event;
+
+        if (challenge.last_event && seenEvent !== challenge.last_event) {
+          count += 1;
         }
         return;
       }
