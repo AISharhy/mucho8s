@@ -155,7 +155,7 @@ export default function Play() {
           <div className="relative z-10">
             <ModeHeader
               kicker="Competitive 8s"
-              title="8s / Team Builder"
+              title="8s"
               description="Create the lobby first, then let the system build the matchup."
               icon={Gamepad2}
               accent="#FF2A3B"
