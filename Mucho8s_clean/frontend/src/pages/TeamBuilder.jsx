@@ -14,7 +14,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { RecordMatchDialog } from "@/components/RecordMatchDialog";
-import MatchResultCenter from "@/components/MatchResultCenter";
 import { computeContextStats, playerForContext } from "@/lib/elo";
 import { GAMES } from "@/lib/demoData";
 import {
@@ -152,10 +151,6 @@ export default function TeamBuilder() {
       : "";
   const canConfirm = Boolean(result && (isAdmin || matchCaptainId));
   const canReport = Boolean(result && liveMatch?.id && (isAdmin || matchCaptainId));
-
-  const currentTeamIds = result
-    ? [...result.teamA, ...result.teamB].map((player) => player.id)
-    : null;
 
   const resetLobby = ({ keepGame = true } = {}) => {
     if (liveMatch?.id) void cancelLiveMatch(liveMatch.id);
@@ -353,8 +348,6 @@ export default function TeamBuilder() {
           </Button>
         </div>
       </section>
-
-      <MatchResultCenter teamPlayerIds={currentTeamIds} />
 
       <section className="m8-panel rounded-[22px] p-5 sm:p-6">
         <div className="flex items-center gap-3 mb-4">
