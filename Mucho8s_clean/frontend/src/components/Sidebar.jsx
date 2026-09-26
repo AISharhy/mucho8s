@@ -85,7 +85,7 @@ const Brand = () => (
       <div className="font-display font-extrabold text-[14px] tracking-tight whitespace-nowrap">
         MUCHO<span className="text-magma">MONEY</span><span className="text-white">8s</span>
       </div>
-      <div className="text-[9px] uppercase tracking-[0.2em] text-[#697181] mt-1">Competitive COD 8s</div>
+      <div className="text-[9px] uppercase tracking-[0.2em] text-[#697181] mt-1">COD 8s competitivo</div>
     </div>
   </div>
 );
@@ -136,7 +136,7 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
                   {discordName}
                 </div>
                 <div className={`text-[10px] truncate ${linked ? "text-emerald-400" : "text-[#D5A33A]"}`}>
-                  {linked ? `${discordRank?.name || "Rank"} · ${discordPlayer.currentElo} Elo` : "In attesa del collegamento giocatore"}
+                  {linked ? `${discordRank?.name || "Grado"} · ${discordPlayer.currentElo} Elo` : "In attesa del collegamento giocatore"}
                 </div>
               </div>
               <button
