@@ -609,7 +609,7 @@ Deno.serve(async (req: Request) => {
     if (action === "list-live") {
       const { data, error } = await supabase
         .from("live_team_matches")
-        .select("id,match_id,team_a,team_b,game,mode,format,captain_player_id,status,created_at,cancel_requested_at,cancel_requested_by_player_id")
+        .select("id,match_id,team_a,team_b,game,mode,format,captain_player_id,status,created_at,cancel_requested_at,cancel_requested_by_player_id,pairings")
         .eq("status", "live")
         .order("created_at", { ascending: false })
         .limit(12);
@@ -625,6 +625,20 @@ Deno.serve(async (req: Request) => {
 
       const teamA = Array.isArray(body?.teamA) ? body.teamA.map((id: unknown) => String(id)) : [];
       const teamB = Array.isArray(body?.teamB) ? body.teamB.map((id: unknown) => String(id)) : [];
+      const pairings = (Array.isArray(body?.pairings) ? body.pairings : [])
+        .map((pair: any) => ({
+          playerAId: String(pair?.playerAId || "").trim(),
+          playerBId: String(pair?.playerBId || "").trim(),
+          amount: Number(pair?.amount),
+          platform: String(pair?.platform || "paypal").trim().toLowerCase(),
+        }))
+        .filter((pair: any) =>
+          teamA.includes(pair.playerAId) &&
+          teamB.includes(pair.playerBId) &&
+          Number.isFinite(pair.amount) &&
+          pair.amount > 0 &&
+          SUPPORTED_MATCH_PLATFORMS.has(pair.platform)
+        );
       const creatorPlayerId = String(account?.player_id || "").trim();
       const creatorInLobby = [...teamA, ...teamB].includes(creatorPlayerId);
 
@@ -650,6 +664,7 @@ Deno.serve(async (req: Request) => {
         game: String(body?.game || ""),
         mode: String(body?.mode || ""),
         format: String(body?.format || ""),
+        pairings,
         captain_player_id: creatorPlayerId || null,
         creator_account_id: user?.id || null,
         status: "live",
