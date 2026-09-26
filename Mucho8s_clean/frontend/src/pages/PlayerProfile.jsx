@@ -3,8 +3,8 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { winRate, tierOf } from "@/lib/elo";
 import { duoChemistry } from "@/lib/chemistry";
-import { analyzeBountyHistory, buildBountyAchievementCatalog } from "@/lib/bountyAchievements";
-import { PlayerAvatar, EloBadge, Last10, StreakBadge, MvpBadge, MerdaBadge, RankBadge } from "@/components/shared";
+import { analyzeBountyHistory, buildBountyAchievementCatalog } from "@/lib/bountyTraguardi";
+import { GiocatoreAvatar, EloBadge, Last10, SerieBadge, MvpBadge, MerdaBadge, RankBadge } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -42,7 +42,7 @@ import {
 import { LineChart, Line, ResponsiveContainer, Tooltip, YAxis, XAxis, CartesianGrid } from "recharts";
 import { toast } from "sonner";
 
-export default function PlayerProfile() {
+export default function GiocatoreProfilo() {
   const { id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const {
@@ -50,26 +50,26 @@ export default function PlayerProfile() {
     matches,
     playerMap,
     playerAvatars,
-    playerProfiles,
-    discordPlayer,
+    playerProfilos,
+    discordGiocatore,
     discordSession,
     saveMyChallengeLinks,
     challenges,
-    publicChallenges,
+    publicSfide,
     createChallenge,
   } = useData();
 
   const player = players.find((p) => p.id === id);
-  const publicProfile = playerProfiles?.[id] || {};
-  const isOwnProfile = Boolean(discordSession && discordPlayer?.id === id);
+  const publicProfilo = playerProfilos?.[id] || {};
+  const isOwnProfilo = Boolean(discordSession && discordGiocatore?.id === id);
   const requestedTab = searchParams.get("tab");
   const profileTab =
-    isOwnProfile && ["edit", "challenges"].includes(requestedTab)
+    isOwnProfilo && ["edit", "challenges"].includes(requestedTab)
       ? requestedTab
       : "overview";
 
-  const setProfileTab = (tab) => {
-    if (!isOwnProfile) return;
+  const setProfiloTab = (tab) => {
+    if (!isOwnProfilo) return;
     if (["edit", "challenges"].includes(tab)) {
       setSearchParams({ tab }, { replace: true });
     } else {
@@ -82,18 +82,18 @@ export default function PlayerProfile() {
     revolutUrl: "",
   });
   const [savingLinks, setSavingLinks] = useState(false);
-  const [profileRole, setProfileRole] = useState("");
+  const [profileRole, setProfiloRole] = useState("");
   const [sendingChallenge, setSendingChallenge] = useState("");
   const [challengePlatform, setChallengePlatform] = useState("");
   const [challengeAmount, setChallengeAmount] = useState("5");
 
   useEffect(() => {
     setLinks({
-      paypalUrl: publicProfile.paypalUrl || "",
-      revolutUrl: publicProfile.revolutUrl || "",
+      paypalUrl: publicProfilo.paypalUrl || "",
+      revolutUrl: publicProfilo.revolutUrl || "",
     });
-    setProfileRole(["AR", "FLEX", "SMG"].includes(player?.role) ? player.role : "");
-  }, [id, publicProfile.paypalUrl, publicProfile.revolutUrl, player?.role]);
+    setProfiloRole(["AR", "FLEX", "SMG"].includes(player?.role) ? player.role : "");
+  }, [id, publicProfilo.paypalUrl, publicProfilo.revolutUrl, player?.role]);
 
   const playerMatches = useMemo(() => {
     if (!player) return [];
@@ -103,9 +103,9 @@ export default function PlayerProfile() {
   }, [matches, player]);
 
   const challengeStats = useMemo(() => {
-    const completed = publicChallenges
+    const completed = publicSfide
       .filter((challenge) => {
-        const belongsToPlayer =
+        const belongsToGiocatore =
           challenge.challenger_player_id === id ||
           challenge.challenged_player_id === id;
         const verified = Boolean(
@@ -117,7 +117,7 @@ export default function PlayerProfile() {
           challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at
         );
 
-        return belongsToPlayer && verified && !openDispute;
+        return belongsToGiocatore && verified && !openDispute;
       })
       .sort((a, b) => new Date(b.verified_at || b.created_at) - new Date(a.verified_at || a.created_at));
 
@@ -153,44 +153,44 @@ export default function PlayerProfile() {
       }, 0),
       matchPairings: completed.filter((challenge) => challenge.source === "match_pairing").length,
     };
-  }, [publicChallenges, id]);
+  }, [publicSfide, id]);
 
   const bountyHistory = useMemo(
     () => analyzeBountyHistory(id, players, matches),
     [id, players, matches]
   );
 
-  const bountyAchievements = useMemo(
+  const bountyTraguardi = useMemo(
     () => buildBountyAchievementCatalog(bountyHistory),
     [bountyHistory]
   );
 
-  const unlockedBountyAchievements = useMemo(
-    () => bountyAchievements.filter((achievement) => achievement.unlocked),
-    [bountyAchievements]
+  const unlockedBountyTraguardi = useMemo(
+    () => bountyTraguardi.filter((achievement) => achievement.unlocked),
+    [bountyTraguardi]
   );
 
   const challengeInsights = useMemo(() => {
     const completed = challengeStats.completed.filter(
       (challenge) => !(challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at)
     );
-    let currentStreak = 0;
+    let currentSerie = 0;
     let currentType = "";
     if (completed.length) {
       currentType = completed[0].reported_winner_player_id === id ? "W" : "L";
       for (const challenge of completed) {
         const result = challenge.reported_winner_player_id === id ? "W" : "L";
         if (result !== currentType) break;
-        currentStreak += 1;
+        currentSerie += 1;
       }
     }
 
-    let bestWinStreak = 0;
+    let bestWinSerie = 0;
     let running = 0;
     [...completed].reverse().forEach((challenge) => {
       if (challenge.reported_winner_player_id === id) {
         running += 1;
-        bestWinStreak = Math.max(bestWinStreak, running);
+        bestWinSerie = Math.max(bestWinSerie, running);
       } else {
         running = 0;
       }
@@ -265,9 +265,9 @@ export default function PlayerProfile() {
       { label: "MVP x3", detail: "Ottieni 3 MVP", icon: Crown, unlocked: (player?.mvpCount || 0) >= 3 },
       { label: "MVP x7", detail: "Ottieni 7 MVP", icon: Award, unlocked: (player?.mvpCount || 0) >= 7 },
 
-      { label: "In forma", detail: "3 vittorie consecutive", icon: Flame, unlocked: bestWinStreak >= 3 },
-      { label: "In fiamme", detail: "4 vittorie consecutive", icon: Flame, unlocked: bestWinStreak >= 4 },
-      { label: "Intoccabile", detail: "8 vittorie consecutive", icon: Rocket, unlocked: bestWinStreak >= 8 },
+      { label: "In forma", detail: "3 vittorie consecutive", icon: Flame, unlocked: bestWinSerie >= 3 },
+      { label: "In fiamme", detail: "4 vittorie consecutive", icon: Flame, unlocked: bestWinSerie >= 4 },
+      { label: "Intoccabile", detail: "8 vittorie consecutive", icon: Rocket, unlocked: bestWinSerie >= 8 },
 
       { label: "Prima sfida", detail: "Vinci 1 sfida", icon: Swords, unlocked: challengeStats.wins >= 1 },
       { label: "Sfide x4", detail: "Vinci 4 sfide", icon: Swords, unlocked: challengeStats.wins >= 4 },
@@ -292,9 +292,9 @@ export default function PlayerProfile() {
     const achievements = achievementCatalog.filter((item) => item.unlocked);
 
     return {
-      currentStreak,
+      currentSerie,
       currentType,
-      bestWinStreak,
+      bestWinSerie,
       reputation,
       settled: settled.length,
       payoutDisputes,
@@ -308,7 +308,7 @@ export default function PlayerProfile() {
     };
   }, [challengeStats, id, player]);
 
-  const trophyChallenges = useMemo(() => {
+  const trophySfide = useMemo(() => {
     if (!player) return [];
 
     const clamp = (value, goal) => Math.min(100, Math.max(0, Math.round((Number(value || 0) / goal) * 100)));
@@ -330,7 +330,7 @@ export default function PlayerProfile() {
         title: "In fiamme",
         description: "Vinci 4 partite consecutive",
         emoji: "🔥",
-        value: Math.max(0, Number(player.currentStreak || 0)),
+        value: Math.max(0, Number(player.currentSerie || 0)),
         goal: 4,
         unit: " vittorie",
       }),
@@ -339,7 +339,7 @@ export default function PlayerProfile() {
         title: "Inarrestabile",
         description: "Vinci 8 partite consecutive",
         emoji: "☢️",
-        value: Math.max(0, Number(player.currentStreak || 0)),
+        value: Math.max(0, Number(player.currentSerie || 0)),
         goal: 8,
         unit: " vittorie",
       }),
@@ -384,7 +384,7 @@ export default function PlayerProfile() {
         title: "Filotto sfide",
         description: "Vinci 4 sfide consecutive",
         emoji: "🧹",
-        value: challengeInsights.currentType === "W" ? challengeInsights.currentStreak : 0,
+        value: challengeInsights.currentType === "W" ? challengeInsights.currentSerie : 0,
         goal: 4,
         unit: " vittorie",
       }),
@@ -410,13 +410,13 @@ export default function PlayerProfile() {
     ];
   }, [player, challengeStats.wonValue, challengeInsights]);
 
-  const nextTrophyChallenges = useMemo(
+  const nextTrophySfide = useMemo(
     () =>
-      trophyChallenges
+      trophySfide
         .filter((item) => !item.unlocked)
         .sort((a, b) => b.progress - a.progress || a.goal - b.goal)
         .slice(0, 3),
-    [trophyChallenges]
+    [trophySfide]
   );
 
   const trophyCabinet = useMemo(() => {
@@ -446,7 +446,7 @@ export default function PlayerProfile() {
       });
     }
 
-    trophyChallenges
+    trophySfide
       .filter((item) => item.unlocked)
       .forEach((item) => {
         awards.push({
@@ -460,13 +460,13 @@ export default function PlayerProfile() {
       });
 
     return awards;
-  }, [player, trophyChallenges]);
+  }, [player, trophySfide]);
 
   if (!player) {
     return (
       <div className="card-surface rounded-xl p-10 text-center">
-        <div className="text-xl font-display font-bold mb-2">Player not found</div>
-        <Link to="/players" className="text-magma hover:underline">Back to players</Link>
+        <div className="text-xl font-display font-bold mb-2">Giocatore non trovato</div>
+        <Link to="/players" className="text-magma hover:underline">Torna ai giocatori</Link>
       </div>
     );
   }
@@ -479,12 +479,12 @@ export default function PlayerProfile() {
       role: profileRole,
     });
     setSavingLinks(false);
-    if (ok) toast.success("Profile updated");
+    if (ok) toast.success("Profilo aggiornato");
   };
 
   const openChallengeAmount = () => {
-    if (!discordSession || !discordPlayer) {
-      toast.error("Login with Discord and link your player before sending a challenge");
+    if (!discordSession || !discordGiocatore) {
+      toast.error("Accedi con Discord e collega il tuo giocatore prima di inviare una sfida");
       return;
     }
     setChallengePlatform("paypal");
@@ -508,7 +508,7 @@ export default function PlayerProfile() {
     }
   };
 
-  const myChallenges = isOwnProfile
+  const mySfide = isOwnProfilo
     ? challenges.filter(
         (challenge) =>
           challenge.challenger_player_id === player.id ||
@@ -519,7 +519,7 @@ export default function PlayerProfile() {
   return (
     <div className="m8-page-stack">
       <Link to="/players" className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-white self-start m8-pill order-0">
-        <ArrowLeft size={16} /> Back to Players
+        <ArrowLeft size={16} /> Back to Giocatores
       </Link>
 
       <Dialog open={Boolean(challengePlatform)} onOpenChange={(open) => !open && !sendingChallenge && setChallengePlatform("")}>
@@ -599,7 +599,7 @@ export default function PlayerProfile() {
               data-testid="send-challenge-confirm"
             >
               <Swords size={16} className="mr-2" />
-              {sendingChallenge ? "Sending..." : "Send Challenge"}
+              {sendingChallenge ? "Invio..." : "Invia sfida"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -616,7 +616,7 @@ export default function PlayerProfile() {
             <div className="relative shrink-0 self-start">
               <div className="absolute -inset-2 rounded-[26px] bg-magma/10 blur-xl" />
               <div className="relative rounded-[24px] border-4 border-[#10151D] shadow-2xl overflow-hidden">
-                <PlayerAvatar
+                <GiocatoreAvatar
                   name={player.name}
                   elo={player.currentElo}
                   size={104}
@@ -626,14 +626,14 @@ export default function PlayerProfile() {
             </div>
 
             <div className="min-w-0 flex-1 pb-1">
-              <div className="brand-kicker mb-1">{isOwnProfile ? "My Competitive Profile" : "Competitive Player Profile"}</div>
+              <div className="brand-kicker mb-1">{isOwnProfilo ? "Il mio profilo competitivo" : "Profilo competitivo"}</div>
               <div className="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-4">
                 <h2 className="font-display text-3xl sm:text-[42px] leading-none font-black tracking-[-0.045em] truncate">
                   {player.name}
                 </h2>
                 <div className="flex flex-wrap items-center gap-2 pb-0.5">
                   <RankBadge elo={player.currentElo} />
-                  <StreakBadge streak={player.currentStreak} />
+                  <SerieBadge streak={player.currentSerie} />
                 </div>
               </div>
 
@@ -647,7 +647,7 @@ export default function PlayerProfile() {
               </div>
             </div>
 
-            {!isOwnProfile && (
+            {!isOwnProfilo && (
               <Button
                 onClick={openChallengeAmount}
                 className="m8-action m8-action-primary h-11 px-6 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-extrabold tracking-wide"
@@ -663,9 +663,9 @@ export default function PlayerProfile() {
               { label: "Current Elo", value: player.currentElo, tone: "text-white" },
               { label: "Peak Elo", value: player.peakElo, tone: "text-[#D5A33A]" },
               { label: "Match Record", value: `${player.wins || 0}W - ${player.losses || 0}L`, tone: "text-white" },
-              { label: "Win Rate", value: `${winRate(player)}%`, tone: "text-white" },
-              { label: "Money Won", value: `€${challengeStats.wonValue.toFixed(2)}`, tone: "text-emerald-400" },
-              { label: "Chall Record", value: `${challengeStats.wins}W - ${challengeStats.losses}L`, tone: "text-white" },
+              { label: "Percentuale vittorie", value: `${winRate(player)}%`, tone: "text-white" },
+              { label: "Valore vinto", value: `${challengeStats.wonValue.toFixed(0)}`, tone: "text-emerald-400" },
+              { label: "Record sfide", value: `${challengeStats.wins}W - ${challengeStats.losses}L`, tone: "text-white" },
             ].map((item) => (
               <div key={item.label} className="m8-profile-stat">
                 <div className="text-[9px] uppercase tracking-[0.16em] text-[#697181] font-bold">{item.label}</div>
@@ -686,17 +686,17 @@ export default function PlayerProfile() {
         </div>
       </section>
 
-      {isOwnProfile && (
+      {isOwnProfilo && (
         <div
           className="order-2 grid grid-cols-1 sm:inline-grid sm:grid-cols-3 gap-1 p-1 rounded-2xl bg-[#0F1218] border border-[#242A35] w-full sm:w-fit"
           role="tablist"
-          aria-label="My Profile sections"
+          aria-label="Sezioni del mio profilo"
         >
           <button
             type="button"
             role="tab"
             aria-selected={profileTab === "overview"}
-            onClick={() => setProfileTab("overview")}
+            onClick={() => setProfiloTab("overview")}
             className={`h-11 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold transition-all ${
               profileTab === "overview"
                 ? "bg-white text-black shadow-sm"
@@ -705,14 +705,14 @@ export default function PlayerProfile() {
             data-testid="profile-tab-overview"
           >
             <UserCircle size={16} />
-            Profile
+            Profilo
           </button>
 
           <button
             type="button"
             role="tab"
             aria-selected={profileTab === "edit"}
-            onClick={() => setProfileTab("edit")}
+            onClick={() => setProfiloTab("edit")}
             className={`h-11 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold transition-all ${
               profileTab === "edit"
                 ? "bg-white text-black shadow-sm"
@@ -721,14 +721,14 @@ export default function PlayerProfile() {
             data-testid="profile-tab-edit"
           >
             <Pencil size={15} />
-            Edit Profile
+            Modifica profilo
           </button>
 
           <button
             type="button"
             role="tab"
             aria-selected={profileTab === "challenges"}
-            onClick={() => setProfileTab("challenges")}
+            onClick={() => setProfiloTab("challenges")}
             className={`h-11 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold transition-all relative ${
               profileTab === "challenges"
                 ? "bg-white text-black shadow-sm"
@@ -737,8 +737,8 @@ export default function PlayerProfile() {
             data-testid="profile-tab-challenges"
           >
             <Swords size={16} />
-            My Challenges
-            {myChallenges.some((challenge) =>
+            My Sfide
+            {mySfide.some((challenge) =>
               ["pending", "accepted", "result_pending", "disputed"].includes(challenge.status)
             ) && (
               <span className="w-2 h-2 rounded-full bg-magma shadow-[0_0_10px_rgba(255,42,59,.65)]" />
@@ -747,37 +747,37 @@ export default function PlayerProfile() {
         </div>
       )}
 
-      {(!isOwnProfile || profileTab === "overview") && (
+      {(!isOwnProfilo || profileTab === "overview") && (
         <>
           <div className="m8-panel rounded-2xl p-4 sm:p-5 order-4" data-testid="competitive-overview">
             <div className="flex items-center justify-between gap-3 mb-4">
               <div>
-                <div className="brand-kicker mb-1">Competitive</div>
-                <h3 className="font-display font-black text-xl tracking-[-0.02em]">Overview</h3>
+                <div className="brand-kicker mb-1">Competitivo</div>
+                <h3 className="font-display font-black text-xl tracking-[-0.02em]">Panoramica</h3>
               </div>
               <span className="m8-pill">{challengeStats.wins}W · {challengeStats.losses}L</span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2">
               <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Win Rate</div>
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Percentuale vittorie</div>
                 <div className="font-mono font-black text-lg mt-1">{challengeStats.winRate}%</div>
               </div>
 
               <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Net Money</div>
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Saldo valore</div>
                 <div className={`font-mono font-black text-lg mt-1 ${
                   challengeStats.wonValue - challengeStats.lostValue >= 0
                     ? "text-emerald-400"
                     : "text-red-400"
                 }`}>
                   {challengeStats.wonValue - challengeStats.lostValue >= 0 ? "+" : ""}
-                  €{(challengeStats.wonValue - challengeStats.lostValue).toFixed(2)}
+                  {(challengeStats.wonValue - challengeStats.lostValue).toFixed(0)}
                 </div>
               </div>
 
               <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Streak</div>
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Serie</div>
                 <div className={`font-mono font-black text-lg mt-1 ${
                   challengeInsights.currentType === "W"
                     ? "text-emerald-400"
@@ -785,14 +785,14 @@ export default function PlayerProfile() {
                       ? "text-red-400"
                       : ""
                 }`}>
-                  {challengeInsights.currentStreak
-                    ? `${challengeInsights.currentStreak}${challengeInsights.currentType}`
+                  {challengeInsights.currentSerie
+                    ? `${challengeInsights.currentSerie}${challengeInsights.currentType}`
                     : "—"}
                 </div>
               </div>
 
               <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Reputation</div>
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Reputazione</div>
                 <div className="font-mono font-black text-lg mt-1">{challengeInsights.reputation}%</div>
               </div>
 
@@ -804,23 +804,23 @@ export default function PlayerProfile() {
               <div className="m8-stat-card">
                 <div className="text-[9px] uppercase tracking-widest text-muted-foreground">MERDA</div>
                 <div className="font-mono font-black text-lg mt-1 text-[#C79A6B]">💩 {player.merdaCount || 0}</div>
-                <div className="text-[9px] text-muted-foreground mt-1">Every 4W → -1 💩</div>
+                <div className="text-[9px] text-muted-foreground mt-1">Ogni 4 vittorie → -1 💩</div>
               </div>
 
               <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Bounties</div>
-                <div className="font-mono font-black text-lg mt-1">{unlockedBountyAchievements.length}/{bountyAchievements.length}</div>
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Encomi</div>
+                <div className="font-mono font-black text-lg mt-1">{unlockedBountyTraguardi.length}/{bountyTraguardi.length}</div>
               </div>
 
               <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Points</div>
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Punti</div>
                 <div className="font-mono font-black text-lg mt-1 text-[#D5A33A]">{bountyHistory.points}</div>
               </div>
             </div>
 
             {challengeStats.completed.length > 0 && (
               <div className="flex items-center gap-1.5 mt-4 pt-3 border-t border-[#1D222C]">
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground mr-1">Last 5</span>
+                <span className="text-[10px] uppercase tracking-widest text-muted-foreground mr-1">Ultime 5</span>
                 {challengeStats.completed.slice(0, 5).map((challenge) => {
                   const won = challenge.reported_winner_player_id === id;
                   return (
@@ -865,14 +865,14 @@ export default function PlayerProfile() {
                         to={`/players/${row.opponentId}`}
                         className="interactive-row rounded-xl p-3 flex items-center gap-3"
                       >
-                        <PlayerAvatar
-                          name={opponent?.name || "Player"}
+                        <GiocatoreAvatar
+                          name={opponent?.name || "Giocatore"}
                           elo={opponent?.currentElo || 1000}
                           size={34}
                           avatarUrl={playerAvatars[row.opponentId]}
                         />
                         <div className="min-w-0 flex-1">
-                          <div className="font-semibold text-sm truncate">{opponent?.name || "Player"}</div>
+                          <div className="font-semibold text-sm truncate">{opponent?.name || "Giocatore"}</div>
                           <div className="text-[10px] text-muted-foreground">{row.played} matches</div>
                         </div>
                         <div className="font-mono text-sm font-black">
@@ -890,12 +890,12 @@ export default function PlayerProfile() {
             <div className="m8-panel rounded-2xl p-4 sm:p-5">
               <div className="flex items-center justify-between gap-3 mb-3">
                 <div>
-                  <div className="brand-kicker mb-1">Achievements</div>
-                  <h3 className="font-display font-bold text-lg">Bounties</h3>
+                  <div className="brand-kicker mb-1">Traguardi</div>
+                  <h3 className="font-display font-bold text-lg">Encomi</h3>
                 </div>
                 <div className="text-right">
                   <div className="font-mono font-black text-[#D5A33A]">
-                    {unlockedBountyAchievements.length}/{bountyAchievements.length}
+                    {unlockedBountyTraguardi.length}/{bountyTraguardi.length}
                   </div>
                   <div className="text-[9px] uppercase tracking-widest text-muted-foreground">
                     {bountyHistory.points} pts
@@ -905,7 +905,7 @@ export default function PlayerProfile() {
 
               {bountyHistory.events.length === 0 ? (
                 <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-6 text-center text-xs text-muted-foreground">
-                  No completed bounties yet.
+                  Nessun encomio completato.
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -928,27 +928,27 @@ export default function PlayerProfile() {
         </>
       )}
 
-      {isOwnProfile && profileTab === "overview" && (
+      {isOwnProfilo && profileTab === "overview" && (
         <div className="m8-panel rounded-[22px] p-4 sm:p-5 order-4" data-testid="next-trophy-challenges">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
-              <div className="brand-kicker mb-1">Challenges</div>
-              <h3 className="font-display font-black text-xl tracking-[-0.02em]">Next Trophies</h3>
+              <div className="brand-kicker mb-1">Sfide</div>
+              <h3 className="font-display font-black text-xl tracking-[-0.02em]">Prossimi trofei</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                The closest trophies to unlock based on your current progress.
+                I trofei più vicini da sbloccare in base ai tuoi progressi.
               </p>
             </div>
             <Target size={20} className="text-[#D5A33A] shrink-0 mt-1" />
           </div>
 
-          {nextTrophyChallenges.length === 0 ? (
+          {nextTrophySfide.length === 0 ? (
             <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-7 px-4 text-center">
               <div className="text-2xl mb-2">🏆</div>
-              <div className="font-semibold">All trophy challenges completed</div>
+              <div className="font-semibold">Hai completato tutti i trofei</div>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-              {nextTrophyChallenges.map((item) => {
+              {nextTrophySfide.map((item) => {
                 const remaining = Math.max(0, item.goal - item.value);
                 const displayValue =
                   item.unit === " €"
@@ -1000,7 +1000,7 @@ export default function PlayerProfile() {
         </div>
       )}
 
-      {(!isOwnProfile || profileTab === "overview") && (
+      {(!isOwnProfilo || profileTab === "overview") && (
       <div className="m8-showcase rounded-[22px] p-4 sm:p-6 order-4" data-testid="trophy-cabinet">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
@@ -1053,12 +1053,12 @@ export default function PlayerProfile() {
       </div>
       )}
 
-      {isOwnProfile && profileTab === "edit" && (
+      {isOwnProfilo && profileTab === "edit" && (
         <div className="m8-panel rounded-2xl p-4 sm:p-5 order-4" data-testid="edit-profile-panel">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
-              <div className="brand-kicker mb-1">Edit Profile</div>
-              <h3 className="font-display font-bold text-lg">Profile settings</h3>
+              <div className="brand-kicker mb-1">Modifica profilo</div>
+              <h3 className="font-display font-bold text-lg">Impostazioni profilo</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 Choose your role and connect PayPal or Revolut for Money Challs.
               </p>
@@ -1074,7 +1074,7 @@ export default function PlayerProfile() {
                   <button
                     key={role}
                     type="button"
-                    onClick={() => setProfileRole(role)}
+                    onClick={() => setProfiloRole(role)}
                     className={`h-10 rounded-lg border text-xs font-black transition-all ${
                       profileRole === role
                         ? "bg-white text-black border-white"
@@ -1123,30 +1123,30 @@ export default function PlayerProfile() {
                 data-testid="save-profile-settings"
               >
                 <Save size={15} className="mr-1.5" />
-                {savingLinks ? "Saving..." : "Save Profile"}
+                {savingLinks ? "Salvataggio..." : "Salva profilo"}
               </Button>
             </div>
           </div>
         </div>
       )}
 
-      {isOwnProfile && profileTab === "challenges" && (
+      {isOwnProfilo && profileTab === "challenges" && (
         <div className="m8-panel rounded-2xl p-4 sm:p-5 order-3" data-testid="my-challenges-panel">
           <div className="mb-4">
-            <div className="brand-kicker mb-1">Challenge Center</div>
-            <h3 className="font-display font-bold text-lg">My Challenges</h3>
+            <div className="brand-kicker mb-1">Centro sfide</div>
+            <h3 className="font-display font-bold text-lg">My Sfide</h3>
             <p className="text-sm text-muted-foreground mt-1">
               Results become official only after the other player verifies them.
             </p>
           </div>
 
-          {myChallenges.length === 0 ? (
+          {mySfide.length === 0 ? (
             <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-8 px-4 text-center text-sm text-muted-foreground">
               No challenges yet.
             </div>
           ) : (
             <div className="space-y-2">
-              {myChallenges.slice(0, 12).map((challenge) => {
+              {mySfide.slice(0, 12).map((challenge) => {
                 const opponentId =
                   challenge.challenger_player_id === player.id
                     ? challenge.challenged_player_id
@@ -1173,15 +1173,15 @@ export default function PlayerProfile() {
                     }`}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                      <PlayerAvatar
-                        name={opponent?.name || "Player"}
+                      <GiocatoreAvatar
+                        name={opponent?.name || "Giocatore"}
                         elo={opponent?.currentElo || 1000}
                         size={42}
                         avatarUrl={playerAvatars[opponentId]}
                       />
 
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold truncate">vs {opponent?.name || "Player"}</div>
+                        <div className="font-semibold truncate">vs {opponent?.name || "Giocatore"}</div>
                         <div className="text-xs text-muted-foreground mt-0.5">
                           {String(challenge.platform || "").toUpperCase()} · {amount} · {new Date(challenge.created_at).toLocaleDateString()}
                         </div>
@@ -1229,7 +1229,7 @@ export default function PlayerProfile() {
                             }`}
                             data-testid={`open-challenge-${challenge.id}`}
                           >
-                            OPEN MATCH
+                            APRI MATCH
                           </Link>
                         )}
                       </div>
@@ -1242,7 +1242,7 @@ export default function PlayerProfile() {
         </div>
       )}
 
-      {(!isOwnProfile || profileTab === "overview") && (
+      {(!isOwnProfilo || profileTab === "overview") && (
       <div className="m8-panel rounded-2xl p-4 sm:p-5 order-8">
         <div className="flex items-center justify-between gap-3 mb-3">
           <div>
@@ -1268,10 +1268,10 @@ export default function PlayerProfile() {
       </div>
       )}
 
-      {(!isOwnProfile || profileTab === "overview") && (
+      {(!isOwnProfilo || profileTab === "overview") && (
       <div className="m8-panel rounded-2xl p-4 sm:p-5 order-5">
-        <div className="brand-kicker mb-1">Recent Activity</div>
-        <h3 className="font-display font-black text-xl tracking-[-0.02em] mb-4">Recent Matches</h3>
+        <div className="brand-kicker mb-1">Attività recente</div>
+        <h3 className="font-display font-black text-xl tracking-[-0.02em] mb-4">Partite recenti</h3>
         <div className="space-y-2">
           {playerMatches.slice(0, 10).map((m) => {
             const winners = m.winner === "A" ? m.teamA : m.teamB;
@@ -1297,7 +1297,7 @@ export default function PlayerProfile() {
                 <div className="flex-1 min-w-0">
                   <div className="font-medium">{m.game || "Game"} · {m.mode || "Mode"}</div>
                   <div className="text-xs text-muted-foreground truncate">
-                    With {teammates.length ? teammates.join(", ") : "—"}
+                    Con {teammates.length ? teammates.join(", ") : "—"}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
