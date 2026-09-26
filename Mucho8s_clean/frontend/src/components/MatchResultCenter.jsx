@@ -14,7 +14,7 @@ const statusClass = {
   disputed: "text-orange-400 border-orange-500/25 bg-orange-500/10",
 };
 
-export default function MatchResultCenter({ teamPlayerIds = null }) {
+export default function MatchResultCenter({ teamPlayerIds = null, reportId = "", hideHeader = false }) {
   const {
     matchReports,
     playerMap,
@@ -38,6 +38,7 @@ export default function MatchResultCenter({ teamPlayerIds = null }) {
     return [...(Array.isArray(matchReports) ? matchReports : [])]
       .filter(Boolean)
       .filter((report) => ["pending", "disputed"].includes(report.status))
+      .filter((report) => !reportId || String(report.id) === String(reportId))
       .filter((report) => {
         if (!targetIds?.length) return true;
         const reportIds = [
@@ -52,7 +53,7 @@ export default function MatchResultCenter({ teamPlayerIds = null }) {
       })
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
       .slice(0, 8);
-  }, [matchReports, teamPlayerIds]);
+  }, [matchReports, teamPlayerIds, reportId]);
 
   if (!reports.length) return null;
 
@@ -104,13 +105,15 @@ export default function MatchResultCenter({ teamPlayerIds = null }) {
 
   return (
     <section className="space-y-3" data-testid="match-result-center">
-      <div className="flex items-center justify-between gap-3 px-1">
-        <div>
-          <div className="brand-kicker mb-1">Action needed</div>
-          <h3 className="font-display text-xl font-black tracking-[-0.02em]">Pending verification</h3>
+      {!hideHeader && (
+        <div className="flex items-center justify-between gap-3 px-1">
+          <div>
+            <div className="brand-kicker mb-1">Action needed</div>
+            <h3 className="font-display text-xl font-black tracking-[-0.02em]">Pending verification</h3>
+          </div>
+          <span className="m8-pill">{reports.length}</span>
         </div>
-        <span className="m8-pill">{reports.length}</span>
-      </div>
+      )}
 
       {reports.map((report) => {
         const teamA = Array.isArray(report.team_a) ? report.team_a : [];
