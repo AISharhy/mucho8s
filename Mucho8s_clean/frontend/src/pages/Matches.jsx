@@ -13,7 +13,7 @@ import { Plus, Search, Crown, Trophy, Filter, Pencil, Trash2, WalletCards, Arrow
 import { GAMES } from "@/lib/demoData";
 import { toast } from "sonner";
 
-const TeamList = ({ ids, playerMap, eloChanges, color, mvpId }) => (
+const TeamList = ({ ids, playerMap, playerAvatars, eloChanges, mvpId }) => (
   <div className="flex-1 space-y-2">
     {ids.map((id) => {
       const p = playerMap[id];
@@ -23,7 +23,7 @@ const TeamList = ({ ids, playerMap, eloChanges, color, mvpId }) => (
 
       return (
         <div key={id} className="flex items-center gap-2.5 min-w-0">
-          <PlayerAvatar name={p.name} elo={p.currentElo} size={30} />
+          <PlayerAvatar name={p.name} elo={p.currentElo} size={30} avatarUrl={playerAvatars?.[id]} />
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold truncate flex items-center gap-1.5">
               <span className="truncate">{p.name}</span>
@@ -49,7 +49,7 @@ const TeamList = ({ ids, playerMap, eloChanges, color, mvpId }) => (
 );
 
 export default function Matches() {
-  const { matches, playerMap, deleteMatch, isAdmin } = useData();
+  const { matches, playerMap, playerAvatars, deleteMatch, isAdmin } = useData();
   const safeMatches = Array.isArray(matches) ? matches.filter(Boolean) : [];
   const safePlayerMap = playerMap && typeof playerMap === "object" ? playerMap : {};
   const [open, setOpen] = useState(false);
@@ -224,7 +224,7 @@ export default function Matches() {
                   <div className="text-xs font-black uppercase tracking-widest text-magma">Alpha</div>
                   {m.winner === "A" && <span className="text-[9px] uppercase tracking-widest text-emerald-400 font-black">Winner</span>}
                 </div>
-                <TeamList ids={Array.isArray(m.teamA) ? m.teamA : []} playerMap={safePlayerMap} eloChanges={m.eloChanges} color="#FF2A3B" mvpId={m.mvpId} />
+                <TeamList ids={Array.isArray(m.teamA) ? m.teamA : []} playerMap={safePlayerMap} playerAvatars={playerAvatars} eloChanges={m.eloChanges} mvpId={m.mvpId} />
               </div>
 
               <div className="m8-match-score flex flex-col items-center justify-center rounded-xl border border-[#222A35] bg-[#0A0D12] px-3 py-4">
@@ -246,7 +246,7 @@ export default function Matches() {
                   <div className="text-xs font-black uppercase tracking-widest text-gold">Bravo</div>
                   {m.winner === "B" && <span className="text-[9px] uppercase tracking-widest text-emerald-400 font-black">Winner</span>}
                 </div>
-                <TeamList ids={Array.isArray(m.teamB) ? m.teamB : []} playerMap={safePlayerMap} eloChanges={m.eloChanges} color="#D5A33A" mvpId={m.mvpId} />
+                <TeamList ids={Array.isArray(m.teamB) ? m.teamB : []} playerMap={safePlayerMap} playerAvatars={playerAvatars} eloChanges={m.eloChanges} mvpId={m.mvpId} />
               </div>
             </div>
 
