@@ -7,10 +7,9 @@ import { EmptyState } from "@/components/ProductState";
 import { Search, Flame, ArrowUpRight, Users } from "lucide-react";
 
 const FILTERS = [
-  { key: "all", label: "All" },
-  { key: "hot", label: "On Fire" },
-  { key: "masters", label: "Masters" },
-  { key: "veteran", label: "Veterans" },
+  { key: "all", label: "All", title: "All players" },
+  { key: "mvp", label: "🏆", title: "Players with MVP awards" },
+  { key: "merda", label: "💩", title: "Players with MERDA awards" },
 ];
 
 export default function Players() {
@@ -19,11 +18,35 @@ export default function Players() {
   const [filter, setFilter] = useState("all");
 
   const list = useMemo(() => {
-    let result = players.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()));
-    if (filter === "hot") result = result.filter((p) => p.currentStreak >= 2);
-    if (filter === "masters") result = result.filter((p) => p.currentElo >= 1350);
-    if (filter === "veteran") result = result.filter((p) => p.totalMatches >= 50);
-    return [...result].sort((a, b) => b.currentElo - a.currentElo);
+    let result = players.filter((p) =>
+      p.name.toLowerCase().includes(query.toLowerCase())
+    );
+
+    if (filter === "mvp") {
+      result = result
+        .filter((p) => Number(p.mvpCount || 0) > 0)
+        .sort(
+          (a, b) =>
+            Number(b.mvpCount || 0) - Number(a.mvpCount || 0) ||
+            Number(b.currentElo || 0) - Number(a.currentElo || 0)
+        );
+      return result;
+    }
+
+    if (filter === "merda") {
+      result = result
+        .filter((p) => Number(p.merdaCount || 0) > 0)
+        .sort(
+          (a, b) =>
+            Number(b.merdaCount || 0) - Number(a.merdaCount || 0) ||
+            Number(b.currentElo || 0) - Number(a.currentElo || 0)
+        );
+      return result;
+    }
+
+    return [...result].sort(
+      (a, b) => Number(b.currentElo || 0) - Number(a.currentElo || 0)
+    );
   }, [players, query, filter]);
 
   return (
@@ -56,8 +79,10 @@ export default function Players() {
                 key={item.key}
                 data-testid={`players-filter-${item.key}`}
                 aria-pressed={filter === item.key}
+                aria-label={item.title}
+                title={item.title}
                 onClick={() => setFilter(item.key)}
-                className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all border ${
+                className={`min-w-10 px-3 py-2 rounded-lg text-sm font-semibold transition-all border ${
                   filter === item.key
                     ? "bg-magma text-white border-magma"
                     : "bg-[#0F1218] text-[#8D95A4] hover:text-white border-[#222834]"
