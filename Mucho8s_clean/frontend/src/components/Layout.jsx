@@ -79,7 +79,7 @@ export const Layout = () => {
     dashboardData,
     loaded,
   } = useData();
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notificationsOpen, setNotificheOpen] = useState(false);
   const [onlineOpen, setOnlineOpen] = useState(false);
   const [markingAllRead, setMarkingAllRead] = useState(false);
 
@@ -87,40 +87,41 @@ export const Layout = () => {
     if (!discordAccount?.id) return [];
 
     return challenges
+      .filter((challenge) => !["admin_update", "admin_sync"].includes(String(challenge?.last_event || "")))
       .map((challenge) => {
         const isChallenger = challenge.challenger_account_id === discordAccount.id;
         const opponentId = isChallenger ? challenge.challenged_player_id : challenge.challenger_player_id;
         const opponent = playerMap[opponentId];
         const iWon = challenge.status === "completed" && challenge.reported_winner_player_id === discordPlayer?.id;
 
-        let title = "Challenge updated";
+        let title = "Sfida aggiornata";
         let tone = "neutral";
         if (challenge.last_event === "pairing_assigned") {
           title = `Money matchup vs ${opponent?.name || "player"}`;
           tone = "magma";
         } else if (challenge.status === "pending" && !isChallenger) {
-          title = `New chall from ${opponent?.name || "player"}`;
+          title = `Nuova sfida da ${opponent?.name || "player"}`;
           tone = "magma";
         } else if (challenge.last_event === "accepted") {
-          title = `${opponent?.name || "Player"} accepted the chall`;
+          title = `${opponent?.name || "Player"} ha accettato la sfida`;
           tone = "green";
         } else if (challenge.status === "result_pending") {
-          title = "Result waiting for verification";
+          title = "Risultato in attesa di verifica";
           tone = "gold";
         } else if (challenge.status === "disputed" || challenge.last_event === "payout_disputed") {
-          title = "Challenge dispute opened";
+          title = "Contestazione della sfida aperta";
           tone = "orange";
         } else if (challenge.last_event === "match_pairing_verified") {
-          title = iWon ? "Money matchup won" : "Money matchup lost";
+          title = iWon ? "Sfida vinta" : "Sfida persa";
           tone = iWon ? "green" : "red";
         } else if (challenge.status === "completed") {
-          title = iWon ? "Challenge won" : "Challenge lost";
+          title = iWon ? "Sfida vinta" : "Sfida persa";
           tone = iWon ? "green" : "red";
         } else if (challenge.last_event === "payout_sent") {
-          title = "Payout marked as sent";
+          title = "Pagamento segnato come inviato";
           tone = "gold";
         } else if (challenge.last_event === "payout_received") {
-          title = "Payout confirmed";
+          title = "Pagamento confermato";
           tone = "green";
         }
 
@@ -212,7 +213,7 @@ export const Layout = () => {
               type="button"
               onClick={() => {
                 setOnlineOpen((open) => !open);
-                setNotificationsOpen(false);
+                setNotificheOpen(false);
               }}
               aria-label={`${onlinePlayers.length} players online`}
               title="Players online"
@@ -252,11 +253,11 @@ export const Layout = () => {
               <button
                 type="button"
                 onClick={() => {
-                  setNotificationsOpen((open) => !open);
+                  setNotificheOpen((open) => !open);
                   setOnlineOpen(false);
                 }}
-                aria-label={challengeNotificationCount > 0 ? `${challengeNotificationCount} challenge notifications` : "Challenge notifications"}
-                title="Challenge notifications"
+                aria-label={challengeNotificationCount > 0 ? `${challengeNotificationCount} challenge notifications` : "Notifiche sfide"}
+                title="Notifiche sfide"
                 aria-expanded={notificationsOpen}
                 aria-controls="challenge-notifications-panel"
                 data-testid="header-challenge-bell"
@@ -360,11 +361,11 @@ export const Layout = () => {
             )}
 
             {discordPlayer && notificationsOpen && (
-                  <div id="challenge-notifications-panel" role="dialog" aria-label="Challenge notifications" className="absolute right-0 top-12 w-[min(92vw,380px)] m8-panel rounded-2xl shadow-2xl overflow-hidden z-50">
+                  <div id="challenge-notifications-panel" role="dialog" aria-label="Notifiche sfide" className="absolute right-0 top-12 w-[min(92vw,380px)] m8-panel rounded-2xl shadow-2xl overflow-hidden z-50">
                     <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#1D222C]">
                       <div>
-                        <div className="brand-kicker mb-0.5">Notifications</div>
-                        <div className="font-display font-bold">Challenge Center</div>
+                        <div className="brand-kicker mb-0.5">Notifiche</div>
+                        <div className="font-display font-bold">Centro sfide</div>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
@@ -372,15 +373,15 @@ export const Layout = () => {
                           onClick={handleMarkAllRead}
                           disabled={markingAllRead || challengeNotificationCount === 0}
                           className="h-8 px-2.5 rounded-lg bg-[#171B23] border border-[#2A303B] inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#B8C0CC] hover:text-white hover:bg-white/[0.04] disabled:opacity-40 disabled:cursor-default"
-                          aria-label="Mark all notifications as read"
+                          aria-label="Segna tutte le notifiche come lette"
                         >
                           <CheckCheck size={14} className="text-emerald-400" />
-                          <span>Mark All Read</span>
+                          <span>Segna tutte come lette</span>
                         </button>
                         <button
                           type="button"
-                          onClick={() => setNotificationsOpen(false)}
-                          aria-label="Close notifications"
+                          onClick={() => setNotificheOpen(false)}
+                          aria-label="Chiudi notifiche"
                           className="w-8 h-8 rounded-lg bg-[#171B23] border border-[#2A303B] flex items-center justify-center text-muted-foreground hover:text-white"
                         >
                           <X size={14} />
@@ -390,7 +391,7 @@ export const Layout = () => {
 
                     <div className="max-h-[420px] overflow-y-auto p-2">
                       {notifications.length === 0 ? (
-                        <div className="py-8 text-center text-sm text-muted-foreground">No challenge notifications yet.</div>
+                        <div className="py-8 text-center text-sm text-muted-foreground">Nessuna notifica di sfida.</div>
                       ) : notifications.map(({ challenge, title, opponent, tone }) => {
                         const Icon =
                           tone === "green" ? Trophy :
@@ -407,7 +408,7 @@ export const Layout = () => {
                           <Link
                             key={challenge.id}
                             to={`/challenges/${challenge.id}`}
-                            onClick={() => setNotificationsOpen(false)}
+                            onClick={() => setNotificheOpen(false)}
                             className="flex items-start gap-3 rounded-xl p-3 hover:bg-white/[0.035] transition-colors"
                           >
                             <div className={`w-9 h-9 rounded-lg border shrink-0 flex items-center justify-center ${toneClass}`}>
@@ -429,10 +430,10 @@ export const Layout = () => {
 
                     <Link
                       to="/challenges"
-                      onClick={() => setNotificationsOpen(false)}
+                      onClick={() => setNotificheOpen(false)}
                       className="h-11 border-t border-[#1D222C] flex items-center justify-center text-sm font-semibold text-[#AAB1BE] hover:text-white hover:bg-white/[0.03]"
                     >
-                      Open Challenge Inbox
+                      Apri le sfide
                     </Link>
                   </div>
             )}
