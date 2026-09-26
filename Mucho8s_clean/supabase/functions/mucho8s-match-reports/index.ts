@@ -609,7 +609,7 @@ Deno.serve(async (req: Request) => {
     if (action === "list-live") {
       const { data, error } = await supabase
         .from("live_team_matches")
-        .select("id,match_id,team_a,team_b,game,mode,format,captain_player_id,status,created_at")
+        .select("id,match_id,team_a,team_b,game,mode,format,captain_player_id,status,created_at,cancel_requested_at,cancel_requested_by_player_id")
         .eq("status", "live")
         .order("created_at", { ascending: false })
         .limit(12);
@@ -666,9 +666,61 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, liveMatch: data });
     }
 
+    if (action === "request-cancel-live") {
+      const liveId = String(body?.id || "").trim();
+      if (!liveId) return json({ error: "Live match id is required" }, 400);
+      if (!account?.player_id) {
+        return json({ error: "Login with a linked Discord account first" }, 401);
+      }
+
+      const { data: liveMatch, error: liveError } = await supabase
+        .from("live_team_matches")
+        .select("*")
+        .eq("id", liveId)
+        .maybeSingle();
+
+      if (liveError) throw liveError;
+      if (!liveMatch || liveMatch.status !== "live") {
+        return json({ error: "This live match is no longer active" }, 409);
+      }
+
+      if (String(liveMatch.captain_player_id || "") !== String(account.player_id)) {
+        return json({ error: "Only the match captain can request cancellation" }, 403);
+      }
+
+      const requestedAt = new Date().toISOString();
+      const { data, error } = await supabase
+        .from("live_team_matches")
+        .update({
+          cancel_requested_at: requestedAt,
+          cancel_requested_by_player_id: account.player_id,
+        })
+        .eq("id", liveId)
+        .eq("status", "live")
+        .select("*")
+        .single();
+
+      if (error) throw error;
+
+      await supabase.from("admin_audit_log").insert({
+        action: "match.cancel_requested",
+        entity_type: "live_match",
+        entity_id: liveId,
+        details: {
+          captain_player_id: account.player_id,
+          match_id: liveMatch.match_id,
+        },
+      });
+
+      return json({ ok: true, liveMatch: data });
+    }
+
     if (action === "cancel-live") {
       const liveId = String(body?.id || "").trim();
       if (!liveId) return json({ error: "Live match id is required" }, 400);
+      if (!isAdmin) {
+        return json({ error: "Only Admin can cancel a live match" }, 403);
+      }
 
       const { data: liveMatch, error: liveError } = await supabase
         .from("live_team_matches")
@@ -679,17 +731,30 @@ Deno.serve(async (req: Request) => {
       if (liveError) throw liveError;
       if (!liveMatch) return json({ ok: true });
 
-      if (!isAdmin && (!user?.id || liveMatch.creator_account_id !== user.id)) {
-        return json({ error: "Only the match creator or Admin can close this live match" }, 403);
-      }
-
+      const closedAt = new Date().toISOString();
       const { error } = await supabase
         .from("live_team_matches")
-        .update({ status: "cancelled", closed_at: new Date().toISOString() })
+        .update({
+          status: "cancelled",
+          closed_at: closedAt,
+          cancel_requested_at: null,
+          cancel_requested_by_player_id: null,
+        })
         .eq("id", liveId)
         .eq("status", "live");
 
       if (error) throw error;
+
+      await supabase.from("admin_audit_log").insert({
+        action: "match.cancelled",
+        entity_type: "live_match",
+        entity_id: liveId,
+        details: {
+          match_id: liveMatch.match_id,
+          requested: Boolean(liveMatch.cancel_requested_at),
+        },
+      });
+
       return json({ ok: true });
     }
 
