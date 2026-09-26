@@ -228,7 +228,7 @@ export default function Matches() {
                 )}
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-[1fr_110px_1fr] items-stretch gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 items-stretch gap-3 sm:gap-4">
               <div
                 className="rounded-xl p-4 border"
                 style={{
@@ -241,14 +241,6 @@ export default function Matches() {
                   {m.winner === "A" && <span className="text-[9px] uppercase tracking-widest text-emerald-400 font-black">Winner</span>}
                 </div>
                 <TeamList ids={Array.isArray(m.teamA) ? m.teamA : []} playerMap={safePlayerMap} playerAvatars={playerAvatars} eloChanges={m.eloChanges} mvpId={m.mvpId} />
-              </div>
-
-              <div className="m8-match-score flex flex-col items-center justify-center rounded-xl border border-[#222A35] bg-[#0A0D12] px-3 py-4">
-                <div className="text-[9px] uppercase tracking-[0.18em] text-[#596170]">Final</div>
-                <div className="font-display text-3xl font-black tracking-[-0.05em] mt-1">
-                  {Number(m.scoreA || 0)}<span className="text-[#4E5665] mx-1">-</span>{Number(m.scoreB || 0)}
-                </div>
-                <div className="text-[9px] uppercase tracking-wider text-[#697181] mt-1 text-center">{m.mode || "Match"}</div>
               </div>
 
               <div
