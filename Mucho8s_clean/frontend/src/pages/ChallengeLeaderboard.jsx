@@ -32,8 +32,8 @@ export default function ChallengeLeaderboard() {
     });
 
     seasonChallenges.forEach((challenge) => {
-      if (!challenge.payment_received_at) return;
       const amount = Number(challenge.amount_cents || 0) / 100;
+      const settled = Boolean(challenge.payment_received_at);
       const ids = [challenge.challenger_player_id, challenge.challenged_player_id];
 
       ids.forEach((id) => {
@@ -45,18 +45,27 @@ export default function ChallengeLeaderboard() {
             volume: 0,
             profit: 0,
             played: 0,
+            settled: 0,
           });
         }
 
         const row = map.get(id);
         row.played += 1;
-        row.volume += amount;
+
         if (challenge.reported_winner_player_id === id) {
           row.wins += 1;
-          row.profit += amount;
+          if (settled) {
+            row.profit += amount;
+            row.volume += amount;
+            row.settled += 1;
+          }
         } else {
           row.losses += 1;
-          row.profit -= amount;
+          if (settled) {
+            row.profit -= amount;
+            row.volume += amount;
+            row.settled += 1;
+          }
         }
       });
     });
@@ -80,7 +89,7 @@ export default function ChallengeLeaderboard() {
         <div className="brand-kicker mb-1">Competition</div>
         <h2 className="font-display text-3xl font-extrabold">Challenge Leaderboard</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          {competitionData?.current?.season_name || `Season ${currentSeason}`} · settled challs only. Profit counts only confirmed payouts.
+          {competitionData?.current?.season_name || `Season ${currentSeason}`} · W/L includes every verified chall and Money Match Pairing. € profit counts confirmed payouts only.
         </p>
       </div>
 
@@ -154,8 +163,8 @@ export default function ChallengeLeaderboard() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="card-surface rounded-2xl p-4">
           <TrendingUp size={18} className="text-emerald-400 mb-2" />
-          <div className="text-xs text-muted-foreground">Settled Chall</div>
-          <div className="font-display text-2xl font-extrabold mt-1">{seasonChallenges.filter((item) => item.payment_received_at).length}</div>
+          <div className="text-xs text-muted-foreground">Verified Chall</div>
+          <div className="font-display text-2xl font-extrabold mt-1">{seasonChallenges.length}</div>
         </div>
         <div className="card-surface rounded-2xl p-4">
           <WalletCards size={18} className="text-[#D5A33A] mb-2" />
