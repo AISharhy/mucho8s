@@ -71,6 +71,7 @@ export default function AdminPanel() {
   const [reportMatchData, setReportMatchData] = useState(null);
   const [auditLogs, setAuditLogs] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");
+  const [matchControlFilter, setMatchControlFilter] = useState("all");
   const [seasonName, setSeasonName] = useState("");
   const [seasonBusy, setSeasonBusy] = useState(false);
   const fileRef = useRef(null);
@@ -125,6 +126,62 @@ export default function AdminPanel() {
     }),
     [adminChallenges],
   );
+
+  const adminMatchRows = useMemo(() => {
+    const teamRows = (matches || []).map((match) => ({
+      type: "team",
+      id: `team:${match.id}`,
+      item: match,
+      timestamp: new Date(match?.date || 0).getTime() || 0,
+      status: "completed",
+      attention: false,
+    }));
+
+    const directRows = sortedAdminChallenges
+      .filter((challenge) =>
+        !["match_pairing", "balancer_pairing"].includes(String(challenge?.source || ""))
+      )
+      .map((challenge) => ({
+        type: "challenge",
+        id: `chall:${challenge.id}`,
+        item: challenge,
+        timestamp: new Date(
+          challenge?.result_reported_at ||
+          challenge?.verified_at ||
+          challenge?.created_at ||
+          0
+        ).getTime() || 0,
+        status: challenge?.status || "pending",
+        attention: Boolean(
+          challenge?.status === "disputed" ||
+          challenge?.status === "result_pending" ||
+          (challenge?.payout_disputed_at && !challenge?.payout_dispute_resolved_at)
+        ),
+      }));
+
+    return [...teamRows, ...directRows].sort(
+      (a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0)
+    );
+  }, [matches, sortedAdminChallenges]);
+
+  const visibleAdminMatchRows = useMemo(() => {
+    if (matchControlFilter === "active") {
+      return adminMatchRows.filter((row) =>
+        row.type === "challenge" &&
+        ["pending", "accepted", "result_pending", "disputed"].includes(row.status)
+      );
+    }
+
+    if (matchControlFilter === "attention") {
+      return adminMatchRows.filter((row) => row.attention);
+    }
+
+    if (matchControlFilter === "completed") {
+      return adminMatchRows.filter((row) => row.status === "completed");
+    }
+
+    return adminMatchRows;
+  }, [adminMatchRows, matchControlFilter]);
 
   const challengeStats = useMemo(() => {
     const active = adminChallenges.filter((challenge) =>
@@ -504,7 +561,7 @@ export default function AdminPanel() {
                 <UserPlus size={15} className="mr-2" /> Players
               </Button>
               <Button onClick={() => setActiveTab("matches")} className="m8-action h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150]">
-                <Gamepad2 size={15} className="mr-2" /> Matches
+                <Gamepad2 size={15} className="mr-2" /> Match Control
               </Button>
               <Button onClick={() => setActiveTab("competition")} className="m8-action h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150]">
                 <Trophy size={15} className="mr-2" /> Season
@@ -572,452 +629,433 @@ export default function AdminPanel() {
       )}
 
       {activeTab === "matches" && (
-        <>
-      <div className="m8-panel rounded-2xl p-5" data-testid="admin-match-management">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-          <div className="min-w-0">
-            <div className="brand-kicker mb-1">Match Control</div>
-            <h3 className="font-display font-black text-xl tracking-[-0.025em]">
-              Match Management
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Review and manage verified competitive results.
-            </p>
+        <div className="m8-panel rounded-2xl p-5" data-testid="admin-match-management">
+          <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4 mb-5">
+            <div className="min-w-0">
+              <div className="brand-kicker mb-1">Match Control</div>
+              <h3 className="font-display font-black text-xl tracking-[-0.025em]">
+                Manage Matches
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                One place for every competitive match, result, stake and dispute.
+              </p>
 
-            <div className="flex flex-wrap items-center gap-2 mt-3">
-              <span className="h-7 px-2.5 rounded-lg border border-[#2A303B] bg-[#0F1218] inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-[#C8CED8]">
-                {matches.length} Matches
-              </span>
-              <span className="h-7 px-2.5 rounded-lg border border-[#D5A33A]/25 bg-[#D5A33A]/[0.05] inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-[#D5A33A]">
-                {adminChallenges.length} Money Challs
-              </span>
+              <div className="flex flex-wrap items-center gap-2 mt-3">
+                <span className="h-7 px-2.5 rounded-lg border border-[#2A303B] bg-[#0F1218] inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-[#C8CED8]">
+                  {adminMatchRows.length} Matches
+                </span>
+                {adminMatchRows.filter((row) => row.attention).length > 0 && (
+                  <span className="h-7 px-2.5 rounded-lg border border-orange-500/25 bg-orange-500/[0.05] inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-orange-400">
+                    {adminMatchRows.filter((row) => row.attention).length} Need attention
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                variant="ghost"
+                onClick={loadAdminChallenges}
+                className="bg-[#0F1218] border border-[#222834]"
+              >
+                <RotateCcw size={14} className="mr-1.5" /> Refresh
+              </Button>
+              <Button
+                onClick={() => setHistOpen(true)}
+                className="bg-magma hover:bg-[#ff3c4c] text-white rounded-xl"
+              >
+                <History size={15} className="mr-1.5" /> New Match
+              </Button>
             </div>
           </div>
 
-          <Button
-            onClick={() => setHistOpen(true)}
-            className="bg-magma hover:bg-[#ff3c4c] text-white rounded-xl shrink-0"
-          >
-            <History size={15} className="mr-1.5" /> New Match
-          </Button>
-        </div>
-
-        <div className="space-y-2 max-h-[440px] overflow-y-auto pr-1">
-          {matches.map((match) => (
-            <div key={match.id} className="m8-panel-quiet rounded-xl p-3 flex flex-col lg:flex-row lg:items-center gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-semibold text-sm">{match.game || "Game"} · {match.mode || "Mode"}</span>
-                  <span className="text-xs px-2 py-0.5 rounded-md border border-[#2A303B] text-muted-foreground">
-                    {new Date(match.date).toLocaleString()}
-                  </span>
-                  <span className="text-xs font-bold text-emerald-400">
-                    {match.winner === "A" ? "Alpha" : "Bravo"} won
-                  </span>
-                </div>
-                <div className="text-xs text-muted-foreground mt-1 truncate">
-                  {match.teamA.map((id) => playerMap[id]?.name || "?").join(", ")} vs {match.teamB.map((id) => playerMap[id]?.name || "?").join(", ")}
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  onClick={() => setReportMatchData(match)}
-                  variant="ghost"
-                  className="h-9 px-3 bg-magma/10 border border-magma/20 text-magma hover:bg-magma/15"
-                >
-                  <Flag size={14} className="mr-1.5" /> Report
-                </Button>
-                <Button
-                  onClick={() => setEditMatchData(match)}
-                  variant="ghost"
-                  className="h-9 px-3 bg-[#151923] border border-[#2A303B] text-white"
-                >
-                  <Pencil size={14} className="mr-1.5" /> Edit
-                </Button>
-                <ConfirmButton
-                  testid={`admin-delete-match-${match.id}`}
-                  label="Delete"
-                  icon={<Trash2 size={14} className="mr-1.5" />}
-                  compact
-                  title="Delete this match?"
-                  desc="The match will be removed and player Elo/statistics will be recalculated."
-                  onConfirm={async () => {
-                    const ok = await deleteMatch(match.id);
-                    if (ok) toast.success("Match deleted");
-                  }}
-                />
-              </div>
-            </div>
-          ))}
-          {matches.length === 0 && (
-            <div className="m8-panel-quiet rounded-xl p-8 text-center text-sm text-muted-foreground">
-              No matches recorded.
-            </div>
-          )}
-        </div>
-      </div>
-
-        </>
-      )}
-
-      {activeTab === "matches" && disputedChallenges.length > 0 && (
-        <div className="m8-panel rounded-2xl p-5 border-orange-500/20" data-testid="admin-dispute-center">
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <div>
-              <div className="brand-kicker mb-1">Priority Queue</div>
-              <h3 className="font-display font-black text-lg tracking-[-0.015em]">Disputes ({disputedChallenges.length})</h3>
-              <p className="text-sm text-muted-foreground mt-1">Review contested challenge results first.</p>
-            </div>
-            <AlertTriangle size={20} className="text-orange-400" />
-          </div>
-
-          <div className="space-y-3">
-            {disputedChallenges.map((challenge) => {
-              const challenger = playerMap[challenge.challenger_player_id];
-              const challenged = playerMap[challenge.challenged_player_id];
-              const busy = challengeBusyId === challenge.id;
-              const amount = (Number(challenge.amount_cents || 0) / 100).toFixed(2);
-
-              const payoutDispute = Boolean(
-                challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at
-              );
+          <div className="flex flex-wrap gap-2 mb-4">
+            {[
+              ["all", "All"],
+              ["active", "Active"],
+              ["attention", "Attention"],
+              ["completed", "Completed"],
+            ].map(([key, label]) => {
+              const active = matchControlFilter === key;
+              const count =
+                key === "all"
+                  ? adminMatchRows.length
+                  : key === "active"
+                    ? adminMatchRows.filter((row) =>
+                        row.type === "challenge" &&
+                        ["pending", "accepted", "result_pending", "disputed"].includes(row.status)
+                      ).length
+                    : key === "attention"
+                      ? adminMatchRows.filter((row) => row.attention).length
+                      : adminMatchRows.filter((row) => row.status === "completed").length;
 
               return (
-                <div key={challenge.id} className="rounded-xl bg-orange-500/[0.04] border border-orange-500/15 p-4">
-                  <div className="flex flex-col lg:flex-row lg:items-start gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="font-display font-bold">
-                        {challenger?.name || "Unknown"} vs {challenged?.name || "Unknown"} · €{amount}
-                      </div>
-                      <div className="text-[10px] uppercase tracking-widest text-orange-400 mt-1">
-                        {payoutDispute ? "Payment dispute" : "Result dispute"}
-                      </div>
-                      <div className="text-sm text-orange-200/80 mt-1">
-                        {payoutDispute
-                          ? challenge.payout_dispute_note || "Winner reports missing payment."
-                          : challenge.dispute_note || "No dispute note supplied."}
-                      </div>
-
-                      {Array.isArray(challenge.evidence) && challenge.evidence.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {challenge.evidence.map((item) => (
-                            <a
-                              key={item.id || item.url}
-                              href={item.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="w-20 h-14 rounded-lg overflow-hidden border border-orange-500/20 bg-[#0F1218]"
-                              title="Open evidence"
-                            >
-                              <img src={item.url} alt="Evidence" className="w-full h-full object-cover" />
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      {payoutDispute ? (
-                        <>
-                          <Button
-                            disabled={busy}
-                            onClick={() => updateAdminChallenge(
-                              challenge.id,
-                              { payoutResolution: "received" },
-                              "Payout marked as received by Admin"
-                            )}
-                            className="h-10 bg-emerald-500 hover:bg-emerald-400 text-black font-bold"
-                          >
-                            <Check size={14} className="mr-1.5" /> Payment received
-                          </Button>
-                          <Button
-                            disabled={busy}
-                            onClick={() => updateAdminChallenge(
-                              challenge.id,
-                              { payoutResolution: "reopen" },
-                              "Payout reopened by Admin"
-                            )}
-                            className="h-10 bg-[#151923] border border-[#2A303B] text-white"
-                          >
-                            Reopen payout
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <Button
-                            disabled={busy}
-                            onClick={() => updateAdminChallenge(
-                              challenge.id,
-                              {
-                                winnerPlayerId: challenge.challenger_player_id,
-                                status: "completed",
-                              },
-                              `${challenger?.name || "Challenger"} set as winner`
-                            )}
-                            className="h-10 bg-emerald-500 hover:bg-emerald-400 text-black font-bold"
-                          >
-                            {challenger?.name || "Challenger"} won
-                          </Button>
-                          <Button
-                            disabled={busy}
-                            onClick={() => updateAdminChallenge(
-                              challenge.id,
-                              {
-                                winnerPlayerId: challenge.challenged_player_id,
-                                status: "completed",
-                              },
-                              `${challenged?.name || "Challenged"} set as winner`
-                            )}
-                            className="h-10 bg-emerald-500 hover:bg-emerald-400 text-black font-bold"
-                          >
-                            {challenged?.name || "Challenged"} won
-                          </Button>
-                          <Button
-                            disabled={busy}
-                            onClick={() => updateAdminChallenge(challenge.id, { status: "cancelled" }, "Challenge cancelled")}
-                            variant="ghost"
-                            className="h-10 bg-[#151923] border border-[#2A303B]"
-                          >
-                            Cancel Chall
-                          </Button>
-                        </>
-                      )}
-
-                      <Link
-                        to={`/challenges/${challenge.id}`}
-                        className="h-10 px-3 rounded-xl bg-[#151923] border border-[#2A303B] inline-flex items-center justify-center"
-                      >
-                        <ExternalLink size={14} />
-                      </Link>
-                    </div>
-                  </div>
-                </div>
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setMatchControlFilter(key)}
+                  className={`h-9 px-3 rounded-xl border text-xs font-bold transition-all ${
+                    active
+                      ? "bg-white text-black border-white"
+                      : "bg-[#0F1218] border-[#222834] text-muted-foreground hover:text-white"
+                  }`}
+                >
+                  {label}
+                  <span className={`ml-2 font-mono text-[10px] ${active ? "text-black/60" : "text-[#697181]"}`}>
+                    {count}
+                  </span>
+                </button>
               );
             })}
           </div>
-        </div>
-      )}
 
-      {activeTab === "matches" && (
-        <>
-      <div className="m8-panel rounded-2xl p-5" data-testid="admin-challenge-management">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <div>
-            <div className="brand-kicker mb-1">Challenge Control</div>
-            <h3 className="font-display font-black text-lg tracking-[-0.015em]">Manage Challenges ({adminChallenges.length})</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Control status, stake, payment verification, results and disputes.
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            onClick={loadAdminChallenges}
-            className="bg-[#0F1218] border border-[#222834]"
-          >
-            <RotateCcw size={14} className="mr-1.5" /> Refresh
-          </Button>
-        </div>
+          <div className="space-y-2 max-h-[760px] overflow-y-auto pr-1">
+            {visibleAdminMatchRows.map((row) => {
+              if (row.type === "team") {
+                const match = row.item;
+                const pairings = Array.isArray(match?.pairings) ? match.pairings : [];
+                const stake = pairings.reduce(
+                  (sum, pair) => sum + Math.max(0, Number(pair?.amount) || 0),
+                  0
+                );
+                const teamA = Array.isArray(match?.teamA) ? match.teamA : [];
+                const teamB = Array.isArray(match?.teamB) ? match.teamB : [];
 
-        <div className="space-y-3 max-h-[700px] overflow-y-auto pr-1">
-          {sortedAdminChallenges.map((challenge) => {
-            const challenger = playerMap[challenge.challenger_player_id];
-            const challenged = playerMap[challenge.challenged_player_id];
-            const draft = challengeDrafts[challenge.id] || {};
-            const busy = challengeBusyId === challenge.id;
-            const expanded = expandedChallengeId === challenge.id;
-            const amount = new Intl.NumberFormat("it-IT", {
-              style: "currency",
-              currency: challenge.currency || "EUR",
-            }).format(Number(challenge.amount_cents || 0) / 100);
-
-            const statusClass =
-              challenge.status === "completed"
-                ? "text-emerald-400 border-emerald-500/25 bg-emerald-500/5"
-                : challenge.status === "disputed"
-                  ? "text-orange-400 border-orange-500/25 bg-orange-500/5"
-                  : challenge.status === "declined" || challenge.status === "cancelled"
-                    ? "text-red-400 border-red-500/20 bg-red-500/5"
-                    : challenge.status === "accepted"
-                      ? "text-[#8E98FF] border-[#5865F2]/25 bg-[#5865F2]/5"
-                      : "text-[#D5A33A] border-[#D5A33A]/25 bg-[#D5A33A]/5";
-
-            return (
-              <div key={challenge.id} className="rounded-2xl bg-[#0F1218] border border-[#1D222C] overflow-hidden">
-                <div className="p-4 flex flex-col lg:flex-row lg:items-center gap-4">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-magma/10 border border-magma/20 flex items-center justify-center shrink-0">
-                      <Swords size={17} className="text-magma" />
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="font-display font-bold truncate">
-                        {challenger?.name || "Unknown"} <span className="text-[#596170]">vs</span> {challenged?.name || "Unknown"}
+                return (
+                  <div
+                    key={row.id}
+                    className="rounded-2xl bg-[#0F1218] border border-[#1D222C] p-4 flex flex-col lg:flex-row lg:items-center gap-4"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-magma/10 border border-magma/20 flex items-center justify-center shrink-0">
+                        <Gamepad2 size={17} className="text-magma" />
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-muted-foreground">
-                        <span>{String(challenge.platform || "").toUpperCase()}</span>
-                        <span>·</span>
-                        <span>{new Date(challenge.created_at).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center gap-2 flex-wrap lg:justify-end">
-                    <div className="h-10 px-3 rounded-xl bg-[#151923] border border-[#242A35] flex items-center">
-                      <span className="font-mono font-bold text-white">{amount}</span>
-                    </div>
-
-                    <span className={`h-10 px-3 rounded-xl border text-xs font-bold uppercase tracking-wider inline-flex items-center ${statusClass}`}>
-                      {challenge.status.replace("_", " ")}
-                    </span>
-
-                    <Button
-                      variant="ghost"
-                      onClick={() => setExpandedChallengeId(expanded ? "" : challenge.id)}
-                      className="h-10 px-4 rounded-xl bg-[#181B26] border border-[#2A303B] text-white hover:bg-white/[0.05]"
-                    >
-                      {expanded ? "Close" : "Manage"}
-                    </Button>
-                  </div>
-                </div>
-
-                {expanded && (
-                  <div className="border-t border-[#1D222C] p-4 bg-[#0C0F14]">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div>
-                        <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Stake €</Label>
-                        <div className="flex gap-2 mt-1">
-                          <Input
-                            type="number"
-                            step="0.50"
-                            min="0"
-                            value={draft.amount ?? ""}
-                            onChange={(e) => setChallengeDrafts((prev) => ({
-                              ...prev,
-                              [challenge.id]: { ...prev[challenge.id], amount: e.target.value },
-                            }))}
-                            className="h-10 bg-[#151923] border-[#2A303B]"
-                          />
-                          <Button
-                            disabled={busy}
-                            onClick={() => saveChallengeAmount(challenge)}
-                            className="h-10 px-3 bg-[#181B26] border border-[#2A303B]"
-                          >
-                            Save
-                          </Button>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-display font-bold truncate">
+                          {teamA.map((id) => playerMap[id]?.name || "?").join(" · ")}
+                          <span className="text-[#596170] mx-2">vs</span>
+                          {teamB.map((id) => playerMap[id]?.name || "?").join(" · ")}
                         </div>
-                      </div>
-
-                      <div>
-                        <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Status</Label>
-                        <select
-                          value={challenge.status}
-                          disabled={busy}
-                          onChange={(e) => updateAdminChallenge(challenge.id, { status: e.target.value })}
-                          className="mt-1 h-10 w-full rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm"
-                        >
-                          {["pending","accepted","declined","result_pending","completed","disputed","cancelled"].map((status) => (
-                            <option key={status} value={status}>{status.replace("_", " ")}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Winner</Label>
-                        <div className="flex gap-2 mt-1">
-                          <select
-                            value={draft.winnerPlayerId || ""}
-                            disabled={busy}
-                            onChange={(e) => setChallengeDrafts((prev) => ({
-                              ...prev,
-                              [challenge.id]: { ...prev[challenge.id], winnerPlayerId: e.target.value },
-                            }))}
-                            className="h-10 flex-1 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm"
-                          >
-                            <option value="">No winner</option>
-                            <option value={challenge.challenger_player_id}>{challenger?.name || "Challenger"}</option>
-                            <option value={challenge.challenged_player_id}>{challenged?.name || "Challenged"}</option>
-                          </select>
-                          <Button
-                            disabled={busy || !draft.winnerPlayerId}
-                            onClick={() => setChallengeWinner(challenge, true)}
-                            className="h-10 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold"
-                          >
-                            <Trophy size={14} className="mr-1.5" /> Complete
-                          </Button>
+                        <div className="flex flex-wrap items-center gap-2 mt-1 text-[11px] text-muted-foreground">
+                          <span>{match.game || "Game"}</span>
+                          <span>·</span>
+                          <span>{match.mode || "Mode"}</span>
+                          <span>·</span>
+                          <span>{new Date(match.date).toLocaleString()}</span>
+                          {stake > 0 && (
+                            <>
+                              <span>·</span>
+                              <span className="text-[#D5A33A]">€{stake.toFixed(2)}</span>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mt-4">
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => updateAdminChallenge(challenge.id, { paymentSent: !challenge.payment_sent_at })}
-                        className={`h-10 rounded-xl border text-xs font-semibold ${
-                          challenge.payment_sent_at
-                            ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
-                            : "bg-[#151923] border-[#2A303B] text-muted-foreground"
-                        }`}
-                      >
-                        Sent: {challenge.payment_sent_at ? "YES" : "NO"}
-                      </button>
-
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => updateAdminChallenge(challenge.id, { paymentReceived: !challenge.payment_received_at })}
-                        className={`h-10 rounded-xl border text-xs font-semibold ${
-                          challenge.payment_received_at
-                            ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
-                            : "bg-[#151923] border-[#2A303B] text-muted-foreground"
-                        }`}
-                      >
-                        Received: {challenge.payment_received_at ? "YES" : "NO"}
-                      </button>
+                    <div className="flex items-center gap-2 flex-wrap lg:justify-end">
+                      <span className="h-9 px-3 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] text-emerald-400 text-[10px] font-bold uppercase tracking-wider inline-flex items-center">
+                        {match.winner === "A" ? "Alpha" : "Bravo"} won
+                      </span>
 
                       <Button
-                        disabled={busy}
-                        onClick={() => updateAdminChallenge(challenge.id, { status: "disputed" }, "Challenge marked disputed")}
+                        onClick={() => setReportMatchData(match)}
                         variant="ghost"
-                        className="h-10 rounded-xl bg-orange-500/5 border border-orange-500/20 text-orange-400 hover:bg-orange-500/10"
+                        className="h-9 px-3 bg-magma/10 border border-magma/20 text-magma hover:bg-magma/15"
                       >
-                        <AlertTriangle size={14} className="mr-1.5" /> Dispute
+                        <Flag size={14} className="mr-1.5" /> Report
                       </Button>
-
-                      <div className="flex gap-2">
-                        <Link
-                          to={`/challenges/${challenge.id}`}
-                          className="h-10 flex-1 rounded-xl bg-[#151923] border border-[#2A303B] text-sm text-white inline-flex items-center justify-center gap-2"
-                        >
-                          Open Match <ExternalLink size={13} />
-                        </Link>
-
-                        <ConfirmButton
-                          iconOnly
-                          testid={`admin-delete-challenge-${challenge.id}`}
-                          icon={<Trash2 size={14} />}
-                          title="Delete this challenge?"
-                          desc="This permanently removes the challenge and its verification history."
-                          onConfirm={() => removeAdminChallenge(challenge.id)}
-                        />
-                      </div>
+                      <Button
+                        onClick={() => setEditMatchData(match)}
+                        variant="ghost"
+                        className="h-9 px-3 bg-[#151923] border border-[#2A303B] text-white"
+                      >
+                        <Pencil size={14} className="mr-1.5" /> Edit
+                      </Button>
+                      <ConfirmButton
+                        testid={`admin-delete-match-${match.id}`}
+                        label="Delete"
+                        icon={<Trash2 size={14} className="mr-1.5" />}
+                        compact
+                        title="Delete this match?"
+                        desc="The match will be removed and player Elo/statistics will be recalculated."
+                        onConfirm={async () => {
+                          const ok = await deleteMatch(match.id);
+                          if (ok) toast.success("Match deleted");
+                        }}
+                      />
                     </div>
                   </div>
-                )}
+                );
+              }
+
+              const challenge = row.item;
+              const challenger = playerMap[challenge.challenger_player_id];
+              const challenged = playerMap[challenge.challenged_player_id];
+              const draft = challengeDrafts[challenge.id] || {};
+              const busy = challengeBusyId === challenge.id;
+              const expanded = expandedChallengeId === challenge.id;
+              const payoutDispute = Boolean(
+                challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at
+              );
+              const amount = new Intl.NumberFormat("it-IT", {
+                style: "currency",
+                currency: challenge.currency || "EUR",
+              }).format(Number(challenge.amount_cents || 0) / 100);
+
+              const statusClass =
+                challenge.status === "completed"
+                  ? "text-emerald-400 border-emerald-500/25 bg-emerald-500/5"
+                  : challenge.status === "disputed" || payoutDispute
+                    ? "text-orange-400 border-orange-500/25 bg-orange-500/5"
+                    : challenge.status === "declined" || challenge.status === "cancelled"
+                      ? "text-red-400 border-red-500/20 bg-red-500/5"
+                      : challenge.status === "accepted"
+                        ? "text-[#8E98FF] border-[#5865F2]/25 bg-[#5865F2]/5"
+                        : "text-[#D5A33A] border-[#D5A33A]/25 bg-[#D5A33A]/5";
+
+              return (
+                <div
+                  key={row.id}
+                  className={`rounded-2xl bg-[#0F1218] border overflow-hidden ${
+                    row.attention ? "border-orange-500/20" : "border-[#1D222C]"
+                  }`}
+                >
+                  <div className="p-4 flex flex-col lg:flex-row lg:items-center gap-4">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-magma/10 border border-magma/20 flex items-center justify-center shrink-0">
+                        <Gamepad2 size={17} className="text-magma" />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="font-display font-bold truncate">
+                          {challenger?.name || "Unknown"}
+                          <span className="text-[#596170] mx-2">vs</span>
+                          {challenged?.name || "Unknown"}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mt-1 text-[11px] text-muted-foreground">
+                          <span>1v1</span>
+                          <span>·</span>
+                          <span>{new Date(challenge.created_at).toLocaleString()}</span>
+                          <span>·</span>
+                          <span className="text-[#D5A33A]">{amount}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap lg:justify-end">
+                      {row.attention && (
+                        <span className="h-9 px-3 rounded-xl border border-orange-500/20 bg-orange-500/[0.05] text-orange-400 text-[10px] font-bold uppercase tracking-wider inline-flex items-center">
+                          <AlertTriangle size={13} className="mr-1.5" /> Attention
+                        </span>
+                      )}
+
+                      <span className={`h-9 px-3 rounded-xl border text-[10px] font-bold uppercase tracking-wider inline-flex items-center ${statusClass}`}>
+                        {String(challenge.status || "pending").replace("_", " ")}
+                      </span>
+
+                      <Button
+                        variant="ghost"
+                        onClick={() => setExpandedChallengeId(expanded ? "" : challenge.id)}
+                        className="h-9 px-4 rounded-xl bg-[#181B26] border border-[#2A303B] text-white hover:bg-white/[0.05]"
+                      >
+                        {expanded ? "Close" : "Manage"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {expanded && (
+                    <div className="border-t border-[#1D222C] p-4 bg-[#0C0F14]">
+                      {(challenge.status === "disputed" || payoutDispute) && (
+                        <div className="rounded-xl border border-orange-500/20 bg-orange-500/[0.04] p-3 mb-4">
+                          <div className="text-[10px] uppercase tracking-widest text-orange-400 font-bold">
+                            {payoutDispute ? "Payment dispute" : "Result dispute"}
+                          </div>
+                          <div className="text-xs text-orange-200/80 mt-1">
+                            {payoutDispute
+                              ? challenge.payout_dispute_note || "Winner reports missing payment."
+                              : challenge.dispute_note || "No dispute note supplied."}
+                          </div>
+
+                          {Array.isArray(challenge.evidence) && challenge.evidence.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {challenge.evidence.map((item) => (
+                                <a
+                                  key={item.id || item.url}
+                                  href={item.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="w-20 h-14 rounded-lg overflow-hidden border border-orange-500/20 bg-[#0F1218]"
+                                  title="Open evidence"
+                                >
+                                  <img src={item.url} alt="Evidence" className="w-full h-full object-cover" />
+                                </a>
+                              ))}
+                            </div>
+                          )}
+
+                          {payoutDispute && (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              <Button
+                                disabled={busy}
+                                onClick={() => updateAdminChallenge(
+                                  challenge.id,
+                                  { payoutResolution: "received" },
+                                  "Payout marked as received by Admin"
+                                )}
+                                className="h-9 bg-emerald-500 hover:bg-emerald-400 text-black font-bold"
+                              >
+                                <Check size={14} className="mr-1.5" /> Payment received
+                              </Button>
+                              <Button
+                                disabled={busy}
+                                onClick={() => updateAdminChallenge(
+                                  challenge.id,
+                                  { payoutResolution: "reopen" },
+                                  "Payout reopened by Admin"
+                                )}
+                                className="h-9 bg-[#151923] border border-[#2A303B] text-white"
+                              >
+                                Reopen payout
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                          <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Stake €</Label>
+                          <div className="flex gap-2 mt-1">
+                            <Input
+                              type="number"
+                              step="0.50"
+                              min="0"
+                              value={draft.amount ?? ""}
+                              onChange={(e) => setChallengeDrafts((prev) => ({
+                                ...prev,
+                                [challenge.id]: { ...prev[challenge.id], amount: e.target.value },
+                              }))}
+                              className="h-10 bg-[#151923] border-[#2A303B]"
+                            />
+                            <Button
+                              disabled={busy}
+                              onClick={() => saveChallengeAmount(challenge)}
+                              className="h-10 px-3 bg-[#181B26] border border-[#2A303B]"
+                            >
+                              Save
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Status</Label>
+                          <select
+                            value={challenge.status}
+                            disabled={busy}
+                            onChange={(e) => updateAdminChallenge(challenge.id, { status: e.target.value })}
+                            className="mt-1 h-10 w-full rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm"
+                          >
+                            {["pending","accepted","declined","result_pending","completed","disputed","cancelled"].map((status) => (
+                              <option key={status} value={status}>{status.replace("_", " ")}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Winner</Label>
+                          <div className="flex gap-2 mt-1">
+                            <select
+                              value={draft.winnerPlayerId || ""}
+                              disabled={busy}
+                              onChange={(e) => setChallengeDrafts((prev) => ({
+                                ...prev,
+                                [challenge.id]: { ...prev[challenge.id], winnerPlayerId: e.target.value },
+                              }))}
+                              className="h-10 flex-1 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm"
+                            >
+                              <option value="">No winner</option>
+                              <option value={challenge.challenger_player_id}>{challenger?.name || "Challenger"}</option>
+                              <option value={challenge.challenged_player_id}>{challenged?.name || "Challenged"}</option>
+                            </select>
+                            <Button
+                              disabled={busy || !draft.winnerPlayerId}
+                              onClick={() => setChallengeWinner(challenge, true)}
+                              className="h-10 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold"
+                            >
+                              <Trophy size={14} className="mr-1.5" /> Complete
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mt-4">
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => updateAdminChallenge(challenge.id, { paymentSent: !challenge.payment_sent_at })}
+                          className={`h-10 rounded-xl border text-xs font-semibold ${
+                            challenge.payment_sent_at
+                              ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
+                              : "bg-[#151923] border-[#2A303B] text-muted-foreground"
+                          }`}
+                        >
+                          Sent: {challenge.payment_sent_at ? "YES" : "NO"}
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => updateAdminChallenge(challenge.id, { paymentReceived: !challenge.payment_received_at })}
+                          className={`h-10 rounded-xl border text-xs font-semibold ${
+                            challenge.payment_received_at
+                              ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
+                              : "bg-[#151923] border-[#2A303B] text-muted-foreground"
+                          }`}
+                        >
+                          Received: {challenge.payment_received_at ? "YES" : "NO"}
+                        </button>
+
+                        <Button
+                          disabled={busy}
+                          onClick={() => updateAdminChallenge(challenge.id, { status: "disputed" }, "Match marked disputed")}
+                          variant="ghost"
+                          className="h-10 rounded-xl bg-orange-500/5 border border-orange-500/20 text-orange-400 hover:bg-orange-500/10"
+                        >
+                          <AlertTriangle size={14} className="mr-1.5" /> Dispute
+                        </Button>
+
+                        <div className="flex gap-2">
+                          <Link
+                            to={`/challenges/${challenge.id}`}
+                            className="h-10 flex-1 rounded-xl bg-[#151923] border border-[#2A303B] text-sm text-white inline-flex items-center justify-center gap-2"
+                          >
+                            Open <ExternalLink size={13} />
+                          </Link>
+
+                          <ConfirmButton
+                            iconOnly
+                            testid={`admin-delete-challenge-${challenge.id}`}
+                            icon={<Trash2 size={14} />}
+                            title="Delete this match?"
+                            desc="This permanently removes the match and its verification history."
+                            onConfirm={() => removeAdminChallenge(challenge.id)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {visibleAdminMatchRows.length === 0 && (
+              <div className="m8-panel-quiet rounded-xl p-8 text-center text-sm text-muted-foreground">
+                No matches in this view.
               </div>
-            );
-          })}
-
-          {adminChallenges.length === 0 && (
-            <div className="m8-panel-quiet rounded-xl p-8 text-center text-sm text-muted-foreground">
-              No challenges yet.
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
-
-        </>
       )}
 
       {activeTab === "discord" && (
