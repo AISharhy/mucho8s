@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar } from "@/components/shared";
@@ -96,6 +96,23 @@ const money = (value) =>
     currency: "EUR",
   }).format(Number(value || 0));
 
+const liveDuration = (createdAt, now = Date.now()) => {
+  const started = new Date(createdAt || 0).getTime();
+  if (!Number.isFinite(started) || started <= 0) return "just started";
+
+  const minutes = Math.max(0, Math.floor((now - started) / 60000));
+  if (minutes < 1) return "<1m";
+  if (minutes < 60) return `${minutes}m`;
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  if (hours < 24) return `${hours}h ${String(remainingMinutes).padStart(2, "0")}m`;
+
+  const days = Math.floor(hours / 24);
+  const remainingHours = hours % 24;
+  return `${days}d ${remainingHours}h`;
+};
+
 export default function Matches() {
   const {
     matches,
@@ -122,11 +139,17 @@ export default function Matches() {
 
   const [editData, setEditData] = useState(null);
   const [reportLiveMatch, setReportLiveMatch] = useState(null);
+  const [liveNow, setLiveNow] = useState(Date.now());
   const [view, setView] = useState("live");
   const [query, setQuery] = useState("");
   const [winnerFilter, setWinnerFilter] = useState("all");
   const [gameFilter, setGameFilter] = useState("ALL");
   const [rematchBusyId, setRematchBusyId] = useState(null);
+
+  useEffect(() => {
+    const timer = setInterval(() => setLiveNow(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   const createRematch = async (match) => {
     if (!isAdmin || !match) return;
@@ -308,7 +331,7 @@ export default function Matches() {
               {names(teamA)} <span className="text-[#596170]">vs</span> {names(teamB)}
             </div>
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">
-              LIVE
+              LIVE · {liveDuration(match.created_at, liveNow)}
               {match.format ? ` · ${match.format}` : ""}
               {match.game ? ` · ${match.game}` : ""}
               {match.mode ? ` · ${match.mode}` : ""}
