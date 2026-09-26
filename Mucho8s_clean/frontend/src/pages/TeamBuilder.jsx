@@ -15,7 +15,6 @@ import {
   Check,
   Crown,
   Gamepad2,
-  MessageCircle,
   RotateCcw,
   Search,
   Swords,
@@ -60,7 +59,6 @@ export default function TeamBuilder() {
     playerAvatars,
     discordPlayer,
     isAdmin,
-    sendDiscordTeams,
   } = useData();
 
   const [game, setGame] = useState("");
@@ -255,18 +253,6 @@ export default function TeamBuilder() {
     }
 
     lockResult(draftTeamsBalanced(selectedPlayers, context.matches));
-  };
-
-  const sendCurrentTeamsToDiscord = async () => {
-    if (!result) return;
-    const ok = await sendDiscordTeams({
-      teamA: result.teamA.map((player) => player.name),
-      teamB: result.teamB.map((player) => player.name),
-      game,
-      mode: matchMode,
-      balanceScore: result.balanceScore,
-    });
-    if (ok) toast.success("Teams sent to Discord");
   };
 
   const reportPairings = result
@@ -631,20 +617,11 @@ export default function TeamBuilder() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-5">
-            {isAdmin && (
-              <Button
-                onClick={sendCurrentTeamsToDiscord}
-                className="h-11 bg-[#5865F2] hover:bg-[#6875F5] text-white font-semibold"
-              >
-                <MessageCircle size={16} className="mr-2" /> Send to Discord
-              </Button>
-            )}
-
+          <div className="mt-5">
             <Button
               onClick={() => setRecordOpen(true)}
               disabled={!canReport}
-              className={`h-11 bg-magma hover:bg-[#ff3c4c] text-white font-semibold ${isAdmin ? "" : "sm:col-span-2"}`}
+              className="w-full h-11 bg-magma hover:bg-[#ff3c4c] text-white font-semibold"
               title={canReport ? "" : "Only an assigned captain or Admin can report the result"}
             >
               <Trophy size={16} className="mr-2" /> Report Result
