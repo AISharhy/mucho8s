@@ -81,9 +81,9 @@ export default function Matches() {
         challengerPlayerId: pair.playerAId,
         challengedPlayerId: pair.playerBId,
         amount: Number(pair.amount || 0),
-        platform: ["cmg", "paypal", "revolut"].includes(String(pair.platform || "").toLowerCase())
+        platform: ["paypal", "revolut"].includes(String(pair.platform || "").toLowerCase())
           ? String(pair.platform).toLowerCase()
-          : "cmg",
+          : "paypal",
       }));
 
     if (!pairings.length) {
@@ -356,7 +356,7 @@ export default function Matches() {
                         <div className="flex items-center gap-2 mt-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
                           <span>€{Number(pair.amount || 0).toFixed(2)}</span>
                           <span>·</span>
-                          <span>{String(pair.platform || "cmg").toUpperCase()}</span>
+                          <span>{String(pair.platform || "paypal").toUpperCase()}</span>
                           <span className="ml-auto text-emerald-400">{winner?.name || "Winner"} won</span>
                         </div>
                       </div>
