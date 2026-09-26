@@ -16,6 +16,8 @@ const BASE_ELO = 1000;
 const MIN_ELO = 500;
 const WIN_DELTA = 25;
 const LOSS_DELTA = 25;
+const MVP_BONUS = 3;
+const MERDA_PENALTY = 3;
 
 const sha256 = async (value: string) => {
   const bytes = new TextEncoder().encode(value);
