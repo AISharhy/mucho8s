@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { NavLink, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Users, Gamepad2, Trophy, Shield, Menu, X, MessageCircle, LogOut, UserCircle, Bell, Medal, FlaskConical,
+  LayoutDashboard, Users, Gamepad2, Trophy, Menu, X, MessageCircle, LogOut, UserCircle, Bell, Medal, FlaskConical,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { tierOf } from "@/lib/elo";
@@ -26,12 +26,10 @@ const CHALLENGES_NAV = {
   testid: "nav-challenges-link",
 };
 
-const ADMIN_NAV = { to: "/admin", label: "Admin Panel", icon: Shield, testid: "nav-admin-link" };
 const ALL_NAV = [
   ...MAIN_NAV,
   ...COMPETITION_NAV,
   CHALLENGES_NAV,
-  ADMIN_NAV,
 ];
 
 const NavItem = ({ item, onNavigate, badge = 0 }) => {
@@ -95,7 +93,6 @@ const Brand = () => (
 const MenuContent = ({ onNavigate, mobile = false }) => {
   const {
     admin,
-    isAdmin,
     discordSession,
     discordAccount,
     discordPlayer,
@@ -132,12 +129,6 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
         )}
       </div>
 
-      {isAdmin && (
-        <div className="px-2 pb-3">
-          <div className="h-px bg-[#1C202E] mb-3" />
-          <NavItem item={ADMIN_NAV} onNavigate={onNavigate} />
-        </div>
-      )}
 
       <div className={`border-t border-[#1C202E] ${mobile ? "px-3 py-4" : "px-3 py-3"}`}>
         {discordLoading ? (
