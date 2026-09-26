@@ -41,10 +41,10 @@ const NavItem = ({ item, onNavigate, badge = 0 }) => {
       data-testid={item.testid}
       onClick={onNavigate}
       className={({ isActive }) =>
-        `group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all border-l-2 ${
+        `group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all border ${
           isActive
-            ? "bg-white/[0.045] text-white border-magma"
-            : "text-[#8D95A4] hover:text-white hover:bg-white/[0.03] border-transparent"
+            ? "bg-magma/[0.075] text-white border-magma/25 shadow-[inset_3px_0_0_#FF2A3B]"
+            : "text-[#8D95A4] hover:text-white hover:bg-white/[0.03] border-transparent hover:border-white/[0.05]"
         }`
       }
     >
@@ -73,8 +73,8 @@ const NavSection = ({ label, items, onNavigate, badges = {} }) => (
 );
 
 const Brand = () => (
-  <div className="flex items-center gap-2.5 px-4 h-[72px] border-b border-[#1D222C]">
-    <div className="w-10 h-10 rounded-xl bg-[#0B0D12] border border-[#252B36] flex items-center justify-center overflow-hidden shrink-0">
+  <div className="flex items-center gap-2.5 px-4 h-[76px] border-b border-[#1D222C]/80">
+    <div className="w-10 h-10 rounded-xl bg-[#090C11] border border-[#2B3340] flex items-center justify-center overflow-hidden shrink-0 shadow-[0_8px_24px_rgba(0,0,0,.25)]">
       <img
         src={`${process.env.PUBLIC_URL}/logo-mark.svg`}
         alt="MuchoMoney8s"
@@ -118,7 +118,7 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
             Checking Discord session...
           </div>
         ) : discordSession ? (
-          <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-2.5">
+          <div className="m8-panel-quiet rounded-xl p-2.5">
             <div className="flex items-center gap-2.5">
               {discordAccount?.avatar_url ? (
                 <img
@@ -175,7 +175,7 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
 };
 
 export const Sidebar = () => (
-  <aside className="hidden lg:flex flex-col w-56 fixed inset-y-0 left-0 bg-[#0D0F14]/95 backdrop-blur-xl border-r border-[#1D222C] z-30">
+  <aside className="hidden lg:flex flex-col w-56 fixed inset-y-0 left-0 bg-[#0B0E13]/94 backdrop-blur-2xl border-r border-[#202631] z-30 shadow-[18px_0_50px_rgba(0,0,0,.12)]">
     <Brand />
     <MenuContent />
   </aside>
@@ -205,8 +205,8 @@ export const MobileNav = () => {
       {open &&
         createPortal(
           <div className="lg:hidden fixed inset-0 z-[100]">
-            <div className="absolute inset-0 bg-black/75" onClick={() => setOpen(false)} />
-            <div className="absolute top-0 bottom-0 left-0 w-64 max-w-[86vw] bg-[#0D0F14] border-r border-[#1D222C] flex flex-col shadow-2xl">
+            <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={() => setOpen(false)} />
+            <div className="absolute top-0 bottom-0 left-0 w-64 max-w-[86vw] bg-[#0B0E13] border-r border-[#202631] flex flex-col shadow-2xl">
               <div className="relative shrink-0">
                 <Brand />
                 <button
