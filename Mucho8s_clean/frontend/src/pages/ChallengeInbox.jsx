@@ -261,11 +261,11 @@ export default function ChallengeInbox() {
                             CHALL SERIES · {roundCount} {roundCount === 1 ? "round" : "rounds"} ·{" "}
                             {series.status === "open"
                               ? Number(series.current_amount_cents || 0) === 0
-                                ? "saldo €0"
-                                : (playerMap[series.current_winner_player_id]?.name || "Player") + " +" + new Intl.NumberFormat("it-IT", { style: "currency", currency: series.currency || "EUR" }).format(Number(series.current_amount_cents || 0) / 100)
+                                ? "da regolare €0"
+                                : "da regolare " + new Intl.NumberFormat("it-IT", { style: "currency", currency: series.currency || "EUR" }).format(Number(series.current_amount_cents || 0) / 100) + " a " + (playerMap[series.current_winner_player_id]?.name || "Player")
                               : series.status === "settled"
                                 ? "chiusa"
-                                : "saldo finale " + new Intl.NumberFormat("it-IT", { style: "currency", currency: series.currency || "EUR" }).format(Number(series.settlement_amount_cents || 0) / 100)}
+                                : "pagamento finale " + new Intl.NumberFormat("it-IT", { style: "currency", currency: series.currency || "EUR" }).format(Number(series.settlement_amount_cents || 0) / 100)}
                           </>
                         ) : (
                           <>
