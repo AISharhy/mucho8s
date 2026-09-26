@@ -54,6 +54,7 @@ export default function Players() {
               <button
                 key={item.key}
                 data-testid={`players-filter-${item.key}`}
+                aria-pressed={filter === item.key}
                 onClick={() => setFilter(item.key)}
                 className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all border ${
                   filter === item.key
