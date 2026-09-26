@@ -1205,7 +1205,7 @@ export default function PlayerProfile() {
                           <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Accettata</span>
                         )}
                         {!completed && challenge.status === "result_pending" && (
-                          <span className="text-xs font-bold uppercase tracking-wider text-[#8E98FF]">Verification</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-[#8E98FF]">Da verificare</span>
                         )}
                         {!completed && challenge.status === "declined" && (
                           <span className="text-xs font-bold uppercase tracking-wider text-red-400">Rifiutata</span>
