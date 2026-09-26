@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useData } from "@/context/DataContext";
-import { PlayerAvatar, MvpBadge } from "@/components/shared";
+import { PlayerAvatar, MvpBadge, RankBadge } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, ArrowUp, ArrowDown, Download, Medal } from "lucide-react";
 import { toast } from "sonner";
