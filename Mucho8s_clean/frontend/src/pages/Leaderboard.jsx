@@ -118,7 +118,7 @@ export default function Leaderboard() {
           challPoints: chall.points,
           moneyWon: chall.moneyWon,
           moneyLost: chall.moneyLost,
-          totalPoints: Number(player.currentElo || 0) + Number(chall.points || 0),
+          totalPoints: Number(player.currentElo || 0),
         };
       }),
     [players, challStatsById]
@@ -179,7 +179,7 @@ export default function Leaderboard() {
       "Rank",
       "Name",
       "Total Points",
-      "Base Elo",
+      "General Elo",
       "Match Record",
       "Chall Record",
       "Chall Points",
@@ -233,7 +233,7 @@ export default function Leaderboard() {
             </h3>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Match Elo + Money Chall points. Every €1 won adds 1 point; every €1 lost removes 1 point.
+            General Elo includes Money Chall results: every €1 won adds 1 Elo point and every €1 lost removes 1.
           </p>
         </div>
 
