@@ -126,8 +126,10 @@ export default function RankGuide() {
           </RuleCard>
 
           <RuleCard icon={Trophy} title="MVP 🏆" accent="text-[#D5A33A]">
-            L'MVP vale <strong className="text-white">+3 Elo</strong> aggiuntivi.
-            Esempio: vittoria con valore 5 e MVP = <strong className="text-white">+33 Elo</strong>.
+            L'MVP non si sceglie manualmente: viene assegnato automaticamente ogni
+            <strong className="text-white"> 4 vittorie consecutive</strong> e vale
+            <strong className="text-white"> +3 Elo</strong>. Se continui la serie, lo ricevi di nuovo
+            alla 8ª, 12ª, 16ª vittoria consecutiva e così via.
           </RuleCard>
 
           <RuleCard icon={Flame} title="MERDA 💩" accent="text-[#C79A6B]">
@@ -172,7 +174,7 @@ export default function RankGuide() {
                 <span className="text-xs text-muted-foreground">sconfitta</span>
               </div>
               <div className="text-[10px] text-muted-foreground mt-3">
-                Con MVP aggiungi altri +3 Elo.
+                Se questa è la 4ª, 8ª, 12ª… vittoria consecutiva, aggiungi +3 Elo MVP.
               </div>
             </div>
           ))}
@@ -293,8 +295,9 @@ export default function RankGuide() {
         <div className="brand-kicker mb-1">In sintesi</div>
         <h2 className="font-display text-xl font-black">Come salire</h2>
         <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-          Vinci partite verificate, mantieni serie positive e prova a conquistare l'MVP.
-          Il valore virtuale della sfida aumenta allo stesso modo sia il guadagno sia la perdita.
+          Vinci partite verificate e costruisci serie positive: ogni blocco di 4 vittorie consecutive
+          ti assegna automaticamente un MVP e +3 Elo. Il valore virtuale della sfida aumenta allo stesso
+          modo sia il guadagno sia la perdita.
           La MERDA è invece un indicatore di serie negativa e non modifica l'Elo.
         </p>
       </section>
