@@ -47,6 +47,7 @@ class PageErrorBoundary extends Component {
 
 const TITLES = {
   "/": "Dashboard",
+  "/play": "Play",
   "/players": "Players",
   "/team-builder": "Team Builder",
   "/balancer": "Team Builder",
