@@ -38,6 +38,7 @@ export default function Ranking({ initialTab = "leaderboard" }) {
             type="button"
             onClick={() => setSection("ranking")}
             data-testid="ranking-section-ranking"
+            aria-pressed={section === "ranking"}
             className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
               section === "ranking"
                 ? "bg-white text-black"
@@ -51,6 +52,7 @@ export default function Ranking({ initialTab = "leaderboard" }) {
             type="button"
             onClick={() => setSection("seasons")}
             data-testid="ranking-section-seasons"
+            aria-pressed={section === "seasons"}
             className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
               section === "seasons"
                 ? "bg-white text-black"
@@ -71,6 +73,7 @@ export default function Ranking({ initialTab = "leaderboard" }) {
               type="button"
               onClick={() => setRankingView("overall")}
               data-testid="ranking-view-overall"
+              aria-pressed={rankingView === "overall"}
               className={`relative px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 rankingView === "overall"
                   ? "bg-white text-black"
@@ -84,6 +87,7 @@ export default function Ranking({ initialTab = "leaderboard" }) {
               type="button"
               onClick={() => setRankingView("challs")}
               data-testid="ranking-view-challs"
+              aria-pressed={rankingView === "challs"}
               className={`relative px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 rankingView === "challs"
                   ? "bg-white text-black"
