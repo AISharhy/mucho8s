@@ -1375,7 +1375,6 @@ export const DataProvider = ({ children }) => {
     if (!p) return false;
     const elo = Math.max(MIN_ELO, Math.round(Number(currentElo) || BASE_ELO));
     p.currentElo = elo;
-    p.role = cleanRole;
     p.peakElo = Math.max(p.peakElo, elo);
     p.eloHistory = [...(p.eloHistory || []), { match: p.eloHistory?.length || 0, elo }];
     return persistWholeState(next, matches);
@@ -1411,6 +1410,7 @@ export const DataProvider = ({ children }) => {
     if (!p) return false;
     p.name = cleanName;
     p.currentElo = elo;
+    p.role = cleanRole;
     p.peakElo = Math.max(p.peakElo, elo);
     p.eloHistory = [...(p.eloHistory || []), { match: p.eloHistory?.length || 0, elo }];
     const ok = await persistWholeState(next, matches);
