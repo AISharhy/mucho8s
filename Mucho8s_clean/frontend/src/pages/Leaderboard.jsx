@@ -61,16 +61,17 @@ export default function Leaderboard() {
   const movementById = useMemo(() => {
     if (game !== "ALL") return new Map();
 
-    const previousOrder = [...players].sort((a, b) => {
-      const historyA = Array.isArray(a.eloHistory) ? a.eloHistory : [];
-      const historyB = Array.isArray(b.eloHistory) ? b.eloHistory : [];
-      const previousA = historyA.length >= 2
-        ? Number(historyA[historyA.length - 2]?.elo ?? a.currentElo ?? 0)
-        : Number(a.currentElo || 0);
-      const previousB = historyB.length >= 2
-        ? Number(historyB[historyB.length - 2]?.elo ?? b.currentElo ?? 0)
-        : Number(b.currentElo || 0);
+    const latestMatch = [...(Array.isArray(matches) ? matches : [])]
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))[0];
 
+    if (!latestMatch?.eloChanges || typeof latestMatch.eloChanges !== "object") {
+      return new Map(rankingOrder.map((player) => [player.id, 0]));
+    }
+
+    const previousOrder = [...players].sort((a, b) => {
+      const previousA = Number(a.currentElo || 0) - Number(latestMatch.eloChanges?.[a.id] || 0);
+      const previousB = Number(b.currentElo || 0) - Number(latestMatch.eloChanges?.[b.id] || 0);
       return previousB - previousA || String(a.name || "").localeCompare(String(b.name || ""));
     });
 
@@ -85,7 +86,7 @@ export default function Leaderboard() {
         return [player.id, previousRank - currentRank];
       })
     );
-  }, [game, players, rankingOrder]);
+  }, [game, matches, players, rankingOrder]);
 
   const podium = useMemo(
     () => rankingOrder.slice(0, 3),
