@@ -1037,20 +1037,24 @@ export default function Matches() {
                 teamB: Array.isArray(reportLiveMatch.team_b)
                   ? reportLiveMatch.team_b
                   : [],
-                pairings: (
-                  Array.isArray(reportLiveMatch.team_a)
-                    ? reportLiveMatch.team_a
-                    : []
-                ).map((playerAId, index) => ({
-                  playerAId,
-                  playerBId: (
-                    Array.isArray(reportLiveMatch.team_b)
-                      ? reportLiveMatch.team_b
-                      : []
-                  )[index] || "",
-                  amount: 5,
-                  platform: "paypal",
-                })),
+                pairings:
+                  Array.isArray(reportLiveMatch.pairings) &&
+                  reportLiveMatch.pairings.length > 0
+                    ? reportLiveMatch.pairings
+                    : (
+                        Array.isArray(reportLiveMatch.team_a)
+                          ? reportLiveMatch.team_a
+                          : []
+                      ).map((playerAId, index) => ({
+                        playerAId,
+                        playerBId: (
+                          Array.isArray(reportLiveMatch.team_b)
+                            ? reportLiveMatch.team_b
+                            : []
+                        )[index] || "",
+                        amount: 5,
+                        platform: "paypal",
+                      })),
               }
             : null
         }
