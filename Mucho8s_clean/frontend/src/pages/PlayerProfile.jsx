@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { winRate, tierOf } from "@/lib/elo";
 import { duoChemistry } from "@/lib/chemistry";
+import { analyzeBountyHistory, buildBountyAchievementCatalog } from "@/lib/bountyAchievements";
 import { PlayerAvatar, EloBadge, Last10, StreakBadge, MvpBadge, RankBadge, RankProgress } from "@/components/shared";
 import { RankEmblem } from "@/components/RankGuide";
 import { Input } from "@/components/ui/input";
@@ -152,6 +153,21 @@ export default function PlayerProfile() {
       matchPairings: completed.filter((challenge) => challenge.source === "match_pairing").length,
     };
   }, [publicChallenges, id]);
+
+  const bountyHistory = useMemo(
+    () => analyzeBountyHistory(id, players, matches),
+    [id, players, matches]
+  );
+
+  const bountyAchievements = useMemo(
+    () => buildBountyAchievementCatalog(bountyHistory),
+    [bountyHistory]
+  );
+
+  const unlockedBountyAchievements = useMemo(
+    () => bountyAchievements.filter((achievement) => achievement.unlocked),
+    [bountyAchievements]
+  );
 
   const challengeInsights = useMemo(() => {
     const completed = challengeStats.completed.filter(
@@ -320,6 +336,19 @@ export default function PlayerProfile() {
       });
     }
 
+    bountyHistory.events
+      .filter((event) => ["duo_breaker", "streak_breaker", "underdog"].includes(event.type))
+      .slice(0, 2)
+      .forEach((event) => {
+        trophies.push({
+          id: `bounty:${event.id}`,
+          type: "bounty",
+          title: event.title,
+          detail: `${event.detail} · +${event.points} Bounty Points`,
+          date: event.date,
+        });
+      });
+
     playerMatches
       .filter((match) => match.mvpId === player.id)
       .slice(0, 6)
@@ -334,7 +363,7 @@ export default function PlayerProfile() {
       });
 
     return trophies.slice(0, 8);
-  }, [player, playerMatches, bestDuo, challengeStats.wins]);
+  }, [player, playerMatches, bestDuo, challengeStats.wins, bountyHistory.events]);
 
   if (!player) {
     return (
@@ -353,6 +382,7 @@ export default function PlayerProfile() {
     { label: "Win Rate", value: `${winRate(player)}%`, icon: Target },
     { label: "Wins", value: player.wins },
     { label: "Chall Points", value: `${challengeStats.points > 0 ? "+" : ""}${challengeStats.points}`, icon: Coins },
+    { label: "Bounty Points", value: bountyHistory.points, icon: Target },
     { label: "Losses", value: player.losses },
     { label: "MVP", value: player.mvpCount, icon: Crown },
   ];
@@ -701,6 +731,115 @@ export default function PlayerProfile() {
         </div>
       </div>
 
+      <div className="card-surface rounded-2xl p-4 sm:p-5" data-testid="bounty-achievements">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-5">
+          <div>
+            <div className="brand-kicker mb-1">Match Bounties</div>
+            <h3 className="font-display font-bold text-xl">Bounty Achievements</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Special achievements earned by breaking streaks, undefeated duos, underdog matchups and rivalries.
+            </p>
+          </div>
+
+          <div className="flex gap-2 shrink-0">
+            <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] px-4 py-2 text-center">
+              <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Unlocked</div>
+              <div className="font-mono font-bold text-[#D5A33A] mt-0.5">
+                {unlockedBountyAchievements.length}/{bountyAchievements.length}
+              </div>
+            </div>
+            <div className="rounded-xl bg-[#D5A33A]/[0.06] border border-[#D5A33A]/20 px-4 py-2 text-center">
+              <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Bounty Points</div>
+              <div className="font-mono font-bold text-[#D5A33A] mt-0.5">{bountyHistory.points}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+          {bountyAchievements.map((achievement) => {
+            const progressPct = achievement.target
+              ? Math.min(100, Math.round((achievement.progress / achievement.target) * 100))
+              : 0;
+
+            return (
+              <div
+                key={achievement.key}
+                className={`rounded-xl border p-3 transition-all ${
+                  achievement.unlocked
+                    ? "bg-[#D5A33A]/[0.06] border-[#D5A33A]/25"
+                    : "bg-[#0F1218] border-[#1D222C]"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                    achievement.unlocked
+                      ? "bg-[#D5A33A]/10 text-[#D5A33A]"
+                      : "bg-white/[0.03] text-[#596170]"
+                  }`}>
+                    {achievement.category === "Duo"
+                      ? <UsersRound size={16} />
+                      : achievement.category === "Streak"
+                        ? <Flame size={16} />
+                        : achievement.category === "Upset"
+                          ? <Rocket size={16} />
+                          : achievement.category === "Rivalry"
+                            ? <Swords size={16} />
+                            : achievement.category === "Points"
+                              ? <Coins size={16} />
+                              : <Target size={16} />}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="font-bold text-sm truncate">{achievement.label}</div>
+                      {achievement.unlocked && <BadgeCheck size={14} className="text-emerald-400 shrink-0" />}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">{achievement.detail}</div>
+                  </div>
+                </div>
+
+                <div className="mt-3">
+                  <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-muted-foreground mb-1.5">
+                    <span>{achievement.category}</span>
+                    <span>{achievement.progress}/{achievement.target}</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-[#1D222C] overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${
+                        achievement.unlocked ? "bg-[#D5A33A]" : "bg-[#596170]"
+                      }`}
+                      style={{ width: `${progressPct}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {bountyHistory.events.length > 0 && (
+          <div className="mt-5 pt-5 border-t border-[#1D222C]">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3">Latest completed bounties</div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
+              {bountyHistory.events.slice(0, 3).map((event) => (
+                <div key={event.id} className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="font-semibold text-sm">{event.title}</div>
+                    <div className="font-mono text-xs font-bold text-[#D5A33A]">+{event.points}</div>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">{event.detail}</div>
+                  {event.date && (
+                    <div className="text-[9px] uppercase tracking-widest text-[#596170] mt-2">
+                      {new Date(event.date).toLocaleDateString()}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="card-surface rounded-2xl p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
@@ -781,7 +920,9 @@ export default function PlayerProfile() {
                     ? Flame
                     : trophy.type === "chall"
                       ? Swords
-                      : Crown;
+                      : trophy.type === "bounty"
+                        ? Target
+                        : Crown;
 
               return (
                 <div
