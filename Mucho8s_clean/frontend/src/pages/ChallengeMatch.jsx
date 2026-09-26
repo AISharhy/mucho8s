@@ -552,17 +552,6 @@ export default function ChallengeMatch() {
 
       {challenge.status === "completed" && (
         <>
-          {challenge.series_id && (
-            <ChallengeSeriesCard
-              challenge={challenge}
-              series={series}
-              playerMap={playerMap}
-              busy={busy}
-              onRechallenge={rechallenge}
-              onClose={closeSeries}
-            />
-          )}
-
           <div className="m8-panel rounded-2xl p-5" data-testid="simple-payout-panel">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -683,6 +672,17 @@ export default function ChallengeMatch() {
               </div>
             )}
           </div>
+
+          {challenge.series_id && (
+            <ChallengeSeriesCard
+              challenge={challenge}
+              series={series}
+              playerMap={playerMap}
+              busy={busy}
+              onRechallenge={rechallenge}
+              onClose={closeSeries}
+            />
+          )}
         </>
       )}
 
