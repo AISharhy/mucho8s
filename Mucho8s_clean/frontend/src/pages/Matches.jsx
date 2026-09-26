@@ -5,7 +5,14 @@ import { PlayerAvatar } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RecordMatchDialog } from "@/components/RecordMatchDialog";
+import MatchResultCenter from "@/components/MatchResultCenter";
 import { EmptyState } from "@/components/ProductState";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -139,6 +146,7 @@ export default function Matches() {
 
   const [editData, setEditData] = useState(null);
   const [reportLiveMatch, setReportLiveMatch] = useState(null);
+  const [verificationReportId, setVerificationReportId] = useState("");
   const [liveNow, setLiveNow] = useState(Date.now());
   const [view, setView] = useState("live");
   const [query, setQuery] = useState("");
@@ -401,10 +409,11 @@ export default function Matches() {
       ids.map((id) => safePlayerMap[id]?.name || "Player").join(" · ");
 
     return (
-      <Link
+      <button
+        type="button"
         key={`live-report-${report.id}`}
-        to="/team-builder"
-        className="m8-panel rounded-2xl p-4 flex items-center gap-4 hover:border-[#394150] transition-all"
+        onClick={() => setVerificationReportId(String(report.id))}
+        className="m8-panel w-full rounded-2xl p-4 flex items-center gap-4 hover:border-[#394150] transition-all text-left"
       >
         <Gamepad2 size={18} className="text-magma shrink-0" />
         <div className="min-w-0 flex-1">
@@ -417,8 +426,8 @@ export default function Matches() {
             {report.mode ? ` · ${report.mode}` : ""}
           </div>
         </div>
-        <div className="text-[10px] text-muted-foreground shrink-0">OPEN</div>
-      </Link>
+        <div className="text-[10px] text-muted-foreground shrink-0">OPEN REPORT</div>
+      </button>
     );
   };
 
@@ -914,6 +923,21 @@ export default function Matches() {
           )}
         </div>
       )}
+
+      <Dialog
+        open={Boolean(verificationReportId)}
+        onOpenChange={(open) => !open && setVerificationReportId("")}
+      >
+        <DialogContent className="bg-[#101319] border-[#242A35] max-w-3xl rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl">Match Verification</DialogTitle>
+          </DialogHeader>
+          <MatchResultCenter
+            reportId={verificationReportId}
+            hideHeader
+          />
+        </DialogContent>
+      </Dialog>
 
       <RecordMatchDialog
         open={!!reportLiveMatch}
