@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { load, save, uid } from "@/lib/storage";
-import { BASE_ELO, MIN_ELO, WIN_DELTA, LOSS_DELTA } from "@/lib/elo";
+import { BASE_ELO, MIN_ELO, WIN_DELTA, LOSS_DELTA, MVP_BONUS, MERDA_PENALTY } from "@/lib/elo";
 import { toast } from "sonner";
 import { supabaseAuth, hasSupabaseAuth } from "@/lib/supabaseClient";
 
@@ -75,6 +75,7 @@ const normalizeMatch = (m) => ({
     ? m.merdaIds.filter(Boolean)
     : (m?.merdaId ? [m.merdaId] : []),
   merdaId: m?.merdaId || (Array.isArray(m?.merdaIds) ? m.merdaIds[0] : undefined),
+  merdaClearedIds: Array.isArray(m?.merdaClearedIds) ? m.merdaClearedIds.filter(Boolean) : [],
   map: m?.map || "",
   mode: m?.mode || "",
   game: m?.game || "",
@@ -127,16 +128,28 @@ const automaticMerdaIds = (byId, losers) =>
     return nextLossStreak >= 4 && nextLossStreak % 4 === 0;
   });
 
-const applyEffects = (byId, teamA, teamB, winner, mvpId, merdaIds = []) => {
+const automaticMerdaClearedIds = (byId, winners) =>
+  winners.filter((pid) => {
+    const player = byId[pid];
+    if (!player || Number(player.merdaCount || 0) <= 0) return false;
+    const current = Number(player.currentStreak || 0);
+    const nextWinStreak = current > 0 ? current + 1 : 1;
+    return nextWinStreak >= 4 && nextWinStreak % 4 === 0;
+  });
+
+const applyEffects = (byId, teamA, teamB, winner, mvpId, merdaIds = [], merdaClearedIds = []) => {
   const winners = winner === "A" ? teamA : teamB;
   const merdaSet = new Set(merdaIds || []);
+  const clearedSet = new Set(merdaClearedIds || []);
   const changes = {};
 
   [...teamA, ...teamB].forEach((pid) => {
     const p = byId[pid];
     if (!p) return;
     const won = winners.includes(pid);
-    const delta = won ? WIN_DELTA : -LOSS_DELTA;
+    let delta = won ? WIN_DELTA : -LOSS_DELTA;
+    if (pid === mvpId) delta += MVP_BONUS;
+    if (merdaSet.has(pid)) delta -= MERDA_PENALTY;
 
     const nextElo = Math.max(MIN_ELO, p.currentElo + delta);
     p.currentElo = nextElo;
@@ -146,6 +159,7 @@ const applyEffects = (byId, teamA, teamB, winner, mvpId, merdaIds = []) => {
     else p.losses += 1;
     if (pid === mvpId) p.mvpCount += 1;
     if (merdaSet.has(pid)) p.merdaCount = Math.max(0, Number(p.merdaCount || 0)) + 1;
+    if (clearedSet.has(pid)) p.merdaCount = Math.max(0, Number(p.merdaCount || 0) - 1);
     p.eloHistory = [...(p.eloHistory || []), { match: p.totalMatches, elo: nextElo }];
     changes[pid] = delta;
   });
@@ -168,6 +182,8 @@ const revertEffects = (byId, match) => {
       ? match.merdaIds
       : (match.merdaId ? [match.merdaId] : []);
     if (merdaIds.includes(pid)) p.merdaCount = Math.max(0, Number(p.merdaCount || 0) - 1);
+    const merdaClearedIds = Array.isArray(match.merdaClearedIds) ? match.merdaClearedIds : [];
+    if (merdaClearedIds.includes(pid)) p.merdaCount = Math.max(0, Number(p.merdaCount || 0) + 1);
     if ((p.eloHistory || []).length > 1) p.eloHistory = p.eloHistory.slice(0, -1);
   });
 };
@@ -1609,13 +1625,16 @@ export const DataProvider = ({ children }) => {
     const byId = Object.fromEntries(nextPlayers.map((p) => [p.id, p]));
     const teamA = [...(data.teamA || [])];
     const teamB = [...(data.teamB || [])];
+    const winners = data.winner === "A" ? teamA : teamB;
     const losers = data.winner === "A" ? teamB : teamA;
     const merdaIds = automaticMerdaIds(byId, losers);
-    const eloChanges = applyEffects(byId, teamA, teamB, data.winner, data.mvpId, merdaIds);
+    const merdaClearedIds = automaticMerdaClearedIds(byId, winners);
+    const eloChanges = applyEffects(byId, teamA, teamB, data.winner, data.mvpId, merdaIds, merdaClearedIds);
     const match = normalizeMatch({
       ...data,
       merdaIds,
       merdaId: merdaIds[0] || undefined,
+      merdaClearedIds,
       id: uid(),
       date: data.date || new Date().toISOString(),
       season: data.season || competitionData?.current?.season_number || dashboardData?.competition?.season_number || 1,
@@ -1672,11 +1691,14 @@ export const DataProvider = ({ children }) => {
       id,
       date: data.date || old.date,
     });
+    const winners = nextMatch.winner === "A" ? teamA : teamB;
     const losers = nextMatch.winner === "A" ? teamB : teamA;
     const merdaIds = automaticMerdaIds(byId, losers);
+    const merdaClearedIds = automaticMerdaClearedIds(byId, winners);
     nextMatch.merdaIds = merdaIds;
     nextMatch.merdaId = merdaIds[0] || undefined;
-    nextMatch.eloChanges = applyEffects(byId, teamA, teamB, nextMatch.winner, nextMatch.mvpId, merdaIds);
+    nextMatch.merdaClearedIds = merdaClearedIds;
+    nextMatch.eloChanges = applyEffects(byId, teamA, teamB, nextMatch.winner, nextMatch.mvpId, merdaIds, merdaClearedIds);
 
     const nextMatches = matches.map((m) => (m.id === id ? nextMatch : m));
     recomputeRecent(byId, nextMatches, new Set([...old.teamA, ...old.teamB, ...teamA, ...teamB]));
