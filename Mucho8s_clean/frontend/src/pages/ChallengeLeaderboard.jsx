@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar, RankBadge } from "@/components/shared";
-import { Trophy, TrendingUp, WalletCards } from "lucide-react";
+import { Trophy, TrendingUp, WalletCards, Swords } from "lucide-react";
 
 const euro = (value) =>
   new Intl.NumberFormat("it-IT", {
@@ -162,11 +162,18 @@ export default function ChallengeLeaderboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="card-surface rounded-2xl p-4">
           <TrendingUp size={18} className="text-emerald-400 mb-2" />
           <div className="text-xs text-muted-foreground">Verified Chall</div>
           <div className="font-display text-2xl font-extrabold mt-1">{seasonChallenges.length}</div>
+        </div>
+        <div className="card-surface rounded-2xl p-4">
+          <Swords size={18} className="text-magma mb-2" />
+          <div className="text-xs text-muted-foreground">Money Match Pairings</div>
+          <div className="font-display text-2xl font-extrabold mt-1">
+            {seasonChallenges.filter((item) => item.source === "match_pairing").length}
+          </div>
         </div>
         <div className="card-surface rounded-2xl p-4">
           <WalletCards size={18} className="text-[#D5A33A] mb-2" />
