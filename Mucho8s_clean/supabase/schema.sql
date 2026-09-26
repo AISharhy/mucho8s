@@ -149,6 +149,30 @@ alter table public.player_presence enable row level security;
 revoke all on table public.player_presence from anon, authenticated;
 
 
+-- Discord player allowlist for automatic Admin access.
+create table if not exists public.admin_access (
+  player_id text primary key,
+  username text not null unique,
+  display_name text not null,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.admin_access enable row level security;
+revoke all on table public.admin_access from anon, authenticated;
+
+insert into public.admin_access (player_id, username, display_name, is_active)
+values
+  ('e9892a93-551f-441b-9122-91336f193075', 'sharhy', 'Sharhy', true),
+  ('37317bcc-1cf9-4410-8934-ec82f9b68ec4', 'sysma', 'SysMa', true)
+on conflict (player_id) do update set
+  username = excluded.username,
+  display_name = excluded.display_name,
+  is_active = true,
+  updated_at = now();
+
+
 -- Server-side Admin authentication.
 create table if not exists public.admin_credentials (
   username text primary key,
