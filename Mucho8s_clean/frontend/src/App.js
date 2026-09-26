@@ -1,6 +1,6 @@
 import "@/App.css";
 import React, { useEffect, useState } from "react";
-import { HashRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route, Link } from "react-router-dom";
 import { DataProvider } from "@/context/DataContext";
 import { Layout } from "@/components/Layout";
 import { Toaster } from "@/components/ui/sonner";
@@ -40,9 +40,28 @@ function IntroSplash({ onDone }) {
   );
 }
 
+function NotFound() {
+  return (
+    <section className="m8-panel rounded-[22px] min-h-[360px] p-8 flex flex-col items-center justify-center text-center">
+      <div className="brand-kicker mb-2">404</div>
+      <h2 className="font-display text-3xl font-black tracking-[-0.035em]">Page not found</h2>
+      <p className="text-sm text-muted-foreground mt-2 max-w-md">
+        This MuchoMoney8s page does not exist or the link is no longer valid.
+      </p>
+      <Link
+        to="/"
+        className="m8-action m8-action-primary mt-6 h-11 px-5 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-bold inline-flex items-center justify-center"
+      >
+        Back to Dashboard
+      </Link>
+    </section>
+  );
+}
+
 function App() {
   const [showIntro, setShowIntro] = useState(() => {
     try {
+      if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return false;
       return sessionStorage.getItem("mucho8s_intro_seen") !== "1";
     } catch {
       return true;
@@ -79,6 +98,7 @@ function App() {
               <Route path="admin" element={<AdminPanel />} />
               <Route path="challenges" element={<ChallengeInbox />} />
               <Route path="challenges/:id" element={<ChallengeMatch />} />
+              <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
           <Toaster position="top-right" theme="dark" richColors />
