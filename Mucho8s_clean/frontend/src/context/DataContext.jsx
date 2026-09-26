@@ -175,6 +175,7 @@ export const DataProvider = ({ children }) => {
     }
   });
   const [adminValidated, setAdminValidated] = useState(false);
+  const [adminAuthLoading, setAdminAuthLoading] = useState(true);
   const [discordSession, setDiscordSession] = useState(null);
   const [discordAccount, setDiscordAccount] = useState(null);
   const [discordLoading, setDiscordLoading] = useState(hasSupabaseAuth);
@@ -1199,7 +1200,10 @@ export const DataProvider = ({ children }) => {
   }, [admin, discordSession]);
 
   useEffect(() => {
-    if (discordLoading) return undefined;
+    if (discordLoading) {
+      setAdminAuthLoading(true);
+      return undefined;
+    }
 
     if (!discordSession?.access_token) {
       if (admin?.sessionToken) {
@@ -1207,16 +1211,25 @@ export const DataProvider = ({ children }) => {
         setAdminValidated(false);
         setAdminState(null);
       }
+      setAdminAuthLoading(false);
       return undefined;
     }
 
     if (admin?.sessionToken) return undefined;
 
     let active = true;
+    setAdminAuthLoading(true);
 
     const autoLogin = async () => {
       const data = await adminAuthRequest({ action: "auto-login" }, { silent: true });
-      if (!active || !data?.ok || !data?.sessionToken) return;
+      if (!active) return;
+
+      if (!data?.ok || !data?.sessionToken) {
+        setAdminValidated(false);
+        setAdminState(null);
+        setAdminAuthLoading(false);
+        return;
+      }
 
       const next = {
         nickname: data.nickname || "Admin",
@@ -1228,6 +1241,7 @@ export const DataProvider = ({ children }) => {
       sessionStorage.setItem("mucho8s_admin_session", JSON.stringify(next));
       setAdminState(next);
       setAdminValidated(true);
+      setAdminAuthLoading(false);
     };
 
     void autoLogin();
@@ -1239,26 +1253,36 @@ export const DataProvider = ({ children }) => {
   useEffect(() => {
     if (!admin?.sessionToken) {
       setAdminValidated(false);
+      if (!discordLoading && !discordSession?.access_token) setAdminAuthLoading(false);
       return undefined;
     }
 
-    setAdminValidated(false);
+    let active = true;
+    setAdminAuthLoading(true);
 
     const verify = async () => {
       const data = await adminAuthRequest({ action: "status" }, { silent: true });
+      if (!active) return;
+
       if (!data?.ok) {
         sessionStorage.removeItem("mucho8s_admin_session");
         setAdminValidated(false);
         setAdminState(null);
+        setAdminAuthLoading(false);
         return;
       }
+
       setAdminValidated(true);
+      setAdminAuthLoading(false);
     };
 
     void verify();
     const timer = setInterval(verify, 5 * 60 * 1000);
-    return () => clearInterval(timer);
-  }, [admin?.sessionToken, adminAuthRequest]);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [admin?.sessionToken, adminAuthRequest, discordLoading, discordSession?.access_token]);
 
   const setAdmin = useCallback(async (nickname, password) => {
     if (nickname === null) {
@@ -1562,6 +1586,7 @@ export const DataProvider = ({ children }) => {
     playerMap,
     admin,
     isAdmin,
+    adminAuthLoading,
     loaded,
     storageMode: STORAGE_MODE,
     discordSession,
