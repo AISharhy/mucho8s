@@ -183,6 +183,22 @@ export default function AdminPanel() {
     return adminMatchRows;
   }, [adminMatchRows, matchControlFilter]);
 
+  const paymentLinkStats = useMemo(() => {
+    const stats = { paypal: 0, revolut: 0, both: 0, none: 0 };
+
+    discordAccounts.forEach((account) => {
+      const hasPayPal = Boolean(String(account?.paypal_url || "").trim());
+      const hasRevolut = Boolean(String(account?.revolut_url || "").trim());
+
+      if (hasPayPal && hasRevolut) stats.both += 1;
+      else if (hasPayPal) stats.paypal += 1;
+      else if (hasRevolut) stats.revolut += 1;
+      else stats.none += 1;
+    });
+
+    return stats;
+  }, [discordAccounts]);
+
   const challengeStats = useMemo(() => {
     const active = adminChallenges.filter((challenge) =>
       ["pending", "accepted", "result_pending"].includes(challenge.status)
@@ -1132,22 +1148,42 @@ export default function AdminPanel() {
       </div>
 
       <div className="m8-panel rounded-2xl p-5" data-testid="discord-player-accounts">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-4">
           <div>
-            <div className="brand-kicker mb-1">Player Login</div>
-            <h3 className="font-display font-black text-lg tracking-[-0.015em]">Discord Player Accounts</h3>
+            <div className="brand-kicker mb-1">Player Accounts</div>
+            <h3 className="font-display font-black text-xl tracking-[-0.02em]">
+              Discord & Payments
+            </h3>
             <p className="text-sm text-muted-foreground mt-1">
-              When a player logs in with Discord for the first time, link that Discord account to the correct MuchoMoney8s player.
+              Link Discord users to players and check which payout methods are connected.
             </p>
           </div>
+
           <Button
             variant="ghost"
             onClick={loadDiscordAccounts}
-            className="bg-[#0F1218] border border-[#222834]"
+            className="bg-[#0F1218] border border-[#222834] shrink-0"
             data-testid="discord-accounts-refresh"
           >
             <RotateCcw size={14} className="mr-1.5" /> Refresh
           </Button>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-4">
+          {[
+            ["PayPal", paymentLinkStats.paypal, "text-[#61A8FF]"],
+            ["Revolut", paymentLinkStats.revolut, "text-white"],
+            ["Both", paymentLinkStats.both, "text-emerald-400"],
+            ["None", paymentLinkStats.none, "text-muted-foreground"],
+          ].map(([label, value, tone]) => (
+            <div
+              key={label}
+              className="rounded-xl border border-[#222834] bg-[#0F1218] px-3 py-2.5"
+            >
+              <div className="text-[9px] uppercase tracking-widest text-[#697181]">{label}</div>
+              <div className={`font-mono font-black text-lg mt-0.5 ${tone}`}>{value}</div>
+            </div>
+          ))}
         </div>
 
         {discordAccounts.length === 0 ? (
@@ -1156,47 +1192,84 @@ export default function AdminPanel() {
           </div>
         ) : (
           <div className="space-y-2">
-            {discordAccounts.map((account) => (
-              <div
-                key={account.id}
-                className="m8-panel-quiet rounded-xl p-3 flex flex-col sm:flex-row sm:items-center gap-3"
-              >
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  {account.avatar_url ? (
-                    <img src={account.avatar_url} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-xl bg-[#5865F2]/15 border border-[#5865F2]/30 flex items-center justify-center shrink-0">
-                      <MessageCircle size={17} className="text-[#8E98FF]" />
+            {discordAccounts.map((account) => {
+              const hasPayPal = Boolean(String(account?.paypal_url || "").trim());
+              const hasRevolut = Boolean(String(account?.revolut_url || "").trim());
+              const linkedPlayer = account.player_id ? playerMap[account.player_id] : null;
+
+              const paymentLabel =
+                hasPayPal && hasRevolut
+                  ? "PayPal + Revolut"
+                  : hasPayPal
+                    ? "PayPal"
+                    : hasRevolut
+                      ? "Revolut"
+                      : "No payment link";
+
+              const paymentClass =
+                hasPayPal && hasRevolut
+                  ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/[0.06]"
+                  : hasPayPal
+                    ? "text-[#61A8FF] border-[#61A8FF]/20 bg-[#61A8FF]/[0.06]"
+                    : hasRevolut
+                      ? "text-white border-white/15 bg-white/[0.04]"
+                      : "text-muted-foreground border-[#2A303B] bg-[#151923]";
+
+              return (
+                <div
+                  key={account.id}
+                  className="rounded-xl border border-[#202631] bg-[#0F1218] p-3"
+                >
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {account.avatar_url ? (
+                        <img
+                          src={account.avatar_url}
+                          alt=""
+                          className="w-10 h-10 rounded-xl object-cover shrink-0"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-xl bg-[#5865F2]/15 border border-[#5865F2]/30 flex items-center justify-center shrink-0">
+                          <MessageCircle size={17} className="text-[#8E98FF]" />
+                        </div>
+                      )}
+
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold text-sm truncate">
+                          {linkedPlayer?.name || account.display_name || account.discord_username || "Discord User"}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground truncate mt-0.5">
+                          {account.display_name || account.discord_username || "Discord account"}
+                          {linkedPlayer ? " · linked" : " · not linked"}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                  <div className="min-w-0">
-                    <div className="font-medium text-sm truncate">{account.display_name || account.discord_username || "Discord User"}</div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {account.discord_username ? `@${account.discord_username}` : "Discord account"}
+
+                    <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                      <span className={`h-8 px-2.5 rounded-lg border inline-flex items-center text-[10px] font-bold uppercase tracking-wider ${paymentClass}`}>
+                        {paymentLabel}
+                      </span>
+
+                      <select
+                        value={account.player_id || ""}
+                        onChange={(e) => handleAccountLink(account.id, e.target.value)}
+                        disabled={accountBusyId === account.id}
+                        className="h-9 w-full sm:w-52 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-xs text-[#D7DBE2]"
+                        data-testid={`discord-account-player-${account.id}`}
+                      >
+                        <option value="">Not linked</option>
+                        {players.map((player) => (
+                          <option key={player.id} value={player.id}>{player.name}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 </div>
-
-                <select
-                  value={account.player_id || ""}
-                  onChange={(e) => handleAccountLink(account.id, e.target.value)}
-                  disabled={accountBusyId === account.id}
-                  className="h-10 w-full sm:w-64 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm text-[#D7DBE2]"
-                  data-testid={`discord-account-player-${account.id}`}
-                >
-                  <option value="">Not linked</option>
-                  {players.map((player) => (
-                    <option key={player.id} value={player.id}>{player.name}</option>
-                  ))}
-                </select>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
-
-        </>
-      )}
 
       {activeTab === "system" && (
         <div className="m8-panel rounded-2xl p-5">
