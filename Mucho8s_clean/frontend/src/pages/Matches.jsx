@@ -5,11 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RecordMatchDialog } from "@/components/RecordMatchDialog";
 import MatchResultCenter from "@/components/MatchResultCenter";
+import { EmptyState } from "@/components/ProductState";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Crown, Trophy, Filter, Pencil, Trash2, WalletCards, ArrowRightLeft, Lock } from "lucide-react";
+import { Plus, Search, Crown, Trophy, Filter, Pencil, Trash2, WalletCards, ArrowRightLeft, Lock, Gamepad2 } from "lucide-react";
 import { GAMES } from "@/lib/demoData";
 import { toast } from "sonner";
 
@@ -117,6 +118,7 @@ export default function Matches() {
             <button
               key={f.k}
               data-testid={`matches-filter-${f.k}`}
+              aria-pressed={winnerFilter === f.k}
               onClick={() => setWinnerFilter(f.k)}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
                 winnerFilter === f.k ? "bg-magma text-white border-magma" : "bg-[#0F1218] text-[#8D95A4] border-[#222834] hover:text-white"
@@ -136,7 +138,13 @@ export default function Matches() {
 
       <div className="space-y-3" data-testid="matches-list">
         {filtered.length === 0 && (
-          <div className="m8-panel rounded-2xl p-16 text-center text-muted-foreground">No matches found.</div>
+          <EmptyState
+            icon={Gamepad2}
+            title={safeMatches.length === 0 ? "No matches yet" : "No matches found"}
+            description={safeMatches.length === 0
+              ? "Verified match results will appear here with score, Elo changes and MVP."
+              : "Try changing the search, game or winner filter."}
+          />
         )}
         {filtered.map((m) => (
           <div key={m.id} className="m8-panel rounded-[22px] p-5 animate-fade-up overflow-hidden relative" data-testid={`match-row-${m.id}`}>
