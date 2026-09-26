@@ -152,7 +152,7 @@ export const Layout = () => {
                   title="My Challenges"
                   aria-label="My Challenges"
                   data-testid="header-my-challenges"
-                  className={`relative w-10 h-10 rounded-xl border transition-all flex items-center justify-center ${
+                  className={`m8-action relative w-10 h-10 rounded-xl border transition-all flex items-center justify-center ${
                     loc.pathname.startsWith("/challenges")
                       ? "border-magma/40 bg-magma/10 text-magma"
                       : "border-[#242A35] bg-[#12151C] text-[#AAB1BE] hover:text-white hover:bg-white/[0.05]"
