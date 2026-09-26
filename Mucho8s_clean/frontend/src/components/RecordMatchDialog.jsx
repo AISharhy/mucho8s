@@ -8,7 +8,7 @@ import { PlayerAvatar, EloBadge } from "@/components/shared";
 import { GAMES } from "@/lib/demoData";
 
 const MATCH_MODES = ["Hardpoint", "Search & Destroy"];
-import { ArrowRightLeft, Crown, Search, WalletCards } from "lucide-react";
+import { ArrowRightLeft, Crown, RotateCcw, Search, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 
 export const RecordMatchDialog = ({
@@ -27,7 +27,7 @@ export const RecordMatchDialog = ({
   liveMatchId = "",
   onReported,
 }) => {
-  const { players, createMatchReport, editMatch } = useData();
+  const { players, createMatchReport, createLiveMatch, editMatch } = useData();
   const [assign, setAssign] = useState({});
   const [winner, setWinner] = useState("A");
   const [map, setMap] = useState("");
@@ -36,6 +36,7 @@ export const RecordMatchDialog = ({
   const [query, setQuery] = useState("");
   const [moneySettings, setMoneySettings] = useState({});
   const [pairingOrder, setPairingOrder] = useState([]);
+  const [rechall, setRechall] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -53,6 +54,7 @@ export const RecordMatchDialog = ({
     setMode(editData?.mode || defaultMode || MATCH_MODES[0]);
     setGame(editData?.game || defaultGame || GAMES[0]);
     setQuery("");
+    setRechall(false);
 
     const nextMoney = {};
     const nextPairingOrder = [];
@@ -258,8 +260,26 @@ export const RecordMatchDialog = ({
         liveMatchId: liveMatchId || undefined,
       });
       if (!report) return;
-      toast.success("Result submitted — waiting for Admin verification");
-      onReported?.(report);
+
+      let rechallLiveMatch = null;
+      if (rechall && liveMatchId) {
+        rechallLiveMatch = await createLiveMatch({
+          teamA,
+          teamB,
+          game,
+          mode,
+          format: `${teamA.length}v${teamB.length}`,
+        });
+      }
+
+      toast.success(
+        rechallLiveMatch
+          ? "Result submitted — ReChall is now live"
+          : rechall
+            ? "Result submitted — ReChall could not be created"
+            : "Result submitted — waiting for Admin verification"
+      );
+      onReported?.(report, rechallLiveMatch);
     }
 
     onOpenChange(false);
@@ -473,6 +493,43 @@ export const RecordMatchDialog = ({
               </div>
             )}
           </div>
+
+          {!editData && liveMatchId && (
+            <button
+              type="button"
+              onClick={() => setRechall((value) => !value)}
+              className={`w-full rounded-xl border p-4 text-left transition-all ${
+                rechall
+                  ? "border-[#D5A33A]/45 bg-[#D5A33A]/[0.07]"
+                  : "border-[#242A35] bg-[#0F1218] hover:border-[#343B48]"
+              }`}
+              aria-pressed={rechall}
+              data-testid="rechall-toggle"
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-9 h-9 rounded-lg border flex items-center justify-center ${
+                  rechall
+                    ? "border-[#D5A33A]/40 bg-[#D5A33A]/10 text-[#D5A33A]"
+                    : "border-[#2A303B] text-muted-foreground"
+                }`}>
+                  <RotateCcw size={16} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold flex items-center gap-2">
+                    ReChall
+                    <span className={`text-[9px] uppercase tracking-widest ${
+                      rechall ? "text-[#D5A33A]" : "text-muted-foreground"
+                    }`}>
+                      {rechall ? "ON" : "OFF"}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5 leading-5">
+                    After submitting this result, create the same matchup again in Live Matches.
+                  </div>
+                </div>
+              </div>
+            </button>
+          )}
 
           <div className="rounded-xl bg-[#0F1218] border border-[#2A303B] px-3 py-3">
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
