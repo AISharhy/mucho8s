@@ -632,7 +632,7 @@ export default function ChallengeMatch() {
                 </div>
               </div>
               <div className={`rounded-xl border p-3 ${
-                challenge.payment_sent_at
+                challenge.payment_sent_at || challenge.payment_received_at
                   ? "bg-emerald-500/[0.05] border-emerald-500/20 text-emerald-400"
                   : "bg-[#0F1218] border-[#242A35] text-muted-foreground"
               }`}>
@@ -734,8 +734,17 @@ export default function ChallengeMatch() {
                   )}
                 </div>
               ) : (
-                <div className="mt-4 m8-panel-quiet rounded-xl p-4 text-sm text-muted-foreground">
-                  {money(challenge)} is owed to you. Waiting for {opponent?.name || "the losing player"} to send the payment via {platformLabel}.
+                <div className="mt-4 space-y-3">
+                  <div className="m8-panel-quiet rounded-xl p-4 text-sm text-muted-foreground">
+                    {money(challenge)} is owed to you via {platformLabel}. You can confirm receipt as soon as the payment arrives, even if {opponent?.name || "the losing player"} has not marked it as sent.
+                  </div>
+                  <Button
+                    onClick={confirmPayoutReceived}
+                    disabled={Boolean(busy)}
+                    className="h-12 w-full rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold"
+                  >
+                    <ShieldCheck size={17} className="mr-2" /> PAGAMENTO RICEVUTO
+                  </Button>
                 </div>
               )
             ) : challenge.payment_sent_at ? (
