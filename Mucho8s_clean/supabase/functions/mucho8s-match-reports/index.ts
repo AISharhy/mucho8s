@@ -604,6 +604,93 @@ Deno.serve(async (req: Request) => {
     const isAdmin = await validateAdminSession(req, supabase);
     const { user, account } = await getUserContext(req, supabase);
 
+    if (action === "list-live") {
+      const { data, error } = await supabase
+        .from("live_team_matches")
+        .select("id,match_id,team_a,team_b,game,mode,format,captain_player_id,status,created_at")
+        .eq("status", "live")
+        .order("created_at", { ascending: false })
+        .limit(12);
+
+      if (error) throw error;
+      return json({ ok: true, liveMatches: data || [] });
+    }
+
+    if (action === "create-live") {
+      if (!isAdmin && !account?.player_id) {
+        return json({ error: "Login with a linked Discord account first" }, 401);
+      }
+
+      const teamA = Array.isArray(body?.teamA) ? body.teamA.map((id: unknown) => String(id)) : [];
+      const teamB = Array.isArray(body?.teamB) ? body.teamB.map((id: unknown) => String(id)) : [];
+      const creatorPlayerId = String(account?.player_id || "").trim();
+      const creatorInLobby = [...teamA, ...teamB].includes(creatorPlayerId);
+
+      if (teamA.length < 2 || teamA.length > 4 || teamA.length !== teamB.length) {
+        return json({ error: "Teams must contain the same number of players (2-4)" }, 400);
+      }
+      if (!isAdmin && !creatorInLobby) {
+        return json({ error: "The match creator must be one of the players in the lobby" }, 403);
+      }
+
+      if (user?.id) {
+        await supabase
+          .from("live_team_matches")
+          .update({ status: "cancelled", closed_at: new Date().toISOString() })
+          .eq("creator_account_id", user.id)
+          .eq("status", "live");
+      }
+
+      const row = {
+        match_id: crypto.randomUUID(),
+        team_a: teamA,
+        team_b: teamB,
+        game: String(body?.game || ""),
+        mode: String(body?.mode || ""),
+        format: String(body?.format || ""),
+        captain_player_id: creatorPlayerId || null,
+        creator_account_id: user?.id || null,
+        status: "live",
+      };
+
+      const { data, error } = await supabase
+        .from("live_team_matches")
+        .insert(row)
+        .select("*")
+        .single();
+
+      if (error) throw error;
+
+      return json({ ok: true, liveMatch: data });
+    }
+
+    if (action === "cancel-live") {
+      const liveId = String(body?.id || "").trim();
+      if (!liveId) return json({ error: "Live match id is required" }, 400);
+
+      const { data: liveMatch, error: liveError } = await supabase
+        .from("live_team_matches")
+        .select("*")
+        .eq("id", liveId)
+        .maybeSingle();
+
+      if (liveError) throw liveError;
+      if (!liveMatch) return json({ ok: true });
+
+      if (!isAdmin && (!user?.id || liveMatch.creator_account_id !== user.id)) {
+        return json({ error: "Only the match creator or Admin can close this live match" }, 403);
+      }
+
+      const { error } = await supabase
+        .from("live_team_matches")
+        .update({ status: "cancelled", closed_at: new Date().toISOString() })
+        .eq("id", liveId)
+        .eq("status", "live");
+
+      if (error) throw error;
+      return json({ ok: true });
+    }
+
     if (action === "list") {
       let query = supabase
         .from("team_match_reports")
@@ -687,13 +774,40 @@ Deno.serve(async (req: Request) => {
         if (scoreWinner !== winner) return json({ error: "Winner does not match the score" }, 400);
       }
 
+      const liveMatchId = String(body?.liveMatchId || "").trim();
+      let liveMatch: any = null;
+
+      if (liveMatchId) {
+        const { data: liveRow, error: liveError } = await supabase
+          .from("live_team_matches")
+          .select("*")
+          .eq("id", liveMatchId)
+          .maybeSingle();
+
+        if (liveError) throw liveError;
+        if (!liveRow || liveRow.status !== "live") {
+          return json({ error: "This live match is no longer active" }, 409);
+        }
+        if (!isAdmin && (!user?.id || liveRow.creator_account_id !== user.id)) {
+          return json({ error: "Only the match creator or Admin can report this live match" }, 403);
+        }
+
+        const sameA = JSON.stringify((liveRow.team_a || []).map(String)) === JSON.stringify(teamA);
+        const sameB = JSON.stringify((liveRow.team_b || []).map(String)) === JSON.stringify(teamB);
+        if (!sameA || !sameB) {
+          return json({ error: "The reported teams do not match the live match" }, 400);
+        }
+
+        liveMatch = liveRow;
+      }
+
       const seasonNumber = Math.max(1, Number(body?.seasonNumber) || await getCurrentSeason(supabase));
       const playedAt = body?.playedAt && !Number.isNaN(new Date(body.playedAt).getTime())
         ? new Date(body.playedAt).toISOString()
         : new Date().toISOString();
 
       const row = {
-        match_id: crypto.randomUUID(),
+        match_id: liveMatch?.match_id || crypto.randomUUID(),
         team_a: teamA,
         team_b: teamB,
         winner,
@@ -723,6 +837,14 @@ Deno.serve(async (req: Request) => {
         .single();
 
       if (error) throw error;
+
+      if (liveMatch?.id) {
+        await supabase
+          .from("live_team_matches")
+          .update({ status: "closed", closed_at: new Date().toISOString() })
+          .eq("id", liveMatch.id)
+          .eq("status", "live");
+      }
 
       await supabase.from("admin_audit_log").insert({
         action: "match.result_reported",
