@@ -1,6 +1,6 @@
 import React from "react";
-import { tierOf, winRate } from "@/lib/elo";
-import { Crown, Flame, TrendingUp, TrendingDown } from "lucide-react";
+import { tierOf, rankProgress, winRate } from "@/lib/elo";
+import { Crown, Flame, TrendingUp, TrendingDown, ChevronUp } from "lucide-react";
 
 export const PlayerAvatar = ({ name, size = 40, elo, avatarUrl }) => {
   const tier = tierOf(elo ?? 1000);
@@ -64,6 +64,86 @@ export const EloBadge = ({ elo }) => {
     >
       {elo}
     </span>
+  );
+};
+
+export const RankBadge = ({ elo, compact = false, showName = true }) => {
+  const rank = tierOf(elo);
+  const shieldSize = compact ? 34 : 48;
+
+  return (
+    <div className="inline-flex items-center gap-2.5" title={`${rank.name} · ${elo} Elo`}>
+      <div
+        className="relative shrink-0 rank-emblem"
+        style={{ width: shieldSize, height: shieldSize }}
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            clipPath: "polygon(50% 0%, 91% 20%, 82% 77%, 50% 100%, 18% 77%, 9% 20%)",
+            background: `linear-gradient(145deg, ${rank.color}, ${rank.accent} 65%, #090A0F)`,
+            boxShadow: `0 0 18px ${rank.color}33`,
+          }}
+        />
+        <div
+          className="absolute"
+          style={{
+            inset: compact ? 3 : 4,
+            clipPath: "polygon(50% 0%, 91% 20%, 82% 77%, 50% 100%, 18% 77%, 9% 20%)",
+            background: "linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,0) 35%), #0B0D12",
+            border: `1px solid ${rank.color}66`,
+          }}
+        />
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <ChevronUp size={compact ? 13 : 17} style={{ color: rank.color }} strokeWidth={3} />
+          <span
+            className="font-display font-black leading-none"
+            style={{ color: rank.color, fontSize: compact ? 9 : 11 }}
+          >
+            {rank.roman}
+          </span>
+        </div>
+      </div>
+
+      {showName && (
+        <div className="min-w-0">
+          <div
+            className={`font-display font-extrabold uppercase tracking-[0.12em] leading-none ${compact ? "text-[10px]" : "text-xs"}`}
+            style={{ color: rank.color }}
+          >
+            {rank.name}
+          </div>
+          {!compact && (
+            <div className="text-[10px] text-muted-foreground mt-1 font-mono">{elo} ELO</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const RankProgress = ({ elo, compact = false }) => {
+  const info = rankProgress(elo);
+
+  return (
+    <div className="min-w-0">
+      <div className="flex items-center justify-between gap-3 text-[10px] uppercase tracking-widest">
+        <span style={{ color: info.rank.color }} className="font-bold">{info.rank.name}</span>
+        <span className="text-muted-foreground">
+          {info.next ? `${info.eloNeeded} ELO to ${info.next.name}` : "MAX RANK"}
+        </span>
+      </div>
+      <div className={`overflow-hidden rounded-full bg-[#0B0D12] border border-[#222834] ${compact ? "h-1.5 mt-1.5" : "h-2 mt-2"}`}>
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{
+            width: `${info.progress}%`,
+            background: `linear-gradient(90deg, ${info.rank.accent}, ${info.rank.color})`,
+            boxShadow: `0 0 12px ${info.rank.color}55`,
+          }}
+        />
+      </div>
+    </div>
   );
 };
 
