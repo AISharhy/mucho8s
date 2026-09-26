@@ -13,6 +13,7 @@ const TITLES = {
   "/ranking": "Ranking",
   "/leaderboard": "Ranking",
   "/statistics": "Ranking",
+  "/ranks": "Ranks",
   "/admin": "Admin Panel",
   "/challenges": "Challenge Inbox",
   "/challenge-ranking": "Chall Ranking",
