@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
-import { winRate, tierOf } from "@/lib/elo";
+import { winRate, tierOf, rankProgress } from "@/lib/elo";
 import { duoChemistry } from "@/lib/chemistry";
 import { analyzeBountyHistory, buildBountyAchievementCatalog } from "@/lib/bountyAchievements";
 import { PlayerAvatar, EloBadge, Last10, StreakBadge, MvpBadge, RankBadge, RankProgress } from "@/components/shared";
@@ -375,6 +375,7 @@ export default function PlayerProfile() {
   }
 
   const tier = tierOf(player.currentElo);
+  const rankPreview = rankProgress(player.currentElo);
   const stats = [
     { label: "Current Elo", value: player.currentElo, icon: TrendingUp },
     { label: "Peak Elo", value: player.peakElo, icon: Trophy },
@@ -522,9 +523,6 @@ export default function PlayerProfile() {
               <RankBadge elo={player.currentElo} />
               <StreakBadge streak={player.currentStreak} />
             </div>
-            <div className="mt-4 max-w-lg">
-              <RankProgress elo={player.currentElo} />
-            </div>
           </div>
 
           {!isOwnProfile && challengeLinks.length > 0 && (
@@ -587,6 +585,37 @@ export default function PlayerProfile() {
           <MvpBadge count={player.mvpCount} />
         </div>
       </div>
+
+      <section className="brand-card rounded-2xl p-5 sm:p-6 overflow-hidden relative" data-testid="player-rank-preview">
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-center">
+          <div>
+            <div className="brand-kicker mb-2">Rank Preview</div>
+            <h3 className="font-display text-2xl sm:text-3xl font-extrabold">
+              {player.name} is{" "}
+              <span style={{ color: rankPreview.rank.color }}>{rankPreview.rank.name}</span>
+            </h3>
+            <p className="text-sm text-muted-foreground mt-2 max-w-xl">
+              Competitive division based directly on {isOwnProfile ? "your" : player.name + "'s"} current Elo.
+            </p>
+
+            <div className="mt-5 max-w-xl">
+              <RankProgress elo={player.currentElo} />
+            </div>
+
+            <div className="mt-3 text-sm text-muted-foreground">
+              {rankPreview.next
+                ? rankPreview.eloNeeded + " Elo to reach " + rankPreview.next.name + "."
+                : "Highest competitive division reached."}
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-[#0B0D12]/70 border border-[#2A303B] p-5 flex items-center justify-center min-h-[170px]">
+            <div className="w-full max-w-[280px]">
+              <RankEmblem elo={player.currentElo} />
+            </div>
+          </div>
+        </div>
+      </section>
 
       <div className="card-surface rounded-2xl p-4 sm:p-5" data-testid="challenge-profile-stats">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
