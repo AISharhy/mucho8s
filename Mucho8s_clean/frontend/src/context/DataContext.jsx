@@ -70,7 +70,10 @@ const normalizeMatch = (m) => ({
   winner: m?.winner === "B" ? "B" : "A",
   scoreA: Math.max(0, Number(m?.scoreA) || 0),
   scoreB: Math.max(0, Number(m?.scoreB) || 0),
-  mvpId: m?.mvpId || undefined,
+  mvpIds: Array.isArray(m?.mvpIds)
+    ? m.mvpIds.filter(Boolean)
+    : (m?.mvpId ? [m.mvpId] : []),
+  mvpId: m?.mvpId || (Array.isArray(m?.mvpIds) ? m.mvpIds[0] : undefined),
   merdaIds: Array.isArray(m?.merdaIds)
     ? m.merdaIds.filter(Boolean)
     : (m?.merdaId ? [m.merdaId] : []),
@@ -121,6 +124,13 @@ const recomputeRecent = (byId, matches, ids) => {
   });
 };
 
+const automaticMvpIds = (byId, winners) =>
+  winners.filter((pid) => {
+    const current = Number(byId[pid]?.currentStreak || 0);
+    const nextWinStreak = current > 0 ? current + 1 : 1;
+    return nextWinStreak >= 4 && nextWinStreak % 4 === 0;
+  });
+
 const automaticMerdaIds = (byId, losers) =>
   losers.filter((pid) => {
     const current = Number(byId[pid]?.currentStreak || 0);
@@ -137,11 +147,12 @@ const automaticMerdaClearedIds = (byId, winners) =>
     return nextWinStreak >= 4 && nextWinStreak % 4 === 0;
   });
 
-const recomputeMerdaState = (byId, matches) => {
+const recomputeAwardState = (byId, matches) => {
   const rebuiltMatches = (matches || []).map((match) => ({ ...match }));
 
   Object.values(byId).forEach((player) => {
     if (!player) return;
+    player.mvpCount = 0;
     player.merdaCount = 0;
     player.currentStreak = 0;
   });
@@ -153,8 +164,9 @@ const recomputeMerdaState = (byId, matches) => {
       const teamB = Array.isArray(match?.teamB) ? match.teamB : [];
       const winners = match?.winner === "B" ? teamB : teamA;
       const winnerSet = new Set(winners);
-      const awarded = [];
-      const cleared = [];
+      const mvpIds = [];
+      const merdaIds = [];
+      const merdaClearedIds = [];
 
       [...teamA, ...teamB].forEach((pid) => {
         const player = byId[pid];
@@ -168,27 +180,65 @@ const recomputeMerdaState = (byId, matches) => {
 
         player.currentStreak = nextStreak;
 
-        if (!won && Math.abs(nextStreak) % 4 === 0) {
-          player.merdaCount = Math.max(0, Number(player.merdaCount || 0)) + 1;
-          awarded.push(pid);
+        if (won && nextStreak >= 4 && nextStreak % 4 === 0) {
+          player.mvpCount = Math.max(0, Number(player.mvpCount || 0)) + 1;
+          mvpIds.push(pid);
         }
 
-        if (won && nextStreak % 4 === 0 && Number(player.merdaCount || 0) > 0) {
+        if (!won && Math.abs(nextStreak) >= 4 && Math.abs(nextStreak) % 4 === 0) {
+          player.merdaCount = Math.max(0, Number(player.merdaCount || 0)) + 1;
+          merdaIds.push(pid);
+        }
+
+        if (won && nextStreak >= 4 && nextStreak % 4 === 0 && Number(player.merdaCount || 0) > 0) {
           player.merdaCount = Math.max(0, Number(player.merdaCount || 0) - 1);
-          cleared.push(pid);
+          merdaClearedIds.push(pid);
         }
       });
 
-      match.merdaIds = awarded;
-      match.merdaId = awarded[0] || undefined;
-      match.merdaClearedIds = cleared;
+      const mvpSet = new Set(mvpIds);
+      const nextChanges = {};
+
+      [...teamA, ...teamB].forEach((pid) => {
+        const player = byId[pid];
+        if (!player) return;
+
+        const won = winnerSet.has(pid);
+        const nextDelta = (won ? WIN_DELTA : -LOSS_DELTA) + (mvpSet.has(pid) ? MVP_BONUS : 0);
+        const oldDelta = Number(match?.eloChanges?.[pid]);
+
+        if (Number.isFinite(oldDelta) && oldDelta !== 0 && oldDelta !== nextDelta) {
+          player.currentElo = Math.max(MIN_ELO, Number(player.currentElo || BASE_ELO) + (nextDelta - oldDelta));
+        }
+
+        nextChanges[pid] = nextDelta;
+      });
+
+      match.mvpIds = mvpIds;
+      match.mvpId = mvpIds[0] || undefined;
+      match.merdaIds = merdaIds;
+      match.merdaId = merdaIds[0] || undefined;
+      match.merdaClearedIds = merdaClearedIds;
+      match.eloChanges = nextChanges;
     });
+
+  Object.values(byId).forEach((player) => {
+    if (!player) return;
+    player.peakElo = Math.max(Number(player.peakElo || BASE_ELO), Number(player.currentElo || BASE_ELO));
+    if (Array.isArray(player.eloHistory) && player.eloHistory.length) {
+      const lastIndex = player.eloHistory.length - 1;
+      player.eloHistory = player.eloHistory.map((row, index) =>
+        index === lastIndex ? { ...row, elo: player.currentElo } : row
+      );
+    }
+  });
 
   return rebuiltMatches;
 };
 
-const applyEffects = (byId, teamA, teamB, winner, mvpId, merdaIds = [], merdaClearedIds = []) => {
+const applyEffects = (byId, teamA, teamB, winner, mvpIds = [], merdaIds = [], merdaClearedIds = []) => {
   const winners = winner === "A" ? teamA : teamB;
+  const mvpSet = new Set(mvpIds || []);
   const merdaSet = new Set(merdaIds || []);
   const clearedSet = new Set(merdaClearedIds || []);
   const changes = {};
@@ -198,7 +248,7 @@ const applyEffects = (byId, teamA, teamB, winner, mvpId, merdaIds = [], merdaCle
     if (!p) return;
     const won = winners.includes(pid);
     let delta = won ? WIN_DELTA : -LOSS_DELTA;
-    if (pid === mvpId) delta += MVP_BONUS;
+    if (mvpSet.has(pid)) delta += MVP_BONUS;
 
     const nextElo = Math.max(MIN_ELO, p.currentElo + delta);
     p.currentElo = nextElo;
@@ -206,7 +256,7 @@ const applyEffects = (byId, teamA, teamB, winner, mvpId, merdaIds = [], merdaCle
     p.totalMatches += 1;
     if (won) p.wins += 1;
     else p.losses += 1;
-    if (pid === mvpId) p.mvpCount += 1;
+    if (mvpSet.has(pid)) p.mvpCount += 1;
     if (merdaSet.has(pid)) p.merdaCount = Math.max(0, Number(p.merdaCount || 0)) + 1;
     if (clearedSet.has(pid)) p.merdaCount = Math.max(0, Number(p.merdaCount || 0) - 1);
     p.eloHistory = [...(p.eloHistory || []), { match: p.totalMatches, elo: nextElo }];
@@ -226,7 +276,10 @@ const revertEffects = (byId, match) => {
     p.totalMatches = Math.max(0, p.totalMatches - 1);
     if (winners.includes(pid)) p.wins = Math.max(0, p.wins - 1);
     else p.losses = Math.max(0, p.losses - 1);
-    if (pid === match.mvpId) p.mvpCount = Math.max(0, p.mvpCount - 1);
+    const mvpIds = Array.isArray(match.mvpIds)
+      ? match.mvpIds
+      : (match.mvpId ? [match.mvpId] : []);
+    if (mvpIds.includes(pid)) p.mvpCount = Math.max(0, p.mvpCount - 1);
     const merdaIds = Array.isArray(match.merdaIds)
       ? match.merdaIds
       : (match.merdaId ? [match.merdaId] : []);
@@ -1680,11 +1733,14 @@ export const DataProvider = ({ children }) => {
     const teamB = [...(data.teamB || [])];
     const winners = data.winner === "A" ? teamA : teamB;
     const losers = data.winner === "A" ? teamB : teamA;
+    const mvpIds = automaticMvpIds(byId, winners);
     const merdaIds = automaticMerdaIds(byId, losers);
     const merdaClearedIds = automaticMerdaClearedIds(byId, winners);
-    const eloChanges = applyEffects(byId, teamA, teamB, data.winner, data.mvpId, merdaIds, merdaClearedIds);
+    const eloChanges = applyEffects(byId, teamA, teamB, data.winner, mvpIds, merdaIds, merdaClearedIds);
     const match = normalizeMatch({
       ...data,
+      mvpIds,
+      mvpId: mvpIds[0] || undefined,
       merdaIds,
       merdaId: merdaIds[0] || undefined,
       merdaClearedIds,
@@ -1693,7 +1749,7 @@ export const DataProvider = ({ children }) => {
       season: data.season || competitionData?.current?.season_number || dashboardData?.competition?.season_number || 1,
       eloChanges,
     });
-    const nextMatches = recomputeMerdaState(byId, [match, ...matches]);
+    const nextMatches = recomputeAwardState(byId, [match, ...matches]);
     recomputeRecent(byId, nextMatches, new Set([...teamA, ...teamB]));
     const ok = await persistWholeState(Object.values(byId), nextMatches);
 
@@ -1705,7 +1761,7 @@ export const DataProvider = ({ children }) => {
         winner: match.winner,
         game: match.game,
         mode: match.mode,
-        mvp: match.mvpId ? byId[match.mvpId]?.name || "" : "",
+        mvp: (match.mvpIds || []).map((id) => byId[id]?.name).filter(Boolean).join(", "),
       }, { silent: true });
     }
 
@@ -1746,14 +1802,17 @@ export const DataProvider = ({ children }) => {
     });
     const winners = nextMatch.winner === "A" ? teamA : teamB;
     const losers = nextMatch.winner === "A" ? teamB : teamA;
+    const mvpIds = automaticMvpIds(byId, winners);
     const merdaIds = automaticMerdaIds(byId, losers);
     const merdaClearedIds = automaticMerdaClearedIds(byId, winners);
+    nextMatch.mvpIds = mvpIds;
+    nextMatch.mvpId = mvpIds[0] || undefined;
     nextMatch.merdaIds = merdaIds;
     nextMatch.merdaId = merdaIds[0] || undefined;
     nextMatch.merdaClearedIds = merdaClearedIds;
-    nextMatch.eloChanges = applyEffects(byId, teamA, teamB, nextMatch.winner, nextMatch.mvpId, merdaIds, merdaClearedIds);
+    nextMatch.eloChanges = applyEffects(byId, teamA, teamB, nextMatch.winner, mvpIds, merdaIds, merdaClearedIds);
 
-    const nextMatches = recomputeMerdaState(
+    const nextMatches = recomputeAwardState(
       byId,
       matches.map((m) => (m.id === id ? nextMatch : m))
     );
@@ -1783,7 +1842,7 @@ export const DataProvider = ({ children }) => {
     const nextPlayers = clonePlayers(players);
     const byId = Object.fromEntries(nextPlayers.map((p) => [p.id, p]));
     revertEffects(byId, old);
-    const nextMatches = recomputeMerdaState(byId, matches.filter((m) => m.id !== id));
+    const nextMatches = recomputeAwardState(byId, matches.filter((m) => m.id !== id));
     recomputeRecent(byId, nextMatches, new Set([...old.teamA, ...old.teamB]));
     const ok = await persistWholeState(Object.values(byId), nextMatches);
     if (ok) {
