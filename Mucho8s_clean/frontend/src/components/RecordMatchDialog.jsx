@@ -16,8 +16,8 @@ export const RecordMatchDialog = ({
   onOpenChange,
   initialTeams,
   editData,
-  defaultGame,
-  defaultMode,
+  defaultGioco,
+  defaultModalità,
   title = "Record Match",
   reportOnly = false,
   lockTeams = false,
@@ -27,8 +27,7 @@ export const RecordMatchDialog = ({
 }) => {
   const { players, createMatchReport, editMatch } = useData();
   const [assign, setAssign] = useState({});
-  const [winner, setWinner] = useState("A");
-  const [mvpId, setMvpId] = useState("");
+  const [winner, setVincitore] = useState("A");
   const [map, setMap] = useState("");
   const [mode, setMode] = useState(MATCH_MODES[0]);
   const [game, setGame] = useState(GAMES[0]);
@@ -48,7 +47,6 @@ export const RecordMatchDialog = ({
 
     setAssign(next);
     setWinner(editData?.winner || "A");
-    setMvpId(editData?.mvpId || "");
     setMap(editData?.map || "");
     setMode(editData?.mode || defaultMode || MATCH_MODES[0]);
     setGame(editData?.game || defaultGame || GAMES[0]);
@@ -218,7 +216,6 @@ export const RecordMatchDialog = ({
             teamA: editData.teamA || [],
             teamB: editData.teamB || [],
             winner,
-            mvpId: mvpId || undefined,
             mode: editData.mode || mode,
             game: editData.game || game,
             map: editData.map || "",
@@ -229,7 +226,6 @@ export const RecordMatchDialog = ({
             teamA,
             teamB,
             winner,
-            mvpId: mvpId || undefined,
             mode,
             game,
             map,
@@ -252,7 +248,6 @@ export const RecordMatchDialog = ({
         winner,
         scoreA: 0,
         scoreB: 0,
-        mvpId: mvpId || undefined,
         map,
         mode,
         game,
@@ -479,26 +474,17 @@ export const RecordMatchDialog = ({
               </div>
             </div>
 
-            <div>
-              <Label className="text-xs text-muted-foreground">MVP (optional)</Label>
-              <select
-                data-testid="mvp-select"
-                value={mvpId}
-                onChange={(e) => setMvpId(e.target.value)}
-                className="mt-1 w-full h-10 rounded-xl bg-[#0F1218] border border-[#222834] px-3 text-sm"
-              >
-                <option value="">No MVP</option>
-                {assigned.map((id) => {
-                  const p = players.find((x) => x.id === id);
-                  return <option key={id} value={id}>{p?.name}</option>;
-                })}
-              </select>
+            <div className="rounded-xl bg-[#D5A33A]/[0.07] border border-[#D5A33A]/20 px-3 py-2.5">
+              <Label className="text-xs text-[#D5A33A]">MVP 🏆 · automatico</Label>
+              <div className="text-[11px] text-muted-foreground mt-1 leading-5">
+                Ogni 4 vittorie consecutive assegna automaticamente 1 MVP e +3 Elo.
+              </div>
             </div>
 
             <div className="rounded-xl bg-[#8B5E3C]/[0.07] border border-[#8B5E3C]/20 px-3 py-2.5">
-              <Label className="text-xs text-[#C79A6B]">MERDA 💩 · automatic</Label>
+              <Label className="text-xs text-[#C79A6B]">MERDA 💩 · automatica</Label>
               <div className="text-[11px] text-muted-foreground mt-1 leading-5">
-                Awarded automatically on the 4th consecutive loss, then again at 8, 12, 16… consecutive losses.
+                Assegnata automaticamente ogni 4 sconfitte consecutive: 4, 8, 12, 16…
               </div>
             </div>
 
