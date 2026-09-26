@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar, EloBadge } from "@/components/shared";
 import ChallengeSeriesCard from "@/components/ChallengeSeriesCard";
+import { CHALL_LOSS_AUDIO_SRC } from "@/assets/challLossAudio";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
@@ -44,10 +45,13 @@ const profileLinkFor = (profile, platform) => {
   return "";
 };
 
+const LOSS_AUDIO_FEATURE_START = Date.parse("2026-09-26T10:40:00Z");
+
 export default function ChallengeMatch() {
   const { id } = useParams();
   const navigate = useNavigate();
   const redirectRef = useRef(false);
+  const lossAudioAttemptRef = useRef(new Set());
   const {
     challenges,
     refreshChallenges,
@@ -81,6 +85,41 @@ export default function ChallengeMatch() {
   const challenge = challenges.find((item) => item.id === id);
   const series = challenge?.series || null;
 
+  const playLossAudioOnce = useCallback((item) => {
+    if (
+      !item ||
+      item.status !== "completed" ||
+      !discordPlayer?.id ||
+      !item.reported_winner_player_id ||
+      item.reported_winner_player_id === discordPlayer.id
+    ) {
+      return;
+    }
+
+    const verifiedAt = Date.parse(item.verified_at || "");
+    if (!Number.isFinite(verifiedAt) || verifiedAt < LOSS_AUDIO_FEATURE_START) return;
+
+    const key = `m8-chall-loss-audio-${item.id}-${item.verified_at || "completed"}`;
+    if (localStorage.getItem(key) || lossAudioAttemptRef.current.has(key)) return;
+
+    lossAudioAttemptRef.current.add(key);
+
+    try {
+      const audio = new Audio(CHALL_LOSS_AUDIO_SRC);
+      audio.volume = 0.9;
+      const playback = audio.play();
+      if (playback?.then) {
+        playback
+          .then(() => localStorage.setItem(key, "1"))
+          .catch(() => {});
+      } else {
+        localStorage.setItem(key, "1");
+      }
+    } catch {
+      // Audio is optional and must never block the challenge flow.
+    }
+  }, [discordPlayer?.id]);
+
   useEffect(() => {
     void refreshChallenges();
   }, [id, refreshChallenges]);
@@ -88,6 +127,16 @@ export default function ChallengeMatch() {
   useEffect(() => {
     if (challenge && discordAccount?.id) void markChallengeSeen(challenge.id);
   }, [challenge?.id, challenge?.status, challenge?.last_event, discordAccount?.id, markChallengeSeen]);
+
+  useEffect(() => {
+    if (challenge?.status === "completed") playLossAudioOnce(challenge);
+  }, [
+    challenge?.id,
+    challenge?.status,
+    challenge?.verified_at,
+    challenge?.reported_winner_player_id,
+    playLossAudioOnce,
+  ]);
 
   const participant = useMemo(() => {
     if (!challenge || !discordAccount?.id) return false;
@@ -226,6 +275,7 @@ export default function ChallengeMatch() {
 
     if (decision === "confirm") {
       toast.success("Result verified");
+      playLossAudioOnce(updated);
       if (payoutTab && payoutUrl) {
         sessionStorage.setItem(`m8-payout-redirect-${challenge.id}`, "1");
         payoutTab.location.href = payoutUrl;
