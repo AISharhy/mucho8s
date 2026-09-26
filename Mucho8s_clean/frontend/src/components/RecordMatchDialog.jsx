@@ -68,7 +68,7 @@ export const RecordMatchDialog = ({
     });
     setPairingOrder(nextPairingOrder);
     setMoneySettings(nextMoney);
-  }, [open, initialTeams, editData, defaultGame, defaultMode]);
+  }, [open, initialTeams, editData]);
 
   const teamA = Object.keys(assign).filter((id) => assign[id] === "A");
   const teamB = Object.keys(assign).filter((id) => assign[id] === "B");
