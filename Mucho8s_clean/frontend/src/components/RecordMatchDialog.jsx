@@ -29,7 +29,6 @@ export const RecordMatchDialog = ({
   const [assign, setAssign] = useState({});
   const [winner, setWinner] = useState("A");
   const [mvpId, setMvpId] = useState("");
-  const [merdaId, setMerdaId] = useState("");
   const [map, setMap] = useState("");
   const [mode, setMode] = useState(MATCH_MODES[0]);
   const [game, setGame] = useState(GAMES[0]);
@@ -50,7 +49,6 @@ export const RecordMatchDialog = ({
     setAssign(next);
     setWinner(editData?.winner || "A");
     setMvpId(editData?.mvpId || "");
-    setMerdaId(editData?.merdaId || "");
     setMap(editData?.map || "");
     setMode(editData?.mode || defaultMode || MATCH_MODES[0]);
     setGame(editData?.game || defaultGame || GAMES[0]);
@@ -63,7 +61,7 @@ export const RecordMatchDialog = ({
       const playerBId = String(pair?.playerBId || "").trim();
       if (!playerAId || !playerBId) return;
       nextPairingOrder.push({ playerAId, playerBId });
-      nextMoney[`${playerAId}:${playerBId}`] = {
+      nextMoney[playerAId] = {
         amount: String(Number(pair?.amount || 5)),
         platform: ["paypal", "revolut"].includes(String(pair?.platform || "").toLowerCase())
           ? String(pair.platform).toLowerCase()
@@ -95,10 +93,9 @@ export const RecordMatchDialog = ({
       const playerAId = pair.playerAId;
       const playerBId = pair.playerBId;
       if (!playerAId || !playerBId) return null;
-      const key = `${playerAId}:${playerBId}`;
-      const saved = moneySettings[key] || {};
+      const saved = moneySettings[playerAId] || {};
       return {
-        key,
+        key: playerAId,
         playerAId,
         playerBId,
         amount: saved.amount ?? "5",
@@ -107,15 +104,40 @@ export const RecordMatchDialog = ({
     })
     .filter(Boolean);
 
-  const updateMoneyPairing = (key, field, value) => {
+  const updateMoneyPairing = (playerAId, field, value) => {
     setMoneySettings((prev) => ({
       ...prev,
-      [key]: {
-        amount: prev[key]?.amount ?? "5",
-        platform: prev[key]?.platform || "paypal",
+      [playerAId]: {
+        amount: prev[playerAId]?.amount ?? "5",
+        platform: prev[playerAId]?.platform || "paypal",
         [field]: value,
       },
     }));
+  };
+
+  const updatePairingOpponent = (playerAId, nextPlayerBId) => {
+    setPairingOrder((prev) => {
+      const base =
+        prev.length === teamA.length &&
+        prev.every((pair) => teamA.includes(pair.playerAId) && teamB.includes(pair.playerBId))
+          ? prev
+          : teamA.map((id, index) => ({ playerAId: id, playerBId: teamB[index] }));
+
+      const current = base.find((pair) => pair.playerAId === playerAId);
+      const occupied = base.find(
+        (pair) => pair.playerAId !== playerAId && pair.playerBId === nextPlayerBId
+      );
+
+      return base.map((pair) => {
+        if (pair.playerAId === playerAId) {
+          return { ...pair, playerBId: nextPlayerBId };
+        }
+        if (occupied && pair.playerAId === occupied.playerAId) {
+          return { ...pair, playerBId: current?.playerBId || pair.playerBId };
+        }
+        return pair;
+      });
+    });
   };
 
   const submittedPairings = moneyPairings.map((pair) => ({
@@ -128,8 +150,12 @@ export const RecordMatchDialog = ({
   const moneyValid =
     submittedPairings.length === teamA.length &&
     submittedPairings.length === teamB.length &&
+    new Set(submittedPairings.map((pair) => pair.playerAId)).size === teamA.length &&
+    new Set(submittedPairings.map((pair) => pair.playerBId)).size === teamB.length &&
     submittedPairings.every(
       (pair) =>
+        teamA.includes(pair.playerAId) &&
+        teamB.includes(pair.playerBId) &&
         Number.isFinite(pair.amount) &&
         pair.amount > 0 &&
         ["paypal", "revolut"].includes(pair.platform)
@@ -193,7 +219,6 @@ export const RecordMatchDialog = ({
             teamB: editData.teamB || [],
             winner,
             mvpId: mvpId || undefined,
-            merdaId: merdaId || undefined,
             mode: editData.mode || mode,
             game: editData.game || game,
             map: editData.map || "",
@@ -205,7 +230,6 @@ export const RecordMatchDialog = ({
             teamB,
             winner,
             mvpId: mvpId || undefined,
-            merdaId: merdaId || undefined,
             mode,
             game,
             map,
@@ -229,7 +253,6 @@ export const RecordMatchDialog = ({
         scoreA: 0,
         scoreB: 0,
         mvpId: mvpId || undefined,
-        merdaId: merdaId || undefined,
         map,
         mode,
         game,
@@ -362,7 +385,7 @@ export const RecordMatchDialog = ({
               <div>
                 <div className="text-sm font-bold">Money Match</div>
                 <div className="text-[11px] text-muted-foreground">
-                  Set the amount and payment method for each matchup.
+                  Choose who faces who, then set amount and payment method.
                 </div>
               </div>
             </div>
@@ -379,7 +402,21 @@ export const RecordMatchDialog = ({
                   >
                     <div className="text-sm font-semibold truncate">{alpha?.name || "Alpha"}</div>
                     <ArrowRightLeft size={13} className="text-muted-foreground" />
-                    <div className="text-sm font-semibold truncate sm:text-left">{bravo?.name || "Bravo"}</div>
+                    <select
+                      value={pair.playerBId}
+                      onChange={(event) => updatePairingOpponent(pair.playerAId, event.target.value)}
+                      className="h-9 rounded-lg bg-[#0F1218] border border-[#2A303B] px-2 text-xs font-semibold min-w-0"
+                      aria-label={`Opponent for ${alpha?.name || "Alpha"}`}
+                    >
+                      {teamB.map((id) => {
+                        const opponent = players.find((player) => player.id === id);
+                        return (
+                          <option key={id} value={id}>
+                            {opponent?.name || "Bravo"}
+                          </option>
+                        );
+                      })}
+                    </select>
 
                     <div className="relative col-span-2 sm:col-span-1">
                       <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">€</span>
@@ -388,7 +425,7 @@ export const RecordMatchDialog = ({
                         min="0.5"
                         step="0.5"
                         value={pair.amount}
-                        onChange={(event) => updateMoneyPairing(pair.key, "amount", event.target.value)}
+                        onChange={(event) => updateMoneyPairing(pair.playerAId, "amount", event.target.value)}
                         className="h-9 pl-6 bg-[#0F1218] border-[#2A303B] text-xs"
                         aria-label={`Amount for ${alpha?.name || "Alpha"} vs ${bravo?.name || "Bravo"}`}
                       />
@@ -396,7 +433,7 @@ export const RecordMatchDialog = ({
 
                     <select
                       value={pair.platform}
-                      onChange={(event) => updateMoneyPairing(pair.key, "platform", event.target.value)}
+                      onChange={(event) => updateMoneyPairing(pair.playerAId, "platform", event.target.value)}
                       className="h-9 rounded-lg bg-[#0F1218] border border-[#2A303B] px-2 text-xs col-span-3 sm:col-span-1"
                       aria-label={`Payment method for ${alpha?.name || "Alpha"} vs ${bravo?.name || "Bravo"}`}
                     >
@@ -453,25 +490,16 @@ export const RecordMatchDialog = ({
                 <option value="">No MVP</option>
                 {assigned.map((id) => {
                   const p = players.find((x) => x.id === id);
-                  return <option key={id} value={id} disabled={id === merdaId}>{p?.name}</option>;
+                  return <option key={id} value={id}>{p?.name}</option>;
                 })}
               </select>
             </div>
 
-            <div>
-              <Label className="text-xs text-muted-foreground">MERDA 💩 (optional)</Label>
-              <select
-                data-testid="merda-select"
-                value={merdaId}
-                onChange={(e) => setMerdaId(e.target.value)}
-                className="mt-1 w-full h-10 rounded-xl bg-[#0F1218] border border-[#222834] px-3 text-sm"
-              >
-                <option value="">No MERDA</option>
-                {assigned.map((id) => {
-                  const p = players.find((x) => x.id === id);
-                  return <option key={id} value={id} disabled={id === mvpId}>{p?.name}</option>;
-                })}
-              </select>
+            <div className="rounded-xl bg-[#8B5E3C]/[0.07] border border-[#8B5E3C]/20 px-3 py-2.5">
+              <Label className="text-xs text-[#C79A6B]">MERDA 💩 · automatic</Label>
+              <div className="text-[11px] text-muted-foreground mt-1 leading-5">
+                Awarded automatically on the 4th consecutive loss, then again at 8, 12, 16… consecutive losses.
+              </div>
             </div>
 
             {!reportOnly && !lockContext && (
