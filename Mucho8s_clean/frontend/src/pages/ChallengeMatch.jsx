@@ -294,7 +294,7 @@ export default function ChallengeMatch() {
     const created = await createRechallenge(challenge.id, amount);
     setBusy("");
     if (!created) return;
-    toast.success("ReChall created");
+    toast.success("Rematch created");
     navigate("/challenges/" + created.id);
   };
 
@@ -577,19 +577,6 @@ export default function ChallengeMatch() {
 
       {challenge.status === "completed" && (
         <>
-          <div className={`m8-rank-spotlight rounded-2xl p-7 text-center ${
-            completedWon ? "border-emerald-500/25" : "border-red-500/25"
-          }`}>
-            <Trophy size={38} className={`${completedWon ? "text-emerald-400" : "text-red-400"} mx-auto mb-3`} />
-            <div className="brand-kicker mb-1">Official Result</div>
-            <h3 className={`font-display text-3xl font-black ${completedWon ? "text-emerald-400" : "text-red-400"}`}>
-              {completedWon ? "VINTA" : "PERSA"}
-            </h3>
-            <p className="text-sm text-muted-foreground mt-2">
-              {winner?.name || "Player"} won · {money(challenge)} · verified result.
-            </p>
-          </div>
-
           {challenge.series_id ? (
             <ChallengeSeriesCard
               challenge={challenge}
