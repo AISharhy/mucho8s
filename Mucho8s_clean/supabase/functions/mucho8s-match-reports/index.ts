@@ -16,8 +16,6 @@ const BASE_ELO = 1000;
 const MIN_ELO = 500;
 const WIN_DELTA = 25;
 const LOSS_DELTA = 25;
-const MVP_BONUS = 0;
-const UPSET_BONUS = 0;
 
 const sha256 = async (value: string) => {
   const bytes = new TextEncoder().encode(value);
@@ -79,12 +77,6 @@ const winRate = (player: any) => {
   const total = Math.max(0, Number(player?.totalMatches) || 0);
   const wins = Math.max(0, Number(player?.wins) || 0);
   return total > 0 ? (wins / total) * 100 : 0;
-};
-
-const playerRating = (player: any) => {
-  const peak = Number(player?.peakElo) || BASE_ELO;
-  const current = Number(player?.currentElo) || BASE_ELO;
-  return 0.6 * peak + 0.25 * current + 0.15 * (winRate(player) * 15);
 };
 
 const normalizePlayer = (player: any) => {
