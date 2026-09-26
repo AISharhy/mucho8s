@@ -208,6 +208,11 @@ Deno.serve(async (req: Request) => {
 
         let paypalUrl = null;
         let revolutUrl = null;
+        const role = String(body?.role || "").trim().toUpperCase();
+
+        if (!["", "SMG", "AR", "FLEX"].includes(role)) {
+          return json({ error: "Role must be SMG, AR or FLEX" }, 400);
+        }
 
         try {
           paypalUrl = cleanPaymentLink(body?.paypalUrl, "paypal");
@@ -227,6 +232,33 @@ Deno.serve(async (req: Request) => {
           .eq("id", user.id);
 
         if (linkError) throw linkError;
+
+        const { data: state, error: stateError } = await supabase
+          .from("app_state")
+          .select("players")
+          .eq("id", "main")
+          .maybeSingle();
+
+        if (stateError) throw stateError;
+
+        if (state?.players && Array.isArray(state.players)) {
+          const nextPlayers = state.players.map((player: any) =>
+            String(player?.id || "") === String(existing.player_id)
+              ? { ...player, role }
+              : player
+          );
+
+          const { error: roleError } = await supabase
+            .from("app_state")
+            .update({
+              players: nextPlayers,
+              version: Date.now(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", "main");
+
+          if (roleError) throw roleError;
+        }
       }
 
       const { data: account, error: accountError } = await supabase
