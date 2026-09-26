@@ -818,6 +818,14 @@ export const DataProvider = ({ children }) => {
     return data.liveMatch;
   }, [matchReportRequest, refreshLiveMatches]);
 
+  const requestCancelLiveMatch = useCallback(async (id) => {
+    if (!id) return false;
+    const data = await matchReportRequest({ action: "request-cancel-live", id });
+    if (!data?.liveMatch) return false;
+    await refreshLiveMatches();
+    return true;
+  }, [matchReportRequest, refreshLiveMatches]);
+
   const cancelLiveMatch = useCallback(async (id) => {
     if (!id) return false;
     const data = await matchReportRequest({ action: "cancel-live", id });
@@ -1929,6 +1937,7 @@ export const DataProvider = ({ children }) => {
     refreshChallenges,
     refreshMatchReports,
     createLiveMatch,
+    requestCancelLiveMatch,
     cancelLiveMatch,
     createMatchReport,
     confirmMatchReport,
