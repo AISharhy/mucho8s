@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   Check,
   Clock3,
-  Swords,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
