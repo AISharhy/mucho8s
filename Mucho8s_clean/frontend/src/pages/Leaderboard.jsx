@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { winRate, computeGameStats, playerForGame } from "@/lib/elo";
 import { GAMES } from "@/lib/demoData";
-import { PlayerAvatar, EloBadge, MvpBadge } from "@/components/shared";
+import { PlayerAvatar, EloBadge, MvpBadge, RankBadge } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, ArrowUp, ArrowDown, Download, Medal, Gamepad2 } from "lucide-react";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import { toast } from "sonner";
 const COLUMNS = [
   { key: "rank", label: "#", sortable: false },
   { key: "name", label: "Player", sortable: true },
+  { key: "division", label: "Rank", sortable: false },
   { key: "currentElo", label: "Current", sortable: true },
   { key: "peakElo", label: "Peak", sortable: true },
   { key: "winRate", label: "Win %", sortable: true },
@@ -136,7 +137,7 @@ export default function Leaderboard() {
             <tbody>
               {sorted.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-16 text-center text-muted-foreground" data-testid="leaderboard-empty">
+                  <td colSpan={9} className="px-4 py-16 text-center text-muted-foreground" data-testid="leaderboard-empty">
                     No matches recorded for {game} yet.
                   </td>
                 </tr>
@@ -155,6 +156,9 @@ export default function Leaderboard() {
                       <PlayerAvatar name={p.name} elo={p.currentElo} size={30} avatarUrl={playerAvatars[p.id]} />
                       <span className="font-medium">{p.name}</span>
                     </Link>
+                  </td>
+                  <td className="px-4 py-3" data-testid={`leaderboard-rank-${p.id}`}>
+                    <RankBadge elo={p.currentElo} compact />
                   </td>
                   <td className="px-4 py-3"><EloBadge elo={p.currentElo} /></td>
                   <td className="px-4 py-3 font-mono text-[#D5A33A]">{p.peakElo}</td>
