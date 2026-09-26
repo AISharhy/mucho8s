@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
-import { winRate, tierOf, rankProgress } from "@/lib/elo";
+import { winRate, tierOf, rankProgress, RANKS } from "@/lib/elo";
 import { duoChemistry } from "@/lib/chemistry";
 import { analyzeBountyHistory, buildBountyAchievementCatalog } from "@/lib/bountyAchievements";
 import { PlayerAvatar, EloBadge, Last10, StreakBadge, MvpBadge, RankBadge, RankProgress } from "@/components/shared";
@@ -282,6 +282,35 @@ export default function PlayerProfile() {
     };
   }, [challengeStats, id, player]);
 
+  const rankEntries = useMemo(() => {
+    if (!player) return [];
+
+    const history = Array.isArray(player.eloHistory) && player.eloHistory.length
+      ? player.eloHistory
+      : [{ match: 0, elo: player.currentElo }];
+
+    const counts = new Map();
+    let previousRankId = null;
+
+    history.forEach((entry) => {
+      const elo = Number(entry?.elo);
+      if (!Number.isFinite(elo)) return;
+
+      const rank = tierOf(elo);
+      if (rank.id === previousRankId) return;
+
+      counts.set(rank.id, Number(counts.get(rank.id) || 0) + 1);
+      previousRankId = rank.id;
+    });
+
+    return RANKS
+      .map((rank) => ({
+        rank,
+        count: Number(counts.get(rank.id) || 0),
+      }))
+      .filter((item) => item.count > 0);
+  }, [player]);
+
   const bestDuo = useMemo(() => {
     if (!player) return null;
 
@@ -305,6 +334,20 @@ export default function PlayerProfile() {
     if (!player) return [];
 
     const trophies = [];
+
+    rankEntries.forEach(({ rank, count }) => {
+      trophies.push({
+        id: `rank:${rank.id}`,
+        type: "rank",
+        title: `${rank.name} Rank`,
+        detail: count === 1
+          ? `Entered ${rank.name} once`
+          : `Entered ${rank.name} ${count} times`,
+        count,
+        rankColor: rank.color,
+        date: null,
+      });
+    });
 
     if (bestDuo && bestDuo.matchesTogether >= 3 && bestDuo.score >= 65) {
       trophies.push({
@@ -362,8 +405,8 @@ export default function PlayerProfile() {
         });
       });
 
-    return trophies.slice(0, 8);
-  }, [player, playerMatches, bestDuo, challengeStats.wins, bountyHistory.events]);
+    return trophies.slice(0, 12);
+  }, [player, playerMatches, bestDuo, challengeStats.wins, bountyHistory.events, rankEntries]);
 
   if (!player) {
     return (
@@ -925,7 +968,7 @@ export default function PlayerProfile() {
             <div className="brand-kicker mb-1">Awards</div>
             <h3 className="font-display font-bold text-lg">Trophy Cabinet</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Awards earned from match history, streaks and team chemistry.
+              Rank milestones, repeat rank entries, match awards, streaks and chemistry.
             </p>
           </div>
           <Trophy size={20} className="text-[#D5A33A]" />
@@ -951,17 +994,40 @@ export default function PlayerProfile() {
                       ? Swords
                       : trophy.type === "bounty"
                         ? Target
-                        : Crown;
+                        : trophy.type === "rank"
+                          ? Trophy
+                          : Crown;
 
               return (
                 <div
                   key={trophy.id}
                   className="rounded-2xl bg-gradient-to-b from-[#171A21] to-[#0F1218] border border-[#D5A33A]/20 p-4 relative overflow-hidden"
+                  style={trophy.type === "rank" ? { borderColor: `${trophy.rankColor}45` } : undefined}
                 >
-                  <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#D5A33A] to-transparent" />
-                  <div className="w-11 h-11 rounded-xl bg-[#D5A33A]/10 border border-[#D5A33A]/20 flex items-center justify-center">
-                    <Icon size={20} className="text-[#D5A33A]" />
+                  <div
+                    className="absolute inset-x-0 top-0 h-[2px]"
+                    style={{
+                      background: trophy.type === "rank"
+                        ? `linear-gradient(90deg, transparent, ${trophy.rankColor}, transparent)`
+                        : "linear-gradient(90deg, transparent, #D5A33A, transparent)",
+                    }}
+                  />
+                  <div
+                    className="w-11 h-11 rounded-xl border flex items-center justify-center"
+                    style={trophy.type === "rank"
+                      ? { backgroundColor: `${trophy.rankColor}14`, borderColor: `${trophy.rankColor}40` }
+                      : { backgroundColor: "#D5A33A1A", borderColor: "#D5A33A33" }}
+                  >
+                    <Icon size={20} style={{ color: trophy.type === "rank" ? trophy.rankColor : "#D5A33A" }} />
                   </div>
+                  {trophy.type === "rank" && (
+                    <div
+                      className="absolute top-3 right-3 px-2 py-1 rounded-lg border text-xs font-mono font-black"
+                      style={{ color: trophy.rankColor, borderColor: `${trophy.rankColor}40`, backgroundColor: `${trophy.rankColor}12` }}
+                    >
+                      ×{trophy.count}
+                    </div>
+                  )}
                   <div className="font-display font-bold mt-3">{trophy.title}</div>
                   <div className="text-xs text-muted-foreground mt-1">{trophy.detail}</div>
                   {trophy.date && (
