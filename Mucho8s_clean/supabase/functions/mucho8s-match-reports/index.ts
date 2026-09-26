@@ -17,7 +17,6 @@ const MIN_ELO = 500;
 const WIN_DELTA = 25;
 const LOSS_DELTA = 25;
 const MVP_BONUS = 3;
-const MERDA_PENALTY = 3;
 
 const sha256 = async (value: string) => {
   const bytes = new TextEncoder().encode(value);
@@ -133,7 +132,6 @@ const applyEffects = (
     const won = winners.includes(id);
     let delta = won ? WIN_DELTA : -LOSS_DELTA;
     if (id === mvpId) delta += MVP_BONUS;
-    if (merdaSet.has(id)) delta -= MERDA_PENALTY;
 
     const nextElo = Math.max(MIN_ELO, Number(player.currentElo || BASE_ELO) + delta);
     player.currentElo = nextElo;
