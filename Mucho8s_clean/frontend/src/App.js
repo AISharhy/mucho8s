@@ -11,6 +11,7 @@ import TeamBalancer from "@/pages/TeamBalancer";
 import Matches from "@/pages/Matches";
 import Ranking from "@/pages/Ranking";
 import RankGuide from "@/pages/RankGuide";
+import DraftHub from "@/pages/DraftHub";
 import AdminPanel from "@/pages/AdminPanel";
 import ChallengeMatch from "@/pages/ChallengeMatch";
 import ChallengeInbox from "@/pages/ChallengeInbox";
@@ -69,6 +70,7 @@ function App() {
               <Route path="balancer" element={<TeamBalancer />} />
               <Route path="matches" element={<Matches />} />
               <Route path="ranking" element={<Ranking />} />
+              <Route path="draft" element={<DraftHub />} />
               <Route path="leaderboard" element={<Ranking initialTab="leaderboard" />} />
               <Route path="statistics" element={<Ranking initialTab="statistics" />} />
               <Route path="challenge-ranking" element={<Ranking initialTab="challenges" />} />
