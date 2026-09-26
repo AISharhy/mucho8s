@@ -642,3 +642,82 @@ code, .font-mono {
     .m8-hero { border-radius: 1rem; }
     .m8-section-head { align-items: center; }
 }
+
+
+/* Final polish: motion, focus and mobile density */
+@keyframes m8PageEnter {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.m8-page-stack {
+    animation: m8PageEnter .26s ease both;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid rgba(255,42,59,.72);
+    outline-offset: 2px;
+}
+
+.m8-panel,
+.m8-panel-quiet,
+.m8-stat-card,
+.interactive-row {
+    will-change: transform;
+}
+
+@media (max-width: 768px) {
+    .page-shell {
+        overflow-x: hidden;
+    }
+
+    .m8-panel,
+    .m8-hero,
+    .m8-rank-spotlight {
+        box-shadow: 0 10px 28px rgba(0,0,0,.12);
+    }
+
+    .m8-stat-card {
+        min-height: 88px;
+        padding: .8rem .85rem;
+    }
+
+    .brand-kicker {
+        letter-spacing: .145em;
+    }
+
+    .dashboard-logo-stage {
+        width: 190px;
+        min-height: 145px;
+    }
+}
+
+@media (max-width: 480px) {
+    .m8-hero {
+        padding: 1rem;
+    }
+
+    .m8-panel {
+        border-radius: .95rem;
+    }
+
+    .m8-stat-card {
+        border-radius: .85rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .m8-page-stack,
+    .m8-action,
+    .interactive-row,
+    .m8-panel,
+    .m8-stat-card {
+        animation: none !important;
+        transition-duration: .01ms !important;
+        transform: none !important;
+    }
+}
