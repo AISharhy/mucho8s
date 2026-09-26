@@ -315,6 +315,13 @@ export default function ChallengeCenter() {
                       You have been paired vs {challenge.challenger_player_id === discordPlayer.id ? challenged?.name : challenger?.name} for {money(challenge)} via {platform}.
                     </p>
                   </>
+                ) : challenge.last_event === "match_pairing_verified" ? (
+                  <>
+                    <h2 className="font-display text-2xl font-extrabold text-emerald-400">MONEY MATCHUP VERIFIED</h2>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      The match result is official and now counts in Chall Ranking and money statistics.
+                    </p>
+                  </>
                 ) : challenge.last_event === "payout_disputed" ? (
                   <>
                     <h2 className="font-display text-2xl font-extrabold text-orange-400">PAYMENT DISPUTE</h2>
