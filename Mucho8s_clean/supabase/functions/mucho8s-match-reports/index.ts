@@ -650,11 +650,21 @@ Deno.serve(async (req: Request) => {
       }
 
       if (user?.id) {
-        await supabase
+        const { data: existingLive, error: existingLiveError } = await supabase
           .from("live_team_matches")
-          .update({ status: "cancelled", closed_at: new Date().toISOString() })
+          .select("id,cancel_requested_at")
           .eq("creator_account_id", user.id)
-          .eq("status", "live");
+          .eq("status", "live")
+          .limit(1);
+
+        if (existingLiveError) throw existingLiveError;
+        if (existingLive?.length) {
+          return json({
+            error: existingLive[0]?.cancel_requested_at
+              ? "Your current live match is waiting for Admin cancellation"
+              : "You already have an active live match",
+          }, 409);
+        }
       }
 
       const row = {
