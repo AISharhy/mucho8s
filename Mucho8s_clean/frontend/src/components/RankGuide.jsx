@@ -28,7 +28,7 @@ export const RankEmblem = ({ elo = 1000, compact = false }) => {
         >
           <div className="-rotate-45 flex flex-col items-center justify-center">
             <Icon size={compact ? 18 : 24} className={RANKS.findIndex((item) => item.id === rank.id) >= 4 ? "text-[#D5A33A]" : "text-white"} />
-            <span className="text-[8px] font-black tracking-tighter">{rank.short}</span>
+            <span className="text-[8px] font-black tracking-tighter">{rank.id === "masters" ? "M" : rank.roman}</span>
           </div>
         </div>
         <div className="min-w-0 flex-1">
@@ -74,7 +74,7 @@ export default function RankGuide() {
               <div className="w-16 h-16 mx-auto rotate-45 rounded-2xl border border-[#D5A33A]/50 bg-[#0F1218] flex items-center justify-center">
                 <div className="-rotate-45 text-center">
                   <Icon size={26} className="mx-auto text-[#D5A33A]" />
-                  <div className="text-[9px] font-black mt-0.5">{rank.short}</div>
+                  <div className="text-[9px] font-black mt-0.5">{rank.id === "masters" ? "M" : rank.roman}</div>
                 </div>
               </div>
               <div className="text-center mt-5">
