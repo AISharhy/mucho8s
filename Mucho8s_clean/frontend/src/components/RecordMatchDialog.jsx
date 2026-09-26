@@ -18,7 +18,7 @@ export const RecordMatchDialog = ({
   title = "Record Match",
   reportOnly = false,
 }) => {
-  const { players, recordMatch, editMatch } = useData();
+  const { players, createMatchReport, editMatch } = useData();
   const [assign, setAssign] = useState({});
   const [winner, setWinner] = useState("A");
   const [mvpId, setMvpId] = useState("");
@@ -27,6 +27,10 @@ export const RecordMatchDialog = ({
   const [game, setGame] = useState(GAMES[0]);
   const [query, setQuery] = useState("");
   const [pairings, setPairings] = useState([]);
+  const [scoreA, setScoreA] = useState("0");
+  const [scoreB, setScoreB] = useState("0");
+  const [captainA, setCaptainA] = useState("");
+  const [captainB, setCaptainB] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -45,6 +49,10 @@ export const RecordMatchDialog = ({
     setMode(editData?.mode || MODES[0]);
     setGame(editData?.game || defaultGame || GAMES[0]);
     setPairings(Array.isArray(source?.pairings) ? source.pairings : []);
+    setScoreA(String(editData?.scoreA ?? 0));
+    setScoreB(String(editData?.scoreB ?? 0));
+    setCaptainA(editData?.captainAPlayerId || source?.teamA?.[0] || "");
+    setCaptainB(editData?.captainBPlayerId || source?.teamB?.[0] || "");
     setQuery("");
   }, [open, initialTeams, editData, defaultGame]);
 
@@ -75,7 +83,19 @@ export const RecordMatchDialog = ({
     [players, query]
   );
 
-  const valid = teamA.length === teamB.length && teamA.length >= 2 && teamA.length <= 4;
+  const effectiveCaptainA = teamA.includes(captainA) ? captainA : teamA[0] || "";
+  const effectiveCaptainB = teamB.includes(captainB) ? captainB : teamB[0] || "";
+  const numericScoreA = Math.max(0, Number(scoreA) || 0);
+  const numericScoreB = Math.max(0, Number(scoreB) || 0);
+  const scoreValid =
+    (numericScoreA === 0 && numericScoreB === 0) ||
+    (numericScoreA !== numericScoreB && (numericScoreA > numericScoreB ? "A" : "B") === winner);
+  const valid =
+    teamA.length === teamB.length &&
+    teamA.length >= 2 &&
+    teamA.length <= 4 &&
+    Boolean(effectiveCaptainA && effectiveCaptainB) &&
+    scoreValid;
 
   const updatePairing = (playerAId, field, value) => {
     setPairings((prev) => {
@@ -111,7 +131,11 @@ export const RecordMatchDialog = ({
 
   const submit = async () => {
     if (!valid) {
-      toast.error("Both teams must be equal (2, 3 or 4 players each)");
+      if (!scoreValid) {
+        toast.error("The selected winner must match the score");
+      } else {
+        toast.error("Both teams must be equal (2, 3 or 4 players each)");
+      }
       return;
     }
 
@@ -149,18 +173,22 @@ export const RecordMatchDialog = ({
           : "Match updated — Elo & stats recalculated"
       );
     } else {
-      const ok = await recordMatch({
+      const report = await createMatchReport({
         teamA,
         teamB,
         winner,
+        scoreA: numericScoreA,
+        scoreB: numericScoreB,
         mvpId: mvpId || undefined,
         map,
         mode,
         game,
         pairings: cleanPairings,
+        captainAPlayerId: effectiveCaptainA,
+        captainBPlayerId: effectiveCaptainB,
       });
-      if (!ok) return;
-      toast.success("Match recorded — Elo & stats updated");
+      if (!report) return;
+      toast.success("Result submitted — waiting for captain verification");
     }
 
     onOpenChange(false);
@@ -406,6 +434,80 @@ export const RecordMatchDialog = ({
               </>
             )}
           </div>
+
+          {!editData && (
+            <div className="rounded-2xl bg-[#0F1218] border border-[#1D222C] p-4 space-y-4">
+              <div>
+                <div className="text-xs uppercase tracking-widest text-muted-foreground">Verification</div>
+                <div className="font-display font-bold mt-1">Score & Captains</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Elo, wins/losses, streaks, MVP and Money Chall results update only after a captain confirms.
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Alpha score</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={scoreA}
+                    onChange={(e) => setScoreA(e.target.value)}
+                    className="mt-1 bg-[#151923] border-[#2A303B]"
+                    data-testid="score-alpha-input"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Bravo score</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={scoreB}
+                    onChange={(e) => setScoreB(e.target.value)}
+                    className="mt-1 bg-[#151923] border-[#2A303B]"
+                    data-testid="score-bravo-input"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Alpha captain</Label>
+                  <select
+                    value={effectiveCaptainA}
+                    onChange={(e) => setCaptainA(e.target.value)}
+                    className="mt-1 w-full h-10 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm"
+                    data-testid="captain-alpha-select"
+                  >
+                    {teamA.map((id) => (
+                      <option key={id} value={id}>{players.find((p) => p.id === id)?.name || "Player"}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Bravo captain</Label>
+                  <select
+                    value={effectiveCaptainB}
+                    onChange={(e) => setCaptainB(e.target.value)}
+                    className="mt-1 w-full h-10 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm"
+                    data-testid="captain-bravo-select"
+                  >
+                    {teamB.map((id) => (
+                      <option key={id} value={id}>{players.find((p) => p.id === id)?.name || "Player"}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {!scoreValid && (
+                <div className="text-xs text-red-400">
+                  The selected winner does not match the entered score.
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
@@ -424,7 +526,7 @@ export const RecordMatchDialog = ({
             data-testid="record-save-btn"
           >
             <Crown size={16} className="mr-1" />
-            {reportOnly ? "Report Result" : editData ? "Update Match" : "Save Result"}
+            {reportOnly ? "Update Result" : editData ? "Update Match" : "Submit for Verification"}
           </Button>
         </DialogFooter>
       </DialogContent>
