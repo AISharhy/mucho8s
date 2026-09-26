@@ -135,7 +135,9 @@ export default function PlayerProfile() {
   }, [publicChallenges, id]);
 
   const challengeInsights = useMemo(() => {
-    const completed = challengeStats.completed;
+    const completed = challengeStats.completed.filter(
+      (challenge) => !(challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at)
+    );
     let currentStreak = 0;
     let currentType = "";
     if (completed.length) {
