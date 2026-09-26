@@ -100,11 +100,11 @@ export default function MatchResultCenter() {
   };
 
   return (
-    <section className="card-surface rounded-2xl p-5" data-testid="match-result-center">
+    <section className="m8-panel rounded-[22px] p-5 sm:p-6" data-testid="match-result-center">
       <div className="flex items-center justify-between gap-3 mb-4">
         <div>
           <div className="brand-kicker mb-1">Verification Center</div>
-          <h3 className="font-display text-xl font-bold">Match Results</h3>
+          <h3 className="font-display text-2xl font-black tracking-[-0.025em]">Match Results</h3>
           <p className="text-sm text-muted-foreground mt-1">
             Results update Elo and challenge stats only after verification.
           </p>
@@ -130,7 +130,11 @@ export default function MatchResultCenter() {
           return (
             <div
               key={report.id}
-              className="rounded-2xl bg-[#0F1218] border border-[#1D222C] p-4"
+              className={`rounded-2xl border p-4 transition-colors ${report.status === "completed"
+                ? "bg-emerald-500/[0.025] border-emerald-500/15"
+                : report.status === "disputed"
+                  ? "bg-orange-500/[0.025] border-orange-500/15"
+                  : "bg-[#0F1218] border-[#1D222C]"}`}
             >
               <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                 <div className="min-w-0 flex-1">
@@ -146,7 +150,7 @@ export default function MatchResultCenter() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center mt-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_118px_1fr] gap-3 items-center mt-4">
                     <div>
                       <div className={`font-display font-bold ${report.winner === "A" ? "text-magma" : ""}`}>
                         Team A
@@ -159,11 +163,12 @@ export default function MatchResultCenter() {
                       </div>
                     </div>
 
-                    <div className="text-center">
-                      <div className="font-display font-black text-2xl">
-                        {Number(report.score_a || 0)} - {Number(report.score_b || 0)}
+                    <div className="m8-panel-quiet rounded-xl px-3 py-3 text-center">
+                      <div className="text-[9px] uppercase tracking-[0.18em] text-[#596170]">Final</div>
+                      <div className="font-display font-black text-3xl tracking-[-0.05em] mt-1">
+                        {Number(report.score_a || 0)}<span className="text-[#4E5665] mx-1">-</span>{Number(report.score_b || 0)}
                       </div>
-                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">
+                      <div className="text-[9px] uppercase tracking-widest text-muted-foreground mt-1">
                         {report.winner === "A" ? "Team A won" : "Team B won"}
                       </div>
                     </div>
@@ -182,8 +187,8 @@ export default function MatchResultCenter() {
                   </div>
 
                   {mvp && (
-                    <div className="inline-flex items-center gap-1.5 text-xs text-[#D5A33A] mt-3">
-                      <Crown size={13} /> MVP: {mvp.name}
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#D5A33A]/[0.07] border border-[#D5A33A]/20 text-xs text-[#D5A33A] mt-3 font-bold">
+                      <Crown size={13} /> MVP · {mvp.name}
                     </div>
                   )}
 
