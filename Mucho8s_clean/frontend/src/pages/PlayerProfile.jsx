@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
-import { winRate, tierOf, rankProgress } from "@/lib/elo";
+import { winRate, tierOf } from "@/lib/elo";
 import { duoChemistry } from "@/lib/chemistry";
 import { analyzeBountyHistory, buildBountyAchievementCatalog } from "@/lib/bountyAchievements";
-import { PlayerAvatar, EloBadge, Last10, StreakBadge, MvpBadge, MerdaBadge, RankBadge, RankProgress } from "@/components/shared";
-import { RankEmblem } from "@/components/RankGuide";
+import { PlayerAvatar, EloBadge, Last10, StreakBadge, MvpBadge, MerdaBadge, RankBadge } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -322,7 +321,6 @@ export default function PlayerProfile() {
   }
 
   const tier = tierOf(player.currentElo);
-  const rankPreview = rankProgress(player.currentElo);
   const saveLinks = async () => {
     setSavingLinks(true);
     const ok = await saveMyChallengeLinks({
@@ -596,39 +594,6 @@ export default function PlayerProfile() {
             )}
           </button>
         </div>
-      )}
-
-      {(!isOwnProfile || profileTab === "overview") && (
-      <section className="m8-rank-spotlight rounded-[22px] p-5 sm:p-7 overflow-hidden relative order-3" data-testid="player-rank-preview">
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-center">
-          <div>
-            <div className="brand-kicker mb-2">Rank Preview</div>
-            <h3 className="font-display text-2xl sm:text-4xl font-black tracking-[-0.035em]">
-              {player.name} is{" "}
-              <span style={{ color: rankPreview.rank.color }}>{rankPreview.rank.name}</span>
-            </h3>
-            <p className="text-sm text-muted-foreground mt-2 max-w-xl">
-              Competitive division based directly on {isOwnProfile ? "your" : player.name + "'s"} current Elo.
-            </p>
-
-            <div className="mt-5 max-w-xl">
-              <RankProgress elo={player.currentElo} />
-            </div>
-
-            <div className="mt-3 text-sm text-muted-foreground">
-              {rankPreview.next
-                ? rankPreview.eloNeeded + " Elo to reach " + rankPreview.next.name + "."
-                : "Highest competitive division reached."}
-            </div>
-          </div>
-
-          <div className="rounded-2xl bg-[#090C11]/75 border border-[#2A303B] p-6 flex items-center justify-center min-h-[210px] shadow-[inset_0_0_40px_rgba(255,255,255,0.018)]">
-            <div className="w-full max-w-[280px]">
-              <RankEmblem elo={player.currentElo} />
-            </div>
-          </div>
-        </div>
-      </section>
       )}
 
       {(!isOwnProfile) && (
