@@ -138,13 +138,15 @@ const automaticMerdaClearedIds = (byId, winners) =>
   });
 
 const recomputeMerdaState = (byId, matches) => {
+  const rebuiltMatches = (matches || []).map((match) => ({ ...match }));
+
   Object.values(byId).forEach((player) => {
     if (!player) return;
     player.merdaCount = 0;
     player.currentStreak = 0;
   });
 
-  [...(matches || [])]
+  [...rebuiltMatches]
     .sort((a, b) => new Date(a?.date || 0).getTime() - new Date(b?.date || 0).getTime())
     .forEach((match) => {
       const teamA = Array.isArray(match?.teamA) ? match.teamA : [];
@@ -182,7 +184,7 @@ const recomputeMerdaState = (byId, matches) => {
       match.merdaClearedIds = cleared;
     });
 
-  return matches;
+  return rebuiltMatches;
 };
 
 const applyEffects = (byId, teamA, teamB, winner, mvpId, merdaIds = [], merdaClearedIds = []) => {
@@ -1691,8 +1693,7 @@ export const DataProvider = ({ children }) => {
       season: data.season || competitionData?.current?.season_number || dashboardData?.competition?.season_number || 1,
       eloChanges,
     });
-    const nextMatches = [match, ...matches];
-    recomputeMerdaState(byId, nextMatches);
+    const nextMatches = recomputeMerdaState(byId, [match, ...matches]);
     recomputeRecent(byId, nextMatches, new Set([...teamA, ...teamB]));
     const ok = await persistWholeState(Object.values(byId), nextMatches);
 
@@ -1752,8 +1753,10 @@ export const DataProvider = ({ children }) => {
     nextMatch.merdaClearedIds = merdaClearedIds;
     nextMatch.eloChanges = applyEffects(byId, teamA, teamB, nextMatch.winner, nextMatch.mvpId, merdaIds, merdaClearedIds);
 
-    const nextMatches = matches.map((m) => (m.id === id ? nextMatch : m));
-    recomputeMerdaState(byId, nextMatches);
+    const nextMatches = recomputeMerdaState(
+      byId,
+      matches.map((m) => (m.id === id ? nextMatch : m))
+    );
     recomputeRecent(byId, nextMatches, new Set([...old.teamA, ...old.teamB, ...teamA, ...teamB]));
     const ok = await persistWholeState(Object.values(byId), nextMatches);
     if (ok) {
@@ -1780,8 +1783,7 @@ export const DataProvider = ({ children }) => {
     const nextPlayers = clonePlayers(players);
     const byId = Object.fromEntries(nextPlayers.map((p) => [p.id, p]));
     revertEffects(byId, old);
-    const nextMatches = matches.filter((m) => m.id !== id);
-    recomputeMerdaState(byId, nextMatches);
+    const nextMatches = recomputeMerdaState(byId, matches.filter((m) => m.id !== id));
     recomputeRecent(byId, nextMatches, new Set([...old.teamA, ...old.teamB]));
     const ok = await persistWholeState(Object.values(byId), nextMatches);
     if (ok) {
