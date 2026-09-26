@@ -14,8 +14,7 @@ const MAIN_NAV = [
 ];
 
 const COMPETITION_NAV = [
-  { to: "/draft", label: "Draft Hub", icon: FlaskConical, testid: "nav-draft-link" },
-  { to: "/balancer", label: "Team Balancer", icon: Swords, testid: "nav-team-balancer-link" },
+  { to: "/team-builder", label: "Team Builder", icon: FlaskConical, testid: "nav-team-builder-link" },
   { to: "/ranking", label: "Ranking", icon: Trophy, testid: "nav-ranking-link" },
   { to: "/rank-guide", label: "Rank Guide", icon: Medal, testid: "nav-rank-guide-link" },
 ];
