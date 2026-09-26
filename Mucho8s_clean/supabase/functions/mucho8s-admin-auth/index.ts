@@ -131,6 +131,23 @@ const validateSession = async (req: Request, supabase: any) => {
   if (credentialError || !credential?.is_active) return null;
   if (!credential?.required_account_id || credential.required_account_id !== session.account_id) return null;
 
+  const { data: account, error: accountError } = await supabase
+    .from("player_accounts")
+    .select("player_id,display_name")
+    .eq("id", session.account_id)
+    .maybeSingle();
+
+  if (accountError || !account?.player_id) return null;
+
+  const { data: access, error: accessError } = await supabase
+    .from("admin_access")
+    .select("player_id,username,display_name,is_active")
+    .eq("player_id", account.player_id)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (accessError || !access || access.username !== session.username) return null;
+
   await supabase
     .from("admin_sessions")
     .update({ last_seen_at: new Date().toISOString() })
@@ -138,6 +155,8 @@ const validateSession = async (req: Request, supabase: any) => {
 
   return {
     username: session.username,
+    playerId: account.player_id,
+    displayName: access.display_name || account.display_name || "Admin",
     tokenHash,
     expiresAt: session.expires_at,
   };
@@ -387,10 +406,140 @@ Deno.serve(async (req: Request) => {
     const session = await validateSession(req, supabase);
     if (!session) return json(req, { error: "Admin session expired or invalid" }, 401);
 
+    if (action === "list-access") {
+      const [{ data: accounts, error: accountsError }, { data: accessRows, error: accessError }] = await Promise.all([
+        supabase
+          .from("player_accounts")
+          .select("id,player_id,display_name,discord_username,avatar_url")
+          .not("player_id", "is", null)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("admin_access")
+          .select("player_id,username,display_name,is_active,updated_at")
+          .order("created_at", { ascending: true }),
+      ]);
+
+      if (accountsError) throw accountsError;
+      if (accessError) throw accessError;
+
+      const accessByPlayer = Object.fromEntries(
+        (accessRows || []).map((row: any) => [String(row.player_id), row])
+      );
+
+      return json(req, {
+        ok: true,
+        access: (accounts || []).map((account: any) => {
+          const access = accessByPlayer[String(account.player_id)] || null;
+          return {
+            account_id: account.id,
+            player_id: account.player_id,
+            display_name: account.display_name,
+            discord_username: account.discord_username,
+            avatar_url: account.avatar_url,
+            is_admin: Boolean(access?.is_active),
+            admin_username: access?.username || null,
+          };
+        }),
+      });
+    }
+
+    if (action === "set-access") {
+      const playerId = String(body?.playerId || "").trim();
+      const enabled = Boolean(body?.enabled);
+      if (!playerId) return json(req, { error: "Player is required" }, 400);
+
+      const { data: account, error: accountError } = await supabase
+        .from("player_accounts")
+        .select("id,player_id,display_name,discord_username")
+        .eq("player_id", playerId)
+        .maybeSingle();
+
+      if (accountError) throw accountError;
+      if (!account) {
+        return json(req, { error: "This player must link Discord before receiving Admin access" }, 409);
+      }
+
+      const { data: existing, error: existingError } = await supabase
+        .from("admin_access")
+        .select("player_id,username,display_name,is_active")
+        .eq("player_id", playerId)
+        .maybeSingle();
+
+      if (existingError) throw existingError;
+
+      const now = new Date().toISOString();
+      let username = String(existing?.username || "").trim();
+
+      if (enabled) {
+        if (!username) {
+          username = `admin_${playerId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 20).toLowerCase()}`;
+        }
+
+        const displayName =
+          String(existing?.display_name || account.display_name || account.discord_username || "Admin").trim() || "Admin";
+
+        const { error } = await supabase
+          .from("admin_access")
+          .upsert({
+            player_id: playerId,
+            username,
+            display_name: displayName,
+            is_active: true,
+            updated_at: now,
+          }, { onConflict: "player_id" });
+
+        if (error) throw error;
+      } else {
+        if (existing?.is_active) {
+          const { count, error: countError } = await supabase
+            .from("admin_access")
+            .select("player_id", { count: "exact", head: true })
+            .eq("is_active", true);
+
+          if (countError) throw countError;
+          if (Number(count || 0) <= 1) {
+            return json(req, { error: "At least one active Admin is required" }, 409);
+          }
+        }
+
+        if (existing) {
+          const { error } = await supabase
+            .from("admin_access")
+            .update({ is_active: false, updated_at: now })
+            .eq("player_id", playerId);
+
+          if (error) throw error;
+
+          await supabase
+            .from("admin_credentials")
+            .update({ is_active: false, updated_at: now })
+            .eq("username", existing.username);
+
+          await supabase
+            .from("admin_sessions")
+            .update({ revoked_at: now })
+            .eq("username", existing.username)
+            .is("revoked_at", null);
+        }
+      }
+
+      await supabase.from("admin_audit_log").insert({
+        action: enabled ? "admin.access_granted" : "admin.access_revoked",
+        entity_type: "player",
+        entity_id: playerId,
+        details: {
+          changed_by: session.playerId,
+          enabled,
+        },
+      });
+
+      return json(req, { ok: true, playerId, enabled });
+    }
+
     if (action === "status") {
       return json(req, {
         ok: true,
-        nickname: session.username === "sysma" ? "SysMa" : session.username === "sharhy" ? "Sharhy" : "Admin",
+        nickname: session.displayName || "Admin",
         expiresAt: session.expiresAt,
       });
     }
