@@ -46,7 +46,7 @@ export const RecordMatchDialog = ({
     setWinner(editData?.winner || "A");
     setMvpId(editData?.mvpId || "");
     setMap(editData?.map || "");
-    setMode(editData?.mode || MODES[0]);
+    setMode(editData?.mode || defaultMode || MODES[0]);
     setGame(editData?.game || defaultGame || GAMES[0]);
     setPairings(Array.isArray(source?.pairings) ? source.pairings : []);
     setScoreA(String(editData?.scoreA ?? 0));
@@ -54,7 +54,7 @@ export const RecordMatchDialog = ({
     setCaptainA(editData?.captainAPlayerId || source?.teamA?.[0] || "");
     setCaptainB(editData?.captainBPlayerId || source?.teamB?.[0] || "");
     setQuery("");
-  }, [open, initialTeams, editData, defaultGame]);
+  }, [open, initialTeams, editData, defaultGame, defaultMode]);
 
   const teamA = Object.keys(assign).filter((id) => assign[id] === "A");
   const teamB = Object.keys(assign).filter((id) => assign[id] === "B");
