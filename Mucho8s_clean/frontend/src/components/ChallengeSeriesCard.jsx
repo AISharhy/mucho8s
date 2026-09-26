@@ -49,17 +49,26 @@ export default function ChallengeSeriesCard({
     series.settlement_winner_player_id === discordPlayer?.id
   );
 
-  const winningsByPlayer = rounds.reduce((acc, round) => {
+  const netByPlayer = rounds.reduce((acc, round) => {
     if (round.status !== "completed" || !round.reported_winner_player_id) return acc;
-    const id = round.reported_winner_player_id;
-    acc[id] = Number(acc[id] || 0) + Number(round.amount_cents || 0);
+
+    const playerAId = series?.player_a_player_id;
+    const playerBId = series?.player_b_player_id;
+    if (!playerAId || !playerBId) return acc;
+
+    const amount = Number(round.amount_cents || 0);
+    const winnerId = round.reported_winner_player_id;
+    const loserId = winnerId === playerAId ? playerBId : playerAId;
+
+    acc[winnerId] = Number(acc[winnerId] || 0) + amount;
+    acc[loserId] = Number(acc[loserId] || 0) - amount;
     return acc;
   }, {});
 
   const playerA = series?.player_a_player_id ? playerMap[series.player_a_player_id] : null;
   const playerB = series?.player_b_player_id ? playerMap[series.player_b_player_id] : null;
-  const playerAWinnings = Number(winningsByPlayer[series?.player_a_player_id] || 0);
-  const playerBWinnings = Number(winningsByPlayer[series?.player_b_player_id] || 0);
+  const playerANet = Number(netByPlayer[series?.player_a_player_id] || 0);
+  const playerBNet = Number(netByPlayer[series?.player_b_player_id] || 0);
   const platformLabel = String(series?.platform || "paypal").toUpperCase();
 
   return (
@@ -99,15 +108,15 @@ export default function ChallengeSeriesCard({
       <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center mt-5 rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
         <div>
           <div className="text-xs font-bold truncate">{playerA?.name || "Player"}</div>
-          <div className="font-mono text-sm text-emerald-400 mt-0.5">
-            {money(playerAWinnings, series?.currency || "EUR")} won
+          <div className={`font-mono text-sm mt-0.5 ${playerANet >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+            {playerANet > 0 ? "+" : ""}{money(playerANet, series?.currency || "EUR")} net
           </div>
         </div>
         <div className="text-[10px] uppercase tracking-[0.2em] text-[#596170]">VS</div>
         <div className="text-right">
           <div className="text-xs font-bold truncate">{playerB?.name || "Player"}</div>
-          <div className="font-mono text-sm text-emerald-400 mt-0.5">
-            {money(playerBWinnings, series?.currency || "EUR")} won
+          <div className={`font-mono text-sm mt-0.5 ${playerBNet >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+            {playerBNet > 0 ? "+" : ""}{money(playerBNet, series?.currency || "EUR")} net
           </div>
         </div>
       </div>
