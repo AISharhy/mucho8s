@@ -15,7 +15,7 @@ const statusClass = {
   disputed: "text-orange-400 border-orange-500/25 bg-orange-500/10",
 };
 
-export default function MatchResultCenter() {
+export default function MatchResultCenter({ teamPlayerIds = null }) {
   const {
     matchReports,
     playerMap,
@@ -32,15 +32,29 @@ export default function MatchResultCenter() {
 
   const safePlayerMap = playerMap && typeof playerMap === "object" ? playerMap : {};
 
-  const reports = useMemo(
-    () =>
-      [...(Array.isArray(matchReports) ? matchReports : [])]
-        .filter(Boolean)
-        .filter((report) => ["pending", "disputed"].includes(report.status))
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-        .slice(0, 8),
-    [matchReports]
-  );
+  const reports = useMemo(() => {
+    const targetIds = Array.isArray(teamPlayerIds)
+      ? [...teamPlayerIds].map(String).sort()
+      : null;
+
+    return [...(Array.isArray(matchReports) ? matchReports : [])]
+      .filter(Boolean)
+      .filter((report) => ["pending", "disputed"].includes(report.status))
+      .filter((report) => {
+        if (!targetIds?.length) return true;
+        const reportIds = [
+          ...(Array.isArray(report.team_a) ? report.team_a : []),
+          ...(Array.isArray(report.team_b) ? report.team_b : []),
+        ].map(String).sort();
+
+        return (
+          reportIds.length === targetIds.length &&
+          reportIds.every((id, index) => id === targetIds[index])
+        );
+      })
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 8);
+  }, [matchReports, teamPlayerIds]);
 
   if (!reports.length) return null;
 
@@ -156,6 +170,47 @@ export default function MatchResultCenter() {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+                  <div className="rounded-lg bg-[#0F1218] border border-[#222834] px-3 py-2 text-xs">
+                    <span className="text-muted-foreground">Alpha Captain · </span>
+                    <span className="font-bold">👑 {safePlayerMap[report.captain_a_player_id]?.name || "Player"}</span>
+                  </div>
+                  <div className="rounded-lg bg-[#0F1218] border border-[#222834] px-3 py-2 text-xs sm:text-right">
+                    <span className="text-muted-foreground">Bravo Captain · </span>
+                    <span className="font-bold">👑 {safePlayerMap[report.captain_b_player_id]?.name || "Player"}</span>
+                  </div>
+                </div>
+
+                {Array.isArray(report.pairings) && report.pairings.length > 0 && (
+                  <div className="mt-3 rounded-xl bg-[#0F1218] border border-[#222834] p-3">
+                    <div className="text-[9px] uppercase tracking-widest text-muted-foreground mb-2">
+                      Money matchups
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {report.pairings.map((pair, index) => (
+                        <div
+                          key={`${pair.playerAId}:${pair.playerBId}:${index}`}
+                          className="flex items-center justify-between gap-2 rounded-lg border border-[#1D222C] px-2.5 py-2 text-xs"
+                        >
+                          <span className="font-semibold truncate">
+                            {safePlayerMap[pair.playerAId]?.name || "Alpha"}
+                          </span>
+                          <span className="text-muted-foreground">↔</span>
+                          <span className="font-semibold truncate">
+                            {safePlayerMap[pair.playerBId]?.name || "Bravo"}
+                          </span>
+                          <span className="font-mono font-black text-[#D5A33A] shrink-0">
+                            €{Number(pair.amount || 0).toFixed(2)}
+                          </span>
+                          <span className="text-[9px] uppercase text-muted-foreground shrink-0">
+                            {String(pair.platform || "").toUpperCase()}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex flex-wrap gap-2 mt-3">
                   {mvp && (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#D5A33A]/[0.07] border border-[#D5A33A]/20 text-xs text-[#D5A33A] font-bold">
@@ -230,7 +285,7 @@ export default function MatchResultCenter() {
 
                 {report.status === "pending" && !canReview && !isAdmin && (
                   <div className="rounded-xl bg-[#151923] border border-[#242A35] p-3 text-xs text-muted-foreground text-center">
-                    Waiting for captain verification
+                    Waiting for the assigned captain to verify
                   </div>
                 )}
 
