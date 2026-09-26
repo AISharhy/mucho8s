@@ -524,7 +524,7 @@ export const DataProvider = ({ children }) => {
     return () => clearInterval(timer);
   }, [discordSession, discordAccount?.player_id, accountRequest]);
 
-  const saveMyChallengeLinks = useCallback(async ({ paypalUrl, revolutUrl, cmgUrl }) => {
+  const saveMyChallengeLinks = useCallback(async ({ paypalUrl, revolutUrl }) => {
     if (!discordSession) {
       toast.error("Login with Discord first");
       return false;
@@ -535,7 +535,6 @@ export const DataProvider = ({ children }) => {
         action: "update-links",
         paypalUrl,
         revolutUrl,
-        cmgUrl,
       },
       { session: discordSession },
     );
@@ -877,9 +876,7 @@ export const DataProvider = ({ children }) => {
           const rawError = String(data?.error || "Admin challenge action failed");
           let message = rawError;
 
-          if (missingPlayer && rawError.includes("has not linked Discord yet")) {
-            message = `${missingPlayer.name} must link Discord before creating this challenge.`;
-          } else if (missingPlayer && rawError.includes("has not configured")) {
+          if (missingPlayer && rawError.includes("has not configured")) {
             const platform = rawError.split("has not configured")[1]?.trim() || "the selected payment method";
             message = `${missingPlayer.name} has not configured ${platform} yet.`;
           }
