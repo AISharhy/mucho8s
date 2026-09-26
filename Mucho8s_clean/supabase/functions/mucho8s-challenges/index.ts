@@ -876,21 +876,19 @@ Deno.serve(async (req: Request) => {
       if (active) return json({ error: "Finish or resolve the active match before closing the series" }, 409);
       if (!state?.completed_rounds) return json({ error: "The series needs at least one verified match" }, 409);
 
-      const winnerPlayerId = state.current_winner_player_id;
-      const settlementAmount = Number(state.current_amount_cents || 0);
-      const even = settlementAmount === 0;
+      const now = new Date().toISOString();
 
       const { data, error } = await supabase
         .from("challenge_series")
         .update({
-          status: even ? "settled" : "closed",
-          settlement_winner_player_id: winnerPlayerId,
-          settlement_amount_cents: settlementAmount,
-          payment_sent_at: even ? new Date().toISOString() : null,
-          payment_received_at: even ? new Date().toISOString() : null,
-          closed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          last_event: even ? "series_even" : "series_closed",
+          status: "settled",
+          settlement_winner_player_id: null,
+          settlement_amount_cents: 0,
+          payment_sent_at: now,
+          payment_received_at: now,
+          closed_at: now,
+          updated_at: now,
+          last_event: "series_ended",
         })
         .eq("id", seriesId)
         .select("*")
@@ -1099,7 +1097,6 @@ Deno.serve(async (req: Request) => {
       if (!challenge) return json({ error: "Challenge not found" }, 404);
       if (!isParticipant(challenge)) return json({ error: "Not allowed" }, 403);
       if (challenge.status !== "completed") return json({ error: "The result must be verified before payout" }, 409);
-      if (challenge.series_id) return json({ error: "This match belongs to a Chall Series. Settle the series balance instead." }, 409);
       if (me.player_id !== challenge.reported_winner_player_id) {
         return json({ error: "Only the winning player can confirm the payout" }, 403);
       }
@@ -1129,9 +1126,7 @@ Deno.serve(async (req: Request) => {
       if (!challenge) return json({ error: "Challenge not found" }, 404);
       if (!isParticipant(challenge)) return json({ error: "Not allowed" }, 403);
       if (challenge.status !== "completed") return json({ error: "The result must be verified first" }, 409);
-      if (challenge.series_id) return json({ error: "Series payout disputes are handled on the final series balance." }, 409);
       if (me.player_id !== challenge.reported_winner_player_id) return json({ error: "Only the winner can dispute a missing payout" }, 403);
-      if (!challenge.payment_sent_at) return json({ error: "The losing player has not marked the payout as sent yet" }, 409);
       if (challenge.payment_received_at) return json({ error: "This payout is already confirmed as received" }, 409);
       if (!note) return json({ error: "Add a short reason for the payout dispute" }, 400);
       if (challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at) return json({ error: "A payout dispute is already open" }, 409);
