@@ -15,8 +15,8 @@ export default function SeasonHistory() {
   const archives = competitionData?.archives || [];
 
   return (
-    <div className="space-y-4">
-      <div className="card-surface rounded-2xl p-5">
+    <div className="m8-page-stack">
+      <div className="m8-rank-spotlight rounded-2xl p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="brand-kicker mb-1">Current Competition</div>
@@ -32,7 +32,7 @@ export default function SeasonHistory() {
       </div>
 
       {archives.length === 0 ? (
-        <div className="card-surface rounded-2xl p-10 text-center text-muted-foreground">
+        <div className="m8-panel rounded-2xl p-10 text-center text-muted-foreground">
           No archived seasons yet.
         </div>
       ) : (
@@ -44,7 +44,7 @@ export default function SeasonHistory() {
             const chall = season.challenge_stats || {};
 
             return (
-              <div key={season.season_number} className="card-surface rounded-2xl p-5">
+              <div key={season.season_number} className="m8-panel rounded-2xl p-5">
                 <div className="flex flex-col lg:flex-row lg:items-center gap-5">
                   <div className="lg:w-56 shrink-0">
                     <div className="brand-kicker mb-1">Archived</div>
@@ -55,17 +55,17 @@ export default function SeasonHistory() {
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 flex-1">
-                    <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+                    <div className="m8-stat-card">
                       <Gamepad2 size={15} className="text-magma mb-2" />
                       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Matches</div>
                       <div className="font-display text-xl font-bold mt-1">{matches.length}</div>
                     </div>
-                    <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+                    <div className="m8-stat-card">
                       <Trophy size={15} className="text-[#D5A33A] mb-2" />
                       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Challs</div>
                       <div className="font-display text-xl font-bold mt-1">{Number(chall.completed || 0)}</div>
                     </div>
-                    <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+                    <div className="m8-stat-card">
                       <WalletCards size={15} className="text-emerald-400 mb-2" />
                       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Volume</div>
                       <div className="font-display text-xl font-bold mt-1">{euro(chall.volume_cents)}</div>
