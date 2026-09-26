@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, ExternalLink, Lock, RotateCcw, ShieldCheck } from "lucide-react";
+import { Lock, RotateCcw } from "lucide-react";
 
 const money = (cents, currency = "EUR") =>
   new Intl.NumberFormat("it-IT", {
@@ -22,32 +22,12 @@ export default function ChallengeSeriesCard({
   challenge,
   series,
   playerMap,
-  discordPlayer,
   busy,
   onRechallenge,
   onClose,
-  onPaymentSent,
-  onPaymentReceived,
 }) {
   const [amount, setAmount] = useState(String(Number(challenge?.amount_cents || 0) / 100 || 5));
   const rounds = Array.isArray(series?.rounds) ? series.rounds : [];
-
-  const currentWinner = series?.current_winner_player_id
-    ? playerMap[series.current_winner_player_id]
-    : null;
-  const settlementWinner = series?.settlement_winner_player_id
-    ? playerMap[series.settlement_winner_player_id]
-    : null;
-
-  const currentAmountCents = Number(series?.current_amount_cents || 0);
-  const settlementAmountCents = Number(series?.settlement_amount_cents || 0);
-  const balanceAmount = series?.status === "open" ? currentAmountCents : settlementAmountCents;
-  const balanceWinner = series?.status === "open" ? currentWinner : settlementWinner;
-
-  const iReceive = Boolean(
-    series?.settlement_winner_player_id &&
-    series.settlement_winner_player_id === discordPlayer?.id
-  );
 
   const netByPlayer = rounds.reduce((acc, round) => {
     if (round.status !== "completed" || !round.reported_winner_player_id) return acc;
@@ -56,12 +36,12 @@ export default function ChallengeSeriesCard({
     const playerBId = series?.player_b_player_id;
     if (!playerAId || !playerBId) return acc;
 
-    const amount = Number(round.amount_cents || 0);
+    const amountCents = Number(round.amount_cents || 0);
     const winnerId = round.reported_winner_player_id;
     const loserId = winnerId === playerAId ? playerBId : playerAId;
 
-    acc[winnerId] = Number(acc[winnerId] || 0) + amount;
-    acc[loserId] = Number(acc[loserId] || 0) - amount;
+    acc[winnerId] = Number(acc[winnerId] || 0) + amountCents;
+    acc[loserId] = Number(acc[loserId] || 0) - amountCents;
     return acc;
   }, {});
 
@@ -73,35 +53,21 @@ export default function ChallengeSeriesCard({
 
   return (
     <div className="m8-panel rounded-[22px] p-5 sm:p-6" data-testid="chall-series-card">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <div className="brand-kicker mb-1">Match Series</div>
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-display text-2xl font-black tracking-[-0.025em]">
               {rounds.length} {rounds.length === 1 ? "match" : "matches"}
             </h3>
             <span className="m8-pill">
-              {series?.status === "open" ? "OPEN" : String(series?.status || "").toUpperCase()}
+              {series?.status === "open" ? "OPEN" : "ENDED"}
             </span>
           </div>
         </div>
 
-        <div className="rounded-xl bg-[#0F1218] border border-[#242A35] px-4 py-3 min-w-[205px]">
-          <div className="text-[9px] uppercase tracking-[0.16em] text-[#697181]">
-            {series?.status === "open" ? "Current Balance" : "Final Payment"}
-          </div>
-          <div className="font-display text-lg font-black mt-1">
-            {balanceAmount === 0 ? (
-              <span className="text-emerald-400">EVEN · €0</span>
-            ) : (
-              <span className="text-[#D5A33A]">
-                {balanceWinner?.name || "Player"} +{money(balanceAmount, series?.currency || "EUR")}
-              </span>
-            )}
-          </div>
-          <div className="text-[9px] uppercase tracking-widest text-muted-foreground mt-1">
-            {platformLabel}
-          </div>
+        <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+          Each verified match is paid separately · {platformLabel}
         </div>
       </div>
 
@@ -112,7 +78,9 @@ export default function ChallengeSeriesCard({
             {playerANet > 0 ? "+" : ""}{money(playerANet, series?.currency || "EUR")} net
           </div>
         </div>
+
         <div className="text-[10px] uppercase tracking-[0.2em] text-[#596170]">VS</div>
+
         <div className="text-right">
           <div className="text-xs font-bold truncate">{playerB?.name || "Player"}</div>
           <div className={`font-mono text-sm mt-0.5 ${playerBNet >= 0 ? "text-emerald-400" : "text-red-400"}`}>
@@ -159,7 +127,7 @@ export default function ChallengeSeriesCard({
         </div>
       </div>
 
-      {series?.status === "open" && challenge?.status === "completed" && (
+      {series?.status === "open" && challenge?.status === "completed" && challenge?.payment_received_at && (
         <div className="mt-5 pt-5 border-t border-[#232A35]">
           <div className="text-[10px] uppercase tracking-[0.16em] text-[#697181] font-bold mb-2">
             Next match
@@ -192,72 +160,19 @@ export default function ChallengeSeriesCard({
               disabled={Boolean(busy)}
               className="h-11 rounded-xl bg-[#181B26] border border-[#2A303B] text-white font-bold hover:bg-white/[0.05]"
             >
-              <Lock size={16} className="mr-2" /> SETTLE NOW
+              <Lock size={16} className="mr-2" /> END SERIES
             </Button>
           </div>
 
           <div className="text-[10px] text-muted-foreground mt-2">
-            Rematch keeps the same players and payment method. Change only the amount if needed.
+            The current match is already paid. Rematch creates the next one with the same player and payment method.
           </div>
         </div>
       )}
 
-      {series?.status === "settled" && (
-        <div className="mt-5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 p-4 text-emerald-400 font-semibold">
-          <ShieldCheck size={18} className="inline mr-2" />
-          {settlementAmountCents === 0
-            ? "Series even — no payment required."
-            : "Series settlement completed."}
-        </div>
-      )}
-
-      {series?.status === "closed" && settlementAmountCents > 0 && (
-        <div className="mt-5 pt-5 border-t border-[#1D222C]">
-          <div className="brand-kicker mb-1">Payment</div>
-          <h4 className="font-display font-bold text-lg">
-            {settlementWinner?.name || "Winner"} receives {money(settlementAmountCents, series.currency)}
-          </h4>
-
-          {series.payment_sent_at ? (
-            iReceive ? (
-              <Button
-                onClick={onPaymentReceived}
-                disabled={Boolean(busy)}
-                className="w-full mt-4 h-12 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold"
-              >
-                <ShieldCheck size={17} className="mr-2" /> PAYMENT RECEIVED
-              </Button>
-            ) : (
-              <div className="mt-4 rounded-xl bg-[#D5A33A]/10 border border-[#D5A33A]/25 p-4 text-[#D5A33A] font-semibold">
-                Payment sent · waiting for confirmation.
-              </div>
-            )
-          ) : iReceive ? (
-            <div className="mt-4 rounded-xl bg-[#0F1218] border border-[#1D222C] p-4 text-sm text-muted-foreground">
-              Waiting for the payment.
-            </div>
-          ) : (
-            <div className="mt-4 space-y-2">
-              {series.settlement_payout_url && (
-                <a
-                  href={series.settlement_payout_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full h-12 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-extrabold inline-flex items-center justify-center gap-2"
-                >
-                  PAY {money(settlementAmountCents, series.currency)} · {platformLabel}
-                  <ExternalLink size={15} />
-                </a>
-              )}
-              <Button
-                onClick={onPaymentSent}
-                disabled={Boolean(busy)}
-                className="w-full h-12 rounded-xl bg-[#181B26] border border-[#2A303B] text-white font-bold hover:bg-white/[0.05]"
-              >
-                <Check size={16} className="mr-2" /> I HAVE PAID
-              </Button>
-            </div>
-          )}
+      {series?.status !== "open" && (
+        <div className="mt-5 rounded-xl bg-[#0F1218] border border-[#242A35] p-4 text-sm text-muted-foreground">
+          Series ended. Every verified match keeps its own result, money record and Elo change.
         </div>
       )}
     </div>
