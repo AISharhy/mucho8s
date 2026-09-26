@@ -10,7 +10,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Crown, Trophy, Filter, Pencil, Trash2, WalletCards, ArrowRightLeft, Lock, Gamepad2 } from "lucide-react";
+import { Plus, Search, Crown, Trophy, Filter, Pencil, Trash2, WalletCards, ArrowRightLeft, Lock, Gamepad2, RotateCcw } from "lucide-react";
 import { GAMES } from "@/lib/demoData";
 import { toast } from "sonner";
 
@@ -50,7 +50,7 @@ const TeamList = ({ ids, playerMap, playerAvatars, eloChanges, mvpId }) => (
 );
 
 export default function Matches() {
-  const { matches, playerMap, playerAvatars, deleteMatch, isAdmin } = useData();
+  const { matches, playerMap, playerAvatars, deleteMatch, isAdmin, adminCreateChallengePairings } = useData();
   const safeMatches = useMemo(
     () => (Array.isArray(matches) ? matches.filter(Boolean) : []),
     [matches]
@@ -64,6 +64,34 @@ export default function Matches() {
   const [query, setQuery] = useState("");
   const [winnerFilter, setWinnerFilter] = useState("all");
   const [gameFilter, setGameFilter] = useState("ALL");
+  const [rematchBusyId, setRematchBusyId] = useState(null);
+
+  const createRematch = async (match) => {
+    if (!isAdmin || !match) return;
+
+    const pairings = (Array.isArray(match.pairings) ? match.pairings : [])
+      .filter((pair) => pair?.playerAId && pair?.playerBId && Number(pair?.amount || 0) > 0)
+      .map((pair) => ({
+        challengerPlayerId: pair.playerAId,
+        challengedPlayerId: pair.playerBId,
+        amount: Number(pair.amount || 0),
+        platform: ["cmg", "paypal", "revolut"].includes(String(pair.platform || "").toLowerCase())
+          ? String(pair.platform).toLowerCase()
+          : "cmg",
+      }));
+
+    if (!pairings.length) {
+      toast.error("No valid Money Chall pairings found");
+      return;
+    }
+
+    setRematchBusyId(match.id);
+    const created = await adminCreateChallengePairings(pairings);
+    setRematchBusyId(null);
+
+    if (!created) return;
+    toast.success(`Rematch created · ${created.length} chall${created.length === 1 ? "" : "s"}`);
+  };
 
   const filtered = useMemo(() => {
     return safeMatches.filter((m) => {
@@ -264,6 +292,41 @@ export default function Matches() {
                   <WalletCards size={15} className="text-[#D5A33A]" />
                   <span className="brand-kicker">Money Chall Pairings</span>
                   <span className="ml-auto text-[10px] text-muted-foreground">{m.pairings.length} pairings</span>
+
+                  {isAdmin && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          disabled={rematchBusyId === m.id}
+                          className="h-8 px-3 rounded-lg bg-magma hover:bg-[#ff3c4c] text-white font-bold"
+                          data-testid={`match-rematch-${m.id}`}
+                        >
+                          <RotateCcw size={13} className="mr-1.5" />
+                          {rematchBusyId === m.id ? "Creating..." : "Rematch"}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="bg-[#101319] border-[#242A35]">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Create rematch?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This creates {m.pairings.filter(Boolean).length} new Money Challs with the same players, amounts and payment platforms.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="bg-[#181B26] border-[#2A303B]">
+                            Cancel
+                          </AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => createRematch(m)}
+                            className="bg-magma hover:bg-[#ff3c4c] text-white"
+                          >
+                            Create Rematch
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
