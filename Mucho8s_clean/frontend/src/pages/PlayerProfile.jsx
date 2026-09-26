@@ -130,6 +130,7 @@ export default function PlayerProfile() {
       wonValue,
       lostValue,
       profit: wonValue - lostValue,
+      points: wonValue - lostValue,
       matchPairings: completed.filter((challenge) => challenge.source === "match_pairing").length,
     };
   }, [publicChallenges, id]);
@@ -263,6 +264,7 @@ export default function PlayerProfile() {
     { label: "Matches", value: player.totalMatches, icon: Gamepad2 },
     { label: "Win Rate", value: `${winRate(player)}%`, icon: Target },
     { label: "Wins", value: player.wins },
+    { label: "Chall Points", value: `${challengeStats.points > 0 ? "+" : ""}${challengeStats.points}`, icon: Coins },
     { label: "Losses", value: player.losses },
     { label: "MVP", value: player.mvpCount, icon: Crown },
   ];
