@@ -428,6 +428,7 @@ export default function TeamBuilder() {
             <button
               type="button"
               data-testid="team-builder-game-ALL"
+              aria-pressed={game === "ALL"}
               onClick={() => changeGame("ALL")}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
                 game === "ALL"
@@ -442,6 +443,7 @@ export default function TeamBuilder() {
                 type="button"
                 key={item}
                 data-testid={`team-builder-game-${item}`}
+                aria-pressed={game === item}
                 onClick={() => changeGame(item)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
                   game === item
@@ -461,6 +463,7 @@ export default function TeamBuilder() {
             <div className="flex flex-wrap gap-1.5" data-testid="team-builder-mode">
               <button
                 type="button"
+                aria-pressed={matchMode === "ALL"}
                 onClick={() => changeMatchMode("ALL")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
                   matchMode === "ALL"
@@ -474,6 +477,7 @@ export default function TeamBuilder() {
                 <button
                   type="button"
                   key={item}
+                  aria-pressed={matchMode === item}
                   onClick={() => changeMatchMode(item)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
                     matchMode === item
@@ -492,6 +496,7 @@ export default function TeamBuilder() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 max-w-4xl">
         <button
           type="button"
+          aria-pressed={mode === "balance"}
           onClick={() => changeMode("balance")}
           className={`rounded-xl border p-4 text-left transition-all ${
             mode === "balance"
@@ -507,6 +512,7 @@ export default function TeamBuilder() {
 
         <button
           type="button"
+          aria-pressed={mode === "chemistry"}
           onClick={() => changeMode("chemistry")}
           className={`rounded-xl border p-4 text-left transition-all ${
             mode === "chemistry"
@@ -522,6 +528,7 @@ export default function TeamBuilder() {
 
         <button
           type="button"
+          aria-pressed={mode === "manual"}
           onClick={() => changeMode("manual")}
           className={`rounded-xl border p-4 text-left transition-all ${
             mode === "manual"
@@ -557,7 +564,9 @@ export default function TeamBuilder() {
           <div className="grid grid-cols-3 gap-2 mb-4">
             {FORMATS.map((format) => (
               <button
+                type="button"
                 key={format.key}
+                aria-pressed={required === format.key}
                 onClick={() => changeFormat(format.key)}
                 className={`h-10 rounded-xl border text-sm font-bold transition-all ${
                   required === format.key
@@ -624,6 +633,8 @@ export default function TeamBuilder() {
                       <button
                         type="button"
                         onClick={() => assignManual(player.id, "A")}
+                        aria-pressed={inA}
+                        aria-label={`Assign ${player.name} to Team A`}
                         className={`w-8 h-8 rounded-lg border text-xs font-black ${
                           inA
                             ? "bg-magma border-magma text-white"
@@ -635,6 +646,8 @@ export default function TeamBuilder() {
                       <button
                         type="button"
                         onClick={() => assignManual(player.id, "B")}
+                        aria-pressed={inB}
+                        aria-label={`Assign ${player.name} to Team B`}
                         className={`w-8 h-8 rounded-lg border text-xs font-black ${
                           inB
                             ? "bg-[#65D5D3] border-[#65D5D3] text-black"
