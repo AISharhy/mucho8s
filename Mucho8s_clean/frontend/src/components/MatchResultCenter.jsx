@@ -21,7 +21,6 @@ export default function MatchResultCenter({ teamPlayerIds = null }) {
     playerMap,
     discordPlayer,
     isAdmin,
-    confirmMatchReport,
     disputeMatchReport,
     adminResolveMatchReport,
   } = useData();
@@ -58,7 +57,7 @@ export default function MatchResultCenter({ teamPlayerIds = null }) {
 
   if (!reports.length) return null;
 
-  const eligibleReviewer = (report) => {
+  const eligibleDisputer = (report) => {
     if (!discordPlayer?.id || report.status !== "pending") return false;
 
     const teamA = Array.isArray(report.team_a) ? report.team_a.map(String) : [];
@@ -73,13 +72,6 @@ export default function MatchResultCenter({ teamPlayerIds = null }) {
     if (teamB.includes(reporterId)) return teamA.includes(discordPlayer.id);
 
     return false;
-  };
-
-  const confirm = async (report) => {
-    setBusy(`confirm:${report.id}`);
-    const result = await confirmMatchReport(report.id);
-    setBusy("");
-    if (result) toast.success("Result confirmed — stats updated");
   };
 
   const dispute = async (report) => {
@@ -126,7 +118,7 @@ export default function MatchResultCenter({ teamPlayerIds = null }) {
         const teamB = Array.isArray(report.team_b) ? report.team_b : [];
         const mvp = report.mvp_id ? safePlayerMap[report.mvp_id] : null;
         const merda = report.merda_id ? safePlayerMap[report.merda_id] : null;
-        const canReview = eligibleReviewer(report);
+        const canReview = eligibleDisputer(report);
         const winnerName = report.winner === "A" ? "Alpha" : "Bravo";
 
         return (
@@ -181,7 +173,7 @@ export default function MatchResultCenter({ teamPlayerIds = null }) {
                     </span>
                   </div>
                   <span className="text-muted-foreground">
-                    Verification · any player from the opposite team
+                    Verification · Admin only
                   </span>
                 </div>
 
@@ -237,26 +229,17 @@ export default function MatchResultCenter({ teamPlayerIds = null }) {
               </div>
 
               <div className="lg:w-64 shrink-0">
-                {canReview && disputeId !== report.id && (
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      onClick={() => setDisputeId(report.id)}
-                      disabled={Boolean(busy)}
-                      className="h-11 bg-red-500/10 border border-red-500/25 text-red-300 hover:bg-red-500/15"
-                    >
-                      <X size={15} className="mr-1.5" /> Dispute
-                    </Button>
-                    <Button
-                      onClick={() => confirm(report)}
-                      disabled={Boolean(busy)}
-                      className="h-11 bg-emerald-500 hover:bg-emerald-400 text-black font-bold"
-                    >
-                      <Check size={15} className="mr-1.5" /> Confirm
-                    </Button>
-                  </div>
+                {canReview && disputeId !== report.id && !isAdmin && (
+                  <Button
+                    onClick={() => setDisputeId(report.id)}
+                    disabled={Boolean(busy)}
+                    className="w-full h-11 bg-red-500/10 border border-red-500/25 text-red-300 hover:bg-red-500/15"
+                  >
+                    <X size={15} className="mr-1.5" /> Dispute
+                  </Button>
                 )}
 
-                {canReview && disputeId === report.id && (
+                {canReview && disputeId === report.id && !isAdmin && (
                   <div className="space-y-2">
                     <textarea
                       value={disputeNote}
@@ -287,9 +270,9 @@ export default function MatchResultCenter({ teamPlayerIds = null }) {
                   </div>
                 )}
 
-                {report.status === "pending" && !canReview && !isAdmin && (
+                {report.status === "pending" && !isAdmin && (
                   <div className="rounded-xl bg-[#151923] border border-[#242A35] p-3 text-xs text-muted-foreground text-center">
-                    Waiting for the opposite team to verify
+                    Waiting for Admin verification
                   </div>
                 )}
 
@@ -308,7 +291,7 @@ export default function MatchResultCenter({ teamPlayerIds = null }) {
                       disabled={Boolean(busy)}
                       className="bg-[#181B26] border border-magma/30 text-magma hover:bg-magma/10"
                     >
-                      <Swords size={14} className="mr-1.5" /> Admin Lock
+                      <Check size={14} className="mr-1.5" /> Confirm
                     </Button>
                   </div>
                 )}
