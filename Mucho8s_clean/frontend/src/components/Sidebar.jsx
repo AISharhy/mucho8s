@@ -8,7 +8,7 @@ import { useData } from "@/context/DataContext";
 import { tierOf } from "@/lib/elo";
 
 const MAIN_NAV = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, testid: "nav-dashboard-link" },
+  { to: "/", label: "Panoramica", icon: LayoutDashboard, end: true, testid: "nav-dashboard-link" },
   { to: "/play", label: "Gioca", icon: Swords, testid: "nav-play-link" },
   { to: "/players", label: "Giocatori", icon: Users, testid: "nav-players-link" },
   { to: "/matches", label: "Partite", icon: Gamepad2, testid: "nav-matches-link" },
