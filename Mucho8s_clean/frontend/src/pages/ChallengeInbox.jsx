@@ -156,6 +156,18 @@ export default function ChallengeInbox() {
             const won = completed && challenge.reported_winner_player_id === discordPlayer.id;
             const lost = completed && challenge.reported_winner_player_id && !won;
             const payoutPending = completed && !challenge.payment_received_at;
+            const payoutDisputed = Boolean(
+              challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at
+            );
+            const payoutLabel = payoutDisputed
+              ? "DISPUTA APERTA"
+              : won
+                ? challenge.payment_sent_at
+                  ? "CONFERMA RICEZIONE"
+                  : "IN ATTESA PAGAMENTO"
+                : challenge.payment_sent_at
+                  ? "PAGAMENTO INVIATO"
+                  : "DA PAGARE";
 
             return (
               <div
@@ -192,8 +204,12 @@ export default function ChallengeInbox() {
                       </span>
                     )}
                     {payoutPending && (
-                      <span className="h-10 px-3 rounded-xl bg-[#D5A33A]/10 border border-[#D5A33A]/25 text-[#D5A33A] text-[10px] font-bold inline-flex items-center">
-                        PAGAMENTO
+                      <span className={`h-10 px-3 rounded-xl text-[10px] font-bold inline-flex items-center ${
+                        payoutDisputed
+                          ? "bg-orange-500/10 border border-orange-500/25 text-orange-400"
+                          : "bg-[#D5A33A]/10 border border-[#D5A33A]/25 text-[#D5A33A]"
+                      }`}>
+                        {payoutLabel}
                       </span>
                     )}
                     {!completed && (
