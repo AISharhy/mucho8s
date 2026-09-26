@@ -11,20 +11,27 @@ const MAIN_NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, testid: "nav-dashboard-link" },
   { to: "/players", label: "Players", icon: Users, testid: "nav-players-link" },
   { to: "/matches", label: "Matches", icon: Gamepad2, testid: "nav-matches-link" },
-  { to: "/balancer", label: "Team Balancer", icon: Swords, testid: "nav-team-balancer-link" },
 ];
 
 const COMPETITION_NAV = [
-  { to: "/ranking", label: "Ranking", icon: Trophy, testid: "nav-ranking-link" },
   { to: "/draft", label: "Draft Hub", icon: FlaskConical, testid: "nav-draft-link" },
+  { to: "/balancer", label: "Team Balancer", icon: Swords, testid: "nav-team-balancer-link" },
+  { to: "/ranking", label: "Ranking", icon: Trophy, testid: "nav-ranking-link" },
   { to: "/rank-guide", label: "Rank Guide", icon: Medal, testid: "nav-rank-guide-link" },
 ];
+
+const CHALLENGES_NAV = {
+  to: "/challenges",
+  label: "My Challenges",
+  icon: Bell,
+  testid: "nav-challenges-link",
+};
 
 const ADMIN_NAV = { to: "/admin", label: "Admin Panel", icon: Shield, testid: "nav-admin-link" };
 const ALL_NAV = [
   ...MAIN_NAV,
   ...COMPETITION_NAV,
-  { to: "/challenges", label: "Challenge Inbox", icon: Bell },
+  CHALLENGES_NAV,
   ADMIN_NAV,
 ];
 
@@ -109,11 +116,11 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
       }
     : null;
 
-  const accountItems = linked ? [myProfileItem] : [];
+  const accountItems = linked ? [myProfileItem, CHALLENGES_NAV] : [];
 
   return (
     <>
-      <div className="py-5 flex-1 overflow-y-auto space-y-6">
+      <div className="py-5 flex-1 overflow-y-auto space-y-5">
         <NavSection label="Main" items={MAIN_NAV} onNavigate={onNavigate} />
         <NavSection label="Competition" items={COMPETITION_NAV} onNavigate={onNavigate} />
         {accountItems.length > 0 && (
