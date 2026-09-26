@@ -8,20 +8,20 @@ import { useData } from "@/context/DataContext";
 import { tierOf } from "@/lib/elo";
 
 const MAIN_NAV = [
-  { to: "/", label: "Panoramica", icon: LayoutDashboard, end: true, testid: "nav-dashboard-link" },
-  { to: "/play", label: "Gioca", icon: Swords, testid: "nav-play-link" },
-  { to: "/players", label: "Giocatori", icon: Users, testid: "nav-players-link" },
-  { to: "/matches", label: "Partite", icon: Gamepad2, testid: "nav-matches-link" },
+  { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, testid: "nav-dashboard-link" },
+  { to: "/play", label: "Play", icon: Swords, testid: "nav-play-link" },
+  { to: "/players", label: "Players", icon: Users, testid: "nav-players-link" },
+  { to: "/matches", label: "Matches", icon: Gamepad2, testid: "nav-matches-link" },
 ];
 
 const COMPETITION_NAV = [
-  { to: "/ranking", label: "Classifica", icon: Trophy, testid: "nav-ranking-link" },
+  { to: "/ranking", label: "Ranking", icon: Trophy, testid: "nav-ranking-link" },
   { to: "/rank-guide", label: "Guide", icon: Medal, testid: "nav-rank-guide-link" },
 ];
 
 const CHALLENGES_NAV = {
   to: "/challenges",
-  label: "Le mie sfide",
+  label: "My Challenges",
   icon: Bell,
   testid: "nav-challenges-link",
 };
@@ -85,7 +85,7 @@ const Brand = () => (
       <div className="font-display font-extrabold text-[14px] tracking-tight whitespace-nowrap">
         MUCHO<span className="text-magma">MONEY</span><span className="text-white">8s</span>
       </div>
-      <div className="text-[9px] uppercase tracking-[0.2em] text-[#697181] mt-1">COD 8s competitivo</div>
+      <div className="text-[9px] uppercase tracking-[0.2em] text-[#697181] mt-1">Competitive COD 8s</div>
     </div>
   </div>
 );
@@ -136,14 +136,14 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
                   {discordName}
                 </div>
                 <div className={`text-[10px] truncate ${linked ? "text-emerald-400" : "text-[#D5A33A]"}`}>
-                  {linked ? `${discordRank?.name || "Grado"} · ${discordPlayer.currentElo} Elo` : "In attesa del collegamento giocatore"}
+                  {linked ? `${discordRank?.name || "Rank"} · ${discordPlayer.currentElo} Elo` : "Waiting for player link"}
                 </div>
               </div>
               <button
                 type="button"
                 onClick={signOutDiscord}
                 className="w-8 h-8 rounded-lg text-[#697181] hover:text-white hover:bg-white/5 flex items-center justify-center"
-                aria-label="Esci da Discord"
+                aria-label="Logout Discord"
                 data-testid="discord-logout-btn"
               >
                 <LogOut size={14} />
@@ -157,7 +157,7 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
             className="w-full h-11 rounded-xl bg-[#5865F2] hover:bg-[#6875F5] text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
             data-testid="discord-login-btn"
           >
-            <MessageCircle size={17} /> Accedi con Discord
+            <MessageCircle size={17} /> Login with Discord
           </button>
         )}
 
@@ -165,7 +165,7 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
           <div className="flex items-center gap-2 px-1 mt-2">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             <span className="text-[10px] text-muted-foreground" data-testid="sidebar-signed-as">
-              Modalità Admin attiva
+              Admin mode active
             </span>
           </div>
         )}
@@ -188,9 +188,9 @@ export const MobileNav = () => {
     item.end ? loc.pathname === "/" : loc.pathname.startsWith(item.to) && item.to !== "/"
   );
   const aliasLabel =
-    ["/balancer", "/draft"].includes(loc.pathname) ? "Creazione squadre" :
+    ["/balancer", "/draft"].includes(loc.pathname) ? "Team Builder" :
     loc.pathname === "/ranks" ? "Guide" :
-    loc.pathname === "/leaderboard" || loc.pathname === "/statistics" || loc.pathname === "/challenge-ranking" ? "Classifica" :
+    loc.pathname === "/leaderboard" || loc.pathname === "/statistics" || loc.pathname === "/challenge-ranking" ? "Ranking" :
     null;
 
   useEffect(() => {
@@ -209,7 +209,7 @@ export const MobileNav = () => {
           data-testid="mobile-menu-btn"
           onClick={() => setOpen(true)}
           className="p-2 -ml-2 rounded-md hover:bg-white/5"
-          aria-label="Apri menu"
+          aria-label="Open menu"
           aria-expanded={open}
           aria-controls="mobile-navigation-drawer"
         >
@@ -220,7 +220,7 @@ export const MobileNav = () => {
 
       {open &&
         createPortal(
-          <div className="lg:hidden fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label="Menu di navigazione">
+          <div className="lg:hidden fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label="Navigation menu">
             <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={() => setOpen(false)} />
             <div id="mobile-navigation-drawer" className="absolute top-0 bottom-0 left-0 w-64 max-w-[86vw] bg-[#0B0E13] border-r border-[#202631] flex flex-col shadow-2xl">
               <div className="relative shrink-0">
@@ -229,7 +229,7 @@ export const MobileNav = () => {
                   onClick={() => setOpen(false)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-md hover:bg-white/5"
                   data-testid="mobile-close-btn"
-                  aria-label="Chiudi menu"
+                  aria-label="Close menu"
                 >
                   <X size={19} />
                 </button>
