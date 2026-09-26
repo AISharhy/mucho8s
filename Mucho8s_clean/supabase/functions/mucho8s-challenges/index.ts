@@ -942,6 +942,33 @@ Deno.serve(async (req: Request) => {
         .single();
 
       if (error) throw error;
+
+      if (nextStatus === "declined" && data.series_id) {
+        const { count, error: countError } = await supabase
+          .from("player_challenges")
+          .select("id", { count: "exact", head: true })
+          .eq("series_id", data.series_id)
+          .eq("status", "completed");
+        if (countError) throw countError;
+
+        if (!count) {
+          const now = new Date().toISOString();
+          const { error: seriesCloseError } = await supabase
+            .from("challenge_series")
+            .update({
+              status: "settled",
+              settlement_amount_cents: 0,
+              settlement_winner_player_id: null,
+              closed_at: now,
+              updated_at: now,
+              last_event: "series_declined",
+            })
+            .eq("id", data.series_id)
+            .eq("status", "open");
+          if (seriesCloseError) throw seriesCloseError;
+        }
+      }
+
       return json({ ok: true, challenge: await attachSeries(data) });
     }
 
@@ -1259,6 +1286,33 @@ Deno.serve(async (req: Request) => {
         .single();
 
       if (error) throw error;
+
+      if (data.series_id) {
+        const { count, error: countError } = await supabase
+          .from("player_challenges")
+          .select("id", { count: "exact", head: true })
+          .eq("series_id", data.series_id)
+          .eq("status", "completed");
+        if (countError) throw countError;
+
+        if (!count) {
+          const now = new Date().toISOString();
+          const { error: seriesCloseError } = await supabase
+            .from("challenge_series")
+            .update({
+              status: "settled",
+              settlement_amount_cents: 0,
+              settlement_winner_player_id: null,
+              closed_at: now,
+              updated_at: now,
+              last_event: "series_cancelled",
+            })
+            .eq("id", data.series_id)
+            .eq("status", "open");
+          if (seriesCloseError) throw seriesCloseError;
+        }
+      }
+
       return json({ ok: true, challenge: await attachSeries(data) });
     }
 
