@@ -1271,6 +1271,9 @@ export default function AdminPanel() {
         )}
       </div>
 
+        </>
+      )}
+
       {activeTab === "system" && (
         <div className="m8-panel rounded-2xl p-5">
           <div className="flex items-start justify-between gap-4">
