@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">MuchoMoney8s</title>
+  <desc id="desc">Competitive COD 8s, Elo ranking, team builder, verified matches and money challs.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#171D27"/>
+      <stop offset=".55" stop-color="#0D1118"/>
+      <stop offset="1" stop-color="#090B10"/>
+    </linearGradient>
+    <radialGradient id="redGlow" cx="0" cy=".55" r=".72">
+      <stop offset="0" stop-color="#FF2A3B" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#FF2A3B" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="goldGlow" cx="1" cy="0" r=".55">
+      <stop offset="0" stop-color="#D5A33A" stop-opacity=".13"/>
+      <stop offset="1" stop-color="#D5A33A" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="42" height="42" patternUnits="userSpaceOnUse">
+      <path d="M 42 0 L 0 0 0 42" fill="none" stroke="#FFFFFF" stroke-opacity=".035"/>
+    </pattern>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#000" flood-opacity=".35"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" rx="0" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#redGlow)"/>
+  <rect width="1200" height="630" fill="url(#goldGlow)"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+
+  <g transform="translate(78 76)" filter="url(#shadow)">
+    <rect width="170" height="170" rx="34" fill="#090C11" stroke="#2B3340" stroke-width="2"/>
+    <path fill="#F3F4F6" d="M26 34h31l30 33 30-33h28v102h-25V77l-33 36-36-38v61H26z"/>
+    <path fill="#FF2A3B" d="m111 145 33-116h9l-33 116z"/>
+    <path fill="#FF2A3B" d="M126 44h28l12 12v18l-9 9 9 9v18l-12 12h-28l-12-12V92l9-9-9-9V56zm13 19v13h14V63zm0 39v13h14v-13z"/>
+  </g>
+
+  <text x="310" y="122" fill="#F7F8FA" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="900" letter-spacing="-1">MUCHO<tspan fill="#FF2A3B">MONEY</tspan>8s</text>
+  <rect x="310" y="148" width="248" height="38" rx="19" fill="#FF2A3B" fill-opacity=".08" stroke="#FF2A3B" stroke-opacity=".25"/>
+  <text x="331" y="173" fill="#FF6976" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="800" letter-spacing="2">COMPETITIVE COD 8s</text>
+
+  <text x="78" y="360" fill="#F7F8FA" font-family="Arial, Helvetica, sans-serif" font-size="68" font-weight="900" letter-spacing="-3">PLAY. RANK. CHALLENGE.</text>
+  <text x="82" y="414" fill="#98A2B3" font-family="Arial, Helvetica, sans-serif" font-size="25">Elo ranking · Team Builder · Verified matches · Money Challs · ReChall Series</text>
+
+  <g font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="800" letter-spacing="1.4">
+    <g transform="translate(80 494)">
+      <rect width="130" height="43" rx="21" fill="#11161E" stroke="#29313D"/><text x="24" y="27" fill="#C6CDD7">RANKING</text>
+    </g>
+    <g transform="translate(222 494)">
+      <rect width="190" height="43" rx="21" fill="#11161E" stroke="#29313D"/><text x="22" y="27" fill="#C6CDD7">PLAYER PROFILES</text>
+    </g>
+    <g transform="translate(424 494)">
+      <rect width="128" height="43" rx="21" fill="#11161E" stroke="#29313D"/><text x="24" y="27" fill="#C6CDD7">TROPHIES</text>
+    </g>
+    <g transform="translate(564 494)">
+      <rect width="174" height="43" rx="21" fill="#11161E" stroke="#29313D"/><text x="23" y="27" fill="#C6CDD7">CHALL SERIES</text>
+    </g>
+  </g>
+
+  <rect x="78" y="580" width="1044" height="5" rx="2.5" fill="#FF2A3B" fill-opacity=".78"/>
+</svg>
