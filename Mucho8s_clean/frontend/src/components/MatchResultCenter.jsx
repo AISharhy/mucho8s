@@ -109,6 +109,7 @@ export default function MatchResultCenter() {
         const teamA = Array.isArray(report.team_a) ? report.team_a : [];
         const teamB = Array.isArray(report.team_b) ? report.team_b : [];
         const mvp = report.mvp_id ? safePlayerMap[report.mvp_id] : null;
+        const merda = report.merda_id ? safePlayerMap[report.merda_id] : null;
         const canReview = eligibleCaptain(report);
         const winnerName = report.winner === "A" ? "Alpha" : "Bravo";
 
@@ -160,6 +161,12 @@ export default function MatchResultCenter() {
                   {mvp && (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#D5A33A]/[0.07] border border-[#D5A33A]/20 text-xs text-[#D5A33A] font-bold">
                       <Crown size={13} /> MVP · {mvp.name}
+                    </span>
+                  )}
+
+                  {merda && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#8B5E3C]/[0.08] border border-[#8B5E3C]/25 text-xs text-[#C79A6B] font-bold">
+                      💩 MERDA · {merda.name}
                     </span>
                   )}
 
