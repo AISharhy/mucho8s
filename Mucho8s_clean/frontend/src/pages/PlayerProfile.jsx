@@ -119,7 +119,6 @@ export default function PlayerProfile() {
     let losses = 0;
     let wonValue = 0;
     let lostValue = 0;
-    let receivedValue = 0;
 
     completed.forEach((challenge) => {
       const amount = Number(challenge.amount_cents || 0) / 100;
@@ -127,7 +126,6 @@ export default function PlayerProfile() {
       if (challenge.reported_winner_player_id === id) {
         wins += 1;
         wonValue += amount;
-        if (challenge.payment_received_at) receivedValue += amount;
       } else {
         losses += 1;
         lostValue += amount;
@@ -143,9 +141,6 @@ export default function PlayerProfile() {
       winRate: played ? Math.round((wins / played) * 100) : 0,
       wonValue,
       lostValue,
-      profit: wonValue - lostValue,
-      receivedValue,
-      pendingPayout: Math.max(0, wonValue - receivedValue),
       points: completed.reduce((total, challenge) => {
         const amount = Number(challenge.amount_cents || 0) / 100;
         return total + (challenge.reported_winner_player_id === id ? amount : -amount);
@@ -209,16 +204,14 @@ export default function PlayerProfile() {
           ? challenge.challenged_player_id
           : challenge.challenger_player_id;
       if (!opponentId) return;
-      const row = h2h.get(opponentId) || { opponentId, wins: 0, losses: 0, profit: 0, played: 0 };
+      const row = h2h.get(opponentId) || { opponentId, wins: 0, losses: 0, played: 0 };
       const amount = Number(challenge.amount_cents || 0) / 100;
       const won = challenge.reported_winner_player_id === id;
       row.played += 1;
       if (won) {
         row.wins += 1;
-        row.profit += amount;
       } else {
         row.losses += 1;
-        row.profit -= amount;
       }
       h2h.set(opponentId, row);
     });
@@ -252,10 +245,10 @@ export default function PlayerProfile() {
       { label: "Chall Veteran", detail: "Win 10 money challs", icon: Medal, unlocked: challengeStats.wins >= 10 },
       { label: "Chall King", detail: "Win 25 money challs", icon: Crown, unlocked: challengeStats.wins >= 25 },
 
-      { label: "In The Money", detail: "Reach €25 net profit", icon: Coins, unlocked: challengeStats.profit >= 25 },
-      { label: "Money Maker", detail: "Reach €50 net profit", icon: CreditCard, unlocked: challengeStats.profit >= 50 },
-      { label: "Big Earner", detail: "Reach €100 net profit", icon: Award, unlocked: challengeStats.profit >= 100 },
-      { label: "High Roller", detail: "Reach €250 net profit", icon: Crown, unlocked: challengeStats.profit >= 250 },
+      { label: "In The Money", detail: "Win €25 in verified challs", icon: Coins, unlocked: challengeStats.wonValue >= 25 },
+      { label: "Money Maker", detail: "Win €50 in verified challs", icon: CreditCard, unlocked: challengeStats.wonValue >= 50 },
+      { label: "Big Earner", detail: "Win €100 in verified challs", icon: Award, unlocked: challengeStats.wonValue >= 100 },
+      { label: "High Roller", detail: "Win €250 in verified challs", icon: Crown, unlocked: challengeStats.wonValue >= 250 },
 
       { label: "Clean Payout", detail: "3 clean settled payouts", icon: ShieldCheck, unlocked: reputation === 100 && settled.length >= 3 },
       { label: "Trusted", detail: "10 clean settled payouts", icon: Shield, unlocked: reputation === 100 && settled.length >= 10 },
@@ -666,11 +659,11 @@ export default function PlayerProfile() {
             <div className="brand-kicker mb-1">Challenge Record</div>
             <h3 className="font-display text-xl font-bold">{challengeStats.wins}W - {challengeStats.losses}L</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Verified chall results are counted immediately. Payouts are tracked separately.
+              Every verified match keeps its real win/loss value. ReChall settlement is tracked separately.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-2 w-full lg:w-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full lg:w-auto">
             <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Win Rate</div>
               <div className="font-mono font-bold text-lg mt-1">{challengeStats.winRate}%</div>
@@ -682,20 +675,6 @@ export default function PlayerProfile() {
             <div className="rounded-xl bg-red-500/[0.05] border border-red-500/15 p-3">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Money Lost</div>
               <div className="font-mono font-bold text-lg mt-1 text-red-400">€{challengeStats.lostValue.toFixed(2)}</div>
-            </div>
-            <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Net</div>
-              <div className={`font-mono font-bold text-lg mt-1 ${challengeStats.profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                {challengeStats.profit >= 0 ? "+" : "-"}€{Math.abs(challengeStats.profit).toFixed(2)}
-              </div>
-            </div>
-            <div className="rounded-xl bg-[#D5A33A]/[0.06] border border-[#D5A33A]/20 p-3">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Pending Payout</div>
-              <div className="font-mono font-bold text-lg mt-1 text-[#D5A33A]">€{challengeStats.pendingPayout.toFixed(2)}</div>
-            </div>
-            <div className="rounded-xl bg-emerald-500/[0.05] border border-emerald-500/15 p-3">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Received</div>
-              <div className="font-mono font-bold text-lg mt-1 text-emerald-400">€{challengeStats.receivedValue.toFixed(2)}</div>
             </div>
             <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Match Pairings</div>
@@ -951,9 +930,7 @@ export default function PlayerProfile() {
                       <span className="text-muted-foreground mx-1">-</span>
                       <span className="text-red-400">{row.losses}L</span>
                     </div>
-                    <div className={`text-xs font-mono mt-0.5 ${row.profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                      {row.profit >= 0 ? "+" : "-"}€{Math.abs(row.profit).toFixed(2)}
-                    </div>
+
                   </div>
                 </Link>
               );
