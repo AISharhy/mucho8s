@@ -33,12 +33,19 @@ import {
 import { GAMES } from "@/lib/demoData";
 import { toast } from "sonner";
 
-const TeamList = ({ ids, playerMap, playerAvatars, eloChanges, mvpId, merdaId, merdaIds = [] }) => (
+const TeamList = ({ ids, playerMap, playerAvatars, eloChanges, pairings = [], mvpId, merdaId, merdaIds = [] }) => (
   <div className="flex-1 space-y-2">
     {ids.map((id) => {
       const p = playerMap[id];
       if (!p) return null;
-      const delta = Number(eloChanges?.[id] ?? 0);
+      const baseDelta = Number(eloChanges?.[id] ?? 0);
+      const pairing = (Array.isArray(pairings) ? pairings : []).find(
+        (item) => item?.playerAId === id || item?.playerBId === id
+      );
+      const valueBonus = Math.max(0, Math.round(Number(pairing?.amount) || 0));
+      const delta = baseDelta === 0
+        ? 0
+        : baseDelta + (baseDelta > 0 ? valueBonus : -valueBonus);
       const isMvp = id === mvpId;
       const isMerda = (Array.isArray(merdaIds) ? merdaIds : []).includes(id) || id === merdaId;
 
@@ -379,7 +386,7 @@ export default function Matches() {
             </div>
             <div className="font-semibold mt-1">{winner?.name || "Player"}</div>
             <div className="font-mono text-sm font-black text-emerald-400 mt-1">
-              +{amount} Elo
+              +{25 + Math.max(0, Math.round(amount))} Elo
             </div>
           </div>
 
@@ -389,7 +396,7 @@ export default function Matches() {
             </div>
             <div className="font-semibold mt-1">{loser?.name || "Player"}</div>
             <div className="font-mono text-sm font-black text-red-400 mt-1">
-              -{amount} Elo
+              -{25 + Math.max(0, Math.round(amount))} Elo
             </div>
           </div>
         </div>
@@ -545,6 +552,7 @@ export default function Matches() {
             playerMap={safePlayerMap}
             playerAvatars={playerAvatars}
             eloChanges={match.eloChanges}
+            pairings={match.pairings}
             mvpId={match.mvpId}
             merdaId={match.merdaId}
           />
@@ -576,6 +584,7 @@ export default function Matches() {
             playerMap={safePlayerMap}
             playerAvatars={playerAvatars}
             eloChanges={match.eloChanges}
+            pairings={match.pairings}
             mvpId={match.mvpId}
             merdaId={match.merdaId}
           />
