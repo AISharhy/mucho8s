@@ -18,6 +18,8 @@ const PLATFORM_COLUMNS: Record<string, string> = {
   cmg: "cmg_url",
 };
 
+const SUPPORTED_PLATFORMS = new Set(["paypal", "revolut"]);
+
 const decodeBase64 = (value: string) => {
   const binary = atob(value);
   return new Uint8Array([...binary].map((char) => char.charCodeAt(0)));
@@ -138,7 +140,7 @@ Deno.serve(async (req: Request) => {
         if (!pair.challengerPlayerId || !pair.challengedPlayerId || pair.challengerPlayerId === pair.challengedPlayerId) {
           return json({ error: "Invalid pairing" }, 400);
         }
-        if (!PLATFORM_COLUMNS[pair.platform]) return json({ error: "Invalid challenge platform" }, 400);
+        if (!SUPPORTED_PLATFORMS.has(pair.platform)) return json({ error: "Choose PayPal or Revolut" }, 400);
         if (!Number.isFinite(pair.amount) || pair.amount <= 0) return json({ error: "Every pairing needs a valid amount" }, 400);
         if (seenPlayers.has(pair.challengerPlayerId) || seenPlayers.has(pair.challengedPlayerId)) {
           return json({ error: "A player can appear only once in a pairing set" }, 400);
@@ -235,13 +237,13 @@ Deno.serve(async (req: Request) => {
       const normalized = rawPairings.map((pair: any) => ({
         playerAId: String(pair?.playerAId || "").trim(),
         playerBId: String(pair?.playerBId || "").trim(),
-        platform: String(pair?.platform || "cmg").trim().toLowerCase(),
+        platform: String(pair?.platform || "paypal").trim().toLowerCase(),
         amount: Number(pair?.amount),
       })).filter((pair: any) =>
         pair.playerAId &&
         pair.playerBId &&
         pair.playerAId !== pair.playerBId &&
-        PLATFORM_COLUMNS[pair.platform] &&
+        SUPPORTED_PLATFORMS.has(pair.platform) &&
         Number.isFinite(pair.amount) &&
         pair.amount > 0
       );
@@ -641,8 +643,8 @@ Deno.serve(async (req: Request) => {
       const amount = Number(body?.amount);
       const amountCents = Math.round(amount * 100);
 
-      if (!targetPlayerId || !linkColumn) {
-        return json({ error: "Invalid challenge target or platform" }, 400);
+      if (!targetPlayerId || !SUPPORTED_PLATFORMS.has(platform) || !linkColumn) {
+        return json({ error: "Choose PayPal or Revolut" }, 400);
       }
       if (!Number.isFinite(amount) || amount <= 0 || amountCents <= 0) {
         return json({ error: "Enter a valid challenge amount" }, 400);
@@ -780,7 +782,11 @@ Deno.serve(async (req: Request) => {
         .maybeSingle();
       if (otherError) throw otherError;
 
-      const linkColumn = PLATFORM_COLUMNS[String(series.platform || "")];
+      const seriesPlatform = String(series.platform || "").toLowerCase();
+      if (!SUPPORTED_PLATFORMS.has(seriesPlatform)) {
+        return json({ error: "This old challenge used an unsupported payment method. Start a new PayPal or Revolut challenge." }, 409);
+      }
+      const linkColumn = PLATFORM_COLUMNS[seriesPlatform];
       const myUrl = String(me?.[linkColumn] || "").trim();
       const otherUrl = String(other?.[linkColumn] || "").trim();
 
