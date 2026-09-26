@@ -199,7 +199,6 @@ const GuestDashboard = ({
   matches,
   playerMap,
   playerAvatars,
-  activeChallenges,
   liveMatches,
   season,
   signInWithDiscord,
@@ -285,7 +284,6 @@ const PersonalDashboard = ({
   isAdmin,
   adminChallengeAlertCount,
   players,
-  activeChallenges,
   liveMatches,
 }) => {
   const personalMatches = useMemo(
@@ -556,7 +554,6 @@ export default function Dashboard() {
   } = useData();
 
   const season = dashboardData?.competition || { season_number: 1, season_name: "Season 1" };
-  const activeChallenges = dashboardData?.activeChallenges || [];
   const loggedIn = Boolean(discordSession && discordPlayer);
 
   if (!loggedIn) {
@@ -566,7 +563,6 @@ export default function Dashboard() {
         matches={matches}
         playerMap={playerMap}
         playerAvatars={playerAvatars}
-        activeChallenges={activeChallenges}
         liveMatches={liveMatches}
         season={season}
         signInWithDiscord={signInWithDiscord}
@@ -586,7 +582,6 @@ export default function Dashboard() {
       isAdmin={isAdmin}
       adminChallengeAlertCount={adminChallengeAlertCount}
       players={players}
-      activeChallenges={activeChallenges}
       liveMatches={liveMatches}
     />
   );
