@@ -345,6 +345,16 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
   const alreadyExists = existingMatches.some((match: any) => String(match?.id) === String(report.match_id));
 
   const verifiedAt = new Date().toISOString();
+  let awardedMerdaIds: string[] = [];
+
+  if (alreadyExists) {
+    const storedMatch = existingMatches.find(
+      (match: any) => String(match?.id) === String(report.match_id)
+    );
+    awardedMerdaIds = Array.isArray(storedMatch?.merdaIds)
+      ? storedMatch.merdaIds.map(String)
+      : (storedMatch?.merdaId ? [String(storedMatch.merdaId)] : []);
+  }
 
   if (!alreadyExists) {
     const players = (Array.isArray(state?.players) ? state.players : []).map(normalizePlayer);
@@ -357,6 +367,7 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
 
     const losers = report.winner === "A" ? teamB : teamA;
     const merdaIds = automaticMerdaIds(byId, losers);
+    awardedMerdaIds = merdaIds;
     const eloChanges = applyEffects(byId, teamA, teamB, report.winner, report.mvp_id, merdaIds);
 
     const match = {
@@ -410,13 +421,7 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       verifier_player_id: verifierPlayerId,
       verified_at: verifiedAt,
       locked_at: verifiedAt,
-      merda_id: (() => {
-        const storedMatch = (Array.isArray(state?.matches) ? state.matches : [])
-          .find((match: any) => String(match?.id) === String(report.match_id));
-        if (storedMatch?.merdaId) return storedMatch.merdaId;
-        if (Array.isArray(storedMatch?.merdaIds) && storedMatch.merdaIds[0]) return storedMatch.merdaIds[0];
-        return null;
-      })(),
+      merda_id: awardedMerdaIds[0] || null,
       dispute_note: null,
     })
     .eq("id", report.id)
