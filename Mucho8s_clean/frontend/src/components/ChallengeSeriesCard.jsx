@@ -44,6 +44,18 @@ export default function ChallengeSeriesCard({
     series.settlement_winner_player_id === discordPlayer?.id
   );
 
+  const winningsByPlayer = rounds.reduce((acc, round) => {
+    if (round.status !== "completed" || !round.reported_winner_player_id) return acc;
+    const id = round.reported_winner_player_id;
+    acc[id] = Number(acc[id] || 0) + Number(round.amount_cents || 0);
+    return acc;
+  }, {});
+
+  const playerA = series?.player_a_player_id ? playerMap[series.player_a_player_id] : null;
+  const playerB = series?.player_b_player_id ? playerMap[series.player_b_player_id] : null;
+  const playerAWinnings = Number(winningsByPlayer[series?.player_a_player_id] || 0);
+  const playerBWinnings = Number(winningsByPlayer[series?.player_b_player_id] || 0);
+
   return (
     <div className="card-surface rounded-2xl p-5" data-testid="chall-series-card">
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
@@ -53,13 +65,13 @@ export default function ChallengeSeriesCard({
             {rounds.length} {rounds.length === 1 ? "Round" : "Rounds"}
           </h3>
           <p className="text-sm text-muted-foreground mt-1">
-            Every round still counts for stats and Chall Points. Only the final net balance is paid.
+            Every round keeps its full winnings for stats. The settlement only decides how much money still has to move between the two players.
           </p>
         </div>
 
         <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] px-4 py-3 min-w-[190px]">
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-            {series?.status === "open" ? "Current Balance" : "Final Settlement"}
+            {series?.status === "open" ? "Amount To Settle" : "Final Payment"}
           </div>
           <div className="font-display text-xl font-black mt-1">
             {(series?.status === "open" ? currentAmountCents : settlementAmountCents) === 0 ? (
@@ -73,6 +85,21 @@ export default function ChallengeSeriesCard({
                 )}
               </span>
             )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-5">
+        <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] px-4 py-3">
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Money Won</div>
+          <div className="font-display font-bold mt-1">
+            {playerA?.name || "Player"} <span className="text-emerald-400">{money(playerAWinnings, series?.currency || "EUR")}</span>
+          </div>
+        </div>
+        <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] px-4 py-3">
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Money Won</div>
+          <div className="font-display font-bold mt-1">
+            {playerB?.name || "Player"} <span className="text-emerald-400">{money(playerBWinnings, series?.currency || "EUR")}</span>
           </div>
         </div>
       </div>
@@ -140,7 +167,7 @@ export default function ChallengeSeriesCard({
             </Button>
           </div>
           <div className="text-[10px] text-muted-foreground mt-2">
-            ReChall can use a different amount. No payment is requested until the series is closed.
+            ReChall can use a different amount. Winnings stay intact; only opposite debts are compensated when the series is closed.
           </div>
         </div>
       )}
@@ -156,10 +183,13 @@ export default function ChallengeSeriesCard({
 
       {series?.status === "closed" && settlementAmountCents > 0 && (
         <div className="mt-5 pt-5 border-t border-[#1D222C]">
-          <div className="brand-kicker mb-1">One Final Payment</div>
+          <div className="brand-kicker mb-1">Settlement Only</div>
           <h4 className="font-display font-bold text-lg">
-            {settlementWinner?.name || "Winner"} receives {money(settlementAmountCents, series.currency)}
+            Remaining payment: {settlementWinner?.name || "Winner"} receives {money(settlementAmountCents, series.currency)}
           </h4>
+          <p className="text-sm text-muted-foreground mt-1">
+            This does not change the money won in each round; it only offsets what the two players owe each other.
+          </p>
 
           {series.payment_sent_at ? (
             iReceive ? (
