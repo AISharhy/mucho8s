@@ -60,7 +60,7 @@ export default function RankGuide() {
         <div className="brand-kicker mb-1">Competitive Divisions</div>
         <h3 className="font-display text-2xl font-extrabold">Rank Ladder</h3>
         <p className="text-sm text-muted-foreground mt-1">
-          BO2-inspired competitive ladder. Your Elo determines the emblem shown across MuchoMoney8s.
+          Competitive rank ladder. Your Elo determines the emblem shown across MuchoMoney8s.
         </p>
       </div>
 
