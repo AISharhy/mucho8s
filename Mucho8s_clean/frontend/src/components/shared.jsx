@@ -198,6 +198,13 @@ export const MvpBadge = ({ count }) => (
   </span>
 );
 
+export const MerdaBadge = ({ count }) => (
+  <span className="inline-flex items-center gap-1 text-[#C79A6B] font-mono font-bold">
+    <span aria-hidden="true">💩</span>
+    {count}
+  </span>
+);
+
 export const WinRatePill = ({ player }) => {
   const wr = winRate(player);
   const color = wr >= 55 ? "#10B981" : wr >= 45 ? "#FFB800" : "#EF4444";
