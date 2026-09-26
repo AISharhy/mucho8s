@@ -35,9 +35,12 @@ export default function MatchResultCenter() {
   const [disputeNote, setDisputeNote] = useState("");
   const [busy, setBusy] = useState("");
 
+  const safePlayerMap = playerMap && typeof playerMap === "object" ? playerMap : {};
+
   const reports = useMemo(
     () =>
-      [...(matchReports || [])]
+      [...(Array.isArray(matchReports) ? matchReports : [])]
+        .filter(Boolean)
         .filter((report) => ["pending", "disputed", "completed"].includes(report.status))
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
         .slice(0, 12),
@@ -113,9 +116,9 @@ export default function MatchResultCenter() {
         {reports.map((report) => {
           const teamA = Array.isArray(report.team_a) ? report.team_a : [];
           const teamB = Array.isArray(report.team_b) ? report.team_b : [];
-          const captainA = playerMap[report.captain_a_player_id];
-          const captainB = playerMap[report.captain_b_player_id];
-          const mvp = report.mvp_id ? playerMap[report.mvp_id] : null;
+          const captainA = safePlayerMap[report.captain_a_player_id];
+          const captainB = safePlayerMap[report.captain_b_player_id];
+          const mvp = report.mvp_id ? safePlayerMap[report.mvp_id] : null;
           const canReview = eligibleCaptain(report);
           const statusLabel =
             report.status === "completed"
@@ -149,7 +152,7 @@ export default function MatchResultCenter() {
                         Team A
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        {teamA.map((id) => playerMap[id]?.name || "Player").join(" · ")}
+                        {teamA.map((id) => safePlayerMap[id]?.name || "Player").join(" · ")}
                       </div>
                       <div className="text-[10px] text-[#697181] mt-1">
                         Captain: {captainA?.name || "Player"}
@@ -170,7 +173,7 @@ export default function MatchResultCenter() {
                         Team B
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        {teamB.map((id) => playerMap[id]?.name || "Player").join(" · ")}
+                        {teamB.map((id) => safePlayerMap[id]?.name || "Player").join(" · ")}
                       </div>
                       <div className="text-[10px] text-[#697181] mt-1">
                         Captain: {captainB?.name || "Player"}
