@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { winRate, tierOf } from "@/lib/elo";
-import { PlayerAvatar, EloBadge, Last10, StreakBadge, MvpBadge } from "@/components/shared";
+import { PlayerAvatar, EloBadge, Last10, StreakBadge, MvpBadge, RankBadge, RankProgress } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -39,6 +39,11 @@ import {
   Flame,
   Award,
   UsersRound,
+  Medal,
+  Star,
+  Coins,
+  Shield,
+  Rocket,
 } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer, Tooltip, YAxis, XAxis, CartesianGrid } from "recharts";
 import { toast } from "sonner";
@@ -183,16 +188,44 @@ export default function PlayerProfile() {
       .sort((a, b) => b.played - a.played || b.wins - a.wins)
       .slice(0, 5);
 
-    const achievements = [
-      player.totalMatches >= 10 && { label: "10 Matches", icon: Gamepad2 },
-      player.wins >= 10 && { label: "10 Wins", icon: Trophy },
-      player.mvpCount >= 5 && { label: "5 MVP", icon: Crown },
-      challengeStats.wins >= 5 && { label: "5 Chall Wins", icon: Swords },
-      bestWinStreak >= 3 && { label: "3 Win Streak", icon: Flame },
-      challengeStats.profit >= 50 && { label: "€50 Profit", icon: CreditCard },
-      challengeStats.profit >= 100 && { label: "€100 Profit", icon: Award },
-      reputation === 100 && settled.length >= 3 && { label: "Clean Payout", icon: ShieldCheck },
-    ].filter(Boolean);
+    const achievementCatalog = [
+      { label: "First Match", detail: "Play 1 match", icon: Gamepad2, unlocked: player.totalMatches >= 1 },
+      { label: "Regular", detail: "Play 10 matches", icon: Gamepad2, unlocked: player.totalMatches >= 10 },
+      { label: "Veteran", detail: "Play 25 matches", icon: Medal, unlocked: player.totalMatches >= 25 },
+      { label: "Grinder", detail: "Play 50 matches", icon: Flame, unlocked: player.totalMatches >= 50 },
+      { label: "Centurion", detail: "Play 100 matches", icon: Award, unlocked: player.totalMatches >= 100 },
+
+      { label: "First Blood", detail: "Win 1 match", icon: Trophy, unlocked: player.wins >= 1 },
+      { label: "Winner", detail: "Win 10 matches", icon: Trophy, unlocked: player.wins >= 10 },
+      { label: "Elite Winner", detail: "Win 25 matches", icon: Crown, unlocked: player.wins >= 25 },
+      { label: "Dominant", detail: "Win 50 matches", icon: Star, unlocked: player.wins >= 50 },
+
+      { label: "MVP", detail: "Earn 1 MVP", icon: Crown, unlocked: player.mvpCount >= 1 },
+      { label: "MVP x5", detail: "Earn 5 MVPs", icon: Crown, unlocked: player.mvpCount >= 5 },
+      { label: "MVP x10", detail: "Earn 10 MVPs", icon: Award, unlocked: player.mvpCount >= 10 },
+
+      { label: "Hot Streak", detail: "3 wins in a row", icon: Flame, unlocked: bestWinStreak >= 3 },
+      { label: "On Fire", detail: "5 wins in a row", icon: Flame, unlocked: bestWinStreak >= 5 },
+      { label: "Untouchable", detail: "10 wins in a row", icon: Rocket, unlocked: bestWinStreak >= 10 },
+
+      { label: "First Chall", detail: "Win 1 money chall", icon: Swords, unlocked: challengeStats.wins >= 1 },
+      { label: "Chall Grinder", detail: "Win 5 money challs", icon: Swords, unlocked: challengeStats.wins >= 5 },
+      { label: "Chall Veteran", detail: "Win 10 money challs", icon: Medal, unlocked: challengeStats.wins >= 10 },
+      { label: "Chall King", detail: "Win 25 money challs", icon: Crown, unlocked: challengeStats.wins >= 25 },
+
+      { label: "In The Money", detail: "Reach €25 net profit", icon: Coins, unlocked: challengeStats.profit >= 25 },
+      { label: "Money Maker", detail: "Reach €50 net profit", icon: CreditCard, unlocked: challengeStats.profit >= 50 },
+      { label: "Big Earner", detail: "Reach €100 net profit", icon: Award, unlocked: challengeStats.profit >= 100 },
+      { label: "High Roller", detail: "Reach €250 net profit", icon: Crown, unlocked: challengeStats.profit >= 250 },
+
+      { label: "Clean Payout", detail: "3 clean settled payouts", icon: ShieldCheck, unlocked: reputation === 100 && settled.length >= 3 },
+      { label: "Trusted", detail: "10 clean settled payouts", icon: Shield, unlocked: reputation === 100 && settled.length >= 10 },
+
+      { label: "Platinum", detail: "Reach 1200 Elo", icon: Medal, unlocked: player.currentElo >= 1200 },
+      { label: "Masters", detail: "Reach 1350 Elo", icon: Crown, unlocked: player.currentElo >= 1350 },
+    ];
+
+    const achievements = achievementCatalog.filter((item) => item.unlocked);
 
     return {
       currentStreak,
@@ -203,6 +236,7 @@ export default function PlayerProfile() {
       payoutDisputes,
       headToHead,
       achievements,
+      achievementCatalog,
     };
   }, [challengeStats, id, player]);
 
@@ -357,10 +391,12 @@ export default function PlayerProfile() {
           <div className="min-w-0 flex-1">
             <div className="brand-kicker mb-1">{isOwnProfile ? "My Profile" : "Player Profile"}</div>
             <h2 className="font-display text-3xl font-extrabold truncate">{player.name}</h2>
-            <div className="mt-1 flex flex-wrap items-center gap-3">
-              <span className="text-xs uppercase tracking-widest font-semibold" style={{ color: tier.color }}>{tier.name}</span>
-              <EloBadge elo={player.currentElo} />
+            <div className="mt-3 flex flex-wrap items-center gap-4">
+              <RankBadge elo={player.currentElo} />
               <StreakBadge streak={player.currentStreak} />
+            </div>
+            <div className="mt-4 max-w-lg">
+              <RankProgress elo={player.currentElo} />
             </div>
           </div>
 
@@ -515,20 +551,39 @@ export default function PlayerProfile() {
         </div>
 
         <div className="card-surface rounded-2xl p-5">
-          <div className="brand-kicker mb-1">Milestones</div>
-          <h3 className="font-display font-bold text-lg">Achievements</h3>
-          <div className="flex flex-wrap gap-2 mt-4">
-            {challengeInsights.achievements.length === 0 ? (
-              <span className="text-sm text-muted-foreground">No badges unlocked yet.</span>
-            ) : challengeInsights.achievements.map((achievement) => {
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="brand-kicker mb-1">Milestones</div>
+              <h3 className="font-display font-bold text-lg">Achievements</h3>
+            </div>
+            <span className="font-mono text-xs text-[#D5A33A]">
+              {challengeInsights.achievements.length}/{challengeInsights.achievementCatalog.length}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 mt-4 max-h-56 overflow-y-auto pr-1">
+            {challengeInsights.achievementCatalog.map((achievement) => {
               const Icon = achievement.icon;
               return (
-                <span
+                <div
                   key={achievement.label}
-                  className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-[#0F1218] border border-[#222834] text-xs font-semibold"
+                  title={achievement.detail}
+                  className={`rounded-xl border p-2.5 flex items-center gap-2 transition-all ${
+                    achievement.unlocked
+                      ? "bg-[#D5A33A]/[0.06] border-[#D5A33A]/25"
+                      : "bg-[#0F1218] border-[#1D222C] opacity-40"
+                  }`}
                 >
-                  <Icon size={13} className="text-[#D5A33A]" /> {achievement.label}
-                </span>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                    achievement.unlocked ? "bg-[#D5A33A]/10" : "bg-white/[0.03]"
+                  }`}>
+                    <Icon size={14} className={achievement.unlocked ? "text-[#D5A33A]" : "text-muted-foreground"} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-bold truncate">{achievement.label}</div>
+                    <div className="text-[9px] text-muted-foreground truncate mt-0.5">{achievement.detail}</div>
+                  </div>
+                </div>
               );
             })}
           </div>
