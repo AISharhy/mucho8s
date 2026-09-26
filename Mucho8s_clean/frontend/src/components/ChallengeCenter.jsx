@@ -134,7 +134,8 @@ export default function ChallengeCenter() {
       attention.type === "event" &&
       attention.challenge.status === "completed" &&
       attention.challenge.reported_winner_player_id !== discordPlayer?.id &&
-      !attention.challenge.payment_sent_at
+      !attention.challenge.payment_received_at &&
+      !(attention.challenge.payout_disputed_at && !attention.challenge.payout_dispute_resolved_at)
     ) {
       const payoutUrl = payoutUrlFor(attention.challenge, playerProfiles);
       const key = `m8-payout-redirect-${attention.challenge.id}`;
