@@ -64,7 +64,9 @@ export default function Matches() {
       if (gameFilter !== "ALL" && m.game !== gameFilter) return false;
       if (!query) return true;
       const q = query.toLowerCase();
-      const names = [...m.teamA, ...m.teamB].map((id) => safePlayerMap[id]?.name?.toLowerCase() || "");
+      const teamA = Array.isArray(m.teamA) ? m.teamA : [];
+      const teamB = Array.isArray(m.teamB) ? m.teamB : [];
+      const names = [...teamA, ...teamB].map((id) => safePlayerMap[id]?.name?.toLowerCase() || "");
       return names.some((n) => n.includes(q)) || (m.game || "").toLowerCase().includes(q) || (m.mode || "").toLowerCase().includes(q);
     });
   }, [safeMatches, query, winnerFilter, gameFilter, safePlayerMap]);
