@@ -1382,7 +1382,7 @@ export const DataProvider = ({ children }) => {
       });
     }
     return ok;
-  }, [players, matches, backendWrite, persistWholeState, logAdminAction]);
+  }, [players, matches, backendWrite, persistWholeState, logAdminAction, syncMatchMoneyPairings]);
 
   const deleteMatch = useCallback(async (id) => {
     if (STORAGE_MODE === "backend") return backendWrite(`/matches/${id}`, { method: "DELETE" });
@@ -1401,7 +1401,7 @@ export const DataProvider = ({ children }) => {
       void logAdminAction("match.delete", "match", id, { game: old.game, mode: old.mode });
     }
     return ok;
-  }, [players, matches, backendWrite, persistWholeState, logAdminAction]);
+  }, [players, matches, backendWrite, persistWholeState, logAdminAction, syncMatchMoneyPairings]);
 
   const value = {
     players,
