@@ -8,7 +8,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Crown, Trophy, Filter, Pencil, Trash2, Flag } from "lucide-react";
+import { Plus, Search, Crown, Trophy, Filter, Pencil, Trash2, Flag, WalletCards, ArrowRightLeft } from "lucide-react";
 import { GAMES } from "@/lib/demoData";
 import { toast } from "sonner";
 
@@ -199,6 +199,45 @@ export default function Matches() {
                 <TeamList ids={m.teamB} playerMap={playerMap} eloChanges={m.eloChanges} color="#D5A33A" mvpId={m.mvpId} />
               </div>
             </div>
+
+            {Array.isArray(m.pairings) && m.pairings.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-[#1D222C]" data-testid={`match-money-pairings-${m.id}`}>
+                <div className="flex items-center gap-2 mb-3">
+                  <WalletCards size={15} className="text-[#D5A33A]" />
+                  <span className="brand-kicker">Money Chall Pairings</span>
+                  <span className="ml-auto text-[10px] text-muted-foreground">{m.pairings.length} pairings</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+                  {m.pairings.map((pair, index) => {
+                    const alpha = playerMap[pair.playerAId];
+                    const bravo = playerMap[pair.playerBId];
+                    const winnerId = m.winner === "A" ? pair.playerAId : pair.playerBId;
+                    const winner = playerMap[winnerId];
+
+                    return (
+                      <div key={pair.playerAId + "-" + pair.playerBId + "-" + index} className="rounded-xl bg-[#0F1218] border border-[#1D222C] px-3 py-2.5">
+                        <div className="flex items-center gap-2 text-sm min-w-0">
+                          <span className={`font-semibold truncate ${winnerId === pair.playerAId ? "text-emerald-400" : ""}`}>
+                            {alpha?.name || "Alpha"}
+                          </span>
+                          <ArrowRightLeft size={13} className="text-muted-foreground shrink-0" />
+                          <span className={`font-semibold truncate ${winnerId === pair.playerBId ? "text-emerald-400" : ""}`}>
+                            {bravo?.name || "Bravo"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                          <span>€{Number(pair.amount || 0).toFixed(2)}</span>
+                          <span>·</span>
+                          <span>{String(pair.platform || "cmg").toUpperCase()}</span>
+                          <span className="ml-auto text-emerald-400">{winner?.name || "Winner"} won</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
