@@ -51,7 +51,59 @@ export default function ChallengeInbox() {
   const rows = useMemo(() => {
     if (!discordAccount?.id) return [];
 
-    return challenges.map((challenge) => {
+    const seriesSeen = new Set();
+    const result = [];
+
+    challenges.forEach((challenge) => {
+      if (challenge.series_id) {
+        if (seriesSeen.has(challenge.series_id)) return;
+        seriesSeen.add(challenge.series_id);
+
+        const group = challenges
+          .filter((item) => item.series_id === challenge.series_id)
+          .sort((a, b) => Number(b.series_round || 0) - Number(a.series_round || 0));
+        const latest = group[0] || challenge;
+        const series = latest.series || challenge.series || null;
+        const isChallenger = latest.challenger_account_id === discordAccount.id;
+        const opponentId = isChallenger
+          ? latest.challenged_player_id
+          : latest.challenger_player_id;
+        const opponent = playerMap[opponentId];
+        const iReceive = Boolean(
+          series?.settlement_winner_player_id === discordAccount.player_id
+        );
+
+        const roundNeedsAction =
+          (latest.status === "pending" && !isChallenger) ||
+          (latest.status === "result_pending" && latest.reporter_account_id !== discordAccount.id);
+
+        const settlementNeedsAction = Boolean(
+          series?.status === "closed" &&
+          Number(series?.settlement_amount_cents || 0) > 0 &&
+          (
+            (!iReceive && !series?.payment_sent_at) ||
+            (iReceive && series?.payment_sent_at && !series?.payment_received_at)
+          )
+        );
+
+        const active = Boolean(
+          series?.status === "open" ||
+          (series?.status === "closed" && !series?.payment_received_at)
+        );
+
+        result.push({
+          challenge: latest,
+          isChallenger,
+          opponentId,
+          opponent,
+          needsAction: roundNeedsAction || settlementNeedsAction,
+          active,
+          series,
+          roundCount: Number(series?.round_count || group.length),
+        });
+        return;
+      }
+
       const isChallenger = challenge.challenger_account_id === discordAccount.id;
       const opponentId = isChallenger
         ? challenge.challenged_player_id
@@ -72,8 +124,10 @@ export default function ChallengeInbox() {
         ["pending", "accepted", "result_pending", "disputed"].includes(challenge.status) ||
         (challenge.status === "completed" && !challenge.payment_received_at);
 
-      return { challenge, isChallenger, opponentId, opponent, needsAction, active };
+      result.push({ challenge, isChallenger, opponentId, opponent, needsAction, active, series: null, roundCount: 0 });
     });
+
+    return result;
   }, [challenges, discordAccount, playerMap]);
 
   const visible = rows.filter((row) => {
@@ -151,23 +205,38 @@ export default function ChallengeInbox() {
         </div>
       ) : (
         <div className="space-y-3">
-          {visible.map(({ challenge, isChallenger, opponentId, opponent, needsAction }) => {
+          {visible.map(({ challenge, isChallenger, opponentId, opponent, needsAction, series, roundCount }) => {
             const completed = challenge.status === "completed";
             const won = completed && challenge.reported_winner_player_id === discordPlayer.id;
             const lost = completed && challenge.reported_winner_player_id && !won;
-            const payoutPending = completed && !challenge.payment_received_at;
-            const payoutDisputed = Boolean(
-              challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at
-            );
+            const iReceiveSeries = Boolean(series?.settlement_winner_player_id === discordPlayer.id);
+            const payoutPending = series
+              ? Boolean(
+                  series.status === "closed" &&
+                  Number(series.settlement_amount_cents || 0) > 0 &&
+                  !series.payment_received_at
+                )
+              : completed && !challenge.payment_received_at;
+            const payoutDisputed = series
+              ? Boolean(series.payout_disputed_at && !series.payout_dispute_resolved_at)
+              : Boolean(challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at);
             const payoutLabel = payoutDisputed
               ? "DISPUTA APERTA"
-              : won
-                ? challenge.payment_sent_at
-                  ? "CONFERMA RICEZIONE"
-                  : "IN ATTESA PAGAMENTO"
-                : challenge.payment_sent_at
-                  ? "PAGAMENTO INVIATO"
-                  : "DA PAGARE";
+              : series
+                ? iReceiveSeries
+                  ? series.payment_sent_at
+                    ? "CONFERMA RICEZIONE"
+                    : "IN ATTESA PAGAMENTO"
+                  : series.payment_sent_at
+                    ? "PAGAMENTO INVIATO"
+                    : "SALDO DA PAGARE"
+                : won
+                  ? challenge.payment_sent_at
+                    ? "CONFERMA RICEZIONE"
+                    : "IN ATTESA PAGAMENTO"
+                  : challenge.payment_sent_at
+                    ? "PAGAMENTO INVIATO"
+                    : "DA PAGARE";
 
             return (
               <div
@@ -187,7 +256,22 @@ export default function ChallengeInbox() {
                     <div className="min-w-0">
                       <div className="font-display font-bold text-lg truncate">vs {opponent?.name || "Player"}</div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        {String(challenge.platform || "").toUpperCase()} · {money(challenge)} · {new Date(challenge.created_at).toLocaleString()}
+                        {series ? (
+                          <>
+                            CHALL SERIES · {roundCount} {roundCount === 1 ? "round" : "rounds"} ·{" "}
+                            {series.status === "open"
+                              ? Number(series.current_amount_cents || 0) === 0
+                                ? "saldo €0"
+                                : (playerMap[series.current_winner_player_id]?.name || "Player") + " +" + new Intl.NumberFormat("it-IT", { style: "currency", currency: series.currency || "EUR" }).format(Number(series.current_amount_cents || 0) / 100)
+                              : series.status === "settled"
+                                ? "chiusa"
+                                : "saldo finale " + new Intl.NumberFormat("it-IT", { style: "currency", currency: series.currency || "EUR" }).format(Number(series.settlement_amount_cents || 0) / 100)}
+                          </>
+                        ) : (
+                          <>
+                            {String(challenge.platform || "").toUpperCase()} · {money(challenge)} · {new Date(challenge.created_at).toLocaleString()}
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -201,6 +285,16 @@ export default function ChallengeInbox() {
                     {lost && (
                       <span className="h-10 px-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs font-extrabold inline-flex items-center">
                         PERSA
+                      </span>
+                    )}
+                    {series?.status === "open" && challenge.status === "completed" && (
+                      <span className="h-10 px-3 rounded-xl bg-[#5865F2]/10 border border-[#5865F2]/25 text-[#8993FF] text-[10px] font-bold inline-flex items-center">
+                        SERIES OPEN
+                      </span>
+                    )}
+                    {series?.status === "settled" && (
+                      <span className="h-10 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] font-bold inline-flex items-center">
+                        SERIES SETTLED
                       </span>
                     )}
                     {payoutPending && (
@@ -250,7 +344,7 @@ export default function ChallengeInbox() {
                         className="h-10 px-4 rounded-xl bg-[#181B26] border border-[#2A303B] text-sm font-semibold text-white inline-flex items-center justify-center hover:bg-white/[0.05]"
                       >
                         {needsAction ? <AlertTriangle size={14} className="mr-1.5 text-[#D5A33A]" /> : <Swords size={14} className="mr-1.5" />}
-                        Open Match
+                        {series ? "Open Series" : "Open Match"}
                       </Link>
                     )}
                   </div>
