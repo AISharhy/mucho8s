@@ -93,6 +93,7 @@ export default function Matches() {
   const {
     matches,
     publicChallenges,
+    matchReports,
     playerMap,
     playerAvatars,
     deleteMatch,
@@ -111,6 +112,7 @@ export default function Matches() {
   );
 
   const [editData, setEditData] = useState(null);
+  const [view, setView] = useState("live");
   const [query, setQuery] = useState("");
   const [winnerFilter, setWinnerFilter] = useState("all");
   const [gameFilter, setGameFilter] = useState("ALL");
@@ -151,6 +153,38 @@ export default function Matches() {
       `Rematch created · ${created.length} chall${created.length === 1 ? "" : "s"}`
     );
   };
+
+  const liveChallenges = useMemo(
+    () =>
+      (Array.isArray(publicChallenges) ? publicChallenges : [])
+        .filter((challenge) =>
+          ["pending", "accepted", "result_pending", "disputed"].includes(
+            String(challenge?.status || "")
+          )
+        )
+        .sort(
+          (a, b) =>
+            new Date(b.updated_at || b.created_at) -
+            new Date(a.updated_at || a.created_at)
+        ),
+    [publicChallenges]
+  );
+
+  const liveReports = useMemo(
+    () =>
+      (Array.isArray(matchReports) ? matchReports : [])
+        .filter((report) =>
+          ["pending", "disputed"].includes(String(report?.status || ""))
+        )
+        .sort(
+          (a, b) =>
+            new Date(b.updated_at || b.created_at) -
+            new Date(a.updated_at || a.created_at)
+        ),
+    [matchReports]
+  );
+
+  const liveCount = liveChallenges.length + liveReports.length;
 
   const history = useMemo(() => {
     const matchIds = new Set(safeMatches.map((match) => String(match.id)));
@@ -228,6 +262,63 @@ export default function Matches() {
       );
     });
   }, [history, query, winnerFilter, gameFilter, safePlayerMap]);
+
+  const renderLiveChallenge = (challenge) => {
+    const challenger = safePlayerMap[challenge.challenger_player_id];
+    const challenged = safePlayerMap[challenge.challenged_player_id];
+    const amount = Number(challenge.amount_cents || 0) / 100;
+    const status = String(challenge.status || "").replaceAll("_", " ").toUpperCase();
+
+    return (
+      <Link
+        key={`live-chall-${challenge.id}`}
+        to={`/challenges/${challenge.id}`}
+        className="m8-panel rounded-2xl p-4 flex items-center gap-4 hover:border-[#394150] transition-all"
+      >
+        <Swords size={18} className="text-[#D5A33A] shrink-0" />
+        <div className="min-w-0 flex-1">
+          <div className="font-display font-bold truncate">
+            {challenger?.name || "Player"} <span className="text-[#596170]">vs</span> {challenged?.name || "Player"}
+          </div>
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">
+            {status} · {String(challenge.platform || "paypal").toUpperCase()}
+          </div>
+        </div>
+        <div className="text-right shrink-0">
+          <div className="font-mono font-black text-[#D5A33A]">{money(amount)}</div>
+          <div className="text-[10px] text-muted-foreground mt-1">OPEN</div>
+        </div>
+      </Link>
+    );
+  };
+
+  const renderLiveReport = (report) => {
+    const teamA = Array.isArray(report.team_a) ? report.team_a : [];
+    const teamB = Array.isArray(report.team_b) ? report.team_b : [];
+    const names = (ids) =>
+      ids.map((id) => safePlayerMap[id]?.name || "Player").join(" · ");
+
+    return (
+      <Link
+        key={`live-report-${report.id}`}
+        to="/team-builder"
+        className="m8-panel rounded-2xl p-4 flex items-center gap-4 hover:border-[#394150] transition-all"
+      >
+        <Gamepad2 size={18} className="text-magma shrink-0" />
+        <div className="min-w-0 flex-1">
+          <div className="font-display font-bold truncate">
+            {names(teamA)} <span className="text-[#596170]">vs</span> {names(teamB)}
+          </div>
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">
+            {String(report.status || "").replaceAll("_", " ").toUpperCase()}
+            {report.game ? ` · ${report.game}` : ""}
+            {report.mode ? ` · ${report.mode}` : ""}
+          </div>
+        </div>
+        <div className="text-[10px] text-muted-foreground shrink-0">OPEN</div>
+      </Link>
+    );
+  };
 
   const renderMoneyChall = (challenge) => {
     const challenger = safePlayerMap[challenge.challenger_player_id];
@@ -593,88 +684,129 @@ export default function Matches() {
 
   return (
     <div className="m8-page-stack">
-      <section className="m8-panel rounded-2xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
-        <div>
-          <div className="brand-kicker mb-1">History</div>
-          <h2 className="font-display text-3xl font-black tracking-[-0.03em]">
-            Match History
-          </h2>
-          <p className="text-sm text-[#7F8795] mt-1">
-            Team matches and Money Challs are one unified history.
-          </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <div className="relative flex-1 max-w-md">
-            <Search
-              size={18}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-            />
-            <Input
-              data-testid="matches-search-input"
-              placeholder="Search player, game or mode..."
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              className="pl-10 bg-[#0F1218] border-[#222834] h-11 rounded-xl"
-            />
+      <section className="m8-panel rounded-2xl p-5 sm:p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <div className="brand-kicker mb-1">Matches</div>
+            <h2 className="font-display text-3xl font-black tracking-[-0.03em]">
+              Matches
+            </h2>
           </div>
 
-          <select
-            value={gameFilter}
-            onChange={(event) => setGameFilter(event.target.value)}
-            className="h-11 w-full sm:w-auto rounded-xl bg-[#0F1218] border border-[#222834] text-[#C8CED8] font-semibold px-3 text-sm"
-          >
-            <option value="ALL">All Games</option>
-            {GAMES.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Filter size={16} className="text-muted-foreground" />
-            {[
-              { key: "all", label: "All" },
-              { key: "A", label: "Alpha" },
-              { key: "B", label: "Bravo" },
-            ].map((filter) => (
-              <button
-                key={filter.key}
-                aria-pressed={winnerFilter === filter.key}
-                onClick={() => setWinnerFilter(filter.key)}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
-                  winnerFilter === filter.key
-                    ? "bg-magma text-white border-magma"
-                    : "bg-[#0F1218] text-[#8D95A4] border-[#222834] hover:text-white"
-                }`}
-              >
-                {filter.label}
-              </button>
-            ))}
+          <div className="inline-flex self-start lg:self-auto rounded-xl border border-[#222834] bg-[#0F1218] p-1">
+            <button
+              type="button"
+              onClick={() => setView("live")}
+              className={`h-9 px-4 rounded-lg text-sm font-bold transition-all ${
+                view === "live"
+                  ? "bg-white text-black"
+                  : "text-[#8D95A4] hover:text-white"
+              }`}
+            >
+              Live{liveCount > 0 ? ` · ${liveCount}` : ""}
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("history")}
+              className={`h-9 px-4 rounded-lg text-sm font-bold transition-all ${
+                view === "history"
+                  ? "bg-white text-black"
+                  : "text-[#8D95A4] hover:text-white"
+              }`}
+            >
+              History
+            </button>
           </div>
         </div>
+
+        {view === "history" && (
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-5 pt-4 border-t border-[#1D222C]">
+            <div className="relative flex-1 max-w-md">
+              <Search
+                size={18}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                data-testid="matches-search-input"
+                placeholder="Search player, game or mode..."
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                className="pl-10 bg-[#0F1218] border-[#222834] h-11 rounded-xl"
+              />
+            </div>
+
+            <select
+              value={gameFilter}
+              onChange={(event) => setGameFilter(event.target.value)}
+              className="h-11 w-full sm:w-auto rounded-xl bg-[#0F1218] border border-[#222834] text-[#C8CED8] font-semibold px-3 text-sm"
+            >
+              <option value="ALL">All Games</option>
+              {GAMES.map((item) => (
+                <option key={item} value={item}>{item}</option>
+              ))}
+            </select>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Filter size={16} className="text-muted-foreground" />
+              {[
+                { key: "all", label: "All" },
+                { key: "A", label: "Alpha" },
+                { key: "B", label: "Bravo" },
+              ].map((filter) => (
+                <button
+                  key={filter.key}
+                  aria-pressed={winnerFilter === filter.key}
+                  onClick={() => setWinnerFilter(filter.key)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                    winnerFilter === filter.key
+                      ? "bg-magma text-white border-magma"
+                      : "bg-[#0F1218] text-[#8D95A4] border-[#222834] hover:text-white"
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
-      <div className="space-y-3" data-testid="matches-list">
-        {filtered.length === 0 && (
-          <EmptyState
-            icon={Gamepad2}
-            title={history.length === 0 ? "No matches yet" : "No matches found"}
-            description={
-              history.length === 0
-                ? "Verified team matches and Money Challs will appear here."
-                : "Try changing the search or filters."
-            }
-          />
-        )}
+      {view === "live" ? (
+        <div className="space-y-3" data-testid="live-matches-list">
+          {liveCount === 0 ? (
+            <EmptyState
+              icon={Gamepad2}
+              title="No live matches"
+              description="Pending and in-progress matches will appear here."
+            />
+          ) : (
+            <>
+              {liveReports.map(renderLiveReport)}
+              {liveChallenges.map(renderLiveChallenge)}
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-3" data-testid="matches-list">
+          {filtered.length === 0 && (
+            <EmptyState
+              icon={Gamepad2}
+              title={history.length === 0 ? "No match history yet" : "No matches found"}
+              description={
+                history.length === 0
+                  ? "Verified team matches and Money Challs will appear here."
+                  : "Try changing the search or filters."
+              }
+            />
+          )}
 
-        {filtered.map((row) =>
-          row.type === "chall"
-            ? renderMoneyChall(row.item)
-            : renderTeamMatch(row.item)
-        )}
-      </div>
+          {filtered.map((row) =>
+            row.type === "chall"
+              ? renderMoneyChall(row.item)
+              : renderTeamMatch(row.item)
+          )}
+        </div>
+      )}
 
       <RecordMatchDialog
         open={!!editData}
