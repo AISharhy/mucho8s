@@ -1,11 +1,10 @@
 import React from "react";
 import { RANKS, rankProgress } from "@/lib/elo";
-import { Shield, Star, Crown, Gem, Trophy } from "lucide-react";
+import { Shield, Star, Crown, Gem } from "lucide-react";
 
 const iconFor = (index) => {
   if (index >= 5) return Crown;
-  if (index >= 4) return Gem;
-  if (index >= 3) return Trophy;
+  if (index >= 3) return Gem;
   if (index >= 2) return Star;
   return Shield;
 };
