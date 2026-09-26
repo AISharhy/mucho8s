@@ -55,7 +55,7 @@ export const computeContextStats = (matches, { game = "ALL", mode = "ALL" } = {}
       s.totalMatches += 1;
       if (winners?.includes(id)) s.wins += 1;
       else s.losses += 1;
-      if (m.mvpId === id) s.mvpCount += 1;
+      if ((Array.isArray(m.mvpIds) ? m.mvpIds : []).includes(id) || m.mvpId === id) s.mvpCount += 1;
     });
   });
 
