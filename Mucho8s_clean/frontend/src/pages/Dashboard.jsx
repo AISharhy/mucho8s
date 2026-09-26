@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar, EloBadge, RankBadge } from "@/components/shared";
@@ -22,6 +22,23 @@ const euro = (value) =>
   }).format(Number(value || 0));
 
 const challengeAmount = (challenge) => Number(challenge?.amount_cents || 0) / 100;
+
+const liveDuration = (createdAt, now = Date.now()) => {
+  const started = new Date(createdAt || 0).getTime();
+  if (!Number.isFinite(started) || started <= 0) return "just started";
+
+  const minutes = Math.max(0, Math.floor((now - started) / 60000));
+  if (minutes < 1) return "<1m";
+  if (minutes < 60) return `${minutes}m`;
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  if (hours < 24) return `${hours}h ${String(remainingMinutes).padStart(2, "0")}m`;
+
+  const days = Math.floor(hours / 24);
+  const remainingHours = hours % 24;
+  return `${days}d ${remainingHours}h`;
+};
 
 const CompactMetric = ({ label, value, sub, icon: Icon, tone = "" }) => (
   <div className="m8-stat-card min-w-0">
@@ -47,6 +64,13 @@ const CompetitionOverview = ({
   playerAvatars,
   liveMatches,
 }) => {
+  const [liveNow, setLiveNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setLiveNow(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+
   const topThree = useMemo(
     () => [...(players || [])]
       .sort((a, b) => Number(b.currentElo || 0) - Number(a.currentElo || 0))
@@ -168,7 +192,7 @@ const CompetitionOverview = ({
             return (
               <Link key={match.id} to="/team-builder" className="interactive-row rounded-xl p-3.5 block">
                 <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-emerald-400 font-bold">
-                  <Radio size={12} /> {match.format || "MATCH"} · {match.game || "Game"}{match.mode ? ` · ${match.mode}` : ""}
+                  <Radio size={12} /> {match.format || "MATCH"} · {match.game || "Game"}{match.mode ? ` · ${match.mode}` : ""} · {liveDuration(match.created_at, liveNow)}
                 </div>
                 <div className="text-sm font-display font-extrabold mt-2 truncate">
                   {alpha.join(", ") || "Alpha"} <span className="text-[#596170] font-medium">vs</span> {bravo.join(", ") || "Bravo"}
