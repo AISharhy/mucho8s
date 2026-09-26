@@ -2,8 +2,9 @@ export const BASE_ELO = 1000;
 export const MIN_ELO = 500;
 export const WIN_DELTA = 25;
 export const LOSS_DELTA = 25;
-export const MVP_BONUS = 10;
-export const UPSET_BONUS = 15;
+export const MVP_BONUS = 3;
+export const MERDA_PENALTY = 3;
+export const UPSET_BONUS = 0;
 
 // Balancing formula weights
 export const WEIGHTS = { peak: 0.6, current: 0.25, winRate: 0.15 };
