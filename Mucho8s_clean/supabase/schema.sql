@@ -85,6 +85,13 @@ create table if not exists public.challenge_series (
 create index if not exists challenge_series_players_idx
   on public.challenge_series (player_a_player_id, player_b_player_id, created_at desc);
 
+create unique index if not exists challenge_series_open_pair_unique
+  on public.challenge_series (
+    least(player_a_player_id, player_b_player_id),
+    greatest(player_a_player_id, player_b_player_id)
+  )
+  where status = 'open';
+
 alter table public.challenge_series enable row level security;
 revoke all on table public.challenge_series from anon, authenticated;
 
