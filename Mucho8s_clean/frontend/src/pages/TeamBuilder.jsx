@@ -47,11 +47,6 @@ const Metric = ({ label, value, tone = "" }) => (
   </div>
 );
 
-const pickRandomCaptain = (team = []) => {
-  if (!team.length) return "";
-  return team[Math.floor(Math.random() * team.length)]?.id || "";
-};
-
 export default function TeamBuilder() {
   const {
     players,
@@ -128,12 +123,19 @@ export default function TeamBuilder() {
     [players, query]
   );
 
-  const captainA = result?.teamA?.find((player) => player.id === captains.A) || null;
-  const captainB = result?.teamB?.find((player) => player.id === captains.B) || null;
-  const canReport = Boolean(
-    result &&
-    (isAdmin || [captains.A, captains.B].includes(discordPlayer?.id))
-  );
+  const matchCaptainId = result && discordPlayer?.id &&
+    [...result.teamA, ...result.teamB].some((player) => player.id === discordPlayer.id)
+      ? discordPlayer.id
+      : "";
+  const matchCaptain = result
+    ? [...result.teamA, ...result.teamB].find((player) => player.id === matchCaptainId) || null
+    : null;
+  const captainSide = result?.teamA?.some((player) => player.id === matchCaptainId)
+    ? "A"
+    : result?.teamB?.some((player) => player.id === matchCaptainId)
+      ? "B"
+      : "";
+  const canReport = Boolean(result && (isAdmin || matchCaptainId));
 
   const currentTeamIds = result
     ? [...result.teamA, ...result.teamB].map((player) => player.id)
@@ -229,10 +231,19 @@ export default function TeamBuilder() {
       return;
     }
 
+    const creatorId = String(discordPlayer?.id || "");
+    const creatorOnA = draft.teamA.some((player) => player.id === creatorId);
+    const creatorOnB = draft.teamB.some((player) => player.id === creatorId);
+
+    if (!isAdmin && !creatorOnA && !creatorOnB) {
+      toast.error("The match creator must be one of the players in the lobby");
+      return;
+    }
+
     setResult(draft);
     setCaptains({
-      A: pickRandomCaptain(draft.teamA),
-      B: pickRandomCaptain(draft.teamB),
+      A: creatorOnA ? creatorId : (draft.teamA[0]?.id || ""),
+      B: creatorOnB ? creatorId : (draft.teamB[0]?.id || ""),
     });
 
     toast.success(
@@ -555,7 +566,7 @@ export default function TeamBuilder() {
               <div className="brand-kicker mb-1">Ready</div>
               <h3 className="font-display text-2xl font-black">Alpha vs Bravo</h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Captains are assigned automatically. Chemistry is informational only.
+                The player who creates the match is the captain. Chemistry is informational only.
               </p>
             </div>
 
@@ -571,7 +582,7 @@ export default function TeamBuilder() {
               <div className="flex items-center justify-between mb-3">
                 <div className="text-xs uppercase tracking-widest text-magma font-black">Alpha</div>
                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {captainA ? `Captain · ${captainA.name}` : ""}
+                  {captainSide === "A" && matchCaptain ? `Captain · ${matchCaptain.name}` : ""}
                 </span>
               </div>
               <div className="space-y-2">
@@ -580,7 +591,7 @@ export default function TeamBuilder() {
                     <PlayerAvatar name={player.name} elo={player.currentElo} size={36} avatarUrl={playerAvatars[player.id]} />
                     <div className="font-semibold truncate flex-1 flex items-center gap-2">
                       {player.name}
-                      {player.id === captains.A && (
+                      {player.id === matchCaptainId && (
                         <span className="text-[9px] uppercase tracking-wider text-[#D5A33A] inline-flex items-center gap-1">
                           <Crown size={11} /> Captain
                         </span>
@@ -600,7 +611,7 @@ export default function TeamBuilder() {
               <div className="flex items-center justify-between mb-3">
                 <div className="text-xs uppercase tracking-widest text-[#65D5D3] font-black">Bravo</div>
                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {captainB ? `Captain · ${captainB.name}` : ""}
+                  {captainSide === "B" && matchCaptain ? `Captain · ${matchCaptain.name}` : ""}
                 </span>
               </div>
               <div className="space-y-2">
@@ -609,7 +620,7 @@ export default function TeamBuilder() {
                     <PlayerAvatar name={player.name} elo={player.currentElo} size={36} avatarUrl={playerAvatars[player.id]} />
                     <div className="font-semibold truncate flex-1 flex items-center gap-2">
                       {player.name}
-                      {player.id === captains.B && (
+                      {player.id === matchCaptainId && (
                         <span className="text-[9px] uppercase tracking-wider text-[#D5A33A] inline-flex items-center gap-1">
                           <Crown size={11} /> Captain
                         </span>
@@ -627,7 +638,7 @@ export default function TeamBuilder() {
               onClick={() => setRecordOpen(true)}
               disabled={!canReport}
               className="w-full h-11 bg-magma hover:bg-[#ff3c4c] text-white font-semibold"
-              title={canReport ? "" : "Only an assigned captain or Admin can report the result"}
+              title={canReport ? "" : "Only the match creator or Admin can report the result"}
             >
               <Trophy size={16} className="mr-2" /> Report Result
             </Button>
@@ -635,7 +646,7 @@ export default function TeamBuilder() {
 
           {!canReport && (
             <div className="text-[11px] text-muted-foreground text-center mt-2">
-              Result reporting is limited to the assigned captains or Admin.
+              Result reporting is limited to the match creator or Admin.
             </div>
           )}
         </section>
@@ -653,6 +664,7 @@ export default function TeamBuilder() {
           pairings: reportPairings,
         } : null}
         initialCaptains={captains}
+        creatorPlayerId={matchCaptainId}
         defaultGame={game || undefined}
         defaultMode={matchMode || undefined}
       />
