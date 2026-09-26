@@ -574,13 +574,30 @@ export default function AdminPanel() {
       {activeTab === "matches" && (
         <>
       <div className="m8-panel rounded-2xl p-5" data-testid="admin-match-management">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <div className="min-w-0">
             <div className="brand-kicker mb-1">Match Control</div>
-            <h3 className="font-display font-black text-lg tracking-[-0.015em]">Matches & Money Challs ({matches.length + adminChallenges.length})</h3>
-            <p className="text-sm text-muted-foreground mt-1">Manage verified team matches and Money Challs from the same place.</p>
+            <h3 className="font-display font-black text-xl tracking-[-0.025em]">
+              Match Management
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Review and manage verified competitive results.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-2 mt-3">
+              <span className="h-7 px-2.5 rounded-lg border border-[#2A303B] bg-[#0F1218] inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-[#C8CED8]">
+                {matches.length} Matches
+              </span>
+              <span className="h-7 px-2.5 rounded-lg border border-[#D5A33A]/25 bg-[#D5A33A]/[0.05] inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-[#D5A33A]">
+                {adminChallenges.length} Money Challs
+              </span>
+            </div>
           </div>
-          <Button onClick={() => setHistOpen(true)} className="bg-magma hover:bg-[#ff3c4c] text-white rounded-xl">
+
+          <Button
+            onClick={() => setHistOpen(true)}
+            className="bg-magma hover:bg-[#ff3c4c] text-white rounded-xl shrink-0"
+          >
             <History size={15} className="mr-1.5" /> New Match
           </Button>
         </div>
