@@ -33,14 +33,14 @@ import {
 import { GAMES } from "@/lib/demoData";
 import { toast } from "sonner";
 
-const TeamList = ({ ids, playerMap, playerAvatars, eloChanges, mvpId, merdaId }) => (
+const TeamList = ({ ids, playerMap, playerAvatars, eloChanges, mvpId, merdaId, merdaIds = [] }) => (
   <div className="flex-1 space-y-2">
     {ids.map((id) => {
       const p = playerMap[id];
       if (!p) return null;
       const delta = Number(eloChanges?.[id] ?? 0);
       const isMvp = id === mvpId;
-      const isMerda = id === merdaId;
+      const isMerda = (Array.isArray(merdaIds) ? merdaIds : []).includes(id) || id === merdaId;
 
       return (
         <div key={id} className="flex items-center gap-2.5 min-w-0">
