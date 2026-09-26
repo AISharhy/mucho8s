@@ -18,8 +18,7 @@ const COLUMNS = [
   { key: "name", label: "Player", sortable: true },
   { key: "division", label: "Rank", sortable: false },
   { key: "totalPoints", label: "Points", sortable: true },
-  { key: "matchWins", label: "Match", sortable: true },
-  { key: "challWins", label: "Challs", sortable: true },
+  { key: "matchWins", label: "Record", sortable: true },
   { key: "challPoints", label: "Chall +/-", sortable: true },
   { key: "moneyWon", label: "Won", sortable: true },
   { key: "mvpCount", label: "MVP", sortable: true },
@@ -180,8 +179,7 @@ export default function Leaderboard() {
       "Name",
       "Total Points",
       "General Elo",
-      "Match Record",
-      "Chall Record",
+      "Record",
       "Chall Points",
       "Money Won",
       "Money Lost",
@@ -194,7 +192,6 @@ export default function Leaderboard() {
       p.totalPoints,
       p.currentElo,
       `${p.matchWins}W-${p.matchLosses}L`,
-      `${p.challWins}W-${p.challLosses}L`,
       p.challPoints,
       p.moneyWon,
       p.moneyLost,
@@ -284,12 +281,21 @@ export default function Leaderboard() {
                   <div className="font-mono text-sm font-bold mt-0.5">{Number(p.totalPoints).toFixed(Number.isInteger(p.totalPoints) ? 0 : 1)}</div>
                 </div>
                 <div className="m8-panel-quiet rounded-lg px-2.5 py-2">
-                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">Match</div>
+                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">Record</div>
                   <div className="font-mono text-sm font-bold mt-0.5">{p.matchWins}W-{p.matchLosses}L</div>
                 </div>
                 <div className="m8-panel-quiet rounded-lg px-2.5 py-2">
-                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">Challs</div>
-                  <div className="font-mono text-sm font-bold mt-0.5">{p.challWins}W-{p.challLosses}L</div>
+                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">Chall +/-</div>
+                  <div className={`font-mono text-sm font-bold mt-0.5 ${
+                    p.challPoints > 0
+                      ? "text-emerald-400"
+                      : p.challPoints < 0
+                        ? "text-red-400"
+                        : ""
+                  }`}>
+                    {p.challPoints > 0 ? "+" : ""}
+                    {Number(p.challPoints).toFixed(Number.isInteger(p.challPoints) ? 0 : 2)}
+                  </div>
                 </div>
               </div>
             </Link>
@@ -387,12 +393,6 @@ export default function Leaderboard() {
                       <span className="text-emerald-400">{p.matchWins}W</span>
                       <span className="text-[#596170] mx-1">-</span>
                       <span className="text-red-400">{p.matchLosses}L</span>
-                    </td>
-
-                    <td className="px-4 py-3 font-mono">
-                      <span className="text-emerald-400">{p.challWins}W</span>
-                      <span className="text-[#596170] mx-1">-</span>
-                      <span className="text-red-400">{p.challLosses}L</span>
                     </td>
 
                     <td className={`px-4 py-3 font-mono font-bold ${challTone}`}>
