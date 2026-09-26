@@ -292,6 +292,10 @@ const syncMoneyPairings = async (supabase: any, report: any, verifiedAt: string)
         .select("*")
         .single();
       if (error) throw error;
+      const { error: eloError } = await supabase.rpc("sync_challenge_elo", {
+        p_challenge_id: data.id,
+      });
+      if (eloError) throw eloError;
       synced.push(data);
     } else {
       const { data, error } = await supabase
@@ -300,6 +304,10 @@ const syncMoneyPairings = async (supabase: any, report: any, verifiedAt: string)
         .select("*")
         .single();
       if (error) throw error;
+      const { error: eloError } = await supabase.rpc("sync_challenge_elo", {
+        p_challenge_id: data.id,
+      });
+      if (eloError) throw eloError;
       synced.push(data);
     }
   }
