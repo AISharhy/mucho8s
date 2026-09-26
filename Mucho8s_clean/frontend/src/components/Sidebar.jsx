@@ -95,6 +95,7 @@ const Brand = () => (
 const MenuContent = ({ onNavigate, mobile = false }) => {
   const {
     admin,
+    isAdmin,
     discordSession,
     discordAccount,
     discordPlayer,
@@ -131,10 +132,12 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
         )}
       </div>
 
-      <div className="px-2 pb-3">
-        <div className="h-px bg-[#1C202E] mb-3" />
-        <NavItem item={ADMIN_NAV} onNavigate={onNavigate} />
-      </div>
+      {isAdmin && (
+        <div className="px-2 pb-3">
+          <div className="h-px bg-[#1C202E] mb-3" />
+          <NavItem item={ADMIN_NAV} onNavigate={onNavigate} />
+        </div>
+      )}
 
       <div className={`border-t border-[#1C202E] ${mobile ? "px-3 py-4" : "px-3 py-3"}`}>
         {discordLoading ? (
