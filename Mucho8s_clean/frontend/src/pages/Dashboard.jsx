@@ -309,9 +309,13 @@ const PersonalDashboard = ({
       (challenges || []).filter((challenge) =>
         challenge.status === "completed" &&
         challenge.reported_winner_player_id &&
+        (
+          challenge.challenger_player_id === discordPlayer.id ||
+          challenge.challenged_player_id === discordPlayer.id
+        ) &&
         !(challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at)
       ),
-    [challenges]
+    [challenges, discordPlayer.id]
   );
 
   const moneyWon = useMemo(
