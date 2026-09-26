@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { winRate, tierOf } from "@/lib/elo";
+import { duoChemistry } from "@/lib/chemistry";
 import { PlayerAvatar, EloBadge, Last10, StreakBadge, MvpBadge, RankBadge, RankProgress } from "@/components/shared";
 import { RankEmblem } from "@/components/RankGuide";
 import { Input } from "@/components/ui/input";
@@ -264,6 +265,76 @@ export default function PlayerProfile() {
       achievementCatalog,
     };
   }, [challengeStats, id, player]);
+
+  const bestDuo = useMemo(() => {
+    if (!player) return null;
+
+    const options = players
+      .filter((candidate) => candidate.id !== player.id)
+      .map((candidate) => ({
+        player: candidate,
+        ...duoChemistry(player, candidate, matches),
+      }))
+      .filter((item) => item.matchesTogether > 0)
+      .sort((a, b) =>
+        b.score - a.score ||
+        b.matchesTogether - a.matchesTogether ||
+        b.winRate - a.winRate
+      );
+
+    return options[0] || null;
+  }, [player, players, matches]);
+
+  const trophyCabinet = useMemo(() => {
+    if (!player) return [];
+
+    const trophies = [];
+
+    if (bestDuo && bestDuo.matchesTogether >= 3 && bestDuo.score >= 65) {
+      trophies.push({
+        id: `duo:${bestDuo.player.id}`,
+        type: "duo",
+        title: "Best Duo",
+        detail: `${bestDuo.player.name} · ${bestDuo.score}% chemistry · ${bestDuo.matchesTogether} games`,
+        date: null,
+      });
+    }
+
+    if ((player.currentStreak || 0) >= 3) {
+      trophies.push({
+        id: "streak",
+        type: "streak",
+        title: "Win Streak",
+        detail: `${player.currentStreak} match wins in a row`,
+        date: null,
+      });
+    }
+
+    if (challengeStats.wins >= 5) {
+      trophies.push({
+        id: "chall",
+        type: "chall",
+        title: "Chall Winner",
+        detail: `${challengeStats.wins} verified money chall wins`,
+        date: null,
+      });
+    }
+
+    playerMatches
+      .filter((match) => match.mvpId === player.id)
+      .slice(0, 6)
+      .forEach((match) => {
+        trophies.push({
+          id: `mvp:${match.id}`,
+          type: "mvp",
+          title: "Match MVP",
+          detail: [match.game, match.mode].filter(Boolean).join(" · ") || "Competitive match",
+          date: match.date,
+        });
+      });
+
+    return trophies.slice(0, 8);
+  }, [player, playerMatches, bestDuo, challengeStats.wins]);
 
   if (!player) {
     return (
@@ -674,6 +745,61 @@ export default function PlayerProfile() {
                     </div>
                   </div>
                 </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="card-surface rounded-2xl p-4 sm:p-5" data-testid="trophy-cabinet">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div>
+            <div className="brand-kicker mb-1">Awards</div>
+            <h3 className="font-display font-bold text-lg">Trophy Cabinet</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Awards earned from match history, streaks and team chemistry.
+            </p>
+          </div>
+          <Trophy size={20} className="text-[#D5A33A]" />
+        </div>
+
+        {trophyCabinet.length === 0 ? (
+          <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-9 px-4 text-center">
+            <Trophy size={28} className="text-[#3D4654] mx-auto mb-2" />
+            <div className="font-semibold">No trophies yet</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              MVPs, strong duo chemistry and competitive streaks will appear here.
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+            {trophyCabinet.map((trophy) => {
+              const Icon =
+                trophy.type === "duo"
+                  ? UsersRound
+                  : trophy.type === "streak"
+                    ? Flame
+                    : trophy.type === "chall"
+                      ? Swords
+                      : Crown;
+
+              return (
+                <div
+                  key={trophy.id}
+                  className="rounded-2xl bg-gradient-to-b from-[#171A21] to-[#0F1218] border border-[#D5A33A]/20 p-4 relative overflow-hidden"
+                >
+                  <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#D5A33A] to-transparent" />
+                  <div className="w-11 h-11 rounded-xl bg-[#D5A33A]/10 border border-[#D5A33A]/20 flex items-center justify-center">
+                    <Icon size={20} className="text-[#D5A33A]" />
+                  </div>
+                  <div className="font-display font-bold mt-3">{trophy.title}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{trophy.detail}</div>
+                  {trophy.date && (
+                    <div className="text-[10px] uppercase tracking-widest text-[#697181] mt-3">
+                      {new Date(trophy.date).toLocaleDateString()}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
