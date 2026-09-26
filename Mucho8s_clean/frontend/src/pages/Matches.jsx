@@ -4,11 +4,12 @@ import { PlayerAvatar } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RecordMatchDialog } from "@/components/RecordMatchDialog";
+import MatchResultCenter from "@/components/MatchResultCenter";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Search, Crown, Trophy, Filter, Pencil, Trash2, Flag, WalletCards, ArrowRightLeft } from "lucide-react";
+import { Plus, Search, Crown, Trophy, Filter, Pencil, Trash2, WalletCards, ArrowRightLeft, Lock } from "lucide-react";
 import { GAMES } from "@/lib/demoData";
 import { toast } from "sonner";
 
@@ -38,7 +39,6 @@ export default function Matches() {
   const { matches, playerMap, deleteMatch, isAdmin } = useData();
   const [open, setOpen] = useState(false);
   const [editData, setEditData] = useState(null);
-  const [reportData, setReportData] = useState(null);
   const [query, setQuery] = useState("");
   const [winnerFilter, setWinnerFilter] = useState("all");
   const [gameFilter, setGameFilter] = useState("ALL");
@@ -109,6 +109,8 @@ export default function Matches() {
         </div>
       </div>
 
+      <MatchResultCenter />
+
       <div className="space-y-3" data-testid="matches-list">
         {filtered.length === 0 && (
           <div className="card-surface rounded-2xl p-16 text-center text-muted-foreground">No matches found.</div>
@@ -129,20 +131,20 @@ export default function Matches() {
                     color: m.winner === "A" ? "#FF2A3B" : "#D5A33A",
                   }}
                 >
-                  <Trophy size={13} /> {m.winner === "A" ? "Alpha" : "Bravo"} won
+                  <Trophy size={13} />
+                  {m.winner === "A" ? "Alpha" : "Bravo"} won
+                  {(Number(m.scoreA || 0) > 0 || Number(m.scoreB || 0) > 0) && (
+                    <span className="ml-1 font-mono">{Number(m.scoreA || 0)}-{Number(m.scoreB || 0)}</span>
+                  )}
                 </span>
+                {m.locked && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-bold text-emerald-400 border border-emerald-500/20 bg-emerald-500/[0.06]">
+                    <Lock size={12} /> LOCKED
+                  </span>
+                )}
 
                 {isAdmin && (
                   <>
-                    <Button
-                      variant="ghost"
-                      data-testid={`match-report-${m.id}`}
-                      onClick={() => setReportData(m)}
-                      className="h-9 px-3 rounded-lg bg-magma/10 border border-magma/25 text-magma hover:bg-magma/15 hover:text-[#ff5a68]"
-                    >
-                      <Flag size={14} className="mr-1.5" /> Report Result
-                    </Button>
-
                     <Button
                       variant="ghost"
                       data-testid={`match-edit-${m.id}`}
@@ -250,13 +252,6 @@ export default function Matches() {
         title="Edit Match"
       />
 
-      <RecordMatchDialog
-        open={!!reportData}
-        onOpenChange={(o) => !o && setReportData(null)}
-        editData={reportData}
-        title="Report Result"
-        reportOnly
-      />
     </div>
   );
 }
