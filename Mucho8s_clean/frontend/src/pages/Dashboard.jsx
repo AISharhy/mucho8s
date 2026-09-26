@@ -46,6 +46,7 @@ const CompetitionOverview = ({
   playerMap,
   playerAvatars,
   activeChallenges,
+  liveMatches,
   loggedIn = false,
 }) => {
   const topThree = useMemo(
@@ -55,7 +56,7 @@ const CompetitionOverview = ({
     [players]
   );
   const recentMatches = (matches || []).slice(0, 3);
-  const liveChallenges = (activeChallenges || []).slice(0, 3);
+  const activeTeamMatches = (liveMatches || []).slice(0, 3);
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-[1.08fr_1fr_1fr] gap-4">
@@ -155,45 +156,40 @@ const CompetitionOverview = ({
         <div className="m8-section-head">
           <div>
             <div className="brand-kicker mb-1">Live</div>
-            <h3 className="m8-section-title">Active challs</h3>
+            <h3 className="m8-section-title">Live Matches</h3>
           </div>
           <div className="m8-pill"><span className="m8-live-dot" /> Live</div>
         </div>
 
         <div className="space-y-2">
-          {liveChallenges.map((challenge) => {
-            const challenger = playerMap[challenge.challenger_player_id];
-            const challenged = playerMap[challenge.challenged_player_id];
+          {activeTeamMatches.map((match) => {
+            const alpha = (match.team_a || []).map((id) => playerMap[id]?.name).filter(Boolean);
+            const bravo = (match.team_b || []).map((id) => playerMap[id]?.name).filter(Boolean);
+            const captain = playerMap[match.captain_player_id];
 
             return (
-              <div key={challenge.id} className="m8-panel-quiet rounded-xl p-3.5">
-                <div className="text-sm font-display font-extrabold truncate">
-                  {challenger?.name || "Player"} <span className="text-[#596170] font-medium">vs</span> {challenged?.name || "Player"}
+              <Link key={match.id} to="/team-builder" className="interactive-row rounded-xl p-3.5 block">
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-emerald-400 font-bold">
+                  <Radio size={12} /> {match.format || "MATCH"} · {match.game || "Game"}{match.mode ? ` · ${match.mode}` : ""}
                 </div>
-                <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-[#737D8D] mt-2">
-                  <span className="text-white font-mono font-bold">{euro(challengeAmount(challenge))}</span>
-                  <span>·</span>
-                  <span>{String(challenge.platform || "").toUpperCase()}</span>
-                  <span className="ml-auto text-emerald-400">{String(challenge.status || "").replace("_", " ")}</span>
+                <div className="text-sm font-display font-extrabold mt-2 truncate">
+                  {alpha.join(", ") || "Alpha"} <span className="text-[#596170] font-medium">vs</span> {bravo.join(", ") || "Bravo"}
                 </div>
-              </div>
+                <div className="text-[10px] text-muted-foreground mt-2">
+                  Captain · {captain?.name || "Admin"}
+                </div>
+              </Link>
             );
           })}
-          {liveChallenges.length === 0 && (
-            <div className="text-sm text-muted-foreground py-8 text-center">No active challs right now.</div>
+          {activeTeamMatches.length === 0 && (
+            <div className="text-sm text-muted-foreground py-8 text-center">No live matches right now.</div>
           )}
         </div>
 
         <div className="mt-4">
-          {loggedIn ? (
-            <Link to="/challenges" className="inline-flex items-center gap-1 text-xs font-semibold text-magma">
-              Manage challenges <ArrowUpRight size={13} />
-            </Link>
-          ) : (
-            <div className="text-xs text-muted-foreground">
-              Login with Discord to manage your challenges.
-            </div>
-          )}
+          <Link to="/team-builder" className="inline-flex items-center gap-1 text-xs font-semibold text-magma">
+            Open Team Builder <ArrowUpRight size={13} />
+          </Link>
         </div>
       </section>
     </div>
@@ -206,6 +202,7 @@ const GuestDashboard = ({
   playerMap,
   playerAvatars,
   activeChallenges,
+  liveMatches,
   season,
   signInWithDiscord,
   discordLoading,
@@ -537,6 +534,7 @@ const PersonalDashboard = ({
         playerMap={playerMap}
         playerAvatars={playerAvatars}
         activeChallenges={activeChallenges}
+        liveMatches={liveMatches}
         loggedIn
       />
     </div>
@@ -557,6 +555,7 @@ export default function Dashboard() {
     signInWithDiscord,
     isAdmin,
     adminChallengeAlertCount,
+    liveMatches,
   } = useData();
 
   const season = dashboardData?.competition || { season_number: 1, season_name: "Season 1" };
@@ -571,6 +570,7 @@ export default function Dashboard() {
         playerMap={playerMap}
         playerAvatars={playerAvatars}
         activeChallenges={activeChallenges}
+        liveMatches={liveMatches}
         season={season}
         signInWithDiscord={signInWithDiscord}
         discordLoading={discordLoading}
@@ -590,6 +590,7 @@ export default function Dashboard() {
       adminChallengeAlertCount={adminChallengeAlertCount}
       players={players}
       activeChallenges={activeChallenges}
+      liveMatches={liveMatches}
     />
   );
 }
