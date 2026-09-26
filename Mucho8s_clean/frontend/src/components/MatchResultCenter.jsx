@@ -14,7 +14,7 @@ const statusClass = {
   disputed: "text-orange-400 border-orange-500/25 bg-orange-500/10",
 };
 
-export default function MatchResultCenter({ teamPlayerIds = null, reportId = "", hideHeader = false }) {
+export default function MatchResultCenter({ teamPlayerIds = null, reportId = "", hideHeader = false, onResolved = null }) {
   const {
     matchReports,
     playerMap,
@@ -101,6 +101,8 @@ export default function MatchResultCenter({ teamPlayerIds = null, reportId = "",
         ? "Result confirmed by Admin"
         : "Match report cancelled"
     );
+
+    onResolved?.(result, decision);
   };
 
   return (
