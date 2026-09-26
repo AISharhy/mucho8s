@@ -440,7 +440,7 @@ export default function PlayerProfile() {
         id: "merda",
         type: "merda",
         title: "MERDA",
-        detail: `Received ${player.merdaCount} ${player.merdaCount === 1 ? "time" : "times"}`,
+        detail: `Active x${player.merdaCount} · match the losing streak with wins to clear it`,
         count: Number(player.merdaCount || 0),
         emoji: "💩",
       });
@@ -804,6 +804,7 @@ export default function PlayerProfile() {
               <div className="m8-stat-card">
                 <div className="text-[9px] uppercase tracking-widest text-muted-foreground">MERDA</div>
                 <div className="font-mono font-black text-lg mt-1 text-[#C79A6B]">💩 {player.merdaCount || 0}</div>
+                <div className="text-[9px] text-muted-foreground mt-1">4L → 4W clears 1 · 8L → 8W clears 1</div>
               </div>
 
               <div className="m8-stat-card">
