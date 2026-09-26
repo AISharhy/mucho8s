@@ -1279,7 +1279,14 @@ export default function PlayerProfile() {
               .filter((pid) => pid !== player.id)
               .map((pid) => playerMap[pid]?.name)
               .filter(Boolean);
-            const delta = Number(m.eloChanges?.[player.id] || 0);
+            const baseDelta = Number(m.eloChanges?.[player.id] || 0);
+            const pairing = (Array.isArray(m.pairings) ? m.pairings : []).find(
+              (item) => item?.playerAId === player.id || item?.playerBId === player.id
+            );
+            const valueBonus = Math.max(0, Math.round(Number(pairing?.amount) || 0));
+            const delta = baseDelta === 0
+              ? 0
+              : baseDelta + (baseDelta > 0 ? valueBonus : -valueBonus);
 
             return (
               <div key={m.id} className="interactive-row flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 rounded-xl p-3">
