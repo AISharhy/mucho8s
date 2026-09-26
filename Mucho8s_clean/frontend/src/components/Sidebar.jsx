@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { NavLink, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Users, Gamepad2, Trophy, Menu, X, MessageCircle, LogOut, UserCircle, Bell, Medal, FlaskConical,
+  LayoutDashboard, Users, Gamepad2, Trophy, Menu, X, MessageCircle, LogOut, Bell, Medal, FlaskConical,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { tierOf } from "@/lib/elo";
@@ -104,29 +104,11 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
   const discordName = discordPlayer?.name || discordAccount?.display_name || discordAccount?.discord_username || "Discord";
   const linked = Boolean(discordPlayer);
   const discordRank = linked ? tierOf(discordPlayer.currentElo) : null;
-  const myProfileItem = linked
-    ? {
-        to: `/players/${discordPlayer.id}`,
-        label: "My Profile",
-        icon: UserCircle,
-        testid: "nav-my-profile-link",
-      }
-    : null;
-
-  const accountItems = linked ? [myProfileItem, CHALLENGES_NAV] : [];
-
   return (
     <>
       <div className="py-5 flex-1 overflow-y-auto space-y-5">
         <NavSection label="Main" items={MAIN_NAV} onNavigate={onNavigate} />
         <NavSection label="Competition" items={COMPETITION_NAV} onNavigate={onNavigate} />
-        {accountItems.length > 0 && (
-          <NavSection
-            label="Account"
-            items={accountItems}
-            onNavigate={onNavigate}
-          />
-        )}
       </div>
 
 
