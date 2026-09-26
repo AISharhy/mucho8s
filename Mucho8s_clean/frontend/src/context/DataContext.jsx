@@ -1219,7 +1219,7 @@ export const DataProvider = ({ children }) => {
 
         // Team-report pairings and technical/admin state changes should never
         // create player-facing notification noise.
-        if (source === "match_pairing") return;
+        if (["match_pairing", "balancer_pairing"].includes(source)) return;
         if (
           [
             "admin_update",
