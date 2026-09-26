@@ -37,6 +37,8 @@ import {
   Coins,
   Shield,
   Rocket,
+  UserCircle,
+  Pencil,
 } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer, Tooltip, YAxis, XAxis, CartesianGrid } from "recharts";
 import { toast } from "sonner";
@@ -536,40 +538,61 @@ export default function PlayerProfile() {
       </section>
 
       {isOwnProfile && (
-        <div className="m8-profile-tabs order-2" role="tablist" aria-label="My Profile sections">
+        <div
+          className="order-2 grid grid-cols-1 sm:inline-grid sm:grid-cols-3 gap-1 p-1 rounded-2xl bg-[#0F1218] border border-[#242A35] w-full sm:w-fit"
+          role="tablist"
+          aria-label="My Profile sections"
+        >
           <button
             type="button"
             role="tab"
             aria-selected={profileTab === "overview"}
             onClick={() => setProfileTab("overview")}
-            className={`m8-profile-tab ${profileTab === "overview" ? "is-active" : ""}`}
+            className={`h-11 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold transition-all ${
+              profileTab === "overview"
+                ? "bg-white text-black shadow-sm"
+                : "text-[#9DA5B4] hover:text-white hover:bg-white/[0.04]"
+            }`}
             data-testid="profile-tab-overview"
           >
+            <UserCircle size={16} />
             Profile
           </button>
+
           <button
             type="button"
             role="tab"
             aria-selected={profileTab === "edit"}
             onClick={() => setProfileTab("edit")}
-            className={`m8-profile-tab ${profileTab === "edit" ? "is-active" : ""}`}
+            className={`h-11 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold transition-all ${
+              profileTab === "edit"
+                ? "bg-white text-black shadow-sm"
+                : "text-[#9DA5B4] hover:text-white hover:bg-white/[0.04]"
+            }`}
             data-testid="profile-tab-edit"
           >
+            <Pencil size={15} />
             Edit Profile
           </button>
+
           <button
             type="button"
             role="tab"
             aria-selected={profileTab === "challenges"}
             onClick={() => setProfileTab("challenges")}
-            className={`m8-profile-tab ${profileTab === "challenges" ? "is-active" : ""}`}
+            className={`h-11 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold transition-all relative ${
+              profileTab === "challenges"
+                ? "bg-white text-black shadow-sm"
+                : "text-[#9DA5B4] hover:text-white hover:bg-white/[0.04]"
+            }`}
             data-testid="profile-tab-challenges"
           >
+            <Swords size={16} />
             My Challenges
             {myChallenges.some((challenge) =>
               ["pending", "accepted", "result_pending", "disputed"].includes(challenge.status)
             ) && (
-              <span className="w-1.5 h-1.5 rounded-full bg-magma shadow-[0_0_10px_rgba(255,42,59,.65)]" />
+              <span className="w-2 h-2 rounded-full bg-magma shadow-[0_0_10px_rgba(255,42,59,.65)]" />
             )}
           </button>
         </div>
