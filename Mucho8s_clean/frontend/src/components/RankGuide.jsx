@@ -55,7 +55,7 @@ export const RankEmblem = ({ elo = 1000, compact = false }) => {
 
         <div className="min-w-0 flex-1">
           <div className="text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
-            Divisione {rank.roman}
+            Division {rank.roman}
           </div>
           <div className={`font-display font-black uppercase tracking-wide ${compact ? "text-sm" : "text-xl"}`}>
             {rank.name}
@@ -64,7 +64,7 @@ export const RankEmblem = ({ elo = 1000, compact = false }) => {
             <div className="text-xs text-muted-foreground mt-0.5">
               {info.next
                 ? `${info.eloNeeded} Elo mancanti per ${info.next.name}`
-                : "Hai raggiunto la divisione massima"}
+                : "You reached the highest division"}
             </div>
           )}
         </div>
@@ -102,57 +102,57 @@ export default function RankGuide() {
   return (
     <div className="m8-page-stack">
       <section className="m8-panel rounded-2xl p-5 sm:p-6">
-        <div className="brand-kicker mb-1">Guida competitiva</div>
+        <div className="brand-kicker mb-1">Competitive Guide</div>
         <h1 className="font-display text-3xl font-black tracking-[-0.03em]">Guide</h1>
         <p className="text-sm text-muted-foreground mt-2 max-w-3xl leading-relaxed">
-          Qui trovi tutto il funzionamento della classifica: come guadagni o perdi Elo,
-          come incidono il valore della sfida, l'MVP, la MERDA e quali soglie servono
-          per salire di divisione.
+          Here you can see how the ranking works: how you gain or lose Elo,
+          how challenge value, MVP, MERDA and rank thresholds affect progression
+          through the divisions.
         </p>
       </section>
 
       <section>
-        <div className="brand-kicker mb-2">Come cambia l'Elo</div>
+        <div className="brand-kicker mb-2">How Elo changes</div>
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3">
-          <RuleCard icon={Swords} title="Risultato della partita">
-            Ogni risultato verificato parte da <strong className="text-white">+25 Elo</strong> per chi vince
-            e <strong className="text-white">-25 Elo</strong> per chi perde.
+          <RuleCard icon={Swords} title="Match result">
+            Every verified result starts at <strong className="text-white">+25 Elo</strong> for the winner
+            and <strong className="text-white">-25 Elo</strong> for the loser.
           </RuleCard>
 
-          <RuleCard icon={TrendingUp} title="Valore della sfida" accent="text-emerald-400">
-            Il valore virtuale si somma al risultato. Con valore 5 il totale base diventa
-            <strong className="text-white"> +30 / -30</strong>; con valore 20 diventa
+          <RuleCard icon={TrendingUp} title="Challenge value" accent="text-emerald-400">
+            The virtual challenge value is added to the result. With value 5, the base total becomes
+            <strong className="text-white"> +30 / -30</strong>; with value 20 it becomes
             <strong className="text-white"> +45 / -45</strong>.
           </RuleCard>
 
           <RuleCard icon={Trophy} title="MVP 🏆" accent="text-[#D5A33A]">
-            L'MVP non si sceglie manualmente: viene assegnato automaticamente ogni
-            <strong className="text-white"> 4 vittorie consecutive</strong> e vale
-            <strong className="text-white"> +3 Elo</strong>. Se continui la serie, lo ricevi di nuovo
-            alla 8ª, 12ª, 16ª vittoria consecutiva e così via.
+            MVP is not selected manually: it is awarded automatically every
+            <strong className="text-white"> 4 consecutive wins</strong> and vale
+            <strong className="text-white"> +3 Elo</strong>. If the streak continues, you receive it again
+            alla 8ª, 12ª, 16ª win consecutiva and così via.
           </RuleCard>
 
           <RuleCard icon={Flame} title="MERDA 💩" accent="text-[#C79A6B]">
-            La MERDA non toglie Elo. Ogni <strong className="text-white">4 sconfitte consecutive</strong>
-            ricevi 1 💩; ogni <strong className="text-white">4 vittorie consecutive</strong>
-            elimini 1 💩 attiva.
+            MERDA does not remove Elo. Every <strong className="text-white">4 consecutive losses</strong>
+            you receive 1 💩; every <strong className="text-white">4 consecutive wins</strong>
+            you remove 1 active 💩.
           </RuleCard>
 
-          <RuleCard icon={CheckCircle2} title="Solo risultati verificati" accent="text-emerald-400">
-            La classifica cambia soltanto quando il risultato è verificato e bloccato.
-            Modifiche tecniche dell'Admin non generano notifiche ai giocatori.
+          <RuleCard icon={CheckCircle2} title="Verified results only" accent="text-emerald-400">
+            La classifica cambia soltanto quando il risultato è verificato and bloccato.
+            Technical Admin changes do not generate player notifications.
           </RuleCard>
 
-          <RuleCard icon={Scale} title="Limite minimo">
-            L'Elo non può scendere sotto <strong className="text-white">500</strong>.
-            Non esistono bonus sorpresa o bonus upset: il calcolo resta leggibile e prevedibile.
+          <RuleCard icon={Scale} title="Minimum floor">
+            Elo cannot drop below <strong className="text-white">500</strong>.
+            Non esistono bonus sorpresa o bonus upset: il calcolo resta leggibile and prevedibile.
           </RuleCard>
         </div>
       </section>
 
       <section className="m8-panel rounded-2xl p-5 sm:p-6">
-        <div className="brand-kicker mb-1">Esempi rapidi</div>
-        <h2 className="font-display text-xl font-black">Quanto guadagni o perdi</h2>
+        <div className="brand-kicker mb-1">Quick examples</div>
+        <h2 className="font-display text-xl font-black">How much you gain or lose</h2>
 
         <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3 mt-4">
           {[
@@ -163,18 +163,18 @@ export default function RankGuide() {
           ].map((row) => (
             <div key={row.value} className="rounded-xl bg-[#0F1218] border border-[#222834] p-4">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                Valore {row.value}
+                Value {row.value}
               </div>
               <div className="flex items-center justify-between mt-3">
                 <span className="font-mono font-black text-emerald-400">+{row.win}</span>
-                <span className="text-xs text-muted-foreground">vittoria</span>
+                <span className="text-xs text-muted-foreground">win</span>
               </div>
               <div className="flex items-center justify-between mt-2">
                 <span className="font-mono font-black text-red-400">{row.loss}</span>
-                <span className="text-xs text-muted-foreground">sconfitta</span>
+                <span className="text-xs text-muted-foreground">loss</span>
               </div>
               <div className="text-[10px] text-muted-foreground mt-3">
-                Se questa è la 4ª, 8ª, 12ª… vittoria consecutiva, aggiungi +3 Elo MVP.
+                Se questa è la 4ª, 8ª, 12ª… win consecutiva, aggiungi +3 Elo MVP.
               </div>
             </div>
           ))}
@@ -182,47 +182,47 @@ export default function RankGuide() {
       </section>
 
       <section className="m8-panel rounded-2xl p-5 sm:p-6">
-        <div className="brand-kicker mb-1">Bilanciamento squadre</div>
-        <h2 className="font-display text-xl font-black">Come funziona il bilanciamento automatico</h2>
+        <div className="brand-kicker mb-1">Team balancing</div>
+        <h2 className="font-display text-xl font-black">How Auto Balance works</h2>
         <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-          Il bilanciamento automatico serve soltanto a creare squadre più equilibrate: non modifica direttamente
-          l'Elo. Tiene conto soprattutto del picco Elo, poi dell'Elo attuale e della percentuale di
-          vittorie. Quando scegli gioco o modalità, usa anche lo storico specifico di quel contesto;
-          più partite hai in quel contesto, più quel dato pesa.
+          Auto Balance is only used to create more balanced teams: it does not directly change
+          l'Elo. Tiene conto soprattutto del picco Elo, poi dell'Current Elo and della percentuale di
+          rate. When you choose a game or mode, it also uses history from that specific context;
+          the more matches you have in that context, the more that data matters.
         </p>
 
         <div className="grid sm:grid-cols-3 gap-3 mt-4">
           <div className="rounded-xl bg-[#0F1218] border border-[#222834] p-4">
             <div className="font-mono font-black text-lg">60%</div>
-            <div className="text-xs text-muted-foreground mt-1">Picco Elo</div>
+            <div className="text-xs text-muted-foreground mt-1">Peak Elo</div>
           </div>
           <div className="rounded-xl bg-[#0F1218] border border-[#222834] p-4">
             <div className="font-mono font-black text-lg">25%</div>
-            <div className="text-xs text-muted-foreground mt-1">Elo attuale</div>
+            <div className="text-xs text-muted-foreground mt-1">Current Elo</div>
           </div>
           <div className="rounded-xl bg-[#0F1218] border border-[#222834] p-4">
             <div className="font-mono font-black text-lg">15%</div>
-            <div className="text-xs text-muted-foreground mt-1">Percentuale vittorie</div>
+            <div className="text-xs text-muted-foreground mt-1">Win Rate</div>
           </div>
         </div>
       </section>
 
       <section className="m8-panel rounded-2xl p-5 sm:p-6">
-        <div className="brand-kicker mb-1">Encomi</div>
-        <h2 className="font-display text-xl font-black">Premi partita separati dall'Elo</h2>
+        <div className="brand-kicker mb-1">Bounties</div>
+        <h2 className="font-display text-xl font-black">Match rewards separated from Elo</h2>
         <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-          Gli encomi premiano situazioni particolari e danno punti encomio, ma
-          <strong className="text-white"> non modificano l'Elo</strong>. Sono stati
-          bilanciati per essere più rari dei normali risultati, senza pesare sulla classifica.
+          Gli encomi premiano situazioni particolari and danno punti encomio, ma
+          <strong className="text-white"> do not change Elo</strong>. They have been
+          balanced to be rarer than normal results without affecting the ranking.
         </p>
 
         <div className="grid sm:grid-cols-2 xl:grid-cols-5 gap-3 mt-4">
           {[
-            ["Spezza serie", "3–6 punti", "Interrompi una serie di almeno 3 vittorie"],
-            ["Spezza duo", "6 punti", "Batti un duo imbattuto con almeno 3 partite"],
-            ["Ammazzagrandi", "5 punti", "Vinci partendo da sfavoriti"],
-            ["Rivincita", "2 punti", "Batti chi ti aveva appena sconfitto"],
-            ["Rivalità", "2 punti", "Vinci uno scontro testa a testa equilibrato"],
+            ["Streak Breaker", "3–6 points", "End an opponent streak of at least 3 wins"],
+            ["Duo Breaker", "6 points", "Beat an undefeated duo with at least 3 games together"],
+            ["Giant Killer", "5 points", "Win as the underdog"],
+            ["Payback", "2 points", "Beat the player who just defeated you"],
+            ["Rivalry", "2 points", "Win a close head-to-head matchup"],
           ].map(([title, points, detail]) => (
             <div key={title} className="rounded-xl bg-[#0F1218] border border-[#222834] p-4">
               <div className="font-display font-black text-sm">{title}</div>
@@ -234,7 +234,7 @@ export default function RankGuide() {
       </section>
 
       <section>
-        <div className="brand-kicker mb-2">Divisioni</div>
+        <div className="brand-kicker mb-2">Divisions</div>
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
           {RANKS.map((rank, index) => {
             const Icon = iconFor(index);
@@ -268,7 +268,7 @@ export default function RankGuide() {
 
                 <div className="text-center mt-5">
                   <div className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground">
-                    Divisione {rank.roman}
+                    Division {rank.roman}
                   </div>
                   <div
                     className="font-display text-xl font-black uppercase mt-1"
@@ -281,8 +281,8 @@ export default function RankGuide() {
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {next
-                      ? `Raggiungi ${next.min} Elo per ${next.name}`
-                      : "Divisione più alta"}
+                      ? `Reach ${next.min} Elo for ${next.name}`
+                      : "Division più alta"}
                   </div>
                 </div>
               </div>
@@ -292,13 +292,13 @@ export default function RankGuide() {
       </section>
 
       <section className="m8-panel rounded-2xl p-5 sm:p-6">
-        <div className="brand-kicker mb-1">In sintesi</div>
-        <h2 className="font-display text-xl font-black">Come salire</h2>
+        <div className="brand-kicker mb-1">Summary</div>
+        <h2 className="font-display text-xl font-black">How to climb</h2>
         <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-          Vinci partite verificate e costruisci serie positive: ogni blocco di 4 vittorie consecutive
-          ti assegna automaticamente un MVP e +3 Elo. Il valore virtuale della sfida aumenta allo stesso
-          modo sia il guadagno sia la perdita.
-          La MERDA è invece un indicatore di serie negativa e non modifica l'Elo.
+          Vinci partite verificate and costruisci serie positive: ogni blocco di 4 consecutive wins
+          ti assegna automaticamente un MVP and +3 Elo. Il valore virtuale della sfida aumenta allo stesso
+          both the gain and the loss by the same amount.
+          La MERDA è invece un indicatore di serie negativa and non modifica l'Elo.
         </p>
       </section>
     </div>
