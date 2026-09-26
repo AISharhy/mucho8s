@@ -1206,64 +1206,76 @@ export const DataProvider = ({ children }) => {
     const seenSeries = new Set();
     let count = 0;
 
-    challenges.forEach((challenge) => {
-      if (["admin_update", "admin_sync"].includes(String(challenge?.last_event || ""))) return;
+    [...challenges]
+      .filter(Boolean)
+      .sort(
+        (a, b) =>
+          new Date(b?.updated_at || b?.created_at || 0) -
+          new Date(a?.updated_at || a?.created_at || 0)
+      )
+      .forEach((challenge) => {
+        const event = String(challenge?.last_event || challenge?.status || "");
+        const source = String(challenge?.source || "");
 
-      const isChallenger = challenge.challenger_account_id === discordAccount.id;
-      const isChallenged = challenge.challenged_account_id === discordAccount.id;
-      if (!isChallenger && !isChallenged) return;
+        // Team-report pairings and technical/admin state changes should never
+        // create player-facing notification noise.
+        if (source === "match_pairing") return;
+        if (
+          [
+            "admin_update",
+            "admin_sync",
+            "pairing_assigned",
+            "challenger_ready",
+            "challenged_ready",
+            "ready_removed",
+            "payout_received",
+            "series_payout_received",
+          ].includes(event)
+        ) return;
 
-      const seenStatus = isChallenger
-        ? challenge.challenger_seen_status
-        : challenge.challenged_seen_status;
-      const seenEvent = isChallenger
-        ? challenge.challenger_seen_event
-        : challenge.challenged_seen_event;
-      const currentEvent = challenge.last_event || challenge.status;
+        const isChallenger = challenge.challenger_account_id === discordAccount.id;
+        const isChallenged = challenge.challenged_account_id === discordAccount.id;
+        if (!isChallenger && !isChallenged) return;
 
-      if (seenStatus === challenge.status && seenEvent === currentEvent) return;
-
-      if (challenge.status === "pending" && isChallenged) {
-        count += 1;
-        return;
-      }
-
-      if (
-        challenge.status === "result_pending" &&
-        challenge.reporter_account_id !== discordAccount.id
-      ) {
-        count += 1;
-        return;
-      }
-
-      if (challenge.status === "completed" && !challenge.payment_received_at) {
-        count += 1;
-        return;
-      }
-
-      if (challenge.series_id) {
-        if (seenSeries.has(challenge.series_id)) return;
-        seenSeries.add(challenge.series_id);
-
-        if (challenge.last_event && seenEvent !== challenge.last_event) {
-          count += 1;
+        if (challenge.series_id) {
+          if (seenSeries.has(challenge.series_id)) return;
+          seenSeries.add(challenge.series_id);
         }
-        return;
-      }
 
-      if (challenge.last_event && seenEvent !== challenge.last_event) {
-        count += 1;
-        return;
-      }
+        const seenStatus = isChallenger
+          ? challenge.challenger_seen_status
+          : challenge.challenged_seen_status;
+        const seenEvent = isChallenger
+          ? challenge.challenger_seen_event
+          : challenge.challenged_seen_event;
 
-      if (challenge.status === "completed" && challenge.reported_winner_player_id) {
-        const myPlayerId = discordAccount.player_id;
-        const iWon = challenge.reported_winner_player_id === myPlayerId;
+        if (seenStatus === challenge.status && seenEvent === event) return;
 
-        if (!iWon && !challenge.payment_sent_at) count += 1;
-        if (iWon && challenge.payment_sent_at && !challenge.payment_received_at) count += 1;
-      }
-    });
+        const needsAttention =
+          (challenge.status === "pending" && isChallenged) ||
+          (challenge.status === "accepted" && event === "accepted" && isChallenger) ||
+          (
+            challenge.status === "result_pending" &&
+            challenge.reporter_account_id !== discordAccount.id
+          ) ||
+          challenge.status === "disputed" ||
+          event === "payout_disputed" ||
+          event === "payout_sent" ||
+          event === "rechallenge_created" ||
+          event === "series_ended" ||
+          event === "series_payout_sent" ||
+          (
+            challenge.status === "completed" &&
+            Boolean(challenge.reported_winner_player_id) &&
+            event === "completed"
+          ) ||
+          event === "declined" ||
+          event === "cancelled" ||
+          event === "series_declined" ||
+          event === "series_cancelled";
+
+        if (needsAttention) count += 1;
+      });
 
     return count;
   }, [challenges, discordAccount]);
