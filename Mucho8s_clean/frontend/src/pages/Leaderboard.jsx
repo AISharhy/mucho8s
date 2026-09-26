@@ -44,11 +44,52 @@ export default function Leaderboard() {
     return arr;
   }, [pool, sortKey, dir]);
 
-  const podium = useMemo(
-    () => [...pool]
-      .sort((a, b) => Number(b.currentElo || 0) - Number(a.currentElo || 0))
-      .slice(0, 3),
+  const rankingOrder = useMemo(
+    () => [...pool].sort(
+      (a, b) =>
+        Number(b.currentElo || 0) - Number(a.currentElo || 0) ||
+        String(a.name || "").localeCompare(String(b.name || ""))
+    ),
     [pool]
+  );
+
+  const rankById = useMemo(
+    () => new Map(rankingOrder.map((player, index) => [player.id, index + 1])),
+    [rankingOrder]
+  );
+
+  const movementById = useMemo(() => {
+    if (game !== "ALL") return new Map();
+
+    const previousOrder = [...players].sort((a, b) => {
+      const historyA = Array.isArray(a.eloHistory) ? a.eloHistory : [];
+      const historyB = Array.isArray(b.eloHistory) ? b.eloHistory : [];
+      const previousA = historyA.length >= 2
+        ? Number(historyA[historyA.length - 2]?.elo ?? a.currentElo ?? 0)
+        : Number(a.currentElo || 0);
+      const previousB = historyB.length >= 2
+        ? Number(historyB[historyB.length - 2]?.elo ?? b.currentElo ?? 0)
+        : Number(b.currentElo || 0);
+
+      return previousB - previousA || String(a.name || "").localeCompare(String(b.name || ""));
+    });
+
+    const previousRankById = new Map(
+      previousOrder.map((player, index) => [player.id, index + 1])
+    );
+
+    return new Map(
+      rankingOrder.map((player, index) => {
+        const currentRank = index + 1;
+        const previousRank = previousRankById.get(player.id) || currentRank;
+        return [player.id, previousRank - currentRank];
+      })
+    );
+  }, [game, players, rankingOrder]);
+
+  const podium = useMemo(
+    () => rankingOrder.slice(0, 3),
+    [rankingOrder]
   );
 
   const toggleSort = (key) => {
@@ -61,7 +102,7 @@ export default function Leaderboard() {
 
   const exportCsv = () => {
     const header = ["Rank", "Name", "Current Elo", "Peak Elo", "Win Rate", "Wins", "Losses", "MVP Count"];
-    const rows = sorted.map((p, i) => [i + 1, p.name, p.currentElo, p.peakElo, `${winRate(p)}%`, p.wins, p.losses, p.mvpCount]);
+    const rows = sorted.map((p) => [rankById.get(p.id) || "—", p.name, p.currentElo, p.peakElo, `${winRate(p)}%`, p.wins, p.losses, p.mvpCount]);
     const csv = [header, ...rows].map((r) => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -122,8 +163,23 @@ export default function Leaderboard() {
               to={"/players/" + p.id}
               className={"m8-panel rounded-2xl p-4 relative overflow-hidden group " + (index === 0 ? "m8-podium-first md:-translate-y-1" : "")}
             >
-              <div className="absolute right-3 top-3 m8-podium-rank" style={{ color: rankColor(index) }}>
-                {index + 1}
+              <div className="absolute right-3 top-3 flex items-center gap-1.5">
+                {game === "ALL" && Number(movementById.get(p.id) || 0) !== 0 && (
+                  <span
+                    className={`h-7 px-2 rounded-lg border inline-flex items-center gap-1 font-mono text-[10px] font-black ${Number(movementById.get(p.id) || 0) > 0
+                      ? "text-emerald-400 bg-emerald-500/[0.07] border-emerald-500/15"
+                      : "text-red-400 bg-red-500/[0.06] border-red-500/15"}`}
+                    title={Number(movementById.get(p.id) || 0) > 0
+                      ? `Up ${Math.abs(Number(movementById.get(p.id)))} places`
+                      : `Down ${Math.abs(Number(movementById.get(p.id)))} places`}
+                  >
+                    {Number(movementById.get(p.id) || 0) > 0 ? <ArrowUp size={11} /> : <ArrowDown size={11} />}
+                    {Math.abs(Number(movementById.get(p.id) || 0))}
+                  </span>
+                )}
+                <div className="m8-podium-rank" style={{ color: rankColor(index) }}>
+                  {index + 1}
+                </div>
               </div>
               <div className="flex items-center gap-3 pr-10">
                 <PlayerAvatar
@@ -202,8 +258,26 @@ export default function Leaderboard() {
                       : "border-[#1D222C] hover:bg-white/[0.03]"
                   )}
                 >
-                  <td className="px-4 py-3 font-mono font-bold" style={{ color: rankColor(i) }}>
-                    {i + 1}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="font-mono font-bold min-w-5"
+                        style={{ color: rankColor((rankById.get(p.id) || 1) - 1) }}
+                      >
+                        {rankById.get(p.id) || "—"}
+                      </span>
+                      {game === "ALL" && Number(movementById.get(p.id) || 0) !== 0 && (
+                        <span
+                          className={`inline-flex items-center gap-0.5 font-mono text-[10px] font-black ${Number(movementById.get(p.id) || 0) > 0 ? "text-emerald-400" : "text-red-400"}`}
+                          title={Number(movementById.get(p.id) || 0) > 0
+                            ? `Up ${Math.abs(Number(movementById.get(p.id)))} places`
+                            : `Down ${Math.abs(Number(movementById.get(p.id)))} places`}
+                        >
+                          {Number(movementById.get(p.id) || 0) > 0 ? <ArrowUp size={11} /> : <ArrowDown size={11} />}
+                          {Math.abs(Number(movementById.get(p.id) || 0))}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <Link to={`/players/${p.id}`} className="flex items-center gap-2.5 hover:text-magma transition-colors">
