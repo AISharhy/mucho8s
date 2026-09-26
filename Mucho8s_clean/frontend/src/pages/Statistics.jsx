@@ -8,7 +8,7 @@ import {
 } from "recharts";
 import { TrendingUp, Percent, Activity, Award, Flame, Gamepad2, WalletCards, Coins, Swords, Trophy } from "lucide-react";
 
-const CARD = "card-surface rounded-2xl p-5";
+const CARD = "m8-panel rounded-2xl p-5";
 const tooltipStyle = { background: "#101319", border: "1px solid #242A35", borderRadius: 12 };
 const COLORS = ["#FF2A3B", "#D5A33A", "#7E8796", "#C8CED8", "#596170", "#AAB1BE"];
 
@@ -189,7 +189,7 @@ export default function Statistics() {
   return (
     <div className="space-y-6">
       {/* Game filter */}
-      <div className="card-surface rounded-2xl p-4">
+      <div className="m8-panel rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <Gamepad2 size={16} className="text-[#D5A33A]" />
           <span className="brand-kicker">Filter statistics by game</span>
@@ -322,7 +322,7 @@ export default function Statistics() {
         </div>
 
         {moneyStats.rows.length > 0 && (
-          <div className="card-surface rounded-2xl overflow-hidden">
+          <div className="m8-panel rounded-2xl overflow-hidden">
             <div className="hidden md:grid grid-cols-[1.5fr_100px_100px_110px_120px] gap-3 px-4 py-3 bg-[#0F1218] border-b border-[#1D222C] text-[10px] uppercase tracking-widest text-muted-foreground">
               <div>Player</div><div>Record</div><div>Win %</div><div>Pairings</div><div className="text-right">Net</div>
             </div>
