@@ -8,7 +8,7 @@ import { Search, Flame, ArrowUpRight, Users } from "lucide-react";
 const FILTERS = [
   { key: "all", label: "All" },
   { key: "hot", label: "On Fire" },
-  { key: "legend", label: "Legends" },
+  { key: "masters", label: "Masters" },
   { key: "veteran", label: "Veterans" },
 ];
 
@@ -20,7 +20,7 @@ export default function Players() {
   const list = useMemo(() => {
     let result = players.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()));
     if (filter === "hot") result = result.filter((p) => p.currentStreak >= 2);
-    if (filter === "legend") result = result.filter((p) => p.currentElo >= 1500);
+    if (filter === "masters") result = result.filter((p) => p.currentElo >= 1350);
     if (filter === "veteran") result = result.filter((p) => p.totalMatches >= 50);
     return [...result].sort((a, b) => b.currentElo - a.currentElo);
   }, [players, query, filter]);
