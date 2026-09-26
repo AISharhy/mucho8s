@@ -103,6 +103,15 @@ const automaticMerdaIds = (byId: Record<string, any>, losers: string[]) =>
     return nextLossStreak >= 4 && nextLossStreak % 4 === 0;
   });
 
+const automaticMerdaClearedIds = (byId: Record<string, any>, winners: string[]) =>
+  winners.filter((id) => {
+    const player = byId[id];
+    if (!player || Number(player.merdaCount || 0) <= 0) return false;
+    const current = Number(player.currentStreak || 0);
+    const nextWinStreak = current > 0 ? current + 1 : 1;
+    return nextWinStreak >= 4 && nextWinStreak % 4 === 0;
+  });
+
 const applyEffects = (
   byId: Record<string, any>,
   teamA: string[],
