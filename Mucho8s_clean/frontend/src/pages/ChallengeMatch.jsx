@@ -498,10 +498,49 @@ export default function ChallengeMatch() {
               <div>
                 <div className="brand-kicker mb-1">Payout</div>
                 <h3 className="font-display text-xl font-bold">
-                  {challenge.payment_received_at ? "Payment completed" : `Pay ${money(challenge)} to the winner`}
+                  {challenge.payment_received_at
+                    ? "Payment completed"
+                    : challenge.payment_sent_at
+                      ? "Payment sent"
+                      : completedWon
+                        ? "Payout pending"
+                        : `Pay ${money(challenge)} to the winner`}
                 </h3>
               </div>
               <Banknote size={20} className={challenge.payment_received_at ? "text-emerald-400" : "text-[#D5A33A]"} />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4" data-testid="payout-status-flow">
+              <div className={`rounded-xl border p-3 ${
+                !challenge.payment_sent_at && !challenge.payment_received_at
+                  ? "bg-[#D5A33A]/10 border-[#D5A33A]/30 text-[#D5A33A]"
+                  : "bg-emerald-500/[0.05] border-emerald-500/20 text-emerald-400"
+              }`}>
+                <div className="flex items-center gap-2">
+                  <Clock3 size={15} />
+                  <span className="text-[10px] uppercase tracking-widest font-bold">1 · Da pagare</span>
+                </div>
+              </div>
+              <div className={`rounded-xl border p-3 ${
+                challenge.payment_sent_at
+                  ? "bg-emerald-500/[0.05] border-emerald-500/20 text-emerald-400"
+                  : "bg-[#0F1218] border-[#242A35] text-muted-foreground"
+              }`}>
+                <div className="flex items-center gap-2">
+                  <Check size={15} />
+                  <span className="text-[10px] uppercase tracking-widest font-bold">2 · Pagamento inviato</span>
+                </div>
+              </div>
+              <div className={`rounded-xl border p-3 ${
+                challenge.payment_received_at
+                  ? "bg-emerald-500/[0.08] border-emerald-500/25 text-emerald-400"
+                  : "bg-[#0F1218] border-[#242A35] text-muted-foreground"
+              }`}>
+                <div className="flex items-center gap-2">
+                  <ShieldCheck size={15} />
+                  <span className="text-[10px] uppercase tracking-widest font-bold">3 · Pagamento ricevuto</span>
+                </div>
+              </div>
             </div>
 
             {challenge.payment_received_at ? (
@@ -586,7 +625,7 @@ export default function ChallengeMatch() {
                 </div>
               ) : (
                 <div className="mt-4 rounded-xl bg-[#0F1218] border border-[#1D222C] p-4 text-sm text-muted-foreground">
-                  Waiting for {opponent?.name || "the losing player"} to pay {money(challenge)} via {platformLabel}.
+                  {money(challenge)} is owed to you. Waiting for {opponent?.name || "the losing player"} to send the payment via {platformLabel}.
                 </div>
               )
             ) : challenge.payment_sent_at ? (
