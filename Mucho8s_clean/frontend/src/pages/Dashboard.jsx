@@ -294,11 +294,12 @@ const PersonalDashboard = ({
 }) => {
   const personalMatches = useMemo(
     () =>
-      matches
+      [...matches]
         .filter((match) =>
           match.teamA?.includes(discordPlayer.id) ||
           match.teamB?.includes(discordPlayer.id)
         )
+        .sort((a, b) => new Date(b?.date || 0) - new Date(a?.date || 0))
         .slice(0, 5),
     [matches, discordPlayer.id]
   );
@@ -357,28 +358,10 @@ const PersonalDashboard = ({
       };
     });
 
-    const challengeItems = verifiedChallenges.map((challenge) => {
-      const won = challenge.reported_winner_player_id === discordPlayer.id;
-      const opponentId =
-        challenge.challenger_player_id === discordPlayer.id
-          ? challenge.challenged_player_id
-          : challenge.challenger_player_id;
-
-      return {
-        id: `chall:${challenge.id}`,
-        type: "chall",
-        date: challenge.verified_at || challenge.created_at,
-        title: won ? `+${euro(challengeAmount(challenge))} chall win` : `-${euro(challengeAmount(challenge))} chall loss`,
-        detail: `vs ${playerMap[opponentId]?.name || "Player"}`,
-        won,
-        to: `/challenges/${challenge.id}`,
-      };
-    });
-
-    return [...matchItems, ...challengeItems]
+    return matchItems
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 3);
-  }, [personalMatches, verifiedChallenges, discordPlayer.id, playerMap]);
+  }, [personalMatches, discordPlayer.id]);
 
   const record = `${discordPlayer.wins || 0}W - ${discordPlayer.losses || 0}L`;
   const streak = Number(discordPlayer.currentStreak || 0);
@@ -537,8 +520,8 @@ const PersonalDashboard = ({
       <section className="m8-panel rounded-2xl p-5">
         <div className="m8-section-head">
           <div>
-            <div className="brand-kicker mb-1">Latest Activity</div>
-            <h3 className="m8-section-title">Your recent results</h3>
+            <div className="brand-kicker mb-1">Latest Matches</div>
+            <h3 className="m8-section-title">Your recent match results</h3>
           </div>
           <Link to="/matches" className="text-xs font-semibold text-magma inline-flex items-center gap-1">
             View all <ArrowUpRight size={13} />
