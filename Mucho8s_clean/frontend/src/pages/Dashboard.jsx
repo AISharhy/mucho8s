@@ -10,7 +10,6 @@ import {
   LogIn,
   Radio,
   ShieldAlert,
-  Swords,
   Trophy,
   UserCircle,
   WalletCards,
@@ -429,10 +428,10 @@ const PersonalDashboard = ({
 
             <div className="flex flex-wrap gap-2 mt-6">
               <Link
-                to="/team-builder"
+                to="/play"
                 className="m8-action m8-action-primary inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-bold"
               >
-                <Swords size={16} /> Build Teams
+                <Gamepad2 size={16} /> Play
               </Link>
               <Link
                 to="/challenges"
