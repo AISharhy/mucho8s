@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Gamepad2, Swords, ArrowRight, UsersRound, Scale, Trophy, WalletCards } from "lucide-react";
+import { Gamepad2, Swords, ArrowRight, UsersRound, Scale, WalletCards } from "lucide-react";
 
 const PlayCard = ({
   to,
