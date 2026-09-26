@@ -250,43 +250,43 @@ export default function PlayerProfile() {
     });
 
     const achievementCatalog = [
-      { label: "Prima partita", detail: "Gioca 1 partita", icon: Gamepad2, unlocked: (player?.totalMatches || 0) >= 1 },
-      { label: "Presenza fissa", detail: "Gioca 8 partite", icon: Gamepad2, unlocked: (player?.totalMatches || 0) >= 8 },
-      { label: "Veterano", detail: "Gioca 20 partite", icon: Medal, unlocked: (player?.totalMatches || 0) >= 20 },
-      { label: "Instancabile", detail: "Gioca 40 partite", icon: Flame, unlocked: (player?.totalMatches || 0) >= 40 },
-      { label: "Centurione", detail: "Gioca 75 partite", icon: Award, unlocked: (player?.totalMatches || 0) >= 75 },
+      { label: "First Match", detail: "Play 1 match", icon: Gamepad2, unlocked: (player?.totalMatches || 0) >= 1 },
+      { label: "Regular", detail: "Play 8 matches", icon: Gamepad2, unlocked: (player?.totalMatches || 0) >= 8 },
+      { label: "Veteran", detail: "Play 20 matches", icon: Medal, unlocked: (player?.totalMatches || 0) >= 20 },
+      { label: "Grinder", detail: "Play 40 matches", icon: Flame, unlocked: (player?.totalMatches || 0) >= 40 },
+      { label: "Centurion", detail: "Play 75 matches", icon: Award, unlocked: (player?.totalMatches || 0) >= 75 },
 
-      { label: "Prima vittoria", detail: "Vinci 1 partita", icon: Trophy, unlocked: (player?.wins || 0) >= 1 },
-      { label: "Vincente", detail: "Vinci 8 partite", icon: Trophy, unlocked: (player?.wins || 0) >= 8 },
-      { label: "Vincente élite", detail: "Vinci 20 partite", icon: Crown, unlocked: (player?.wins || 0) >= 20 },
-      { label: "Dominatore", detail: "Vinci 40 partite", icon: Star, unlocked: (player?.wins || 0) >= 40 },
+      { label: "First Blood", detail: "Win 1 match", icon: Trophy, unlocked: (player?.wins || 0) >= 1 },
+      { label: "Winner", detail: "Win 8 matches", icon: Trophy, unlocked: (player?.wins || 0) >= 8 },
+      { label: "Elite Winner", detail: "Win 20 matches", icon: Crown, unlocked: (player?.wins || 0) >= 20 },
+      { label: "Dominant", detail: "Win 40 matches", icon: Star, unlocked: (player?.wins || 0) >= 40 },
 
-      { label: "MVP", detail: "Ottieni 1 MVP", icon: Crown, unlocked: (player?.mvpCount || 0) >= 1 },
-      { label: "MVP x3", detail: "Ottieni 3 MVP", icon: Crown, unlocked: (player?.mvpCount || 0) >= 3 },
-      { label: "MVP x7", detail: "Ottieni 7 MVP", icon: Award, unlocked: (player?.mvpCount || 0) >= 7 },
+      { label: "MVP", detail: "Earn 1 MVP", icon: Crown, unlocked: (player?.mvpCount || 0) >= 1 },
+      { label: "MVP x3", detail: "Earn 3 MVPs", icon: Crown, unlocked: (player?.mvpCount || 0) >= 3 },
+      { label: "MVP x7", detail: "Earn 7 MVPs", icon: Award, unlocked: (player?.mvpCount || 0) >= 7 },
 
-      { label: "In forma", detail: "3 vittorie consecutive", icon: Flame, unlocked: bestWinStreak >= 3 },
-      { label: "In fiamme", detail: "4 vittorie consecutive", icon: Flame, unlocked: bestWinStreak >= 4 },
-      { label: "Intoccabile", detail: "8 vittorie consecutive", icon: Rocket, unlocked: bestWinStreak >= 8 },
+      { label: "Hot Streak", detail: "3 wins in a row", icon: Flame, unlocked: bestWinStreak >= 3 },
+      { label: "On Fire", detail: "4 wins in a row", icon: Flame, unlocked: bestWinStreak >= 4 },
+      { label: "Untouchable", detail: "8 wins in a row", icon: Rocket, unlocked: bestWinStreak >= 8 },
 
-      { label: "Prima sfida", detail: "Vinci 1 sfida", icon: Swords, unlocked: challengeStats.wins >= 1 },
-      { label: "Sfide x4", detail: "Vinci 4 sfide", icon: Swords, unlocked: challengeStats.wins >= 4 },
-      { label: "Veterano sfide", detail: "Vinci 10 sfide", icon: Medal, unlocked: challengeStats.wins >= 10 },
-      { label: "Re delle sfide", detail: "Vinci 20 sfide", icon: Crown, unlocked: challengeStats.wins >= 20 },
+      { label: "First Chall", detail: "Win 1 challenge", icon: Swords, unlocked: challengeStats.wins >= 1 },
+      { label: "Chall Grinder", detail: "Win 4 challenges", icon: Swords, unlocked: challengeStats.wins >= 4 },
+      { label: "Veteran challenges", detail: "Win 10 challenges", icon: Medal, unlocked: challengeStats.wins >= 10 },
+      { label: "Chall King", detail: "Win 20 challenges", icon: Crown, unlocked: challengeStats.wins >= 20 },
 
-      { label: "Primi punti", detail: "Accumula 20 di valore vinto nelle sfide verificate", icon: Coins, unlocked: challengeStats.wonValue >= 20 },
-      { label: "Accumulatore", detail: "Accumula 50 di valore vinto", icon: CreditCard, unlocked: challengeStats.wonValue >= 50 },
-      { label: "Grande bottino", detail: "Accumula 100 di valore vinto", icon: Award, unlocked: challengeStats.wonValue >= 100 },
-      { label: "Fuoriclasse", detail: "Accumula 200 di valore vinto", icon: Crown, unlocked: challengeStats.wonValue >= 200 },
+      { label: "In The Money", detail: "Win 20 value in verified challenges", icon: Coins, unlocked: challengeStats.wonValue >= 20 },
+      { label: "Money Maker", detail: "Win 50 value", icon: CreditCard, unlocked: challengeStats.wonValue >= 50 },
+      { label: "Big Earner", detail: "Win 100 value", icon: Award, unlocked: challengeStats.wonValue >= 100 },
+      { label: "High Roller", detail: "Win 200 value", icon: Crown, unlocked: challengeStats.wonValue >= 200 },
 
-      { label: "Affidabile", detail: "3 pagamenti chiusi senza contestazioni", icon: ShieldCheck, unlocked: reputation === 100 && settled.length >= 3 },
-      { label: "Fiducia totale", detail: "8 pagamenti chiusi senza contestazioni", icon: Shield, unlocked: reputation === 100 && settled.length >= 8 },
+      { label: "Clean Payout", detail: "3 clean settled payouts", icon: ShieldCheck, unlocked: reputation === 100 && settled.length >= 3 },
+      { label: "Trusted", detail: "8 clean settled payouts", icon: Shield, unlocked: reputation === 100 && settled.length >= 8 },
 
-      { label: "Grado Bronzo", detail: "Raggiungi 900 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 900 },
-      { label: "Grado Argento", detail: "Raggiungi 1000 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 1000 },
-      { label: "Grado Oro", detail: "Raggiungi 1100 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 1100 },
-      { label: "Grado Platino", detail: "Raggiungi 1200 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 1200 },
-      { label: "Master", detail: "Raggiungi 1350 Elo", icon: Crown, unlocked: (player?.peakElo || 0) >= 1350 },
+      { label: "Bronze Rank", detail: "Reach 900 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 900 },
+      { label: "Silver Rank", detail: "Reach 1000 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 1000 },
+      { label: "Gold Rank", detail: "Reach 1100 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 1100 },
+      { label: "Platinum Rank", detail: "Reach 1200 Elo", icon: Medal, unlocked: (player?.peakElo || 0) >= 1200 },
+      { label: "Masters", detail: "Reach 1350 Elo", icon: Crown, unlocked: (player?.peakElo || 0) >= 1350 },
     ];
 
     const achievements = achievementCatalog.filter((item) => item.unlocked);
@@ -327,80 +327,80 @@ export default function PlayerProfile() {
     return [
       challenge({
         id: "on-fire",
-        title: "In fiamme",
-        description: "Vinci 4 partite consecutive",
+        title: "On Fire",
+        description: "Vinci 4 matches consecutive",
         emoji: "🔥",
         value: Math.max(0, Number(player.currentStreak || 0)),
         goal: 4,
-        unit: " vittorie",
+        unit: " wins",
       }),
       challenge({
         id: "unstoppable",
-        title: "Inarrestabile",
-        description: "Vinci 8 partite consecutive",
+        title: "Unstoppable",
+        description: "Win 8 matches consecutive",
         emoji: "☢️",
         value: Math.max(0, Number(player.currentStreak || 0)),
         goal: 8,
-        unit: " vittorie",
+        unit: " wins",
       }),
       challenge({
         id: "money-maker",
-        title: "Accumulatore",
-        description: "Accumula 50 di valore vinto nelle sfide verificate",
+        title: "Money Maker",
+        description: "Win 50 value in verified challenges",
         emoji: "💰",
         value: challengeStats.wonValue,
         goal: 50,
-        unit: " valore",
+        unit: " value",
       }),
       challenge({
         id: "high-roller",
-        title: "Colpo grosso",
-        description: "Vinci una singola sfida con valore almeno 20",
+        title: "High Roller",
+        description: "Win a single challenge worth at least 20",
         emoji: "💎",
         value: challengeInsights.maxWonChallenge,
         goal: 20,
-        unit: " valore",
+        unit: " value",
       }),
       challenge({
         id: "rivalry",
-        title: "Rivalità",
-        description: "Gioca 8 sfide contro lo stesso giocatore",
+        title: "Rivalry",
+        description: "Play 8 challenges against the same player",
         emoji: "⚔️",
         value: challengeInsights.maxH2HPlayed,
         goal: 8,
-        unit: " sfide",
+        unit: " challenges",
       }),
       challenge({
         id: "nemesis",
-        title: "Nemesi",
-        description: "Batti lo stesso giocatore 4 volte",
+        title: "Nemesis",
+        description: "Beat the same player 4 times",
         emoji: "👑",
         value: challengeInsights.maxH2HWins,
         goal: 4,
-        unit: " vittorie",
+        unit: " wins",
       }),
       challenge({
         id: "clean-sweep",
-        title: "Filotto sfide",
-        description: "Vinci 4 sfide consecutive",
+        title: "Clean Sweep",
+        description: "Win 4 challenges consecutive",
         emoji: "🧹",
         value: challengeInsights.currentType === "W" ? challengeInsights.currentStreak : 0,
         goal: 4,
-        unit: " vittorie",
+        unit: " wins",
       }),
       challenge({
         id: "veteran",
-        title: "Veterano",
-        description: "Gioca 40 partite",
+        title: "Veteran",
+        description: "Play 40 matches",
         emoji: "🧱",
         value: Number(player.totalMatches || 0),
         goal: 40,
-        unit: " partite",
+        unit: " matches",
       }),
       challenge({
         id: "run-it-back",
-        title: "Rivincita",
-        description: "Perdi contro un giocatore e poi battilo nella sfida successiva",
+        title: "Run It Back",
+        description: "Lose to a player, then beat them in the next challenge",
         emoji: "🔄",
         value: challengeInsights.runItBack ? 1 : 0,
         goal: 1,
@@ -429,7 +429,7 @@ export default function PlayerProfile() {
         id: "mvp",
         type: "mvp",
         title: "MVP",
-        detail: `Automatico ogni 4 vittorie consecutive · ${player.mvpCount} ${player.mvpCount === 1 ? "MVP" : "MVP"}`,
+        detail: `Automatico ogni 4 wins in a row · ${player.mvpCount} ${player.mvpCount === 1 ? "MVP" : "MVP"}`,
         count: Number(player.mvpCount || 0),
         emoji: "🏆",
       });
@@ -440,7 +440,7 @@ export default function PlayerProfile() {
         id: "merda",
         type: "merda",
         title: "MERDA",
-        detail: `Attive x${player.merdaCount} · ogni 4 vittorie consecutive ne elimini 1`,
+        detail: `Active x${player.merdaCount} · ogni 4 wins in a row ne elimini 1`,
         count: Number(player.merdaCount || 0),
         emoji: "💩",
       });
@@ -465,8 +465,8 @@ export default function PlayerProfile() {
   if (!player) {
     return (
       <div className="card-surface rounded-xl p-10 text-center">
-        <div className="text-xl font-display font-bold mb-2">Giocatore non trovato</div>
-        <Link to="/players" className="text-magma hover:underline">Torna ai giocatori</Link>
+        <div className="text-xl font-display font-bold mb-2">Player not found</div>
+        <Link to="/players" className="text-magma hover:underline">Back to players</Link>
       </div>
     );
   }
@@ -479,12 +479,12 @@ export default function PlayerProfile() {
       role: profileRole,
     });
     setSavingLinks(false);
-    if (ok) toast.success("Profilo aggiornato");
+    if (ok) toast.success("Profile updated");
   };
 
   const openChallengeAmount = () => {
     if (!discordSession || !discordPlayer) {
-      toast.error("Accedi con Discord e collega il tuo giocatore prima di inviare una sfida");
+      toast.error("Login with Discord and link your player before sending a challenge");
       return;
     }
     setChallengePlatform("paypal");
@@ -519,7 +519,7 @@ export default function PlayerProfile() {
   return (
     <div className="m8-page-stack">
       <Link to="/players" className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-white self-start m8-pill order-0">
-        <ArrowLeft size={16} /> Torna ai giocatori
+        <ArrowLeft size={16} /> Back to players
       </Link>
 
       <Dialog open={Boolean(challengePlatform)} onOpenChange={(open) => !open && !sendingChallenge && setChallengePlatform("")}>
@@ -528,7 +528,7 @@ export default function PlayerProfile() {
           data-testid="challenge-amount-dialog"
         >
           <DialogHeader>
-            <DialogTitle className="font-display text-xl">SFIDA {player.name}</DialogTitle>
+            <DialogTitle className="font-display text-xl">CHALL {player.name}</DialogTitle>
             <DialogDescription>
               Choose how much you want to challenge for. The other player will see the amount before accepting.
             </DialogDescription>
@@ -599,7 +599,7 @@ export default function PlayerProfile() {
               data-testid="send-challenge-confirm"
             >
               <Swords size={16} className="mr-2" />
-              {sendingChallenge ? "Invio..." : "Invia sfida"}
+              {sendingChallenge ? "Sending..." : "Send Challenge"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -626,7 +626,7 @@ export default function PlayerProfile() {
             </div>
 
             <div className="min-w-0 flex-1 pb-1">
-              <div className="brand-kicker mb-1">{isOwnProfile ? "Il mio profilo competitivo" : "Profilo competitivo"}</div>
+              <div className="brand-kicker mb-1">{isOwnProfile ? "My Competitive Profile" : "Competitive Player Profile"}</div>
               <div className="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-4">
                 <h2 className="font-display text-3xl sm:text-[42px] leading-none font-black tracking-[-0.045em] truncate">
                   {player.name}
@@ -640,8 +640,8 @@ export default function PlayerProfile() {
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-xs text-[#8A94A4]">
                 <span><strong className="text-white font-mono">{player.currentElo}</strong> Elo</span>
                 {player.role && <span className="font-bold text-white">{player.role}</span>}
-                <span>{player.totalMatches || 0} partite</span>
-                <span>{challengeStats.wins + challengeStats.losses} sfide</span>
+                <span>{player.totalMatches || 0} matches</span>
+                <span>{challengeStats.wins + challengeStats.losses} challenges</span>
                 <span>{player.mvpCount || 0} MVP</span>
                 <span>{player.merdaCount || 0} 💩</span>
               </div>
@@ -662,10 +662,10 @@ export default function PlayerProfile() {
             {[
               { label: "Elo attuale", value: player.currentElo, tone: "text-white" },
               { label: "Picco Elo", value: player.peakElo, tone: "text-[#D5A33A]" },
-              { label: "Record partite", value: `${player.wins || 0}W - ${player.losses || 0}L`, tone: "text-white" },
-              { label: "Percentuale vittorie", value: `${winRate(player)}%`, tone: "text-white" },
-              { label: "Valore vinto", value: `${challengeStats.wonValue.toFixed(0)}`, tone: "text-emerald-400" },
-              { label: "Record sfide", value: `${challengeStats.wins}W - ${challengeStats.losses}L`, tone: "text-white" },
+              { label: "Record matches", value: `${player.wins || 0}W - ${player.losses || 0}L`, tone: "text-white" },
+              { label: "Percentuale wins", value: `${winRate(player)}%`, tone: "text-white" },
+              { label: "Value Won", value: `${challengeStats.wonValue.toFixed(0)}`, tone: "text-emerald-400" },
+              { label: "Record challenges", value: `${challengeStats.wins}W - ${challengeStats.losses}L`, tone: "text-white" },
             ].map((item) => (
               <div key={item.label} className="m8-profile-stat">
                 <div className="text-[9px] uppercase tracking-[0.16em] text-[#697181] font-bold">{item.label}</div>
@@ -690,7 +690,7 @@ export default function PlayerProfile() {
         <div
           className="order-2 grid grid-cols-1 sm:inline-grid sm:grid-cols-3 gap-1 p-1 rounded-2xl bg-[#0F1218] border border-[#242A35] w-full sm:w-fit"
           role="tablist"
-          aria-label="Sezioni del mio profilo"
+          aria-label="My Profile sections"
         >
           <button
             type="button"
@@ -705,7 +705,7 @@ export default function PlayerProfile() {
             data-testid="profile-tab-overview"
           >
             <UserCircle size={16} />
-            Profilo
+            Profile
           </button>
 
           <button
@@ -721,7 +721,7 @@ export default function PlayerProfile() {
             data-testid="profile-tab-edit"
           >
             <Pencil size={15} />
-            Modifica profilo
+            Edit Profile
           </button>
 
           <button
@@ -737,7 +737,7 @@ export default function PlayerProfile() {
             data-testid="profile-tab-challenges"
           >
             <Swords size={16} />
-            Le mie sfide
+            Le mie challenges
             {myChallenges.some((challenge) =>
               ["pending", "accepted", "result_pending", "disputed"].includes(challenge.status)
             ) && (
@@ -753,19 +753,19 @@ export default function PlayerProfile() {
             <div className="flex items-center justify-between gap-3 mb-4">
               <div>
                 <div className="brand-kicker mb-1">Competitivo</div>
-                <h3 className="font-display font-black text-xl tracking-[-0.02em]">Panoramica</h3>
+                <h3 className="font-display font-black text-xl tracking-[-0.02em]">Overview</h3>
               </div>
               <span className="m8-pill">{challengeStats.wins}W · {challengeStats.losses}L</span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2">
               <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Percentuale vittorie</div>
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Percentuale wins</div>
                 <div className="font-mono font-black text-lg mt-1">{challengeStats.winRate}%</div>
               </div>
 
               <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Saldo valore</div>
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Saldo value</div>
                 <div className={`font-mono font-black text-lg mt-1 ${
                   challengeStats.wonValue - challengeStats.lostValue >= 0
                     ? "text-emerald-400"
@@ -777,7 +777,7 @@ export default function PlayerProfile() {
               </div>
 
               <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Serie</div>
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Streak</div>
                 <div className={`font-mono font-black text-lg mt-1 ${
                   challengeInsights.currentType === "W"
                     ? "text-emerald-400"
@@ -792,7 +792,7 @@ export default function PlayerProfile() {
               </div>
 
               <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Reputazione</div>
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Reputation</div>
                 <div className="font-mono font-black text-lg mt-1">{challengeInsights.reputation}%</div>
               </div>
 
@@ -804,29 +804,29 @@ export default function PlayerProfile() {
               <div className="m8-stat-card">
                 <div className="text-[9px] uppercase tracking-widest text-muted-foreground">MERDA</div>
                 <div className="font-mono font-black text-lg mt-1 text-[#C79A6B]">💩 {player.merdaCount || 0}</div>
-                <div className="text-[9px] text-muted-foreground mt-1">Ogni 4 vittorie → -1 💩</div>
+                <div className="text-[9px] text-muted-foreground mt-1">Ogni 4 wins → -1 💩</div>
               </div>
 
               <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Encomi</div>
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Bounties</div>
                 <div className="font-mono font-black text-lg mt-1">{unlockedBountyAchievements.length}/{bountyAchievements.length}</div>
               </div>
 
               <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Punti</div>
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Points</div>
                 <div className="font-mono font-black text-lg mt-1 text-[#D5A33A]">{bountyHistory.points}</div>
               </div>
             </div>
 
             {challengeStats.completed.length > 0 && (
               <div className="flex items-center gap-1.5 mt-4 pt-3 border-t border-[#1D222C]">
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground mr-1">Ultime 5</span>
+                <span className="text-[10px] uppercase tracking-widest text-muted-foreground mr-1">Last 5</span>
                 {challengeStats.completed.slice(0, 5).map((challenge) => {
                   const won = challenge.reported_winner_player_id === id;
                   return (
                     <span
                       key={challenge.id}
-                      title={won ? "Vittoria" : "Sconfitta"}
+                      title={won ? "Win" : "Loss"}
                       className={`w-7 h-7 rounded-lg border flex items-center justify-center text-[10px] font-black ${
                         won
                           ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
@@ -866,14 +866,14 @@ export default function PlayerProfile() {
                         className="interactive-row rounded-xl p-3 flex items-center gap-3"
                       >
                         <PlayerAvatar
-                          name={opponent?.name || "Giocatore"}
+                          name={opponent?.name || "Player"}
                           elo={opponent?.currentElo || 1000}
                           size={34}
                           avatarUrl={playerAvatars[row.opponentId]}
                         />
                         <div className="min-w-0 flex-1">
-                          <div className="font-semibold text-sm truncate">{opponent?.name || "Giocatore"}</div>
-                          <div className="text-[10px] text-muted-foreground">{row.played} partite</div>
+                          <div className="font-semibold text-sm truncate">{opponent?.name || "Player"}</div>
+                          <div className="text-[10px] text-muted-foreground">{row.played} matches</div>
                         </div>
                         <div className="font-mono text-sm font-black">
                           <span className="text-emerald-400">{row.wins}W</span>
@@ -890,8 +890,8 @@ export default function PlayerProfile() {
             <div className="m8-panel rounded-2xl p-4 sm:p-5">
               <div className="flex items-center justify-between gap-3 mb-3">
                 <div>
-                  <div className="brand-kicker mb-1">Traguardi</div>
-                  <h3 className="font-display font-bold text-lg">Encomi</h3>
+                  <div className="brand-kicker mb-1">Achievements</div>
+                  <h3 className="font-display font-bold text-lg">Bounties</h3>
                 </div>
                 <div className="text-right">
                   <div className="font-mono font-black text-[#D5A33A]">
@@ -905,7 +905,7 @@ export default function PlayerProfile() {
 
               {bountyHistory.events.length === 0 ? (
                 <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-6 text-center text-xs text-muted-foreground">
-                  Nessun encomio completato.
+                  No completed bounties yet.
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -932,10 +932,10 @@ export default function PlayerProfile() {
         <div className="m8-panel rounded-[22px] p-4 sm:p-5 order-4" data-testid="next-trophy-challenges">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
-              <div className="brand-kicker mb-1">Sfide</div>
-              <h3 className="font-display font-black text-xl tracking-[-0.02em]">Prossimi trofei</h3>
+              <div className="brand-kicker mb-1">Challenges</div>
+              <h3 className="font-display font-black text-xl tracking-[-0.02em]">Next Trophies</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                I trofei più vicini da sbloccare in base ai tuoi progressi.
+                The closest trophies to unlock based on your current progress.
               </p>
             </div>
             <Target size={20} className="text-[#D5A33A] shrink-0 mt-1" />
@@ -944,7 +944,7 @@ export default function PlayerProfile() {
           {nextTrophyChallenges.length === 0 ? (
             <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-7 px-4 text-center">
               <div className="text-2xl mb-2">🏆</div>
-              <div className="font-semibold">Hai completato tutti i trofei</div>
+              <div className="font-semibold">All trophy challenges completed</div>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
@@ -986,10 +986,10 @@ export default function PlayerProfile() {
                       <span className="font-mono text-[10px] text-[#AAB1BE]">{displayValue}</span>
                       <span className="text-[10px] text-muted-foreground">
                         {item.id === "run-it-back"
-                          ? "Perdi → rivincita → vinci"
+                          ? "Lose → rematch → win"
                           : item.unit === " €"
-                            ? `€${remaining.toFixed(0)} mancanti`
-                            : `${Math.ceil(remaining)} mancanti`}
+                            ? `€${remaining.toFixed(0)} to go`
+                            : `${Math.ceil(remaining)} to go`}
                       </span>
                     </div>
                   </div>
@@ -1004,10 +1004,10 @@ export default function PlayerProfile() {
       <div className="m8-showcase rounded-[22px] p-4 sm:p-6 order-4" data-testid="trophy-cabinet">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
-            <div className="brand-kicker mb-1">Premi</div>
-            <h3 className="font-display font-black text-xl tracking-[-0.02em]">Bacheca</h3>
+            <div className="brand-kicker mb-1">Awards</div>
+            <h3 className="font-display font-black text-xl tracking-[-0.02em]">Trophy Cabinet</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              MVP 🏆, MERDA 💩 attive e traguardi sbloccati.
+              MVP 🏆, active MERDA 💩, and unlocked achievements.
             </p>
           </div>
           <Trophy size={20} className="text-[#D5A33A]" />
@@ -1016,9 +1016,9 @@ export default function PlayerProfile() {
         {trophyCabinet.length === 0 ? (
           <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-9 px-4 text-center">
             <Trophy size={28} className="text-[#3D4654] mx-auto mb-2" />
-            <div className="font-semibold">Nessun premio ancora</div>
+            <div className="font-semibold">No awards yet</div>
             <div className="text-xs text-muted-foreground mt-1">
-              Ottieni un MVP 🏆 o una MERDA 💩 per comparire qui.
+              Earn an MVP 🏆 or a MERDA 💩 to appear here.
             </div>
           </div>
         ) : (
@@ -1057,8 +1057,8 @@ export default function PlayerProfile() {
         <div className="m8-panel rounded-2xl p-4 sm:p-5 order-4" data-testid="edit-profile-panel">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
-              <div className="brand-kicker mb-1">Modifica profilo</div>
-              <h3 className="font-display font-bold text-lg">Impostazioni profilo</h3>
+              <div className="brand-kicker mb-1">Edit Profile</div>
+              <h3 className="font-display font-bold text-lg">Profile settings</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 Choose your role and connect PayPal or Revolut for Money Challs.
               </p>
@@ -1123,7 +1123,7 @@ export default function PlayerProfile() {
                 data-testid="save-profile-settings"
               >
                 <Save size={15} className="mr-1.5" />
-                {savingLinks ? "Salvataggio..." : "Salva profilo"}
+                {savingLinks ? "Saving..." : "Save Profile"}
               </Button>
             </div>
           </div>
@@ -1133,8 +1133,8 @@ export default function PlayerProfile() {
       {isOwnProfile && profileTab === "challenges" && (
         <div className="m8-panel rounded-2xl p-4 sm:p-5 order-3" data-testid="my-challenges-panel">
           <div className="mb-4">
-            <div className="brand-kicker mb-1">Centro sfide</div>
-            <h3 className="font-display font-bold text-lg">Le mie sfide</h3>
+            <div className="brand-kicker mb-1">Centro challenges</div>
+            <h3 className="font-display font-bold text-lg">Le mie challenges</h3>
             <p className="text-sm text-muted-foreground mt-1">
               Results become official only after the other player verifies them.
             </p>
@@ -1174,14 +1174,14 @@ export default function PlayerProfile() {
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                       <PlayerAvatar
-                        name={opponent?.name || "Giocatore"}
+                        name={opponent?.name || "Player"}
                         elo={opponent?.currentElo || 1000}
                         size={42}
                         avatarUrl={playerAvatars[opponentId]}
                       />
 
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold truncate">vs {opponent?.name || "Giocatore"}</div>
+                        <div className="font-semibold truncate">vs {opponent?.name || "Player"}</div>
                         <div className="text-xs text-muted-foreground mt-0.5">
                           {String(challenge.platform || "").toUpperCase()} · {amount} · {new Date(challenge.created_at).toLocaleDateString()}
                         </div>
@@ -1199,22 +1199,22 @@ export default function PlayerProfile() {
                           </span>
                         )}
                         {!completed && challenge.status === "pending" && (
-                          <span className="text-xs font-bold uppercase tracking-wider text-[#D5A33A]">In attesa</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-[#D5A33A]">Pending</span>
                         )}
                         {!completed && challenge.status === "accepted" && (
-                          <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Accettata</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Accepted</span>
                         )}
                         {!completed && challenge.status === "result_pending" && (
-                          <span className="text-xs font-bold uppercase tracking-wider text-[#8E98FF]">Da verificare</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-[#8E98FF]">Verification</span>
                         )}
                         {!completed && challenge.status === "declined" && (
-                          <span className="text-xs font-bold uppercase tracking-wider text-red-400">Rifiutata</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-red-400">Declined</span>
                         )}
                         {!completed && challenge.status === "disputed" && (
-                          <span className="text-xs font-bold uppercase tracking-wider text-orange-400">Contestata</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-orange-400">Disputed</span>
                         )}
                         {!completed && challenge.status === "cancelled" && (
-                          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Annullata</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Cancelled</span>
                         )}
 
                         {canOpen && (
@@ -1271,7 +1271,7 @@ export default function PlayerProfile() {
       {(!isOwnProfile || profileTab === "overview") && (
       <div className="m8-panel rounded-2xl p-4 sm:p-5 order-5">
         <div className="brand-kicker mb-1">Attività recente</div>
-        <h3 className="font-display font-black text-xl tracking-[-0.02em] mb-4">Partite recenti</h3>
+        <h3 className="font-display font-black text-xl tracking-[-0.02em] mb-4">Recent Matches</h3>
         <div className="space-y-2">
           {playerMatches.slice(0, 10).map((m) => {
             const winners = m.winner === "A" ? m.teamA : m.teamB;
@@ -1292,7 +1292,7 @@ export default function PlayerProfile() {
             return (
               <div key={m.id} className="interactive-row flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 rounded-xl p-3">
                 <div className={`font-bold text-sm ${won ? "text-emerald-400" : "text-red-400"}`}>
-                  {won ? "VITTORIA" : "SCONFITTA"}
+                  {won ? "WIN" : "LOSS"}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium">{m.game || "Game"} · {m.mode || "Mode"}</div>
@@ -1301,7 +1301,7 @@ export default function PlayerProfile() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  {((Array.isArray(m.mvpIds) ? m.mvpIds : []).includes(player.id) || m.mvpId === player.id) && <span title="MVP automatico" aria-label="MVP automatico">🏆</span>}
+                  {((Array.isArray(m.mvpIds) ? m.mvpIds : []).includes(player.id) || m.mvpId === player.id) && <span title="Automatic MVP" aria-label="Automatic MVP">🏆</span>}
                   {((Array.isArray(m.merdaIds) && m.merdaIds.includes(player.id)) || m.merdaId === player.id) && (
                     <span title="MERDA">💩</span>
                   )}
@@ -1315,7 +1315,7 @@ export default function PlayerProfile() {
           })}
 
           {playerMatches.length === 0 && (
-            <div className="py-10 text-center text-muted-foreground">Nessuna partita registrata per questo giocatore.</div>
+            <div className="py-10 text-center text-muted-foreground">No matches recorded for this player yet.</div>
           )}
         </div>
       </div>
