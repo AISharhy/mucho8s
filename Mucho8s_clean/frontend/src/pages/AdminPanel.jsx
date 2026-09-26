@@ -27,6 +27,7 @@ export default function AdminPanel() {
   const {
     admin,
     isAdmin,
+    adminAuthLoading,
     signOutDiscord,
     players,
     matches,
@@ -147,6 +148,20 @@ export default function AdminPanel() {
     pendingMatchReports.length +
     disputedChallenges.length +
     Number(adminChallengeAlertCount || 0);
+
+  if (adminAuthLoading) {
+    return (
+      <div className="card-surface rounded-2xl p-8 min-h-[220px] flex flex-col items-center justify-center text-center">
+        <div className="w-12 h-12 rounded-2xl bg-[#0F1218] border border-[#242A35] flex items-center justify-center mb-4">
+          <Shield size={20} className="text-magma" />
+        </div>
+        <h2 className="font-display text-xl font-bold">Verifying Admin access</h2>
+        <p className="text-sm text-muted-foreground mt-2">
+          Checking your authorized Discord session...
+        </p>
+      </div>
+    );
+  }
 
   if (!isAdmin) return <Navigate to="/" replace />;
 
