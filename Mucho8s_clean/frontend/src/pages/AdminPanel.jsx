@@ -17,7 +17,6 @@ const ADMIN_TABS = [
   { key: "overview", label: "Overview", icon: Shield },
   { key: "players", label: "Players", icon: Users },
   { key: "matches", label: "Matches", icon: Gamepad2 },
-  { key: "challenges", label: "Money Challs", icon: Swords },
   { key: "discord", label: "Discord", icon: MessageCircle },
   { key: "competition", label: "Competition", icon: Trophy },
   { key: "system", label: "System", icon: Database },
@@ -481,7 +480,7 @@ export default function AdminPanel() {
                 <div className="text-sm font-semibold">Match verification</div>
                 <div className="text-xs text-muted-foreground mt-1">{pendingMatchReports.length} pending or disputed results</div>
               </button>
-              <button onClick={() => setActiveTab("challenges")} className="w-full text-left m8-panel-quiet rounded-xl p-3 hover:border-[#353E4C] transition-colors">
+              <button onClick={() => setActiveTab("matches")} className="w-full text-left m8-panel-quiet rounded-xl p-3 hover:border-[#353E4C] transition-colors">
                 <div className="text-sm font-semibold">Money Chall disputes</div>
                 <div className="text-xs text-muted-foreground mt-1">{disputedChallenges.length} disputes to review</div>
               </button>
@@ -498,7 +497,7 @@ export default function AdminPanel() {
               <Button onClick={() => setActiveTab("matches")} className="m8-action h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150]">
                 <Gamepad2 size={15} className="mr-2" /> Matches
               </Button>
-              <Button onClick={() => setActiveTab("challenges")} className="m8-action h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150]">
+              <Button onClick={() => setActiveTab("matches")} className="m8-action h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150]">
                 <WalletCards size={15} className="mr-2" /> Challs
               </Button>
               <Button onClick={() => setActiveTab("competition")} className="m8-action h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150]">
@@ -572,8 +571,8 @@ export default function AdminPanel() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <div className="brand-kicker mb-1">Match Control</div>
-            <h3 className="font-display font-black text-lg tracking-[-0.015em]">Manage Matches ({matches.length})</h3>
-            <p className="text-sm text-muted-foreground mt-1">Report, edit or delete any recorded match directly from Admin.</p>
+            <h3 className="font-display font-black text-lg tracking-[-0.015em]">Matches & Money Challs ({matches.length + adminChallenges.length})</h3>
+            <p className="text-sm text-muted-foreground mt-1">Manage verified team matches and Money Challs from the same place.</p>
           </div>
           <Button onClick={() => setHistOpen(true)} className="bg-magma hover:bg-[#ff3c4c] text-white rounded-xl">
             <History size={15} className="mr-1.5" /> New Match
@@ -639,7 +638,7 @@ export default function AdminPanel() {
         </>
       )}
 
-      {activeTab === "challenges" && disputedChallenges.length > 0 && (
+      {activeTab === "matches" && disputedChallenges.length > 0 && (
         <div className="m8-panel rounded-2xl p-5 border-orange-500/20" data-testid="admin-dispute-center">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div>
@@ -777,7 +776,7 @@ export default function AdminPanel() {
         </div>
       )}
 
-      {activeTab === "challenges" && (
+      {activeTab === "matches" && (
         <>
       <div className="m8-panel rounded-2xl p-5" data-testid="admin-challenge-management">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
