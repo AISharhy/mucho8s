@@ -71,6 +71,7 @@ function App() {
               <Route path="ranking" element={<Ranking />} />
               <Route path="leaderboard" element={<Ranking initialTab="leaderboard" />} />
               <Route path="statistics" element={<Ranking initialTab="statistics" />} />
+              <Route path="ranks" element={<Ranking initialTab="ranks" />} />
               <Route path="admin" element={<AdminPanel />} />
               <Route path="challenges" element={<ChallengeInbox />} />
               <Route path="challenge-ranking" element={<ChallengeLeaderboard />} />
