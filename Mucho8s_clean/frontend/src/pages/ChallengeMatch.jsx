@@ -430,7 +430,7 @@ export default function ChallengeMatch() {
               {completedWon ? "VINTA" : "PERSA"}
             </div>
           ) : (
-            <span className="inline-flex h-9 items-center px-3 rounded-xl bg-[#0F1218] border border-[#242A35] text-xs font-bold uppercase tracking-wider">
+            <span className="m8-pill h-9 px-3">
               {statusLabel[challenge.status] || challenge.status}
             </span>
           )}
@@ -734,7 +734,7 @@ export default function ChallengeMatch() {
                   )}
                 </div>
               ) : (
-                <div className="mt-4 rounded-xl bg-[#0F1218] border border-[#1D222C] p-4 text-sm text-muted-foreground">
+                <div className="mt-4 m8-panel-quiet rounded-xl p-4 text-sm text-muted-foreground">
                   {money(challenge)} is owed to you. Waiting for {opponent?.name || "the losing player"} to send the payment via {platformLabel}.
                 </div>
               )
@@ -749,7 +749,7 @@ export default function ChallengeMatch() {
                     href={payoutUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full h-12 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-extrabold inline-flex items-center justify-center gap-2"
+                    className="m8-action m8-action-primary w-full h-12 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-extrabold inline-flex items-center justify-center gap-2"
                   >
                     PAY {winner?.name || "WINNER"} · {money(challenge)} ON {platformLabel}
                     <ExternalLink size={15} />
@@ -763,7 +763,7 @@ export default function ChallengeMatch() {
                 <Button
                   onClick={markPayoutSent}
                   disabled={Boolean(busy)}
-                  className="w-full h-12 rounded-xl bg-[#181B26] border border-[#2A303B] text-white font-bold hover:bg-white/[0.05]"
+                  className="m8-action w-full h-12 rounded-xl bg-[#181B26] border border-[#2A303B] text-white font-bold hover:bg-white/[0.05]"
                 >
                   <Check size={16} className="mr-2" /> I HAVE PAID {money(challenge)}
                 </Button>
@@ -777,7 +777,7 @@ export default function ChallengeMatch() {
       {Array.isArray(challenge.evidence) && challenge.evidence.length > 0 && (
         <div className="m8-panel rounded-2xl p-5" data-testid="challenge-evidence-gallery">
           <div className="brand-kicker mb-1">Evidence</div>
-          <h3 className="font-display text-lg font-bold">Screenshots</h3>
+          <h3 className="font-display text-xl font-black tracking-[-0.02em]">Screenshots</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
             {challenge.evidence.map((item) => (
               <a
@@ -785,7 +785,7 @@ export default function ChallengeMatch() {
                 href={item.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group rounded-xl overflow-hidden border border-[#242A35] bg-[#0F1218]"
+                className="group m8-panel-quiet rounded-xl overflow-hidden"
               >
                 <img src={item.url} alt="Challenge evidence" className="w-full aspect-video object-cover group-hover:opacity-90 transition-opacity" />
                 <div className="px-2.5 py-2 text-[10px] uppercase tracking-wider text-muted-foreground truncate">
@@ -800,7 +800,7 @@ export default function ChallengeMatch() {
       {challenge.status === "disputed" && (
         <div className="m8-panel rounded-2xl p-6 text-center border-orange-500/20">
           <AlertTriangle size={34} className="text-orange-400 mx-auto mb-3" />
-          <h3 className="font-display text-xl font-bold">Result disputed</h3>
+          <h3 className="font-display text-2xl font-black tracking-[-0.02em]">Result disputed</h3>
           <p className="text-sm text-muted-foreground mt-2">
             {challenge.dispute_note || "The challenge is waiting for Admin review."}
           </p>
