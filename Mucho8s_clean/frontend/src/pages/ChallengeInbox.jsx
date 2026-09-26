@@ -152,7 +152,7 @@ export default function ChallengeInbox() {
 
   if (!discordSession || !discordPlayer) {
     return (
-      <div className="card-surface rounded-2xl p-10 text-center max-w-xl mx-auto">
+      <div className="m8-panel rounded-2xl p-10 text-center max-w-xl mx-auto">
         <Bell size={34} className="text-[#697181] mx-auto mb-3" />
         <h2 className="font-display text-2xl font-bold">Challenge Inbox</h2>
         <p className="text-sm text-muted-foreground mt-2">
@@ -163,11 +163,11 @@ export default function ChallengeInbox() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+    <div className="m8-page-stack">
+      <section className="m8-panel rounded-2xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
         <div>
           <div className="brand-kicker mb-1">Challenge Center</div>
-          <h2 className="font-display text-3xl font-extrabold">Challenge Inbox</h2>
+          <h2 className="font-display text-3xl font-black tracking-[-0.03em]">Challenge Inbox</h2>
           <p className="text-sm text-muted-foreground mt-1">
             Accept requests, follow active challs and verify results.
           </p>
@@ -193,10 +193,10 @@ export default function ChallengeInbox() {
             </Button>
           ))}
         </div>
-      </div>
+      </section>
 
       {visible.length === 0 ? (
-        <div className="card-surface rounded-2xl p-10 text-center">
+        <div className="m8-panel rounded-2xl p-10 text-center">
           <ShieldCheck size={34} className="text-[#596170] mx-auto mb-3" />
           <div className="font-display font-bold">Nothing here</div>
           <div className="text-sm text-muted-foreground mt-1">
@@ -241,7 +241,7 @@ export default function ChallengeInbox() {
             return (
               <div
                 key={challenge.id}
-                className={`card-surface rounded-2xl p-4 sm:p-5 ${
+                className={`m8-panel rounded-2xl p-4 sm:p-5 ${
                   won ? "border-emerald-500/25" : lost ? "border-red-500/25" : ""
                 }`}
               >
@@ -254,7 +254,7 @@ export default function ChallengeInbox() {
                       avatarUrl={playerAvatars[opponentId]}
                     />
                     <div className="min-w-0">
-                      <div className="font-display font-bold text-lg truncate">vs {opponent?.name || "Player"}</div>
+                      <div className="font-display font-black text-lg truncate">vs {opponent?.name || "Player"}</div>
                       <div className="text-xs text-muted-foreground mt-1">
                         {series ? (
                           <>
