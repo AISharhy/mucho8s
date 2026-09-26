@@ -42,26 +42,8 @@ const euro = (cents, currency = "EUR") =>
     currency,
   }).format(Number(cents || 0) / 100);
 
-const unlockedAchievementKeys = (player, publicChallenges = []) => {
+const unlockedAchievementKeys = (player) => {
   if (!player?.id) return new Set();
-
-  const verified = publicChallenges.filter((challenge) =>
-    challenge?.status === "completed" &&
-    challenge?.reported_winner_player_id &&
-    (
-      challenge.challenger_player_id === player.id ||
-      challenge.challenged_player_id === player.id
-    ) &&
-    !(challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at)
-  );
-
-  const challWins = verified.filter(
-    (challenge) => challenge.reported_winner_player_id === player.id
-  );
-  const moneyWon = challWins.reduce(
-    (total, challenge) => total + Number(challenge.amount_cents || 0) / 100,
-    0
-  );
 
   const keys = new Set();
   const add = (condition, key, label) => {
@@ -87,16 +69,6 @@ const unlockedAchievementKeys = (player, publicChallenges = []) => {
   add((player.currentStreak || 0) >= 5, "streak-5", "On Fire");
   add((player.currentStreak || 0) >= 10, "streak-10", "Untouchable");
 
-  add(challWins.length >= 1, "chall-1", "First Chall");
-  add(challWins.length >= 5, "chall-5", "Chall Grinder");
-  add(challWins.length >= 10, "chall-10", "Chall Veteran");
-  add(challWins.length >= 25, "chall-25", "Chall King");
-
-  add(moneyWon >= 25, "money-25", "In The Money");
-  add(moneyWon >= 50, "money-50", "Money Maker");
-  add(moneyWon >= 100, "money-100", "Big Earner");
-  add(moneyWon >= 250, "money-250", "High Roller");
-
   return keys;
 };
 
@@ -104,7 +76,6 @@ export default function CompetitiveEventFX() {
   const {
     discordPlayer,
     challenges,
-    publicChallenges,
   } = useData();
 
   const [event, setEvent] = useState(null);
@@ -118,8 +89,8 @@ export default function CompetitiveEventFX() {
   const achievementReadyRef = useRef(false);
 
   const achievementKeys = useMemo(
-    () => unlockedAchievementKeys(discordPlayer, publicChallenges || []),
-    [discordPlayer, publicChallenges]
+    () => unlockedAchievementKeys(discordPlayer),
+    [discordPlayer]
   );
 
   const showNext = useCallback(() => {
@@ -262,10 +233,8 @@ export default function CompetitiveEventFX() {
     }
 
     if (!achievementReadyRef.current) {
-      if (achievementKeys.size > 0 || (publicChallenges || []).length > 0) {
-        achievementSnapshotRef.current = new Set(achievementKeys);
-        achievementReadyRef.current = true;
-      }
+      achievementSnapshotRef.current = new Set(achievementKeys);
+      achievementReadyRef.current = true;
       return;
     }
 
@@ -285,7 +254,7 @@ export default function CompetitiveEventFX() {
     }
 
     achievementSnapshotRef.current = new Set(achievementKeys);
-  }, [achievementKeys, discordPlayer?.id, publicChallenges, pushEvent]);
+  }, [achievementKeys, discordPlayer?.id, pushEvent]);
 
   if (!event) return null;
 
