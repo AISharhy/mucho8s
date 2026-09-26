@@ -726,6 +726,34 @@ export const DataProvider = ({ children }) => {
     return data.challenge;
   }, [challengeRequest, refreshChallenges]);
 
+  const createRechallenge = useCallback(async (id, amount) => {
+    const data = await challengeRequest({ action: "rechallenge", id, amount });
+    if (!data?.challenge) return null;
+    await refreshChallenges();
+    return data.challenge;
+  }, [challengeRequest, refreshChallenges]);
+
+  const closeChallengeSeries = useCallback(async (seriesId) => {
+    const data = await challengeRequest({ action: "close-series", seriesId });
+    if (!data?.series) return null;
+    await refreshChallenges();
+    return data.series;
+  }, [challengeRequest, refreshChallenges]);
+
+  const markChallengeSeriesPaymentSent = useCallback(async (seriesId) => {
+    const data = await challengeRequest({ action: "series-payment-sent", seriesId });
+    if (!data?.series) return null;
+    await refreshChallenges();
+    return data.series;
+  }, [challengeRequest, refreshChallenges]);
+
+  const confirmChallengeSeriesPaymentReceived = useCallback(async (seriesId) => {
+    const data = await challengeRequest({ action: "series-payment-received", seriesId });
+    if (!data?.series) return null;
+    await refreshChallenges();
+    return data.series;
+  }, [challengeRequest, refreshChallenges]);
+
   const respondToChallenge = useCallback(async (id, decision) => {
     const data = await challengeRequest({ action: "respond", id, decision });
     if (!data?.challenge) return null;
@@ -950,35 +978,64 @@ export const DataProvider = ({ children }) => {
   const challengeNotificationCount = useMemo(() => {
     if (!discordAccount?.id) return 0;
 
-    return challenges.reduce((count, challenge) => {
+    const seenSeries = new Set();
+    let count = 0;
+
+    challenges.forEach((challenge) => {
       const isChallenger = challenge.challenger_account_id === discordAccount.id;
       const isChallenged = challenge.challenged_account_id === discordAccount.id;
-      if (!isChallenger && !isChallenged) return count;
+      if (!isChallenger && !isChallenged) return;
 
-      if (challenge.status === "pending" && isChallenged) return count + 1;
+      if (challenge.status === "pending" && isChallenged) {
+        count += 1;
+        return;
+      }
+
       if (
         challenge.status === "result_pending" &&
         challenge.reporter_account_id !== discordAccount.id
-      ) return count + 1;
+      ) {
+        count += 1;
+        return;
+      }
+
+      if (challenge.series_id) {
+        const series = challenge.series;
+        if (!series || seenSeries.has(challenge.series_id)) return;
+        seenSeries.add(challenge.series_id);
+
+        const myPlayerId = discordAccount.player_id;
+        if (
+          series.status === "closed" &&
+          Number(series.settlement_amount_cents || 0) > 0 &&
+          series.settlement_winner_player_id
+        ) {
+          const iReceive = series.settlement_winner_player_id === myPlayerId;
+          if (!iReceive && !series.payment_sent_at) count += 1;
+          if (iReceive && series.payment_sent_at && !series.payment_received_at) count += 1;
+        }
+        return;
+      }
 
       const seenEvent = isChallenger
         ? challenge.challenger_seen_event
         : challenge.challenged_seen_event;
 
       if (challenge.last_event && seenEvent !== challenge.last_event) {
-        return count + 1;
+        count += 1;
+        return;
       }
 
       if (challenge.status === "completed" && challenge.reported_winner_player_id) {
         const myPlayerId = discordAccount.player_id;
         const iWon = challenge.reported_winner_player_id === myPlayerId;
 
-        if (!iWon && !challenge.payment_sent_at) return count + 1;
-        if (iWon && challenge.payment_sent_at && !challenge.payment_received_at) return count + 1;
+        if (!iWon && !challenge.payment_sent_at) count += 1;
+        if (iWon && challenge.payment_sent_at && !challenge.payment_received_at) count += 1;
       }
+    });
 
-      return count;
-    }, 0);
+    return count;
   }, [challenges, discordAccount]);
 
   const adminAuditRequest = useCallback(async (payload, { silent = false } = {}) => {
@@ -1609,6 +1666,10 @@ export const DataProvider = ({ children }) => {
     disputeMatchReport,
     adminResolveMatchReport,
     createChallenge,
+    createRechallenge,
+    closeChallengeSeries,
+    markChallengeSeriesPaymentSent,
+    confirmChallengeSeriesPaymentReceived,
     respondToChallenge,
     markChallengePaymentSent,
     confirmChallengePaymentReceived,
