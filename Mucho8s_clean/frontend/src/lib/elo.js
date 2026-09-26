@@ -48,13 +48,102 @@ export const playerForGame = (player, gameStats) => {
   return { ...player, currentElo: g.currentElo, peakElo: g.peakElo, wins: g.wins, losses: g.losses, totalMatches: g.totalMatches, mvpCount: g.mvpCount };
 };
 
+export const RANKS = [
+  {
+    id: "iron",
+    name: "Iron",
+    min: 500,
+    max: 899,
+    color: "#7C8798",
+    accent: "#3D4654",
+    roman: "VI",
+    description: "Entry division",
+  },
+  {
+    id: "bronze",
+    name: "Bronze",
+    min: 900,
+    max: 999,
+    color: "#C17845",
+    accent: "#6D3D24",
+    roman: "V",
+    description: "Rising competitor",
+  },
+  {
+    id: "silver",
+    name: "Silver",
+    min: 1000,
+    max: 1099,
+    color: "#C7CFDA",
+    accent: "#727D8A",
+    roman: "IV",
+    description: "Proven player",
+  },
+  {
+    id: "gold",
+    name: "Gold",
+    min: 1100,
+    max: 1199,
+    color: "#F4C451",
+    accent: "#9B6A13",
+    roman: "III",
+    description: "High-level competitor",
+  },
+  {
+    id: "platinum",
+    name: "Platinum",
+    min: 1200,
+    max: 1349,
+    color: "#65D5D3",
+    accent: "#1D747A",
+    roman: "II",
+    description: "Elite division",
+  },
+  {
+    id: "masters",
+    name: "Masters",
+    min: 1350,
+    max: Infinity,
+    color: "#F04A63",
+    accent: "#8A1730",
+    roman: "I",
+    description: "Top MuchoMoney8s division",
+  },
+];
+
 export const tierOf = (elo) => {
-  if (elo >= 1500) return { name: "Legend", color: "#FFB800" };
-  if (elo >= 1350) return { name: "Diamond", color: "#3B82F6" };
-  if (elo >= 1200) return { name: "Platinum", color: "#10B981" };
-  if (elo >= 1050) return { name: "Gold", color: "#F59E0B" };
-  if (elo >= 900) return { name: "Silver", color: "#9CA3AF" };
-  return { name: "Bronze", color: "#B45309" };
+  const value = Math.max(MIN_ELO, Number(elo) || BASE_ELO);
+  return RANKS.find((rank) => value >= rank.min && value <= rank.max) || RANKS[0];
+};
+
+export const rankProgress = (elo) => {
+  const value = Math.max(MIN_ELO, Number(elo) || BASE_ELO);
+  const rank = tierOf(value);
+  const index = RANKS.findIndex((item) => item.id === rank.id);
+  const next = RANKS[index + 1] || null;
+
+  if (!next) {
+    return {
+      rank,
+      next: null,
+      progress: 100,
+      eloNeeded: 0,
+      start: rank.min,
+      target: rank.min,
+    };
+  }
+
+  const span = Math.max(1, next.min - rank.min);
+  const progress = Math.max(0, Math.min(100, ((value - rank.min) / span) * 100));
+
+  return {
+    rank,
+    next,
+    progress: Math.round(progress),
+    eloNeeded: Math.max(0, next.min - value),
+    start: rank.min,
+    target: next.min,
+  };
 };
 
 const kCombos = (arr, k) => {
