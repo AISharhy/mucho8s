@@ -978,3 +978,64 @@ textarea:focus-visible {
         animation: none !important;
     }
 }
+
+
+/* Product states */
+@keyframes m8SkeletonPulse {
+    0%, 100% { opacity: .42; }
+    50% { opacity: .78; }
+}
+
+.m8-skeleton {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(90deg, #181E27 0%, #222A35 50%, #181E27 100%);
+    background-size: 200% 100%;
+    animation: m8SkeletonPulse 1.35s ease-in-out infinite;
+}
+
+.m8-empty-state {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 50% 0%, rgba(255,255,255,.035), transparent 15rem),
+        linear-gradient(180deg, rgba(255,255,255,.012), transparent),
+        #10151D;
+}
+
+.m8-empty-state::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: .18;
+    background-image:
+        linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+    background-size: 28px 28px;
+    mask-image: radial-gradient(circle at 50% 45%, #000, transparent 70%);
+}
+
+.m8-empty-state > * {
+    position: relative;
+    z-index: 1;
+}
+
+.m8-empty-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8D95A4;
+    background: #0C1016;
+    border: 1px solid #29313D;
+    box-shadow: 0 12px 30px rgba(0,0,0,.22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .m8-skeleton {
+        animation: none !important;
+    }
+}
