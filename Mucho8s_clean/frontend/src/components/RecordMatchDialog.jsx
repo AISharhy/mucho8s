@@ -20,6 +20,10 @@ export const RecordMatchDialog = ({
   defaultMode,
   title = "Record Match",
   reportOnly = false,
+  lockTeams = false,
+  lockContext = false,
+  initialCaptains = null,
+  onReported,
 }) => {
   const { players, createMatchReport, editMatch } = useData();
   const [assign, setAssign] = useState({});
@@ -31,6 +35,7 @@ export const RecordMatchDialog = ({
   const [game, setGame] = useState(GAMES[0]);
   const [query, setQuery] = useState("");
   const [moneySettings, setMoneySettings] = useState({});
+  const [pairingOrder, setPairingOrder] = useState([]);
 
   useEffect(() => {
     if (!open) return;
@@ -52,10 +57,12 @@ export const RecordMatchDialog = ({
     setQuery("");
 
     const nextMoney = {};
+    const nextPairingOrder = [];
     (Array.isArray(source?.pairings) ? source.pairings : []).forEach((pair) => {
       const playerAId = String(pair?.playerAId || "").trim();
       const playerBId = String(pair?.playerBId || "").trim();
       if (!playerAId || !playerBId) return;
+      nextPairingOrder.push({ playerAId, playerBId });
       nextMoney[`${playerAId}:${playerBId}`] = {
         amount: String(Number(pair?.amount || 5)),
         platform: ["paypal", "revolut"].includes(String(pair?.platform || "").toLowerCase())
@@ -63,6 +70,7 @@ export const RecordMatchDialog = ({
           : "paypal",
       };
     });
+    setPairingOrder(nextPairingOrder);
     setMoneySettings(nextMoney);
   }, [open, initialTeams, editData, defaultGame, defaultMode]);
 
@@ -70,10 +78,23 @@ export const RecordMatchDialog = ({
   const teamB = Object.keys(assign).filter((id) => assign[id] === "B");
   const assigned = [...teamA, ...teamB];
 
-  const moneyPairings = teamA
-    .map((playerAId, index) => {
-      const playerBId = teamB[index];
-      if (!playerBId) return null;
+  const orderedPairings = (
+    pairingOrder.length === teamA.length &&
+    pairingOrder.every(
+      (pair) => teamA.includes(pair.playerAId) && teamB.includes(pair.playerBId)
+    )
+  )
+    ? pairingOrder
+    : teamA.map((playerAId, index) => ({
+        playerAId,
+        playerBId: teamB[index],
+      }));
+
+  const moneyPairings = orderedPairings
+    .map((pair) => {
+      const playerAId = pair.playerAId;
+      const playerBId = pair.playerBId;
+      if (!playerAId || !playerBId) return null;
       const key = `${playerAId}:${playerBId}`;
       const saved = moneySettings[key] || {};
       return {
@@ -137,9 +158,17 @@ export const RecordMatchDialog = ({
     [players, query]
   );
 
-  // Captains are assigned automatically from the generated team order.
-  const effectiveCaptainA = teamA[0] || "";
-  const effectiveCaptainB = teamB[0] || "";
+  const effectiveCaptainA =
+    editData?.captainAPlayerId ||
+    initialCaptains?.A ||
+    teamA[0] ||
+    "";
+  const effectiveCaptainB =
+    editData?.captainBPlayerId ||
+    initialCaptains?.B ||
+    teamB[0] ||
+    "";
+  const teamsLocked = reportOnly || lockTeams;
   const valid =
     teamA.length === teamB.length &&
     teamA.length >= 2 &&
@@ -210,6 +239,7 @@ export const RecordMatchDialog = ({
       });
       if (!report) return;
       toast.success("Result submitted — waiting for captain verification");
+      onReported?.(report);
     }
 
     onOpenChange(false);
@@ -238,7 +268,7 @@ export const RecordMatchDialog = ({
             <span className="text-muted-foreground text-xs ml-auto">Teams must be equal (2–4 each)</span>
           </div>
 
-          {reportOnly ? (
+          {teamsLocked ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="rounded-xl bg-magma/5 border border-magma/20 p-3">
                 <div className="text-[10px] uppercase tracking-widest text-magma mb-2">Alpha</div>
@@ -310,6 +340,21 @@ export const RecordMatchDialog = ({
 
             </>
           )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="rounded-xl bg-[#0F1218] border border-[#222834] px-3 py-2.5">
+              <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Alpha Captain</div>
+              <div className="text-sm font-bold mt-1">
+                👑 {players.find((p) => p.id === effectiveCaptainA)?.name || "—"}
+              </div>
+            </div>
+            <div className="rounded-xl bg-[#0F1218] border border-[#222834] px-3 py-2.5">
+              <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Bravo Captain</div>
+              <div className="text-sm font-bold mt-1">
+                👑 {players.find((p) => p.id === effectiveCaptainB)?.name || "—"}
+              </div>
+            </div>
+          </div>
 
           <div className="rounded-2xl bg-[#0F1218] border border-[#222834] p-4" data-testid="match-money-settings">
             <div className="flex items-center gap-2 mb-3">
@@ -429,7 +474,7 @@ export const RecordMatchDialog = ({
               </select>
             </div>
 
-            {!reportOnly && (
+            {!reportOnly && !lockContext && (
               <>
                 <div>
                   <Label className="text-xs text-muted-foreground">Mode</Label>
