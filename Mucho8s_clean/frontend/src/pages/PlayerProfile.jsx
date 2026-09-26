@@ -129,6 +129,7 @@ export default function PlayerProfile() {
       wonValue,
       lostValue,
       profit: wonValue - lostValue,
+      matchPairings: completed.filter((challenge) => challenge.source === "match_pairing").length,
     };
   }, [publicChallenges, id]);
 
@@ -469,10 +470,14 @@ export default function PlayerProfile() {
             <p className="text-sm text-muted-foreground mt-1">Record: verified challs · € totals: confirmed payouts only.</p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full lg:w-auto lg:min-w-[560px]">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 w-full lg:w-auto lg:min-w-[700px]">
             <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Win Rate</div>
               <div className="font-mono font-bold text-lg mt-1">{challengeStats.winRate}%</div>
+            </div>
+            <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Match Pairings</div>
+              <div className="font-mono font-bold text-lg mt-1 text-magma">{challengeStats.matchPairings}</div>
             </div>
             <div className="rounded-xl bg-emerald-500/[0.05] border border-emerald-500/15 p-3">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">€ Won</div>
