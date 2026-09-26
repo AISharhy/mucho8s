@@ -513,7 +513,7 @@ Deno.serve(async (req: Request) => {
         payment_sent: Boolean(data.payment_sent_at),
         payment_received: Boolean(data.payment_received_at),
       });
-      return json({ ok: true, challenge: await attachSeries(data) });
+      return json({ ok: true, challenge: data });
     }
 
     if (adminRequest && action === "admin-delete") {
