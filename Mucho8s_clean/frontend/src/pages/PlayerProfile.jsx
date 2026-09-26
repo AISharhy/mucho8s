@@ -429,7 +429,7 @@ export default function PlayerProfile() {
         id: "mvp",
         type: "mvp",
         title: "MVP",
-        detail: `Automatico ogni 4 wins in a row · ${player.mvpCount} ${player.mvpCount === 1 ? "MVP" : "MVP"}`,
+        detail: `Automatic every 4 wins in a row · ${player.mvpCount} ${player.mvpCount === 1 ? "MVP" : "MVP"}`,
         count: Number(player.mvpCount || 0),
         emoji: "🏆",
       });
@@ -653,7 +653,7 @@ export default function PlayerProfile() {
                 className="m8-action m8-action-primary h-11 px-6 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-extrabold tracking-wide"
                 data-testid="challenge-me-btn"
               >
-                <Swords size={17} className="mr-2" /> SFIDAMI
+                <Swords size={17} className="mr-2" /> CHALL ME
               </Button>
             )}
           </div>
@@ -663,7 +663,7 @@ export default function PlayerProfile() {
               { label: "Elo attuale", value: player.currentElo, tone: "text-white" },
               { label: "Picco Elo", value: player.peakElo, tone: "text-[#D5A33A]" },
               { label: "Record matches", value: `${player.wins || 0}W - ${player.losses || 0}L`, tone: "text-white" },
-              { label: "Percentuale wins", value: `${winRate(player)}%`, tone: "text-white" },
+              { label: "Win Rate", value: `${winRate(player)}%`, tone: "text-white" },
               { label: "Value Won", value: `${challengeStats.wonValue.toFixed(0)}`, tone: "text-emerald-400" },
               { label: "Record challenges", value: `${challengeStats.wins}W - ${challengeStats.losses}L`, tone: "text-white" },
             ].map((item) => (
@@ -760,7 +760,7 @@ export default function PlayerProfile() {
 
             <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2">
               <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Percentuale wins</div>
+                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Win Rate</div>
                 <div className="font-mono font-black text-lg mt-1">{challengeStats.winRate}%</div>
               </div>
 
