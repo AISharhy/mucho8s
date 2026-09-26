@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar } from "@/components/shared";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ProductState";
 import {
   Bell,
   Check,
@@ -152,12 +153,12 @@ export default function ChallengeInbox() {
 
   if (!discordSession || !discordPlayer) {
     return (
-      <div className="m8-panel rounded-2xl p-10 text-center max-w-xl mx-auto">
-        <Bell size={34} className="text-[#697181] mx-auto mb-3" />
-        <h2 className="font-display text-2xl font-bold">Challenge Inbox</h2>
-        <p className="text-sm text-muted-foreground mt-2">
-          Login with Discord to see your challenges and notifications.
-        </p>
+      <div className="max-w-xl mx-auto">
+        <EmptyState
+          icon={Bell}
+          title="Challenge Inbox"
+          description="Login with Discord to see your challenges, ReChall Series and notifications."
+        />
       </div>
     );
   }
@@ -181,6 +182,7 @@ export default function ChallengeInbox() {
           ].map(([key, label]) => (
             <Button
               key={key}
+              aria-pressed={tab === key}
               onClick={() => setTab(key)}
               variant="ghost"
               className={`rounded-xl border ${
@@ -196,13 +198,15 @@ export default function ChallengeInbox() {
       </section>
 
       {visible.length === 0 ? (
-        <div className="m8-panel rounded-2xl p-10 text-center">
-          <ShieldCheck size={34} className="text-[#596170] mx-auto mb-3" />
-          <div className="font-display font-bold">Nothing here</div>
-          <div className="text-sm text-muted-foreground mt-1">
-            {tab === "action" ? "You have no challenge actions waiting." : "No challenges in this section."}
-          </div>
-        </div>
+        <EmptyState
+          icon={ShieldCheck}
+          title={tab === "action" ? "You're all caught up" : tab === "active" ? "No active challenges" : "No challenge history yet"}
+          description={tab === "action"
+            ? "You have no challenge actions waiting for you."
+            : tab === "active"
+              ? "Accepted challs and open ReChall Series will appear here."
+              : "Completed and closed challenges will appear here."}
+        />
       ) : (
         <div className="space-y-3">
           {visible.map(({ challenge, isChallenger, opponentId, opponent, needsAction, series, roundCount }) => {
