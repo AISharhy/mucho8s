@@ -195,7 +195,12 @@ const PLATFORM_COLUMNS: Record<string, string> = {
 
 const SUPPORTED_MATCH_PLATFORMS = new Set(["paypal", "revolut"]);
 
-const syncMoneyPairings = async (supabase: any, report: any, verifiedAt: string) => {
+const syncMoneyPairings = async (
+  supabase: any,
+  report: any,
+  verifiedAt: string,
+  suppressNotifications = false,
+) => {
   const raw = Array.isArray(report.pairings) ? report.pairings : [];
   const pairings = raw
     .map((pair: any) => ({
@@ -259,11 +264,11 @@ const syncMoneyPairings = async (supabase: any, report: any, verifiedAt: string)
       payout_dispute_note: null,
       payout_dispute_resolved_at: null,
       payout_dispute_resolution: null,
-      last_event: "match_pairing_verified",
-      challenger_seen_status: null,
-      challenged_seen_status: null,
-      challenger_seen_event: null,
-      challenged_seen_event: null,
+      last_event: suppressNotifications ? "admin_sync" : "match_pairing_verified",
+      challenger_seen_status: suppressNotifications ? "completed" : null,
+      challenged_seen_status: suppressNotifications ? "completed" : null,
+      challenger_seen_event: suppressNotifications ? "admin_sync" : null,
+      challenged_seen_event: suppressNotifications ? "admin_sync" : null,
     };
 
     const { data: existing, error: existingError } = await supabase
@@ -415,7 +420,12 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
 
     if (updateError) throw updateError;
 
-    await syncMoneyPairings(supabase, report, verifiedAt);
+    await syncMoneyPairings(
+      supabase,
+      report,
+      verifiedAt,
+      verifierAccountId === null && verifierPlayerId === null,
+    );
   }
 
   const { data: completed, error: completeError } = await supabase
