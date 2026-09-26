@@ -83,7 +83,6 @@ export default function PlayerProfile() {
   const [links, setLinks] = useState({
     paypalUrl: "",
     revolutUrl: "",
-    cmgUrl: "",
   });
   const [savingLinks, setSavingLinks] = useState(false);
   const [sendingChallenge, setSendingChallenge] = useState("");
@@ -94,9 +93,8 @@ export default function PlayerProfile() {
     setLinks({
       paypalUrl: publicProfile.paypalUrl || "",
       revolutUrl: publicProfile.revolutUrl || "",
-      cmgUrl: publicProfile.cmgUrl || "",
     });
-  }, [id, publicProfile.paypalUrl, publicProfile.revolutUrl, publicProfile.cmgUrl]);
+  }, [id, publicProfile.paypalUrl, publicProfile.revolutUrl]);
 
   const playerMatches = useMemo(() => {
     if (!player) return [];
@@ -424,7 +422,6 @@ export default function PlayerProfile() {
   const challengeLinks = [
     { key: "paypal", label: "PayPal", url: publicProfile.paypalUrl, className: "bg-[#0070BA] hover:bg-[#0a7bc7]", icon: CreditCard },
     { key: "revolut", label: "Revolut", url: publicProfile.revolutUrl, className: "bg-white hover:bg-[#eceef2] text-black", icon: CreditCard },
-    { key: "cmg", label: "CMG", url: publicProfile.cmgUrl, className: "bg-magma hover:bg-[#ff3c4c]", icon: Swords },
   ].filter((item) => item.url);
 
   const saveLinks = async () => {
@@ -1098,50 +1095,45 @@ export default function PlayerProfile() {
         <div className="m8-panel rounded-2xl p-4 sm:p-5 order-4">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
-              <div className="brand-kicker mb-1">Challenge</div>
-              <h3 className="font-display font-bold text-lg">Your Challenge Links</h3>
+              <div className="brand-kicker mb-1">Payments</div>
+              <h3 className="font-display font-bold text-lg">Payment Accounts</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Add the pages other players should use when they press CHALL ME.
+                Add your PayPal and/or Revolut username. A full link also works.
               </p>
             </div>
             <Link2 size={18} className="text-[#697181] shrink-0 mt-1" />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-            <div>
-              <Label className="text-xs text-muted-foreground">PayPal link</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="rounded-xl bg-[#0F1218] border border-[#222834] p-3">
+              <Label className="text-xs font-semibold">PayPal</Label>
               <Input
                 value={links.paypalUrl}
                 onChange={(e) => setLinks((prev) => ({ ...prev, paypalUrl: e.target.value }))}
-                placeholder="https://paypal.me/..."
-                className="mt-1 bg-[#0F1218] border-[#222834]"
+                placeholder="username or paypal.me/username"
+                className="mt-2 bg-[#151923] border-[#2A303B]"
                 data-testid="my-paypal-link"
               />
+              <div className="text-[10px] text-muted-foreground mt-2">
+                You can paste only your PayPal.Me username.
+              </div>
             </div>
 
-            <div>
-              <Label className="text-xs text-muted-foreground">Revolut link</Label>
+            <div className="rounded-xl bg-[#0F1218] border border-[#222834] p-3">
+              <Label className="text-xs font-semibold">Revolut</Label>
               <Input
                 value={links.revolutUrl}
                 onChange={(e) => setLinks((prev) => ({ ...prev, revolutUrl: e.target.value }))}
-                placeholder="https://revolut.me/..."
-                className="mt-1 bg-[#0F1218] border-[#222834]"
+                placeholder="username or revolut.me/username"
+                className="mt-2 bg-[#151923] border-[#2A303B]"
                 data-testid="my-revolut-link"
               />
+              <div className="text-[10px] text-muted-foreground mt-2">
+                You can paste only your Revolut.me username.
+              </div>
             </div>
 
-            <div>
-              <Label className="text-xs text-muted-foreground">CMG profile / challenge link</Label>
-              <Input
-                value={links.cmgUrl}
-                onChange={(e) => setLinks((prev) => ({ ...prev, cmgUrl: e.target.value }))}
-                placeholder="https://..."
-                className="mt-1 bg-[#0F1218] border-[#222834]"
-                data-testid="my-cmg-link"
-              />
-            </div>
-
-            <div className="lg:col-span-3 flex justify-end">
+            <div className="sm:col-span-2 flex justify-end">
               <Button
                 onClick={saveLinks}
                 disabled={savingLinks}
@@ -1149,7 +1141,7 @@ export default function PlayerProfile() {
                 data-testid="save-challenge-links"
               >
                 <Save size={15} className="mr-1.5" />
-                {savingLinks ? "Saving..." : "Save Challenge Links"}
+                {savingLinks ? "Saving..." : "Save Payment Accounts"}
               </Button>
             </div>
           </div>
