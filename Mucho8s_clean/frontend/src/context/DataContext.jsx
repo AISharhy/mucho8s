@@ -781,6 +781,39 @@ export const DataProvider = ({ children }) => {
     return data.challenges;
   }, [adminChallengeRequest, discordAccount, refreshChallenges]);
 
+  const syncMatchMoneyPairings = useCallback(async (match, { silent = true } = {}) => {
+    if (!match?.id || STORAGE_MODE !== "supabase" || !admin?.sessionToken) return true;
+
+    const data = await adminChallengeRequest({
+      action: "admin-sync-match-pairings",
+      matchId: match.id,
+      winner: match.winner,
+      date: match.date,
+      seasonNumber: match.season || competitionData?.current?.season_number || 1,
+      pairings: Array.isArray(match.pairings) ? match.pairings : [],
+    }, { silent });
+
+    if (!data?.ok) return false;
+
+    await Promise.all([
+      fetchPublicChallenges(),
+      fetchDashboardData(),
+      refreshAdminChallengeAlerts(),
+      discordAccount?.player_id ? refreshChallenges() : Promise.resolve(),
+    ]);
+
+    return true;
+  }, [
+    admin?.sessionToken,
+    adminChallengeRequest,
+    competitionData,
+    discordAccount?.player_id,
+    fetchDashboardData,
+    fetchPublicChallenges,
+    refreshAdminChallengeAlerts,
+    refreshChallenges,
+  ]);
+
   const adminUpdateChallenge = useCallback(async (id, updates) => {
     const data = await adminChallengeRequest({ action: "admin-update", id, ...updates });
     if (!data?.challenge) return null;
@@ -1172,7 +1205,7 @@ export const DataProvider = ({ children }) => {
     const ok = await persistWholeState([...players, player], matches);
     if (ok) void logAdminAction("player.add", "player", player.id, { name: player.name, elo: player.currentElo });
     return ok;
-  }, [players, matches, backendWrite, persistWholeState, logAdminAction]);
+  }, [players, matches, backendWrite, persistWholeState, logAdminAction, syncMatchMoneyPairings]);
 
   const removePlayer = useCallback(async (id) => {
     if (STORAGE_MODE === "backend") return backendWrite(`/players/${id}`, { method: "DELETE" });
@@ -1180,7 +1213,7 @@ export const DataProvider = ({ children }) => {
     const ok = await persistWholeState(players.filter((p) => p.id !== id), matches);
     if (ok) void logAdminAction("player.delete", "player", id, { name: removed?.name || "" });
     return ok;
-  }, [players, matches, backendWrite, persistWholeState, logAdminAction]);
+  }, [players, matches, backendWrite, persistWholeState, logAdminAction, syncMatchMoneyPairings]);
 
   const editElo = useCallback(async (id, currentElo) => {
     if (STORAGE_MODE === "backend") {
@@ -1296,9 +1329,20 @@ export const DataProvider = ({ children }) => {
       }, { silent: true });
     }
 
-    if (ok) void logAdminAction("match.add", "match", match.id, { game: match.game, mode: match.mode, winner: match.winner });
+    if (ok) {
+      const moneyOk = await syncMatchMoneyPairings(match, { silent: false });
+      if (!moneyOk) {
+        toast.error("Match saved, but Money Chall statistics could not sync");
+      }
+      void logAdminAction("match.add", "match", match.id, {
+        game: match.game,
+        mode: match.mode,
+        winner: match.winner,
+        moneyPairings: match.pairings?.length || 0,
+      });
+    }
     return ok;
-  }, [players, matches, backendWrite, persistWholeState, discordRequest, logAdminAction, competitionData, dashboardData]);
+  }, [players, matches, backendWrite, persistWholeState, discordRequest, logAdminAction, competitionData, dashboardData, syncMatchMoneyPairings]);
 
   const editMatch = useCallback(async (id, data) => {
     if (STORAGE_MODE === "backend") {
@@ -1325,7 +1369,18 @@ export const DataProvider = ({ children }) => {
     const nextMatches = matches.map((m) => (m.id === id ? nextMatch : m));
     recomputeRecent(byId, nextMatches, new Set([...old.teamA, ...old.teamB, ...teamA, ...teamB]));
     const ok = await persistWholeState(Object.values(byId), nextMatches);
-    if (ok) void logAdminAction("match.update", "match", id, { winner: nextMatch.winner, game: nextMatch.game, mode: nextMatch.mode });
+    if (ok) {
+      const moneyOk = await syncMatchMoneyPairings(nextMatch, { silent: false });
+      if (!moneyOk) {
+        toast.error("Match updated, but Money Chall statistics could not sync");
+      }
+      void logAdminAction("match.update", "match", id, {
+        winner: nextMatch.winner,
+        game: nextMatch.game,
+        mode: nextMatch.mode,
+        moneyPairings: nextMatch.pairings?.length || 0,
+      });
+    }
     return ok;
   }, [players, matches, backendWrite, persistWholeState, logAdminAction]);
 
@@ -1341,7 +1396,10 @@ export const DataProvider = ({ children }) => {
     const nextMatches = matches.filter((m) => m.id !== id);
     recomputeRecent(byId, nextMatches, new Set([...old.teamA, ...old.teamB]));
     const ok = await persistWholeState(Object.values(byId), nextMatches);
-    if (ok) void logAdminAction("match.delete", "match", id, { game: old.game, mode: old.mode });
+    if (ok) {
+      await syncMatchMoneyPairings({ ...old, pairings: [] }, { silent: true });
+      void logAdminAction("match.delete", "match", id, { game: old.game, mode: old.mode });
+    }
     return ok;
   }, [players, matches, backendWrite, persistWholeState, logAdminAction]);
 
@@ -1379,6 +1437,7 @@ export const DataProvider = ({ children }) => {
     cancelChallenge,
     listAdminChallenges,
     adminCreateChallengePairings,
+    syncMatchMoneyPairings,
     adminUpdateChallenge,
     adminDeleteChallenge,
     listAdminAudit,
