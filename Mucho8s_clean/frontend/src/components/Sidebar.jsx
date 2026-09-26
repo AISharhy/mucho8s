@@ -5,6 +5,7 @@ import {
   LayoutDashboard, Users, Swords, Gamepad2, Trophy, Shield, Menu, X, MessageCircle, LogOut, UserCircle, Bell, BarChart3, Medal,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
+import { tierOf } from "@/lib/elo";
 
 const MAIN_NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, testid: "nav-dashboard-link" },
@@ -98,6 +99,7 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
 
   const discordName = discordPlayer?.name || discordAccount?.display_name || discordAccount?.discord_username || "Discord";
   const linked = Boolean(discordPlayer);
+  const discordRank = linked ? tierOf(discordPlayer.currentElo) : null;
   const myProfileItem = linked
     ? {
         to: `/players/${discordPlayer.id}`,
@@ -152,7 +154,7 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
                   {discordName}
                 </div>
                 <div className={`text-[10px] truncate ${linked ? "text-emerald-400" : "text-[#D5A33A]"}`}>
-                  {linked ? `Linked · ${discordPlayer.currentElo} Elo` : "Waiting for player link"}
+                  {linked ? `${discordRank?.name || "Rank"} · ${discordPlayer.currentElo} Elo` : "Waiting for player link"}
                 </div>
               </div>
               <button
