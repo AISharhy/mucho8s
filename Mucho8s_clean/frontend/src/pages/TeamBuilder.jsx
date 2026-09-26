@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { RecordMatchDialog } from "@/components/RecordMatchDialog";
 import { computeContextStats, playerForContext } from "@/lib/elo";
 import { GAMES } from "@/lib/demoData";
+import { detectLobbyBounties } from "@/lib/bountyAchievements";
 import {
   analyzeManualTeams,
   duoChemistry,
@@ -25,6 +26,7 @@ import {
   Zap,
   MessageCircle,
   Trophy,
+  Target,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -192,6 +194,11 @@ export default function TeamBuilder() {
   );
 
   const result = mode === "manual" ? manualResult : autoResult;
+
+  const matchBounties = useMemo(
+    () => result ? detectLobbyBounties(result.teamA, result.teamB, contextMatches) : [],
+    [result, contextMatches]
+  );
 
   const chemistryPreview = useMemo(() => {
     const pool = mode === "manual"
@@ -837,6 +844,56 @@ export default function TeamBuilder() {
                   game={game}
                   matchMode={matchMode}
                 />
+              </div>
+
+              <div className="card-surface rounded-2xl p-5" data-testid="match-bounties">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div>
+                    <div className="brand-kicker mb-1">Match Objectives</div>
+                    <h3 className="font-display text-xl font-bold">Match Bounties</h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Generated from real streaks, duo history, underdog status and rivalries. Maximum 3 active objectives.
+                    </p>
+                  </div>
+                  <Target size={20} className="text-[#D5A33A]" />
+                </div>
+
+                {matchBounties.length === 0 ? (
+                  <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-8 text-center text-sm text-muted-foreground">
+                    No special bounty for this lobby. The match still counts normally.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {matchBounties.map((bounty) => (
+                      <div
+                        key={bounty.key}
+                        className="rounded-2xl bg-gradient-to-b from-[#171A21] to-[#0F1218] border border-[#D5A33A]/20 p-4"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-[#D5A33A]/10 border border-[#D5A33A]/20 flex items-center justify-center">
+                            {bounty.type === "streak"
+                              ? <Flame size={18} className="text-orange-400" />
+                              : bounty.type === "duo"
+                                ? <UsersRound size={18} className="text-[#65D5D3]" />
+                                : bounty.type === "rivalry"
+                                  ? <Swords size={18} className="text-magma" />
+                                  : <Trophy size={18} className="text-[#D5A33A]" />}
+                          </div>
+                          <span className="font-mono text-sm font-black text-[#D5A33A]">
+                            +{bounty.reward}
+                          </span>
+                        </div>
+                        <div className="font-display font-bold mt-3">{bounty.title}</div>
+                        <div className="text-xs text-muted-foreground mt-1">{bounty.detail}</div>
+                        <div className="text-[9px] uppercase tracking-widest text-[#697181] mt-3">
+                          {bounty.hunterSide === "BOTH"
+                            ? "Both sides eligible"
+                            : `Team ${bounty.hunterSide} objective`}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="card-surface rounded-2xl p-5">
