@@ -14,19 +14,32 @@ import { GAMES } from "@/lib/demoData";
 import { toast } from "sonner";
 
 const TeamList = ({ ids, playerMap, eloChanges, color, mvpId }) => (
-  <div className="flex-1 space-y-1">
+  <div className="flex-1 space-y-2">
     {ids.map((id) => {
       const p = playerMap[id];
       if (!p) return null;
-      const delta = eloChanges?.[id] ?? 0;
+      const delta = Number(eloChanges?.[id] ?? 0);
+      const isMvp = id === mvpId;
+
       return (
-        <div key={id} className="flex items-center gap-2 text-sm">
-          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
-          <span className="truncate flex items-center gap-1">
-            {p.name}
-            {id === mvpId && <Crown size={12} className="text-gold" />}
-          </span>
-          <span className={`ml-auto font-mono text-xs ${delta >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+        <div key={id} className="flex items-center gap-2.5 min-w-0">
+          <PlayerAvatar name={p.name} elo={p.currentElo} size={30} />
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold truncate flex items-center gap-1.5">
+              <span className="truncate">{p.name}</span>
+              {isMvp && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#D5A33A]/10 border border-[#D5A33A]/20 text-[#D5A33A] text-[8px] font-black uppercase tracking-wider shrink-0">
+                  <Crown size={9} /> MVP
+                </span>
+              )}
+            </div>
+            <div className="text-[9px] uppercase tracking-widest text-[#596170] mt-0.5">{p.currentElo} Elo</div>
+          </div>
+          <span
+            className={`min-w-[52px] h-7 px-2 rounded-lg border inline-flex items-center justify-center font-mono text-[11px] font-black ${delta >= 0
+              ? "text-emerald-400 bg-emerald-500/[0.06] border-emerald-500/15"
+              : "text-red-400 bg-red-500/[0.06] border-red-500/15"}`}
+          >
             {delta >= 0 ? "+" : ""}{delta}
           </span>
         </div>
@@ -118,7 +131,13 @@ export default function Matches() {
           <div className="m8-panel rounded-2xl p-16 text-center text-muted-foreground">No matches found.</div>
         )}
         {filtered.map((m) => (
-          <div key={m.id} className="m8-panel rounded-2xl p-5 animate-fade-up" data-testid={`match-row-${m.id}`}>
+          <div key={m.id} className="m8-panel rounded-[22px] p-5 animate-fade-up overflow-hidden relative" data-testid={`match-row-${m.id}`}>
+            <div
+              className="absolute inset-x-0 top-0 h-[2px]"
+              style={{ background: m.winner === "A"
+                ? "linear-gradient(90deg, transparent, #FF2A3B, transparent)"
+                : "linear-gradient(90deg, transparent, #D5A33A, transparent)" }}
+            />
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div className="flex items-center gap-2 text-sm">
                 <span className="font-mono text-muted-foreground">{new Date(m.date).toLocaleString()}</span>
@@ -127,10 +146,11 @@ export default function Matches() {
               </div>
               <div className="flex items-center gap-2 flex-wrap justify-end">
                 <span
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide border"
                   style={{
-                    background: m.winner === "A" ? "rgba(255,42,59,0.15)" : "rgba(213,163,58,0.12)",
-                    color: m.winner === "A" ? "#FF2A3B" : "#D5A33A",
+                    background: m.winner === "A" ? "rgba(255,42,59,0.10)" : "rgba(213,163,58,0.10)",
+                    color: m.winner === "A" ? "#FF5361" : "#E6B94E",
+                    borderColor: m.winner === "A" ? "rgba(255,42,59,0.22)" : "rgba(213,163,58,0.22)",
                   }}
                 >
                   <Trophy size={13} />
@@ -192,14 +212,40 @@ export default function Matches() {
                 )}
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row items-stretch gap-3 sm:gap-4">
-              <div className="flex-1 p-3 rounded-lg" style={{ background: m.winner === "A" ? "rgba(255,42,59,0.06)" : "transparent", border: "1px solid #1C202E" }}>
-                <div className="text-xs font-bold uppercase tracking-widest text-magma mb-2">Alpha</div>
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_110px_1fr] items-stretch gap-3 sm:gap-4">
+              <div
+                className="rounded-xl p-4 border"
+                style={{
+                  background: m.winner === "A" ? "rgba(255,42,59,0.055)" : "rgba(15,18,24,.72)",
+                  borderColor: m.winner === "A" ? "rgba(255,42,59,.20)" : "#1C202E",
+                }}
+              >
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="text-xs font-black uppercase tracking-widest text-magma">Alpha</div>
+                  {m.winner === "A" && <span className="text-[9px] uppercase tracking-widest text-emerald-400 font-black">Winner</span>}
+                </div>
                 <TeamList ids={Array.isArray(m.teamA) ? m.teamA : []} playerMap={safePlayerMap} eloChanges={m.eloChanges} color="#FF2A3B" mvpId={m.mvpId} />
               </div>
-              <div className="flex items-center justify-center font-display font-bold text-muted-foreground py-1 sm:py-0">VS</div>
-              <div className="flex-1 p-3 rounded-lg" style={{ background: m.winner === "B" ? "rgba(213,163,58,0.05)" : "transparent", border: "1px solid #1C202E" }}>
-                <div className="text-xs font-bold uppercase tracking-widest text-gold mb-2">Bravo</div>
+
+              <div className="m8-match-score flex flex-col items-center justify-center rounded-xl border border-[#222A35] bg-[#0A0D12] px-3 py-4">
+                <div className="text-[9px] uppercase tracking-[0.18em] text-[#596170]">Final</div>
+                <div className="font-display text-3xl font-black tracking-[-0.05em] mt-1">
+                  {Number(m.scoreA || 0)}<span className="text-[#4E5665] mx-1">-</span>{Number(m.scoreB || 0)}
+                </div>
+                <div className="text-[9px] uppercase tracking-wider text-[#697181] mt-1 text-center">{m.mode || "Match"}</div>
+              </div>
+
+              <div
+                className="rounded-xl p-4 border"
+                style={{
+                  background: m.winner === "B" ? "rgba(213,163,58,0.05)" : "rgba(15,18,24,.72)",
+                  borderColor: m.winner === "B" ? "rgba(213,163,58,.20)" : "#1C202E",
+                }}
+              >
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="text-xs font-black uppercase tracking-widest text-gold">Bravo</div>
+                  {m.winner === "B" && <span className="text-[9px] uppercase tracking-widest text-emerald-400 font-black">Winner</span>}
+                </div>
                 <TeamList ids={Array.isArray(m.teamB) ? m.teamB : []} playerMap={safePlayerMap} eloChanges={m.eloChanges} color="#D5A33A" mvpId={m.mvpId} />
               </div>
             </div>
