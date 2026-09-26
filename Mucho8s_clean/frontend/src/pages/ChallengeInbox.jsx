@@ -70,26 +70,15 @@ export default function ChallengeInbox() {
           ? latest.challenged_player_id
           : latest.challenger_player_id;
         const opponent = playerMap[opponentId];
-        const iReceive = Boolean(
-          series?.settlement_winner_player_id === discordAccount.player_id
-        );
-
         const roundNeedsAction =
           (latest.status === "pending" && !isChallenger) ||
-          (latest.status === "result_pending" && latest.reporter_account_id !== discordAccount.id);
-
-        const settlementNeedsAction = Boolean(
-          series?.status === "closed" &&
-          Number(series?.settlement_amount_cents || 0) > 0 &&
-          (
-            (!iReceive && !series?.payment_sent_at) ||
-            (iReceive && series?.payment_sent_at && !series?.payment_received_at)
-          )
-        );
+          (latest.status === "result_pending" && latest.reporter_account_id !== discordAccount.id) ||
+          (latest.status === "completed" && !latest.payment_received_at);
 
         const active = Boolean(
           series?.status === "open" ||
-          (series?.status === "closed" && !series?.payment_received_at)
+          ["pending", "accepted", "result_pending", "disputed"].includes(latest.status) ||
+          (latest.status === "completed" && !latest.payment_received_at)
         );
 
         result.push({
@@ -97,7 +86,7 @@ export default function ChallengeInbox() {
           isChallenger,
           opponentId,
           opponent,
-          needsAction: roundNeedsAction || settlementNeedsAction,
+          needsAction: roundNeedsAction,
           active,
           series,
           roundCount: Number(series?.round_count || group.length),
@@ -213,34 +202,15 @@ export default function ChallengeInbox() {
             const completed = challenge.status === "completed";
             const won = completed && challenge.reported_winner_player_id === discordPlayer.id;
             const lost = completed && challenge.reported_winner_player_id && !won;
-            const iReceiveSeries = Boolean(series?.settlement_winner_player_id === discordPlayer.id);
-            const payoutPending = series
-              ? Boolean(
-                  series.status === "closed" &&
-                  Number(series.settlement_amount_cents || 0) > 0 &&
-                  !series.payment_received_at
-                )
-              : completed && !challenge.payment_received_at;
-            const payoutDisputed = series
-              ? Boolean(series.payout_disputed_at && !series.payout_dispute_resolved_at)
-              : Boolean(challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at);
+            const payoutPending = completed && !challenge.payment_received_at;
+            const payoutDisputed = Boolean(
+              challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at
+            );
             const payoutLabel = payoutDisputed
               ? "DISPUTA APERTA"
-              : series
-                ? iReceiveSeries
-                  ? series.payment_sent_at
-                    ? "CONFERMA RICEZIONE"
-                    : "IN ATTESA PAGAMENTO"
-                  : series.payment_sent_at
-                    ? "PAGAMENTO INVIATO"
-                    : "SALDO DA PAGARE"
-                : won
-                  ? challenge.payment_sent_at
-                    ? "CONFERMA RICEZIONE"
-                    : "IN ATTESA PAGAMENTO"
-                  : challenge.payment_sent_at
-                    ? "PAGAMENTO INVIATO"
-                    : "DA PAGARE";
+              : won
+                ? "RICEVUTO O DISPUTA"
+                : "DA PAGARE";
 
             return (
               <div
@@ -265,11 +235,9 @@ export default function ChallengeInbox() {
                             CHALL SERIES · {roundCount} {roundCount === 1 ? "match" : "matches"} ·{" "}
                             {series.status === "open"
                               ? Number(series.current_amount_cents || 0) === 0
-                                ? "da regolare €0"
-                                : "da regolare " + new Intl.NumberFormat("it-IT", { style: "currency", currency: series.currency || "EUR" }).format(Number(series.current_amount_cents || 0) / 100) + " a " + (playerMap[series.current_winner_player_id]?.name || "Player")
-                              : series.status === "settled"
-                                ? "chiusa"
-                                : "pagamento finale " + new Intl.NumberFormat("it-IT", { style: "currency", currency: series.currency || "EUR" }).format(Number(series.settlement_amount_cents || 0) / 100)}
+                                ? "net €0"
+                                : "net +" + new Intl.NumberFormat("it-IT", { style: "currency", currency: series.currency || "EUR" }).format(Number(series.current_amount_cents || 0) / 100) + " " + (playerMap[series.current_winner_player_id]?.name || "Player")
+                              : "ended"}
                           </>
                         ) : (
                           <>
@@ -298,7 +266,7 @@ export default function ChallengeInbox() {
                     )}
                     {series?.status === "settled" && (
                       <span className="h-10 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] font-bold inline-flex items-center">
-                        SERIES SETTLED
+                        SERIES ENDED
                       </span>
                     )}
                     {payoutPending && (
