@@ -596,7 +596,7 @@ export default function PlayerProfile() {
         </div>
       )}
 
-      {(!isOwnProfile) && (
+      {(!isOwnProfile || profileTab === "overview") && (
       <div className="m8-panel rounded-2xl p-4 sm:p-5 order-4" data-testid="challenge-profile-stats">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
@@ -651,7 +651,7 @@ export default function PlayerProfile() {
       </div>
       )}
 
-      {!isOwnProfile && (
+      {(!isOwnProfile || profileTab === "overview") && (
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 order-5" data-testid="challenge-insights">
         <div className="m8-panel rounded-2xl p-5">
           <div className="brand-kicker mb-1">Momentum</div>
@@ -729,7 +729,7 @@ export default function PlayerProfile() {
       </div>
       )}
 
-      {!isOwnProfile && (
+      {(!isOwnProfile || profileTab === "overview") && (
       <div className="m8-panel rounded-2xl p-4 sm:p-5 order-7" data-testid="bounty-achievements">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-5">
           <div>
@@ -840,7 +840,7 @@ export default function PlayerProfile() {
       </div>
       )}
 
-      {!isOwnProfile && (
+      {(!isOwnProfile || profileTab === "overview") && (
       <div className="m8-panel rounded-2xl p-4 sm:p-5 order-6">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
@@ -1130,7 +1130,7 @@ export default function PlayerProfile() {
         </div>
       )}
 
-      {!isOwnProfile && (
+      {(!isOwnProfile || profileTab === "overview") && (
       <div className="m8-panel rounded-2xl p-4 sm:p-5 order-8">
         <div className="brand-kicker mb-1">Progression</div>
         <h3 className="font-display font-black text-xl tracking-[-0.02em] mb-4">Elo History</h3>
