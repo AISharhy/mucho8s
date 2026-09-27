@@ -10,11 +10,8 @@ import {
   Flame,
   Scale,
   CheckCircle2,
-  UsersRound,
-  Landmark,
-  Medal,
-  Clock3,
 } from "lucide-react";
+import ModeBadge from "@/components/ModeBadge";
 
 const iconFor = (index) => {
   if (index >= 5) return Crown;
@@ -100,17 +97,16 @@ export default function RankGuide() {
   return (
     <div className="m8-page-stack">
       <section className="m8-panel rounded-[22px] p-5 sm:p-6">
-        <div className="brand-kicker mb-1">Guide</div>
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
+            <div className="brand-kicker mb-1">Guide</div>
             <h1 className="font-display text-3xl sm:text-4xl font-black tracking-[-0.04em]">
-              Competitive rules
+              Mucho at a glance
             </h1>
-            <p className="text-sm text-[#7F8795] mt-2 max-w-2xl">
-              Mucho modes, Elo, Trophy families, streak rules, team balance and divisions.
+            <p className="text-sm text-[#7F8795] mt-2">
+              Modes, Elo, trophies and ranks. Nothing else you need to memorize.
             </p>
           </div>
-
           <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-[#697181]">
             <CheckCircle2 size={14} className="text-emerald-400" />
             Verified results only
@@ -119,243 +115,92 @@ export default function RankGuide() {
       </section>
 
       <section>
-        <div className="flex items-end justify-between gap-3 mb-2">
-          <div>
-            <div className="brand-kicker mb-1">Play ecosystem</div>
-            <h2 className="font-display text-xl font-black">Mucho modes</h2>
-          </div>
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-            One platform · four identities
-          </div>
-        </div>
-
-        <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+        <div className="brand-kicker mb-2">Modes</div>
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-2.5">
           {[
-            {
-              title: "Mucho8s",
-              status: "Live",
-              text: "Team money matches with Auto Balance, Captain Draft or Manual teams.",
-              icon: UsersRound,
-              color: "#FF2A3B",
-            },
-            {
-              title: "Mucho1v1",
-              status: "Live",
-              text: "Direct money challenge against one player using linked PayPal or Revolut.",
-              icon: Landmark,
-              color: "#34D399",
-            },
-            {
-              title: "MuchoRanked",
-              status: "Coming Soon",
-              text: "Automatic ranked queue, BO1 matchmaking and map/mode voting.",
-              icon: Medal,
-              color: "#4F8CFF",
-            },
-            {
-              title: "MuchoTourney",
-              status: "Coming Soon",
-              text: "Tournament brackets, team registration, progression and event history.",
-              icon: Trophy,
-              color: "#D5A33A",
-            },
-          ].map((mode) => {
-            const Icon = mode.icon;
-            const coming = mode.status !== "Live";
-            return (
-              <div
-                key={mode.title}
-                className="rounded-2xl border bg-[#0F1218] p-4 relative overflow-hidden"
-                style={{ borderColor: mode.color + "35" }}
-              >
-                <div
-                  className="absolute inset-x-0 top-0 h-px"
-                  style={{
-                    background: `linear-gradient(90deg, transparent, ${mode.color}, transparent)`,
-                  }}
-                />
-                <div className="flex items-start justify-between gap-3">
-                  <div
-                    className="w-10 h-10 rounded-xl border flex items-center justify-center"
-                    style={{
-                      color: mode.color,
-                      borderColor: mode.color + "45",
-                      background: mode.color + "0D",
-                    }}
-                  >
-                    <Icon size={18} />
-                  </div>
-                  <span
-                    className="h-6 px-2 rounded-lg border inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider"
-                    style={{
-                      color: mode.color,
-                      borderColor: mode.color + "35",
-                      background: mode.color + "0D",
-                    }}
-                  >
-                    {coming && <Clock3 size={10} />}
-                    {mode.status}
-                  </span>
-                </div>
-
-                <div className="font-display font-black text-lg mt-3">
-                  {mode.title}
-                </div>
-                <div className="text-[11px] text-muted-foreground mt-1.5 leading-5">
-                  {mode.text}
-                </div>
+            ["mucho8s", "Live", "Team money matches"],
+            ["mucho1v1", "Live", "Direct money 1v1"],
+            ["muchoranked", "Soon", "Ranked queue · BO1"],
+            ["muchotourney", "Soon", "Tournament events"],
+          ].map(([mode, status, text]) => (
+            <div key={mode} className="rounded-xl border border-[#222834] bg-[#0F1218] p-3.5">
+              <div className="flex items-center justify-between gap-2">
+                <ModeBadge mode={mode} compact />
+                <span className="text-[8px] uppercase tracking-widest text-[#697181]">
+                  {status}
+                </span>
               </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="m8-panel rounded-[22px] p-5 sm:p-6">
-        <div className="brand-kicker mb-1">Awards system</div>
-        <h2 className="font-display text-xl font-black">Trophy families</h2>
-        <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
-          Every mode has its own Trophy identity. Awards never mix between modes.
-        </p>
-
-        <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3 mt-4">
-          {[
-            ["Trophy8s", "#FF2A3B", "Mucho8s awards: MVP, MERDA and Mucho8s achievements."],
-            ["Trophy1v1", "#34D399", "Reserved for achievements earned only in Mucho1v1."],
-            ["TrophyRanked", "#4F8CFF", "Reserved for MuchoRanked milestones and competitive progression."],
-            ["TrophyTourney", "#D5A33A", "Reserved for tournament achievements and event results."],
-          ].map(([name, color, text]) => (
-            <div
-              key={name}
-              className="rounded-xl border bg-[#0F1218] p-4"
-              style={{ borderColor: color + "35" }}
-            >
-              <div className="flex items-center gap-2">
-                <Trophy size={16} style={{ color }} />
-                <div className="font-display font-black" style={{ color }}>
-                  {name}
-                </div>
-              </div>
-              <div className="text-[11px] text-muted-foreground mt-2 leading-5">
-                {text}
-              </div>
+              <div className="text-[11px] text-muted-foreground mt-2">{text}</div>
             </div>
           ))}
-        </div>
-
-        <div className="mt-3 rounded-xl border border-[#222834] bg-[#0F1218] px-4 py-3 text-[11px] text-muted-foreground">
-          The profile header shows the four Trophy-family counters in the same order:
-          <span className="text-magma font-black"> red</span> ·
-          <span className="text-emerald-400 font-black"> green</span> ·
-          <span className="text-[#4F8CFF] font-black"> blue</span> ·
-          <span className="text-[#D5A33A] font-black"> yellow</span>.
-          MERDA remains a separate Mucho8s penalty indicator.
         </div>
       </section>
 
       <section>
-        <div className="brand-kicker mb-2">Core rules · Mucho8s</div>
-        <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+        <div className="brand-kicker mb-2">Mucho8s rules</div>
+        <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-2.5">
           <Rule
             icon={Swords}
-            title="Match result"
+            title="Verified result"
             value="+25 / -25"
-            text="Every verified team result starts at +25 Elo for the winner and -25 Elo for the loser."
+            text="Base Elo change for a verified Mucho8s result."
             accent="text-magma"
           />
-
           <Rule
             icon={Scale}
-            title="Money value"
+            title="Money pairing"
             value="± stake"
-            text="The pairing amount is added to the Elo change. A €5 matchup becomes +30 / -30."
+            text="Pairing value is added to the Elo result. €5 means +30 / -30."
             accent="text-emerald-400"
           />
-
           <Rule
             icon={Trophy}
             title="MVP"
-            value="3 W = 🏆 +3"
-            text="Every 3 consecutive Mucho8s wins awards 1 MVP, adds it to Trophy8s and gives +3 Elo. At 6 wins you earn another one."
+            value="3W = +3 Elo"
+            text="Every 3-win milestone gives one Trophy8s MVP."
             accent="text-magma"
           />
-
           <Rule
             icon={Flame}
             title="MERDA"
-            value="3 L = 💩"
-            text="Every 3 consecutive Mucho8s losses adds 1 MERDA. Every 3-win milestone removes 1 active MERDA. MERDA keeps its own 💩 identity."
+            value="3L = 💩"
+            text="Every 3 losses adds one. Every 3-win milestone removes one."
             accent="text-[#C79A6B]"
           />
         </div>
-
-        <div className="mt-3 rounded-xl border border-[#222834] bg-[#0F1218] px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] text-muted-foreground">
-          <span><strong className="text-white">500 Elo</strong> minimum floor</span>
-          <span>No upset bonus</span>
-          <span>No manual MVP selection</span>
-          <span>Admin verification locks the result</span>
-        </div>
-
-        <div className="mt-3 rounded-xl border border-magma/20 bg-magma/[0.035] px-4 py-3">
-          <div className="flex items-start gap-3">
-            <Trophy size={15} className="text-magma mt-0.5 shrink-0" />
-            <div>
-              <div className="text-sm font-bold">Trophy unlock Elo</div>
-              <div className="text-[11px] text-muted-foreground mt-1 leading-5">
-                Every newly unlocked Trophy gives +3 Elo. Multiple Trophy unlocks in the same verified match stack with no cap:
-                2 unlocks = +6 Elo, 3 unlocks = +9 Elo, and so on. Each Trophy can award its unlock bonus only once.
-              </div>
-            </div>
-          </div>
-        </div>
       </section>
 
       <section className="m8-panel rounded-[22px] p-5 sm:p-6">
-        <div className="brand-kicker mb-1">Trophy8s</div>
-        <h2 className="font-display text-xl font-black">Mucho8s achievements</h2>
-        <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
-          These trophies are calculated only from verified Mucho8s history and money pairings.
-        </p>
-
-        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-2.5 mt-4">
-          {[
-            ["Run It Back", "Lose to a player, then beat them in the next Mucho8s meeting."],
-            ["Rivalry", "Meet the same player 8 times in Mucho8s."],
-            ["Nemesis", "Beat the same player 4 times in Mucho8s."],
-            ["Money Maker", "Win €50 through Mucho8s money pairings."],
-            ["High Roller", "Win a Mucho8s pairing worth at least €20."],
-            ["Clean Sweep", "Win 4 Mucho8s matches in a row."],
-          ].map(([name, text]) => (
-            <div key={name} className="rounded-xl border border-magma/15 bg-magma/[0.025] p-3">
-              <div className="font-display font-bold text-sm text-magma">{name}</div>
-              <div className="text-[11px] text-muted-foreground mt-1 leading-5">{text}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="m8-panel rounded-[22px] p-5 sm:p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-          <div className="max-w-xl">
-            <div className="brand-kicker mb-1">Auto Balance</div>
-            <h2 className="font-display text-xl font-black">Team strength</h2>
-            <p className="text-sm text-muted-foreground mt-2 leading-6">
-              Auto Balance only builds teams. It does not change Elo. Game and mode history
-              become more relevant as more contextual matches are played.
+        <div className="flex flex-col lg:flex-row lg:items-center gap-5">
+          <div className="min-w-0 flex-1">
+            <div className="brand-kicker mb-1">Trophies</div>
+            <h2 className="font-display text-xl font-black">One family per mode</h2>
+            <p className="text-sm text-muted-foreground mt-1.5">
+              A new Trophy unlock gives <strong className="text-white">+3 Elo</strong>.
+              Multiple unlocks in the same verified match stack with no cap, and each Trophy rewards Elo only once.
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 w-full lg:w-auto lg:min-w-[420px]">
+          <div className="flex flex-wrap gap-2 lg:justify-end">
             {[
-              ["60%", "Peak Elo"],
-              ["25%", "Current"],
-              ["15%", "Win Rate"],
-            ].map(([value, label]) => (
-              <div key={label} className="rounded-xl border border-[#222834] bg-[#0F1218] px-3 py-4 text-center">
-                <div className="font-mono font-black text-lg">{value}</div>
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1">{label}</div>
-              </div>
+              ["Trophy8s", "text-magma border-magma/25 bg-magma/[0.06]"],
+              ["Trophy1v1", "text-emerald-400 border-emerald-500/25 bg-emerald-500/[0.06]"],
+              ["TrophyRanked", "text-[#4F8CFF] border-[#4F8CFF]/25 bg-[#4F8CFF]/[0.06]"],
+              ["TrophyTourney", "text-[#D5A33A] border-[#D5A33A]/25 bg-[#D5A33A]/[0.06]"],
+            ].map(([name, classes]) => (
+              <span
+                key={name}
+                className={`h-8 px-3 rounded-lg border inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider ${classes}`}
+              >
+                <Trophy size={11} />
+                {name}
+              </span>
             ))}
           </div>
+        </div>
+
+        <div className="mt-3 pt-3 border-t border-[#1D222C] text-[10px] text-[#697181]">
+          Mucho8s Points are separate from Elo and Trophy unlocks.
         </div>
       </section>
 
@@ -363,14 +208,14 @@ export default function RankGuide() {
         <div className="flex items-end justify-between gap-3 mb-2">
           <div>
             <div className="brand-kicker mb-1">Ranks</div>
-            <h2 className="font-display text-xl font-black">Divisions</h2>
+            <h2 className="font-display text-xl font-black">Elo divisions</h2>
           </div>
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
             500 → 1350+
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2.5">
           {RANKS.map((rank, index) => {
             const Icon = iconFor(index);
             const next = RANKS[index + 1];
@@ -378,49 +223,24 @@ export default function RankGuide() {
             return (
               <div
                 key={rank.id}
-                className="rounded-2xl border bg-[#0F1218] p-4 flex items-center gap-3"
+                className="rounded-xl border bg-[#0F1218] p-3"
                 style={{ borderColor: rank.color + "32" }}
               >
-                <div
-                  className="w-11 h-11 rounded-xl border bg-[#151923] flex items-center justify-center shrink-0"
-                  style={{ borderColor: rank.color + "55" }}
-                >
-                  <Icon size={20} style={{ color: rank.color }} />
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
-                    Division {rank.roman}
-                  </div>
-                  <div className="font-display font-black uppercase" style={{ color: rank.color }}>
+                <div className="flex items-center gap-2">
+                  <Icon size={16} style={{ color: rank.color }} />
+                  <div
+                    className="font-display font-black text-sm uppercase truncate"
+                    style={{ color: rank.color }}
+                  >
                     {rank.name}
                   </div>
                 </div>
-
-                <div className="text-right shrink-0">
-                  <div className="font-mono font-black text-xs" style={{ color: rank.color }}>
-                    {next ? `${rank.min}–${rank.max}` : `${rank.min}+`}
-                  </div>
-                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground mt-1">
-                    Elo
-                  </div>
+                <div className="font-mono text-[10px] text-muted-foreground mt-2">
+                  {next ? `${rank.min}–${rank.max} Elo` : `${rank.min}+ Elo`}
                 </div>
               </div>
             );
           })}
-        </div>
-      </section>
-
-      <section className="rounded-2xl border border-[#222834] bg-[#0F1218] px-4 py-3">
-        <div className="flex items-start gap-3">
-          <Trophy size={16} className="text-[#D5A33A] mt-0.5 shrink-0" />
-          <div>
-            <div className="text-sm font-bold">Bounties stay separate</div>
-            <div className="text-[11px] text-muted-foreground mt-1 leading-5">
-              Streak Breaker, Duo Breaker, Giant Killer, Payback and Rivalry award bounty points only.
-              They never change Elo.
-            </div>
-          </div>
         </div>
       </section>
     </div>
