@@ -910,61 +910,94 @@ export default function TeamBuilder() {
                 </>
               ) : (
                 <div className="space-y-3">
-                  <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-2 items-stretch">
-                    {[
-                      ["A", draftTeamA, resolvedDraftCaptainA],
-                      ["B", draftTeamB, resolvedDraftCaptainB],
-                    ].map(([side, ids, captainId]) => (
-                      <div
-                        key={side}
-                        className={`rounded-xl border p-3 ${
-                          currentDraftSide === side
-                            ? side === "A"
-                              ? "border-magma/35 bg-magma/[0.04]"
-                              : "border-[#65D5D3]/35 bg-[#65D5D3]/[0.035]"
-                            : "border-[#222834] bg-[#0F1218]"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                          <span className={`text-[10px] uppercase tracking-widest font-black ${
-                            side === "A" ? "text-magma" : "text-[#65D5D3]"
-                          }`}>
-                            {side === "A" ? "Alpha" : "Bravo"}
-                          </span>
-                          <span className="font-mono text-[10px] text-muted-foreground">
-                            {ids.length}/{perTeam}
-                          </span>
-                        </div>
-                        <div className="space-y-1.5">
-                          {ids.map((id) => {
-                            const player = contextualPlayerMap[id];
-                            return (
-                              <div
-                                key={id}
-                                className="h-10 px-2 rounded-lg border border-[#202631] bg-[#12161D] flex items-center gap-2"
-                              >
-                                <PlayerAvatar
-                                  name={player?.name || "Player"}
-                                  elo={player?.currentElo || 1000}
-                                  size={26}
-                                  avatarUrl={playerAvatars[id]}
-                                />
-                                <span className="text-xs font-semibold truncate flex-1">
-                                  {player?.name || "Player"}
-                                </span>
-                                {id === captainId && (
-                                  <Crown size={11} className="text-[#D5A33A] shrink-0" />
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_48px_minmax(0,1fr)] gap-3 items-stretch">
 
-                    <div className="hidden lg:flex items-center justify-center px-1">
+                    <div
+                      className={`min-w-0 rounded-xl border p-3 ${
+                        currentDraftSide === "A"
+                          ? "border-magma/35 bg-magma/[0.04]"
+                          : "border-[#222834] bg-[#0F1218]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-[10px] uppercase tracking-widest font-black text-magma">
+                          Alpha
+                        </span>
+                        <span className="font-mono text-[10px] text-muted-foreground">
+                          {draftTeamA.length}/{perTeam}
+                        </span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {draftTeamA.map((id) => {
+                          const player = contextualPlayerMap[id];
+                          return (
+                            <div
+                              key={id}
+                              className="h-10 min-w-0 px-2 rounded-lg border border-[#202631] bg-[#12161D] flex items-center gap-2"
+                            >
+                              <PlayerAvatar
+                                name={player?.name || "Player"}
+                                elo={player?.currentElo || 1000}
+                                size={26}
+                                avatarUrl={playerAvatars[id]}
+                              />
+                              <span className="text-xs font-semibold truncate flex-1 min-w-0">
+                                {player?.name || "Player"}
+                              </span>
+                              {id === resolvedDraftCaptainA && (
+                                <Crown size={11} className="text-[#D5A33A] shrink-0" />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="hidden lg:flex items-center justify-center">
                       <div className="w-10 h-10 rounded-full border border-[#2A303B] bg-[#0F1218] flex items-center justify-center font-display font-black text-xs text-muted-foreground">
                         VS
+                      </div>
+                    </div>
+
+
+                    <div
+                      className={`min-w-0 rounded-xl border p-3 ${
+                        currentDraftSide === "B"
+                          ? "border-[#65D5D3]/35 bg-[#65D5D3]/[0.035]"
+                          : "border-[#222834] bg-[#0F1218]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-[10px] uppercase tracking-widest font-black text-[#65D5D3]">
+                          Bravo
+                        </span>
+                        <span className="font-mono text-[10px] text-muted-foreground">
+                          {draftTeamB.length}/{perTeam}
+                        </span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {draftTeamB.map((id) => {
+                          const player = contextualPlayerMap[id];
+                          return (
+                            <div
+                              key={id}
+                              className="h-10 min-w-0 px-2 rounded-lg border border-[#202631] bg-[#12161D] flex items-center gap-2"
+                            >
+                              <PlayerAvatar
+                                name={player?.name || "Player"}
+                                elo={player?.currentElo || 1000}
+                                size={26}
+                                avatarUrl={playerAvatars[id]}
+                              />
+                              <span className="text-xs font-semibold truncate flex-1 min-w-0">
+                                {player?.name || "Player"}
+                              </span>
+                              {id === resolvedDraftCaptainB && (
+                                <Crown size={11} className="text-[#D5A33A] shrink-0" />
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
