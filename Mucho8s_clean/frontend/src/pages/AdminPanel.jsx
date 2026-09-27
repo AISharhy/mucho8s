@@ -272,7 +272,7 @@ export default function AdminPanel() {
     addPlayer(newName.trim(), Number(newElo) || 500);
     toast.success(`${newName.trim()} added to the roster`);
     setNewName("");
-    setNewElo(1000);
+    setNewElo(500);
   };
 
   const savePlayer = async (id) => {
