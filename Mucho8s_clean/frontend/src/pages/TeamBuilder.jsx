@@ -501,7 +501,38 @@ export default function TeamBuilder() {
         {game && (
           <div className="mt-4">
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Mode</div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2 max-w-xl">
+              {MATCH_MODES.map((item) => (
+                <button
+                  type="button"
+                  key={item}
+                  aria-pressed={matchMode === item}
+                  onClick={() => changeMatchMode(item)}
+                  className={`h-11 rounded-xl border text-sm font-bold transition-all ${
+                    matchMode === item
+                      ? "bg-[#D5A33A] text-black border-[#D5A33A]"
+                      : "bg-[#0F1218] border-[#222834] text-[#AAB1BE] hover:text-white"
+                  }`}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {game && matchMode && (
+        <section className="m8-panel rounded-[22px] p-5 sm:p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-black text-sm">2</div>
+            <div>
+              <div className="brand-kicker">Teams</div>
+              <h3 className="font-display text-xl font-black">Choose the team method</h3>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
             {[
               {
                 key: "auto",
@@ -571,7 +602,7 @@ export default function TeamBuilder() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-1.5 sm:w-auto">
+                <div className="grid grid-cols-3 gap-1.5">
                   {[
                     ["elo", "Elo"],
                     ["chemistry", "Chemistry"],
@@ -607,7 +638,7 @@ export default function TeamBuilder() {
                 Best for 3v3 / 4v4
               </span>
             </div>
-          )}/div>
+          )}
         </section>
       )}
 
