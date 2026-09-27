@@ -192,7 +192,7 @@ export const StreakBadge = ({ streak }) => {
 };
 
 export const MvpBadge = ({ count }) => (
-  <span className="inline-flex items-center gap-1 text-magma font-mono font-bold" title="MVP · Trophy8s">
+  <span className="inline-flex items-center gap-1 text-[#D5A33A] font-mono font-bold" title="MVP">
     <Trophy size={13} strokeWidth={2.2} />
     {count}
   </span>
