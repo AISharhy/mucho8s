@@ -198,10 +198,24 @@ export default function TeamBuilder() {
       : "";
   const canConfirm = Boolean(result && (isAdmin || matchCaptainId));
 
+  const clearDraftProgress = () => {
+    setDraftTeamA([]);
+    setDraftTeamB([]);
+    setDraftPickIndex(0);
+    setDraftStarted(false);
+  };
+
+  const resetCaptainDraft = () => {
+    clearDraftProgress();
+    setDraftCaptainA("");
+    setDraftCaptainB("");
+  };
+
   const resetLobby = ({ keepGame = true } = {}) => {
     setSelected([]);
     setManualA([]);
     setManualB([]);
+    resetCaptainDraft();
     setResult(null);
     setQuery("");
     if (!keepGame) {
@@ -225,11 +239,13 @@ export default function TeamBuilder() {
     setTeamMethod(nextMethod);
     setManualA([]);
     setManualB([]);
+    resetCaptainDraft();
     setResult(null);
   };
 
   const togglePlayer = (id) => {
     setResult(null);
+    resetCaptainDraft();
 
     setSelected((prev) => {
       if (prev.includes(id)) {
@@ -276,6 +292,62 @@ export default function TeamBuilder() {
     }
     setManualA((prev) => prev.filter((item) => item !== id));
     setManualB((prev) => [...prev, id]);
+  };
+
+  const changeDraftCaptainMode = (mode) => {
+    setDraftCaptainMode(mode);
+    clearDraftProgress();
+    setResult(null);
+  };
+
+  const startCaptainDraft = () => {
+    if (!validLobby) {
+      toast.error("Select exactly 4, 6 or 8 players first");
+      return;
+    }
+
+    const captainAId = resolvedDraftCaptainA;
+    const captainBId = resolvedDraftCaptainB;
+
+    if (!captainAId || !captainBId || captainAId === captainBId) {
+      toast.error("Choose two different draft captains");
+      return;
+    }
+    if (!selected.includes(captainAId) || !selected.includes(captainBId)) {
+      toast.error("Draft captains must be inside the lobby");
+      return;
+    }
+
+    setResult(null);
+    setDraftTeamA([captainAId]);
+    setDraftTeamB([captainBId]);
+    setDraftPickIndex(0);
+    setDraftStarted(true);
+  };
+
+  const pickDraftPlayer = (id) => {
+    if (!draftStarted || draftComplete || !draftAvailable.includes(id)) return;
+
+    const side = currentDraftSide;
+    const nextA = side === "A" ? [...draftTeamA, id] : [...draftTeamA];
+    const nextB = side === "B" ? [...draftTeamB, id] : [...draftTeamB];
+    const nextIndex = draftPickIndex + 1;
+
+    setDraftTeamA(nextA);
+    setDraftTeamB(nextB);
+    setDraftPickIndex(nextIndex);
+
+    const complete = nextA.length === perTeam && nextB.length === perTeam;
+    if (!complete) return;
+
+    const teamAPlayers = nextA
+      .map((playerId) => contextualPlayerMap[playerId])
+      .filter(Boolean);
+    const teamBPlayers = nextB
+      .map((playerId) => contextualPlayerMap[playerId])
+      .filter(Boolean);
+
+    void lockResult(analyzeManualTeams(teamAPlayers, teamBPlayers, context.matches));
   };
 
   const lockResult = async (draft) => {
@@ -355,7 +427,14 @@ export default function TeamBuilder() {
       return;
     }
 
-    void lockResult(draftTeamsBalanced(selectedPlayers, context.matches));
+    if (teamMethod === "draft") {
+      startCaptainDraft();
+      return;
+    }
+
+    void lockResult(
+      draftTeamsByPriority(selectedPlayers, context.matches, autoPriority)
+    );
   };
 
   return (
