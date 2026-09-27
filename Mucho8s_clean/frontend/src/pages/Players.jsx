@@ -88,7 +88,12 @@ export default function Players() {
                     : "bg-[#0F1218] text-[#8D95A4] hover:text-white border-[#222834]"
                 }`}
               >
-                {item.icon ? <item.icon size={13} className="inline mr-1 text-magma" /> : null}
+                {item.icon
+                  ? React.createElement(item.icon, {
+                      size: 13,
+                      className: "inline mr-1 text-magma",
+                    })
+                  : null}
                 {item.label}
               </button>
             ))}
