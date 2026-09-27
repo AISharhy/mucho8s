@@ -20,6 +20,7 @@ const ensurePair = (map, a, b) => {
       lastWinnerId: null,
       teamMeetings: 0,
       directMeetings: 0,
+      history: [],
     });
   }
   return map.get(key);
@@ -45,32 +46,45 @@ export const buildRivalries = (matches = [], challenges = []) => {
     const winnerTeam = match.winner === "B" ? teamB : teamA;
     const winnerSet = new Set(winnerTeam);
     const date = match.verifiedAt || match.date || null;
+    const pairingAmountByKey = Object.fromEntries(
+      (Array.isArray(match.pairings) ? match.pairings : [])
+        .map((pair) => {
+          const a = String(pair?.playerAId || "");
+          const b = String(pair?.playerBId || "");
+          const amount = Math.max(0, Number(pair?.amount) || 0);
+          return a && b ? [pairKey(a, b), amount] : null;
+        })
+        .filter(Boolean)
+    );
 
     teamA.forEach((a) => {
       teamB.forEach((b) => {
         const row = ensurePair(pairs, a, b);
         const winnerId = winnerSet.has(a) ? a : b;
+        const amount = Math.max(0, Number(pairingAmountByKey[pairKey(a, b)] || 0));
 
         row.meetings += 1;
         row.teamMeetings += 1;
         if (winnerId === row.playerAId) row.playerAWins += 1;
         if (winnerId === row.playerBId) row.playerBWins += 1;
+        row.moneyVolume += amount;
+        row.playerANet += amount
+          ? winnerId === row.playerAId
+            ? amount
+            : -amount
+          : 0;
+        row.history.push({
+          id: String(match.id || `team-${date || row.meetings}`),
+          type: "team",
+          date,
+          winnerId,
+          amount,
+          game: match.game || "",
+          mode: match.mode || "",
+          format: `${teamA.length}v${teamB.length}`,
+        });
         touchLastMeeting(row, date, winnerId);
       });
-    });
-
-    (Array.isArray(match.pairings) ? match.pairings : []).forEach((pair) => {
-      const a = String(pair?.playerAId || "");
-      const b = String(pair?.playerBId || "");
-      const amount = Math.max(0, Number(pair?.amount) || 0);
-      if (!a || !b || !amount) return;
-
-      const row = pairs.get(pairKey(a, b));
-      if (!row) return;
-
-      const winnerId = match.winner === "B" ? b : a;
-      row.moneyVolume += amount;
-      row.playerANet += winnerId === row.playerAId ? amount : -amount;
     });
   });
 
@@ -104,14 +118,48 @@ export const buildRivalries = (matches = [], challenges = []) => {
       if (winnerId === row.playerBId) row.playerBWins += 1;
       row.moneyVolume += amount;
       row.playerANet += winnerId === row.playerAId ? amount : -amount;
+      row.history.push({
+        id: String(challenge.id || `1v1-${date || row.meetings}`),
+        type: "1v1",
+        date,
+        winnerId,
+        amount,
+        platform: String(challenge.platform || "").toLowerCase(),
+        game: challenge.game || "",
+        mode: challenge.mode || "",
+        format: "1v1",
+      });
       touchLastMeeting(row, date, winnerId);
     });
 
-  return [...pairs.values()].sort((a, b) => {
-    if (b.meetings !== a.meetings) return b.meetings - a.meetings;
-    if (b.moneyVolume !== a.moneyVolume) return b.moneyVolume - a.moneyVolume;
-    return new Date(b.lastMeetingAt || 0) - new Date(a.lastMeetingAt || 0);
-  });
+  return [...pairs.values()]
+    .map((row) => {
+      const history = [...row.history].sort(
+        (a, b) => new Date(b.date || 0) - new Date(a.date || 0)
+      );
+      const recentFive = history.slice(0, 5);
+      const streakWinnerId = history[0]?.winnerId || null;
+      let currentStreak = 0;
+
+      for (const item of history) {
+        if (!streakWinnerId || item.winnerId !== streakWinnerId) break;
+        currentStreak += 1;
+      }
+
+      return {
+        ...row,
+        history,
+        recentFive,
+        streakWinnerId,
+        currentStreak,
+        scoreDiff: Math.abs(row.playerAWins - row.playerBWins),
+      };
+    })
+    .sort((a, b) => {
+      if (b.meetings !== a.meetings) return b.meetings - a.meetings;
+      if (b.moneyVolume !== a.moneyVolume) return b.moneyVolume - a.moneyVolume;
+      return new Date(b.lastMeetingAt || 0) - new Date(a.lastMeetingAt || 0);
+    });
 };
 
 export const buildPlayerRivalries = (playerId, matches = [], challenges = []) =>
