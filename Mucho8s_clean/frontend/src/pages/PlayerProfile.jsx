@@ -778,6 +778,34 @@ export default function PlayerProfile() {
         ]
       : [];
 
+    const tierHistory = {};
+    chronologicalMatches.forEach((match) => {
+      const events = Array.isArray(match?.trophyUnlockEvents?.[id])
+        ? match.trophyUnlockEvents[id]
+        : [];
+
+      events.forEach((event) => {
+        const trophyId = String(event?.id || "");
+        if (!trophyId) return;
+        if (!tierHistory[trophyId]) tierHistory[trophyId] = [];
+
+        tierHistory[trophyId].push(
+          matchEvent(match, {
+            level: Number(event?.level || 1),
+            reward: Number(event?.reward || 0),
+            rewardApplied: event?.rewardApplied === true,
+            note: `Level ${Number(event?.level || 1)} unlocked · target ${Number(
+              event?.goal || 0
+            )} · ${event?.rewardApplied === true ? `+${Number(event?.reward || 0)} Elo` : "legacy unlock"}`,
+          })
+        );
+      });
+    });
+
+    Object.entries(tierHistory).forEach(([trophyId, events]) => {
+      byId[trophyId] = events;
+    });
+
     return byId;
   }, [player, playerMatches, playerMap, id, mucho8sInsights]);
 
@@ -1073,8 +1101,11 @@ export default function PlayerProfile() {
                 tone: "text-white",
               },
               {
-                label: "Winnings",
-                value: `€${Number(mucho8sInsights.wonValue || 0).toFixed(0)}`,
+                label: "Total Winnings",
+                value: `€${(
+                  Number(mucho8sInsights.wonValue || 0) +
+                  Number(challengeStats.wonValue || 0)
+                ).toFixed(0)}`,
                 tone: "text-emerald-400",
               },
               {
@@ -1816,7 +1847,17 @@ export default function PlayerProfile() {
         <div className="m8-panel rounded-2xl p-4 sm:p-5 order-3" data-testid="my-challenges-panel">
           <div className="mb-4">
             <div className="brand-kicker mb-1 text-emerald-400">Mucho1v1</div>
-            <h3 className="font-display font-bold text-lg">My Mucho1v1</h3>
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+              <div>
+                <h3 className="font-display font-bold text-lg">My Mucho1v1</h3>
+              </div>
+              <div className="text-right">
+                <div className="text-[9px] uppercase tracking-widest text-[#697181]">Mucho1v1 Winnings</div>
+                <div className="font-mono font-black text-emerald-400 mt-0.5">
+                  €{Number(challengeStats.wonValue || 0).toFixed(2)}
+                </div>
+              </div>
+            </div>
             <p className="text-sm text-muted-foreground mt-1">
               Direct 1v1 history only. Mucho8s pairings never appear here.
             </p>
