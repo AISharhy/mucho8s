@@ -44,6 +44,44 @@ import {
 import { LineChart, Line, ResponsiveContainer, Tooltip, YAxis, XAxis, CartesianGrid } from "recharts";
 import { toast } from "sonner";
 
+const TROPHY_FAMILY_STYLES = {
+  Trophy8s: {
+    text: "text-magma",
+    border: "border-magma/25",
+    bg: "bg-magma/[0.06]",
+    hover: "hover:border-magma/45",
+    focus: "focus:ring-magma/30",
+    hex: "#FF2A3B",
+  },
+  Trophy1v1: {
+    text: "text-emerald-400",
+    border: "border-emerald-500/25",
+    bg: "bg-emerald-500/[0.06]",
+    hover: "hover:border-emerald-500/45",
+    focus: "focus:ring-emerald-500/30",
+    hex: "#34D399",
+  },
+  TrophyRanked: {
+    text: "text-[#4F8CFF]",
+    border: "border-[#4F8CFF]/25",
+    bg: "bg-[#4F8CFF]/[0.06]",
+    hover: "hover:border-[#4F8CFF]/45",
+    focus: "focus:ring-[#4F8CFF]/30",
+    hex: "#4F8CFF",
+  },
+  TrophyTourney: {
+    text: "text-[#D5A33A]",
+    border: "border-[#D5A33A]/25",
+    bg: "bg-[#D5A33A]/[0.06]",
+    hover: "hover:border-[#D5A33A]/45",
+    focus: "focus:ring-[#D5A33A]/30",
+    hex: "#D5A33A",
+  },
+};
+
+const trophyFamilyStyle = (source) =>
+  TROPHY_FAMILY_STYLES[source] || TROPHY_FAMILY_STYLES.Trophy8s;
+
 export default function PlayerProfile() {
   const { id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -469,7 +507,7 @@ export default function PlayerProfile() {
       value: Number(value || 0),
       goal,
       unit,
-      source: "Mucho8s",
+      source: "Trophy8s",
       unlocked: unlocked === null ? Number(value || 0) >= goal : Boolean(unlocked),
       progress: unlocked === true ? 100 : clamp(value, goal),
     });
@@ -581,8 +619,9 @@ export default function PlayerProfile() {
         title: "MVP",
         detail: `Automatic every 3 wins in a row · ${player.mvpCount} ${player.mvpCount === 1 ? "MVP" : "MVP"}`,
         count: Number(player.mvpCount || 0),
-        emoji: "🏆",
-        source: "Mucho8s",
+        emoji: null,
+        iconType: "trophy",
+        source: "Trophy8s",
       });
     }
 
@@ -594,7 +633,7 @@ export default function PlayerProfile() {
         detail: `Active x${player.merdaCount} · ogni 3 wins in a row ne elimini 1`,
         count: Number(player.merdaCount || 0),
         emoji: "💩",
-        source: "Mucho8s",
+        source: "Trophy8s",
       });
     }
 
@@ -608,7 +647,7 @@ export default function PlayerProfile() {
           detail: item.description,
           count: null,
           emoji: item.emoji,
-          source: item.source || "Mucho8s",
+          source: item.source || "Trophy8s",
         });
       });
 
@@ -1354,25 +1393,29 @@ export default function PlayerProfile() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-            {trophyCabinet.map((trophy) => (
+            {trophyCabinet.map((trophy) => {
+              const family = trophyFamilyStyle(trophy.source || "Trophy8s");
+              return (
               <button
                 type="button"
                 key={trophy.id}
                 onClick={() => setSelectedTrophyId(trophy.id)}
-                className="rounded-2xl bg-gradient-to-b from-[#171C25] to-[#0D1118] border border-[#D5A33A]/20 p-4 relative overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:border-[#D5A33A]/40 text-left group focus:outline-none focus:ring-2 focus:ring-[#D5A33A]/30"
+                className={`rounded-2xl bg-gradient-to-b from-[#171C25] to-[#0D1118] border p-4 relative overflow-hidden transition-all duration-200 hover:-translate-y-1 text-left group focus:outline-none focus:ring-2 ${family.border} ${family.hover} ${family.focus}`}
                 aria-label={`Open details for ${trophy.title}`}
               >
                 <div
                   className="absolute inset-x-0 top-0 h-[2px]"
                   style={{
-                    background: trophy.type === "mvp"
-                      ? "linear-gradient(90deg, transparent, #D5A33A, transparent)"
-                      : "linear-gradient(90deg, transparent, #8B5E3C, transparent)",
+                    background: `linear-gradient(90deg, transparent, ${family.hex}, transparent)`,
                   }}
                 />
                 <div className="flex items-start justify-between gap-3">
-                  <div className="w-12 h-12 rounded-xl border border-[#2A303B] bg-[#0F1218] flex items-center justify-center text-2xl shadow-[0_8px_24px_rgba(0,0,0,.22)]">
-                    <span aria-hidden="true">{trophy.emoji}</span>
+                  <div className={`w-12 h-12 rounded-xl border bg-[#0F1218] flex items-center justify-center text-2xl shadow-[0_8px_24px_rgba(0,0,0,.22)] ${family.border} ${family.bg}`}>
+                    {trophy.iconType === "trophy" ? (
+                      <Trophy size={24} className={family.text} strokeWidth={2.2} />
+                    ) : (
+                      <span aria-hidden="true">{trophy.emoji}</span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     {trophy.count !== null && trophy.count !== undefined && (
@@ -1382,22 +1425,23 @@ export default function PlayerProfile() {
                     )}
                     <ChevronRight
                       size={15}
-                      className="text-[#596170] group-hover:text-[#D5A33A] group-hover:translate-x-0.5 transition-all"
+                      className={`text-[#596170] group-hover:translate-x-0.5 transition-all ${family.text}`}
                     />
                   </div>
                 </div>
                 <div className="flex items-center gap-2 mt-3">
                   <div className="font-display font-bold">{trophy.title}</div>
-                  <span className="h-5 px-1.5 rounded-md border border-magma/20 bg-magma/[0.05] text-magma inline-flex items-center text-[8px] font-black uppercase tracking-[0.12em]">
-                    {trophy.source || "Mucho8s"}
+                  <span className={`h-5 px-1.5 rounded-md border inline-flex items-center text-[8px] font-black uppercase tracking-[0.12em] ${family.border} ${family.bg} ${family.text}`}>
+                    {trophy.source || "Trophy8s"}
                   </span>
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">{trophy.detail}</div>
-                <div className="text-[9px] uppercase tracking-widest text-[#697181] mt-3 group-hover:text-[#D5A33A] transition-colors">
+                <div className={`text-[9px] uppercase tracking-widest mt-3 transition-colors ${family.text}`}>
                   View unlock history
                 </div>
               </button>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -1414,8 +1458,16 @@ export default function PlayerProfile() {
             <>
               <DialogHeader>
                 <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 rounded-xl border border-[#D5A33A]/20 bg-[#D5A33A]/[0.06] flex items-center justify-center text-2xl shrink-0">
-                    <span aria-hidden="true">{selectedTrophy.emoji}</span>
+                  <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${trophyFamilyStyle(selectedTrophy.source || "Trophy8s").border} ${trophyFamilyStyle(selectedTrophy.source || "Trophy8s").bg}`}>
+                    {selectedTrophy.iconType === "trophy" ? (
+                      <Trophy
+                        size={24}
+                        strokeWidth={2.2}
+                        className={trophyFamilyStyle(selectedTrophy.source || "Trophy8s").text}
+                      />
+                    ) : (
+                      <span aria-hidden="true">{selectedTrophy.emoji}</span>
+                    )}
                   </div>
                   <div className="min-w-0">
                     <DialogTitle className="font-display text-xl font-black">
@@ -1431,7 +1483,7 @@ export default function PlayerProfile() {
               <div className="mt-2">
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <div>
-                    <div className="brand-kicker mb-1">{selectedTrophy.source || "Mucho8s"} · Unlock history</div>
+                    <div className="brand-kicker mb-1">{selectedTrophy.source || "Trophy8s"} · Unlock history</div>
                     <div className="text-sm font-bold">
                       {selectedTrophyEvents.length > 0
                         ? selectedTrophy.id === "mvp" || selectedTrophy.id === "merda"
@@ -1441,7 +1493,7 @@ export default function PlayerProfile() {
                     </div>
                   </div>
                   {selectedTrophy.count !== null && selectedTrophy.count !== undefined && (
-                    <span className="m8-pill text-[#D5A33A] border-[#D5A33A]/20">
+                    <span className={`m8-pill ${trophyFamilyStyle(selectedTrophy.source || "Trophy8s").text} ${trophyFamilyStyle(selectedTrophy.source || "Trophy8s").border}`}>
                       Total ×{selectedTrophy.count}
                     </span>
                   )}
