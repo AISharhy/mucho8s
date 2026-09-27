@@ -3,13 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   Gamepad2,
+  UsersRound,
+  Medal,
   Search,
   Swords,
   Landmark,
   WalletCards,
   Link2Off,
   Trophy,
-  Crown,
   Clock3,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
@@ -229,7 +230,7 @@ export default function Play() {
               kicker="Money Team Play"
               title="Mucho8s"
               description="Create the lobby, build the teams and play the money matchup."
-              icon={Gamepad2}
+              icon={UsersRound}
               accent="#FF2A3B"
             />
 
@@ -260,7 +261,7 @@ export default function Play() {
               className="w-full h-12 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-black inline-flex items-center justify-between px-4 transition-all"
             >
               <span className="inline-flex items-center gap-2">
-                <Gamepad2 size={17} />
+                <UsersRound size={17} />
                 OPEN MUCHO8S
               </span>
               <ArrowRight size={18} />
@@ -272,7 +273,7 @@ export default function Play() {
           className="relative overflow-hidden rounded-[22px] border border-[#2A313D] bg-[#10151D] p-5 sm:p-6 flex flex-col min-h-[500px]"
           data-testid="play-money-chall-card"
         >
-          <div className="absolute w-64 h-64 -top-40 -right-24 rounded-full bg-[#D5A33A]/8 blur-3xl pointer-events-none" />
+          <div className="absolute w-64 h-64 -top-40 -right-24 rounded-full bg-emerald-500/[0.08] blur-3xl pointer-events-none" />
 
           <div className="relative z-10 flex items-center justify-between gap-4">
             <div className="min-w-0">
@@ -340,7 +341,7 @@ export default function Play() {
                     onClick={() => chooseTarget(player.id)}
                     className={`group h-11 flex items-center gap-2.5 rounded-xl border px-2.5 text-left transition-all ${
                       selected
-                        ? "border-[#D5A33A]/60 bg-[#D5A33A]/[0.08]"
+                        ? "border-emerald-500/50 bg-emerald-500/[0.08]"
                         : "border-[#202631] bg-[#11151C] hover:border-[#343C49] hover:bg-[#141923]"
                     }`}
                     data-testid={`quick-chall-player-${player.id}`}
@@ -359,7 +360,7 @@ export default function Play() {
                       compact
                     />
                     <span className={`font-mono text-[11px] font-bold ${
-                      selected ? "text-[#D5A33A]" : "text-[#9AA2AF]"
+                      selected ? "text-emerald-400" : "text-[#9AA2AF]"
                     }`}>
                       {Number(player.currentElo || 0)}
                     </span>
@@ -390,7 +391,7 @@ export default function Play() {
                       onClick={() => setAmount(String(value))}
                       className={`h-9 min-w-12 px-3 rounded-lg border text-[11px] font-black transition-all ${
                         String(amount) === String(value)
-                          ? "bg-white text-black border-white"
+                          ? "bg-emerald-400 text-black border-emerald-400"
                           : "bg-[#151923] border-[#2A303B] text-[#B8C0CD] hover:border-[#3A424F]"
                       }`}
                     >
@@ -442,7 +443,7 @@ export default function Play() {
                           unavailable
                             ? "bg-[#11151C] border-[#202631] text-[#555E6B] cursor-not-allowed"
                             : platform === key
-                              ? "bg-[#D5A33A] text-black border-[#D5A33A]"
+                              ? "bg-emerald-400 text-black border-emerald-400"
                               : "bg-[#151923] border-[#2A303B] text-[#B8C0CD] hover:border-[#3A424F]"
                         }`}
                       >
@@ -466,7 +467,7 @@ export default function Play() {
             <Button
               onClick={sendQuickChallenge}
               disabled={Boolean(sending) || (Boolean(discordSession) && !canSend)}
-              className="w-full h-11 bg-[#D5A33A] hover:bg-[#e1b34b] disabled:bg-[#6F5A29] disabled:text-black/60 text-black font-black rounded-xl"
+              className="w-full h-11 bg-emerald-400 hover:bg-emerald-300 disabled:bg-emerald-900/70 disabled:text-emerald-200/40 text-black font-black rounded-xl"
               data-testid="quick-chall-send"
             >
               <WalletCards size={15} className="mr-2" />
@@ -493,13 +494,13 @@ export default function Play() {
           className="relative overflow-hidden rounded-[22px] border border-[#2A313D] bg-[#10151D] p-5 sm:p-6 min-h-[220px]"
           data-testid="play-ranked-coming-soon"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-[#8E98FF]/[0.055] via-transparent to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#4F8CFF]/[0.055] via-transparent to-transparent pointer-events-none" />
           <div className="relative z-10 h-full flex flex-col">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="brand-kicker">Competitive Queue</div>
-                  <span className="h-6 px-2 rounded-lg border border-[#8E98FF]/20 bg-[#8E98FF]/[0.06] text-[#A9B0FF] inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-[0.14em]">
+                  <span className="h-6 px-2 rounded-lg border border-[#4F8CFF]/20 bg-[#4F8CFF]/[0.06] text-[#76A7FF] inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-[0.14em]">
                     <Clock3 size={10} />
                     Coming Soon
                   </span>
@@ -512,8 +513,8 @@ export default function Play() {
                 </p>
               </div>
 
-              <div className="w-11 h-11 rounded-xl border border-[#8E98FF]/25 bg-[#8E98FF]/[0.06] flex items-center justify-center shrink-0">
-                <Trophy size={19} className="text-[#8E98FF]" />
+              <div className="w-11 h-11 rounded-xl border border-[#4F8CFF]/25 bg-[#4F8CFF]/[0.06] flex items-center justify-center shrink-0">
+                <Medal size={19} className="text-[#4F8CFF]" />
               </div>
             </div>
 
@@ -554,7 +555,7 @@ export default function Play() {
               </div>
 
               <div className="w-11 h-11 rounded-xl border border-[#D5A33A]/25 bg-[#D5A33A]/[0.06] flex items-center justify-center shrink-0">
-                <Crown size={19} className="text-[#D5A33A]" />
+                <Trophy size={19} className="text-[#D5A33A]" />
               </div>
             </div>
 
