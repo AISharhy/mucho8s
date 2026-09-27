@@ -22,7 +22,7 @@ const COLUMNS = [
   { key: "totalPoints", label: "Elo", sortable: true },
   { key: "matchWins", label: "Record", sortable: true },
   { key: "winRate", label: "Win %", sortable: true },
-  { key: "earnings", label: "Money", sortable: true },
+  { key: "earnings", label: "Earnings", sortable: true },
   { key: "currentStreak", label: "Streak", sortable: true },
   { key: "mvpCount", label: "MVP", sortable: true },
 ];
@@ -191,7 +191,7 @@ export default function Leaderboard() {
       "Elo",
       "Record",
       "Win %",
-      "Money Won",
+      "Earnings",
       "Streak",
       "MVP",
     ];
@@ -244,7 +244,7 @@ export default function Leaderboard() {
             </h3>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Global Elo, record, streak and total verified money won. Losses do not reduce this value.
+            Global Elo, record, streak and total verified earnings. Losses do not reduce this value.
           </p>
         </div>
 
@@ -299,8 +299,8 @@ export default function Leaderboard() {
                   <div className="font-mono text-sm font-bold mt-0.5">{p.matchWins}-{p.matchLosses}</div>
                 </div>
                 <div className="m8-panel-quiet rounded-lg px-2.5 py-2">
-                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">Money</div>
-                  <div className="mt-1 font-mono text-sm font-black text-emerald-400" title="Total verified money won">
+                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">Earnings</div>
+                  <div className="mt-1 font-mono text-sm font-black text-emerald-400" title="Total verified earnings">
                     +{euro(p.earnings)}
                   </div>
                 </div>
