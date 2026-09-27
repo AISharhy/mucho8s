@@ -1058,7 +1058,10 @@ export default function PlayerProfile() {
                   <div className="text-[9px] uppercase tracking-[0.18em] text-[#697181] font-bold">
                     Rank
                   </div>
-                  <div className="font-display text-sm sm:text-base font-black uppercase text-magma mt-1">
+                  <div
+                    className="font-display text-sm sm:text-base font-black uppercase mt-1"
+                    style={{ color: tier.color }}
+                  >
                     {tier.name}
                   </div>
                 </div>
@@ -1103,7 +1106,7 @@ export default function PlayerProfile() {
               {
                 label: "Peak Elo",
                 value: player.peakElo,
-                tone: "text-magma",
+                tone: "text-[#D5A33A]",
               },
               {
                 label: "Mucho8s Record",
@@ -1143,7 +1146,7 @@ export default function PlayerProfile() {
                 ["Trophy8s", "bg-magma", "text-magma"],
                 ["Trophy1v1", "bg-emerald-400", "text-emerald-400"],
                 ["TrophyRanked", "bg-[#4F8CFF]", "text-[#4F8CFF]"],
-                ["TrophyTourney", "bg-[#D5A33A]", "text-magma"],
+                ["TrophyTourney", "bg-[#D5A33A]", "text-[#D5A33A]"],
               ].map(([family, dotClass, textClass], index) => (
                 <React.Fragment key={family}>
                   {index > 0 && <span className="text-[#3D4654]">·</span>}
@@ -1226,7 +1229,7 @@ export default function PlayerProfile() {
             {myChallenges.some((challenge) =>
               ["pending", "accepted", "result_pending", "disputed"].includes(challenge.status)
             ) && (
-              <span className="w-2 h-2 rounded-full bg-magma shadow-[0_0_10px_rgba(255,42,59,.65)]" />
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.55)]" />
             )}
           </button>
         </div>
@@ -1272,7 +1275,7 @@ export default function PlayerProfile() {
                         <div className="min-w-0 flex-1">
                           <div className="font-semibold text-sm truncate">{opponent?.name || "Player"}</div>
                           <div className="text-[10px] text-muted-foreground">
-                            {row.meetings} meetings · ${row.teamMeetings} Mucho8s · ${row.directMeetings} Mucho1v1
+                            {row.meetings} meetings · {row.teamMeetings} Mucho8s · {row.directMeetings} Mucho1v1
                           </div>
                         </div>
                         <div className="text-right shrink-0">
@@ -1760,8 +1763,8 @@ export default function PlayerProfile() {
 
       {(!isOwnProfile || profileTab === "overview") && (
       <div className="m8-panel rounded-2xl p-4 sm:p-5 order-5">
-        <div className="brand-kicker mb-1">Attività recente</div>
-        <h3 className="font-display font-black text-xl tracking-[-0.02em] mb-4">Recent Matches</h3>
+        <div className="brand-kicker mb-1 text-magma">Mucho8s</div>
+        <h3 className="font-display font-black text-xl tracking-[-0.02em] mb-4">Recent Mucho8s</h3>
         <div className="space-y-2">
           {playerMatches.slice(0, 10).map((m) => {
             const winners = m.winner === "A" ? m.teamA : m.teamB;
@@ -1781,6 +1784,7 @@ export default function PlayerProfile() {
 
             return (
               <div key={m.id} className="interactive-row flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 rounded-xl p-3">
+                <ModeBadge mode="mucho8s" compact />
                 <div className={`font-bold text-sm ${won ? "text-emerald-400" : "text-red-400"}`}>
                   {won ? "WIN" : "LOSS"}
                 </div>
@@ -1791,7 +1795,9 @@ export default function PlayerProfile() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  {((Array.isArray(m.mvpIds) ? m.mvpIds : []).includes(player.id) || m.mvpId === player.id) && <span title="Automatic MVP" aria-label="Automatic MVP">🏆</span>}
+                  {((Array.isArray(m.mvpIds) ? m.mvpIds : []).includes(player.id) || m.mvpId === player.id) && (
+                    <Trophy size={14} className="text-magma" aria-label="MVP · Trophy8s" />
+                  )}
                   {((Array.isArray(m.merdaIds) && m.merdaIds.includes(player.id)) || m.merdaId === player.id) && (
                     <span title="MERDA">💩</span>
                   )}
@@ -1805,7 +1811,7 @@ export default function PlayerProfile() {
           })}
 
           {playerMatches.length === 0 && (
-            <div className="py-10 text-center text-muted-foreground">No matches recorded for this player yet.</div>
+            <div className="py-10 text-center text-muted-foreground">No Mucho8s recorded for this player yet.</div>
           )}
         </div>
       </div>
