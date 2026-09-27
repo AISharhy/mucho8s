@@ -103,7 +103,7 @@ export default function Rivalries() {
               Rivalries
             </h1>
             <p className="text-sm text-[#7F8795] mt-2 max-w-2xl">
-              The most played head-to-head matchups, form, streaks and money history.
+              One head-to-head record, clearly split between Mucho8s and Mucho1v1.
             </p>
           </div>
 
@@ -276,11 +276,11 @@ export default function Rivalries() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 text-[11px] text-[#8A93A1]">
-                  <span>
-                    Team <strong className="text-white">{row.teamMeetings}</strong>
+                  <span className="text-magma">
+                    Mucho8s <strong className="text-white">{row.teamMeetings}</strong>
                   </span>
-                  <span>
-                    1v1 <strong className="text-white">{row.directMeetings}</strong>
+                  <span className="text-emerald-400">
+                    Mucho1v1 <strong className="text-white">{row.directMeetings}</strong>
                   </span>
                   <span>
                     Played <strong className="text-[#D5A33A]">{euro(row.moneyVolume)}</strong>
