@@ -189,8 +189,7 @@ export default function Leaderboard() {
       "Elo",
       "Record",
       "Win %",
-      "Mucho8s Net",
-      "Mucho1v1 Net",
+      "Money Net",
       "Streak",
       "MVP",
     ];
@@ -202,8 +201,7 @@ export default function Leaderboard() {
       p.totalPoints,
       `${p.matchWins}-${p.matchLosses}`,
       p.winRate.toFixed(1),
-      p.mucho8sNet,
-      p.mucho1v1Net,
+      p.earnings,
       p.currentStreak > 0
         ? `W${p.currentStreak}`
         : p.currentStreak < 0
@@ -217,7 +215,7 @@ export default function Leaderboard() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "muchomoney8s_leaderboard.csv";
+    a.download = "mucho_leaderboard.csv";
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Leaderboard exported as CSV");
@@ -244,7 +242,7 @@ export default function Leaderboard() {
             </h3>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Global Elo with Mucho8s and Mucho1v1 money kept separate.
+            Global Elo, record, streak and one unified verified money balance.
           </p>
         </div>
 
@@ -300,13 +298,8 @@ export default function Leaderboard() {
                 </div>
                 <div className="m8-panel-quiet rounded-lg px-2.5 py-2">
                   <div className="text-[9px] uppercase tracking-wider text-[#697181]">Money</div>
-                  <div className="mt-1 space-y-0.5 font-mono text-[10px] font-black">
-                    <div className="text-emerald-400" title="Mucho8s net">
-                      ● {p.mucho8sNet >= 0 ? "+" : "-"}{euro(Math.abs(p.mucho8sNet))}
-                    </div>
-                    <div className="text-emerald-400" title="Mucho1v1 net">
-                      ● {p.mucho1v1Net >= 0 ? "+" : "-"}{euro(Math.abs(p.mucho1v1Net))}
-                    </div>
+                  <div className="mt-1 font-mono text-sm font-black text-emerald-400" title="Verified money net">
+                    {p.earnings >= 0 ? "+" : "-"}{euro(Math.abs(p.earnings))}
                   </div>
                 </div>
               </div>
@@ -406,15 +399,8 @@ export default function Leaderboard() {
                       {p.winRate.toFixed(1)}%
                     </td>
 
-                    <td className="px-4 py-3">
-                      <div className="space-y-0.5 font-mono text-[11px] font-black">
-                        <div className="text-emerald-400" title="Mucho8s net">
-                          ● {p.mucho8sNet >= 0 ? "+" : "-"}{euro(Math.abs(p.mucho8sNet))}
-                        </div>
-                        <div className="text-emerald-400" title="Mucho1v1 net">
-                          ● {p.mucho1v1Net >= 0 ? "+" : "-"}{euro(Math.abs(p.mucho1v1Net))}
-                        </div>
-                      </div>
+                    <td className="px-4 py-3 font-mono text-[11px] font-black text-emerald-400">
+                      {p.earnings >= 0 ? "+" : "-"}{euro(Math.abs(p.earnings))}
                     </td>
 
                     <td className="px-4 py-3">
