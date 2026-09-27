@@ -435,7 +435,7 @@ export const RecordMatchDialog = ({
 
           <div className="rounded-2xl bg-[#0F1218] border border-[#222834] p-4" data-testid="match-money-settings">
             <div className="flex items-center gap-2 mb-3">
-              <WalletCards size={16} className="text-magma" />
+              <WalletCards size={16} className="text-emerald-400" />
               <div>
                 <div className="text-sm font-bold">Mucho8s Pairings</div>
                 <div className="text-[11px] text-muted-foreground">
@@ -503,7 +503,7 @@ export const RecordMatchDialog = ({
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] leading-5">
               <div>
-                <span className="font-semibold text-magma inline-flex items-center gap-1"><Trophy size={11} /> MVP</span>
+                <span className="font-semibold text-[#D5A33A] inline-flex items-center gap-1"><Trophy size={11} /> MVP</span>
                 <span className="text-muted-foreground"> · Every 3 consecutive wins = +1 MVP and +3 Elo.</span>
               </div>
               <div>
