@@ -17,6 +17,23 @@ const MIN_ELO = 500;
 const WIN_DELTA = 25;
 const LOSS_DELTA = 25;
 const MVP_BONUS = 3;
+const ELO_K = 50;
+const ELO_SCALE = 400;
+const MIN_RESULT_DELTA = 5;
+const MAX_RESULT_DELTA = 45;
+
+const expectedEloScore = (elo: number, opponentElo: number) =>
+  1 / (1 + Math.pow(10, (opponentElo - elo) / ELO_SCALE));
+
+const eloResultDelta = (elo: number, opponentElo: number, won: boolean) => {
+  const expected = expectedEloScore(elo, opponentElo);
+  const raw = ELO_K * ((won ? 1 : 0) - expected);
+  const magnitude = Math.max(
+    MIN_RESULT_DELTA,
+    Math.min(MAX_RESULT_DELTA, Math.round(Math.abs(raw))),
+  );
+  return won ? magnitude : -magnitude;
+};
 
 const sha256 = async (value: string) => {
   const bytes = new TextEncoder().encode(value);
@@ -133,12 +150,26 @@ const applyEffects = (
   const clearedSet = new Set(merdaClearedIds);
   const changes: Record<string, number> = {};
 
+  const averageElo = (ids: string[]) => {
+    const values = ids
+      .map((id) => Number(byId[id]?.currentElo || BASE_ELO))
+      .filter(Number.isFinite);
+    return values.length
+      ? values.reduce((sum, value) => sum + value, 0) / values.length
+      : BASE_ELO;
+  };
+
+  const averageA = averageElo(teamA);
+  const averageB = averageElo(teamB);
+  const teamADelta = eloResultDelta(averageA, averageB, winner === "A");
+  const teamBDelta = eloResultDelta(averageB, averageA, winner === "B");
+
   [...teamA, ...teamB].forEach((id) => {
     const player = byId[id];
     if (!player) return;
 
     const won = winners.includes(id);
-    let delta = won ? WIN_DELTA : -LOSS_DELTA;
+    let delta = teamA.includes(id) ? teamADelta : teamBDelta;
     if (mvpSet.has(id)) delta += MVP_BONUS;
 
     const nextElo = Math.max(MIN_ELO, Number(player.currentElo || BASE_ELO) + delta);
@@ -239,6 +270,11 @@ const recomputeAwardState = (byId: Record<string, any>, matches: any[]) => {
         }
       });
 
+      const previousMvpSet = new Set(
+        Array.isArray(match?.mvpIds)
+          ? match.mvpIds.map(String)
+          : (match?.mvpId ? [String(match.mvpId)] : []),
+      );
       const mvpSet = new Set(mvpIds);
       const nextChanges: Record<string, number> = {};
 
@@ -247,8 +283,14 @@ const recomputeAwardState = (byId: Record<string, any>, matches: any[]) => {
         if (!player) return;
 
         const won = winnerSet.has(id);
-        const nextDelta = (won ? WIN_DELTA : -LOSS_DELTA) + (mvpSet.has(id) ? MVP_BONUS : 0);
         const oldDelta = Number(match?.eloChanges?.[id]);
+
+        let baseDelta = won ? WIN_DELTA : -LOSS_DELTA;
+        if (Number.isFinite(oldDelta) && oldDelta !== 0) {
+          baseDelta = oldDelta - (previousMvpSet.has(id) ? MVP_BONUS : 0);
+        }
+
+        const nextDelta = baseDelta + (mvpSet.has(id) ? MVP_BONUS : 0);
 
         if (Number.isFinite(oldDelta) && oldDelta !== 0 && oldDelta !== nextDelta) {
           player.currentElo = Math.max(
