@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar } from "@/components/shared";
+import ModeBadge from "@/components/ModeBadge";
 import { Button } from "@/components/ui/button";
 import { RecordMatchDialog } from "@/components/RecordMatchDialog";
 import {
@@ -136,15 +137,15 @@ export default function MatchRoom() {
       <div className="m8-page-stack">
         <section className="m8-panel rounded-[22px] p-8 sm:p-10 text-center">
           <Gamepad2 size={30} className="mx-auto text-[#697181]" />
-          <h1 className="font-display text-2xl font-black mt-3">Match Room unavailable</h1>
+          <h1 className="font-display text-2xl font-black mt-3">Mucho8s Room unavailable</h1>
           <p className="text-sm text-muted-foreground mt-2">
-            This match is no longer live or could not be found.
+            This Mucho8s is no longer live or could not be found.
           </p>
           <Link
             to="/matches"
             className="mt-5 inline-flex h-10 px-4 rounded-xl bg-white text-black items-center justify-center font-bold text-sm"
           >
-            Back to Matches
+            Back to Match Center
           </Link>
         </section>
       </div>
@@ -189,7 +190,7 @@ export default function MatchRoom() {
     const ok = await cancelLiveMatch(match.id);
     setBusy(false);
     if (!ok) return;
-    toast.success("Live match cancelled");
+    toast.success("Mucho8s cancelled");
     navigate("/matches");
   };
 
@@ -207,10 +208,11 @@ export default function MatchRoom() {
               to="/matches"
               className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-white"
             >
-              <ArrowLeft size={14} /> Live Matches
+              <ArrowLeft size={14} /> Match Center
             </Link>
 
             <div className="flex flex-wrap items-center gap-2 mt-4">
+              <ModeBadge mode="mucho8s" compact />
               <span className="h-7 px-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-400 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 Live
@@ -221,7 +223,7 @@ export default function MatchRoom() {
             </div>
 
             <h1 className="font-display text-3xl sm:text-4xl font-black tracking-[-0.04em] mt-3">
-              Match Room
+              Mucho8s Room
             </h1>
 
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 text-xs text-muted-foreground">
@@ -233,7 +235,7 @@ export default function MatchRoom() {
                 Captain · <strong className="text-white">{playerMap[captainId]?.name || "Player"}</strong>
               </span>
               <span>
-                Total stake · <strong className="text-[#D5A33A]">{euro(totalStake)}</strong>
+                Total stake · <strong className="text-magma">{euro(totalStake)}</strong>
               </span>
             </div>
           </div>
@@ -269,25 +271,25 @@ export default function MatchRoom() {
                     className="h-10 rounded-xl border border-red-500/20 bg-red-500/[0.04] text-red-400 hover:bg-red-500/[0.08] hover:text-red-300"
                   >
                     <Trash2 size={14} className="mr-1.5" />
-                    Cancel Match
+                    Cancel Mucho8s
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent className="bg-[#101319] border-[#242A35]">
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Cancel this live match?</AlertDialogTitle>
+                    <AlertDialogTitle>Cancel this Mucho8s?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      The match will close without recording a result.
+                      The Mucho8s will close without recording a result.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel className="bg-[#181B26] border-[#2A303B]">
-                      Keep Match
+                      Keep Mucho8s
                     </AlertDialogCancel>
                     <AlertDialogAction
                       onClick={() => void cancelAsAdmin()}
                       className="bg-red-500 hover:bg-red-400 text-white"
                     >
-                      Cancel Match
+                      Cancel Mucho8s
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -313,7 +315,7 @@ export default function MatchRoom() {
           <div>
             <div className="text-sm font-bold text-orange-300">Cancellation awaiting Admin</div>
             <div className="text-xs text-orange-200/60 mt-1">
-              The match stays live until an Admin approves the cancellation or a result is reported.
+              The Mucho8s stays live until an Admin approves the cancellation or a result is reported.
             </div>
           </div>
         </section>
@@ -348,10 +350,10 @@ export default function MatchRoom() {
       <section className="m8-panel rounded-2xl p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3 mb-3">
           <div>
-            <div className="brand-kicker mb-1">Money</div>
-            <h2 className="font-display font-bold text-lg">Pairings</h2>
+            <div className="brand-kicker mb-1 text-magma">Mucho8s</div>
+            <h2 className="font-display font-bold text-lg">Money Pairings</h2>
           </div>
-          <div className="inline-flex items-center gap-1.5 text-[#D5A33A] font-mono font-black text-sm">
+          <div className="inline-flex items-center gap-1.5 text-magma font-mono font-black text-sm">
             <WalletCards size={15} />
             {euro(totalStake)}
           </div>
@@ -378,7 +380,7 @@ export default function MatchRoom() {
                 </div>
                 <div className="flex items-center justify-between gap-3 mt-2 text-[10px] uppercase tracking-wider text-muted-foreground">
                   <span>{String(pair.platform || "paypal").toUpperCase()}</span>
-                  <span className="font-mono font-black text-[#D5A33A]">
+                  <span className="font-mono font-black text-magma">
                     {euro(pair.amount)}
                   </span>
                 </div>
@@ -392,7 +394,7 @@ export default function MatchRoom() {
         <section className="rounded-2xl border border-[#222834] bg-[#0F1218] px-4 py-3 flex items-start gap-3">
           <ShieldCheck size={16} className="text-[#697181] mt-0.5 shrink-0" />
           <div className="text-xs text-muted-foreground">
-            Only the match captain or an Admin can report the final result.
+            Only the Mucho8s captain or an Admin can report the final result.
           </div>
         </section>
       )}
@@ -400,7 +402,7 @@ export default function MatchRoom() {
       <RecordMatchDialog
         open={reportOpen}
         onOpenChange={setReportOpen}
-        title="Report Final Result"
+        title="Report Mucho8s Result"
         lockTeams
         lockContext
         initialTeams={{ teamA, teamB, pairings }}
