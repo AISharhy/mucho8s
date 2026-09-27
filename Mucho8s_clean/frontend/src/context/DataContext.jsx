@@ -1173,7 +1173,7 @@ export const DataProvider = ({ children }) => {
       matchId: match.id,
       winner: match.winner,
       date: match.date,
-      seasonNumber: match.season || competitionData?.current?.season_number || 1,
+      seasonNumber: match.season ?? competitionData?.current?.season_number ?? 1,
       pairings: Array.isArray(match.pairings) ? match.pairings : [],
     }, { silent });
 
@@ -1847,7 +1847,7 @@ export const DataProvider = ({ children }) => {
       merdaClearedIds,
       id: uid(),
       date: data.date || new Date().toISOString(),
-      season: data.season || competitionData?.current?.season_number || dashboardData?.competition?.season_number || 1,
+      season: data.season ?? competitionData?.current?.season_number ?? dashboardData?.competition?.season_number ?? 1,
       eloChanges,
     });
     const nextMatches = recomputeAwardState(byId, [match, ...matches]);
