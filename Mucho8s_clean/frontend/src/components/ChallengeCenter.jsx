@@ -79,7 +79,14 @@ export default function ChallengeCenter() {
   const attention = useMemo(() => {
     if (!discordAccount?.id) return null;
 
-    const verification = challenges.find(
+    const directChallenges = (Array.isArray(challenges) ? challenges : []).filter(
+      (challenge) =>
+        !["match_pairing", "balancer_pairing"].includes(
+          String(challenge?.source || "").toLowerCase()
+        )
+    );
+
+    const verification = directChallenges.find(
       (c) =>
         c.status === "result_pending" &&
         c.reporter_account_id !== discordAccount.id &&
@@ -87,12 +94,12 @@ export default function ChallengeCenter() {
     );
     if (verification) return { type: "verify", challenge: verification };
 
-    const request = challenges.find(
+    const request = directChallenges.find(
       (c) => c.status === "pending" && c.challenged_account_id === discordAccount.id
     );
     if (request) return { type: "incoming", challenge: request };
 
-    const acceptedForSender = challenges.find((c) => {
+    const acceptedForSender = directChallenges.find((c) => {
       const isSender = c.challenger_account_id === discordAccount.id;
       return (
         isSender &&
@@ -103,7 +110,7 @@ export default function ChallengeCenter() {
     });
     if (acceptedForSender) return { type: "accepted", challenge: acceptedForSender };
 
-    const eventNotice = challenges.find((c) => {
+    const eventNotice = directChallenges.find((c) => {
       const isChallenger = c.challenger_account_id === discordAccount.id;
       const isChallenged = c.challenged_account_id === discordAccount.id;
       if (!isChallenger && !isChallenged) return false;
