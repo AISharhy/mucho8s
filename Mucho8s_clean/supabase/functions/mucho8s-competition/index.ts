@@ -210,7 +210,7 @@ Deno.serve(async (req: Request) => {
         const elo = Number(rawElo);
         if (!Number.isFinite(elo)) continue;
 
-        baselines.set(id, { elo: Math.max(startingElo, Math.round(elo)), at });
+        baselines.set(id, { elo: Math.max(500, Math.round(elo)), at });
       }
 
       const challengeById = new Map(
@@ -219,7 +219,15 @@ Deno.serve(async (req: Request) => {
 
       const nextPlayers = players.map((player: any) => {
         const id = String(player?.id || "");
-        const baseline = baselines.get(id) || { elo: startingElo, at: seasonStartedAt };
+        const firstHistoryElo = Number(
+          Array.isArray(player?.eloHistory) && player.eloHistory.length
+            ? player.eloHistory[0]?.elo
+            : NaN
+        );
+        const baseline = baselines.get(id) || {
+          elo: Number.isFinite(firstHistoryElo) ? Math.max(500, Math.round(firstHistoryElo)) : startingElo,
+          at: seasonStartedAt,
+        };
         const events: Array<{ at: number; order: number; delta: number }> = [];
 
         for (const match of matches) {
@@ -251,7 +259,7 @@ Deno.serve(async (req: Request) => {
         events.sort((a, b) => a.at - b.at || a.order - b.order);
 
         let repairedElo = baseline.elo;
-        for (const event of events) repairedElo = Math.max(startingElo, repairedElo + event.delta);
+        for (const event of events) repairedElo = Math.max(500, repairedElo + event.delta);
         repairedElo = Math.round(repairedElo);
 
         const oldElo = Math.round(Number(player?.currentElo) || startingElo);
