@@ -30,6 +30,7 @@ const COLUMNS = [
 export default function Leaderboard() {
   const {
     players,
+    matches,
     playerAvatars,
     discordPlayer,
     publicChallenges,
@@ -58,6 +59,31 @@ export default function Leaderboard() {
 
     (players || []).forEach((player) => ensure(player.id));
 
+    // Mucho8s earnings come from the canonical match history.
+    // This preserves the full historical total even when old pairing rows
+    // are not present in the public challenge feed.
+    (matches || []).forEach((match) => {
+      const teamA = Array.isArray(match.teamA) ? match.teamA : [];
+      const teamB = Array.isArray(match.teamB) ? match.teamB : [];
+      const winnerSide = match.winner === "B" ? "B" : "A";
+      const winnerIds = winnerSide === "A" ? teamA : teamB;
+      const pairings = Array.isArray(match.pairings) ? match.pairings : [];
+
+      winnerIds.forEach((playerId) => {
+        if (!playerId) return;
+
+        const pairing = pairings.find(
+          (pair) =>
+            pair?.playerAId === playerId ||
+            pair?.playerBId === playerId
+        );
+
+        const amount = Math.max(0, Number(pairing?.amount) || 0);
+        if (amount > 0) ensure(playerId).mucho8sWon += amount;
+      });
+    });
+
+    // Direct Mucho1v1 earnings are stored in the verified challenge history.
     (publicChallenges || []).forEach((challenge) => {
       const verified = Boolean(
         challenge.verified_at &&
@@ -67,13 +93,9 @@ export default function Leaderboard() {
       const openDispute = Boolean(
         challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at
       );
-      if (!verified || openDispute) return;
+      if (!verified || openDispute || !isDirectMucho1v1(challenge)) return;
 
-      const source = String(challenge.source || "").toLowerCase();
-      if (source === "balancer_pairing") return;
-
-      const direct1v1 = isDirectMucho1v1(challenge);
-      const amount = Number(challenge.amount_cents || 0) / 100;
+      const amount = Math.max(0, Number(challenge.amount_cents || 0) / 100);
       const ids = [
         challenge.challenger_player_id,
         challenge.challenged_player_id,
@@ -84,21 +106,17 @@ export default function Leaderboard() {
         const row = ensure(id);
         const won = challenge.reported_winner_player_id === id;
 
-        if (direct1v1) {
-          if (won) {
-            row.mucho1v1Won += amount;
-            row.mucho1v1Wins += 1;
-          } else {
-            row.mucho1v1Losses += 1;
-          }
-        } else if (source === "match_pairing" && won) {
-          row.mucho8sWon += amount;
+        if (won) {
+          row.mucho1v1Won += amount;
+          row.mucho1v1Wins += 1;
+        } else {
+          row.mucho1v1Losses += 1;
         }
       });
     });
 
     return stats;
-  }, [players, publicChallenges]);
+  }, [players, matches, publicChallenges]);
 
   const rows = useMemo(
     () =>
