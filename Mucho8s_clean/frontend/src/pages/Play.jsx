@@ -203,15 +203,15 @@ export default function Play() {
               Choose your mode
             </h1>
             <p className="text-sm text-[#7F8795] mt-2">
-              Money8s and 1v1 Chall are live now. Ranked and Tournaments are already in development.
+              Mucho8s and Mucho1v1 are live now. MuchoRanked and MuchoTourney are already in development.
             </p>
           </div>
 
           <div className="hidden sm:flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-[#697181]">
-            <span className="m8-pill">Money8s</span>
-            <span className="m8-pill">1v1 Chall</span>
-            <span className="m8-pill text-[#697181]">Ranked · Soon</span>
-            <span className="m8-pill text-[#697181]">Tournaments · Soon</span>
+            <span className="m8-pill">Mucho8s</span>
+            <span className="m8-pill">Mucho1v1</span>
+            <span className="m8-pill text-[#697181]">MuchoRanked · Soon</span>
+            <span className="m8-pill text-[#697181]">MuchoTourney · Soon</span>
           </div>
         </div>
       </section>
@@ -226,7 +226,7 @@ export default function Play() {
           <div className="relative z-10">
             <ModeHeader
               kicker="Money Team Play"
-              title="Money8s"
+              title="Mucho8s"
               description="Create the lobby, build the teams and play the money matchup."
               icon={Gamepad2}
               accent="#FF2A3B"
@@ -260,7 +260,7 @@ export default function Play() {
             >
               <span className="inline-flex items-center gap-2">
                 <Gamepad2 size={17} />
-                OPEN MONEY8S
+                OPEN MUCHO8S
               </span>
               <ArrowRight size={18} />
             </Link>
@@ -277,7 +277,7 @@ export default function Play() {
             <div className="min-w-0">
               <div className="brand-kicker mb-1">Direct Challenge</div>
               <h2 className="font-display text-2xl sm:text-[28px] font-black tracking-[-0.035em]">
-                1v1 Chall
+                Mucho1v1
               </h2>
               <p className="text-xs sm:text-sm text-[#7F8795] mt-1.5">
                 Pick one opponent, choose the stake and send a direct chall.
@@ -504,7 +504,7 @@ export default function Play() {
                   </span>
                 </div>
                 <h2 className="font-display text-2xl sm:text-[28px] font-black tracking-[-0.035em]">
-                  Ranked
+                  MuchoRanked
                 </h2>
                 <p className="text-sm text-[#7F8795] mt-2 max-w-md">
                   Enter the queue, find a balanced lobby and play BO1 ranked matches with map and mode voting.
@@ -545,7 +545,7 @@ export default function Play() {
                   </span>
                 </div>
                 <h2 className="font-display text-2xl sm:text-[28px] font-black tracking-[-0.035em]">
-                  Tournaments
+                  MuchoTourney
                 </h2>
                 <p className="text-sm text-[#7F8795] mt-2 max-w-md">
                   Join organized events with team registration, brackets, match progression and tournament history.
