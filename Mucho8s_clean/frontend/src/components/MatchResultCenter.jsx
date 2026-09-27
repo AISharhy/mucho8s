@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from "react";
 import { useData } from "@/context/DataContext";
 import { Button } from "@/components/ui/button";
+import ModeBadge from "@/components/ModeBadge";
 import {
   AlertTriangle,
   Check,
   Clock3,
   X,
+  Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -99,7 +101,7 @@ export default function MatchResultCenter({ teamPlayerIds = null, reportId = "",
     toast.success(
       decision === "confirm"
         ? "Result confirmed by Admin"
-        : "Match report cancelled"
+        : "Mucho8s report cancelled"
     );
 
     onResolved?.(result, decision);
@@ -110,8 +112,10 @@ export default function MatchResultCenter({ teamPlayerIds = null, reportId = "",
       {!hideHeader && (
         <div className="flex items-center justify-between gap-3 px-1">
           <div>
-            <div className="brand-kicker mb-1">Action needed</div>
-            <h3 className="font-display text-xl font-black tracking-[-0.02em]">Pending verification</h3>
+            <div className="flex items-center gap-2 mb-1">
+              <ModeBadge mode="mucho8s" compact />
+            </div>
+            <h3 className="font-display text-xl font-black tracking-[-0.02em]">Pending Mucho8s verification</h3>
           </div>
           <span className="m8-pill">{reports.length}</span>
         </div>
@@ -137,6 +141,7 @@ export default function MatchResultCenter({ teamPlayerIds = null, reportId = "",
             <div className="flex flex-col lg:flex-row lg:items-center gap-4">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
+                  <ModeBadge mode="mucho8s" compact />
                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-bold tracking-wider ${statusClass[report.status]}`}>
                     {report.status === "disputed" ? <AlertTriangle size={12} /> : <Clock3 size={12} />}
                     {report.status === "disputed" ? "DISPUTED" : "WAITING"}
@@ -184,7 +189,7 @@ export default function MatchResultCenter({ teamPlayerIds = null, reportId = "",
                 {Array.isArray(report.pairings) && report.pairings.length > 0 && (
                   <div className="mt-3 rounded-xl bg-[#0F1218] border border-[#222834] p-3">
                     <div className="text-[9px] uppercase tracking-widest text-muted-foreground mb-2">
-                      Money matchups
+                      Mucho8s pairings
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {report.pairings.map((pair, index) => (
@@ -214,7 +219,7 @@ export default function MatchResultCenter({ teamPlayerIds = null, reportId = "",
                 <div className="flex flex-wrap gap-2 mt-3">
                   {mvp && (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#D5A33A]/[0.07] border border-[#D5A33A]/20 text-xs text-[#D5A33A] font-bold">
-                      <span aria-hidden="true">🏆</span> MVP · {mvp.name}
+                      <Trophy size={11} /> MVP · {mvp.name}
                     </span>
                   )}
 
