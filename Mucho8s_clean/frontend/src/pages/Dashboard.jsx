@@ -305,8 +305,10 @@ const GuestDashboard = ({
       <CompetitionOverview
         players={players}
         matches={matches}
-          playerAvatars={playerAvatars}
-        />
+        playerMap={playerMap}
+        playerAvatars={playerAvatars}
+        liveMatches={liveMatches}
+      />
     </div>
   );
 };
@@ -639,12 +641,10 @@ export default function Dashboard() {
       discordPlayer={discordPlayer}
       playerAvatars={playerAvatars}
       matches={matches}
-      playerMap={playerMap}
       season={season}
       isAdmin={isAdmin}
       adminChallengeAlertCount={adminChallengeAlertCount}
       players={players}
-      liveMatches={liveMatches}
     />
   );
 }
