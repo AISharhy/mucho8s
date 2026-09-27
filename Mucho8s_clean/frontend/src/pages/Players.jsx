@@ -4,11 +4,11 @@ import { useData } from "@/context/DataContext";
 import { PlayerAvatar, EloBadge, RankBadge, RankProgress, Last10, StreakBadge, WinRatePill, MvpBadge } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ProductState";
-import { Search, Flame, ArrowUpRight, Users } from "lucide-react";
+import { Search, Flame, ArrowUpRight, Users, Trophy } from "lucide-react";
 
 const FILTERS = [
   { key: "all", label: "All", title: "All players" },
-  { key: "mvp", label: "🏆", title: "Players with MVP awards" },
+  { key: "mvp", label: "MVP", icon: Trophy, title: "Players with Trophy8s MVP awards" },
   { key: "merda", label: "💩", title: "Players with MERDA awards" },
 ];
 
@@ -88,6 +88,7 @@ export default function Players() {
                     : "bg-[#0F1218] text-[#8D95A4] hover:text-white border-[#222834]"
                 }`}
               >
+                {item.icon ? <item.icon size={13} className="inline mr-1 text-magma" /> : null}
                 {item.label}
               </button>
             ))}
@@ -125,11 +126,11 @@ export default function Players() {
                 <span className="font-mono font-bold text-white">{p.peakElo}</span>
               </div>
               <div>
-                <div className="brand-kicker mb-1">Win Rate</div>
+                <div className="brand-kicker mb-1">Mucho8s WR</div>
                 <WinRatePill player={p} />
               </div>
               <div>
-                <div className="brand-kicker mb-1">MVP</div>
+                <div className="brand-kicker mb-1 text-magma">Trophy8s MVP</div>
                 <MvpBadge count={p.mvpCount} />
               </div>
             </div>
@@ -137,7 +138,10 @@ export default function Players() {
             <div className="mt-5 pt-4 border-t border-[#1D222C]">
               <RankProgress elo={p.currentElo} compact />
               <div className="flex items-center justify-between mt-3">
-                <Last10 record={p.last10} />
+                <div>
+                  <div className="text-[8px] uppercase tracking-widest text-[#697181] mb-1">Mucho8s form</div>
+                  <Last10 record={p.last10} />
+                </div>
                 <StreakBadge streak={p.currentStreak} />
               </div>
             </div>
