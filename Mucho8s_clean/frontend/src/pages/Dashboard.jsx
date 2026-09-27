@@ -433,10 +433,16 @@ const PersonalDashboard = ({
       (challenge) => challenge.reported_winner_player_id === discordPlayer.id
     ).length;
 
+    const wonValue = completed.reduce((sum, challenge) => {
+      if (challenge.reported_winner_player_id !== discordPlayer.id) return sum;
+      return sum + Math.max(0, Number(challenge.amount_cents || 0) / 100);
+    }, 0);
+
     return {
       played: completed.length,
       wins,
       losses: Math.max(0, completed.length - wins),
+      wonValue,
     };
   }, [publicChallenges, discordPlayer.id]);
 
@@ -608,9 +614,9 @@ const PersonalDashboard = ({
             to={"/players/" + discordPlayer.id}
           />
           <CompactMetric
-            label="Mucho8s Winnings"
-            value={euro(moneyWon)}
-            sub="Verified money pairings"
+            label="Money Won"
+            value={euro(moneyWon + mucho1v1Stats.wonValue)}
+            sub="All verified modes"
             icon={WalletCards}
             tone="text-emerald-400"
             to="/matches"
