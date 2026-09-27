@@ -200,13 +200,13 @@ export default function Play() {
               Choose your mode
             </h1>
             <p className="text-sm text-[#7F8795] mt-2">
-              Team lobby or direct 1v1 Money Chall. Two clear paths, no extra steps.
+              Money8s team lobby or a direct 1v1 Chall. Two clear competitive paths.
             </p>
           </div>
 
           <div className="hidden sm:flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-[#697181]">
-            <span className="m8-pill">8s</span>
-            <span className="m8-pill">1v1</span>
+            <span className="m8-pill">Money8s</span>
+            <span className="m8-pill">1v1 Chall</span>
           </div>
         </div>
       </section>
@@ -220,9 +220,9 @@ export default function Play() {
 
           <div className="relative z-10">
             <ModeHeader
-              kicker="Competitive 8s"
-              title="8s"
-              description="Create the lobby first, then let the system build the matchup."
+              kicker="Money Team Play"
+              title="Money8s"
+              description="Create the lobby, build the teams and play the money matchup."
               icon={Gamepad2}
               accent="#FF2A3B"
             />
@@ -237,7 +237,7 @@ export default function Play() {
               <StepRow
                 number="2"
                 title="Choose team method"
-                text="Auto Balance or Manual. Chemistry becomes an information score after the teams are created."
+                text="Auto Balance, Captain Draft or Manual. Build the matchup your way."
               />
 
               <StepRow
@@ -255,7 +255,7 @@ export default function Play() {
             >
               <span className="inline-flex items-center gap-2">
                 <Gamepad2 size={17} />
-                OPEN TEAM BUILDER
+                OPEN MONEY8S
               </span>
               <ArrowRight size={18} />
             </Link>
@@ -270,12 +270,12 @@ export default function Play() {
 
           <div className="relative z-10 flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <div className="brand-kicker mb-1">1v1 Challenge</div>
+              <div className="brand-kicker mb-1">Direct Challenge</div>
               <h2 className="font-display text-2xl sm:text-[28px] font-black tracking-[-0.035em]">
-                Chall Singola
+                1v1 Chall
               </h2>
               <p className="text-xs sm:text-sm text-[#7F8795] mt-1.5">
-                Pick an opponent, choose the stake and send the chall.
+                Pick one opponent, choose the stake and send a direct chall.
               </p>
             </div>
 
