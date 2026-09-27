@@ -347,7 +347,19 @@ export default function TeamBuilder() {
       .map((playerId) => contextualPlayerMap[playerId])
       .filter(Boolean);
 
-    void lockResult(analyzeManualTeams(teamAPlayers, teamBPlayers, context.matches));
+    const analysis = analyzeManualTeams(teamAPlayers, teamBPlayers, context.matches);
+    void lockResult(
+      analysis
+        ? {
+            ...analysis,
+            teamMethod: "draft",
+            draftCaptains: {
+              A: resolvedDraftCaptainA,
+              B: resolvedDraftCaptainB,
+            },
+          }
+        : null
+    );
   };
 
   const lockResult = async (draft) => {
@@ -489,63 +501,113 @@ export default function TeamBuilder() {
         {game && (
           <div className="mt-4">
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Mode</div>
-            <div className="grid grid-cols-2 gap-2 max-w-xl">
-              {MATCH_MODES.map((item) => (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            {[
+              {
+                key: "auto",
+                title: "Auto Balance",
+                text: "System creates the best split for the selected priority.",
+                icon: Scale,
+              },
+              {
+                key: "draft",
+                title: "Captain Draft",
+                text: "Two draft captains pick the lobby with a snake order.",
+                icon: Crown,
+              },
+              {
+                key: "manual",
+                title: "Manual",
+                text: "Build Alpha and Bravo yourself with full control.",
+                icon: UsersRound,
+              },
+            ].map(({ key, title, text, icon: Icon }) => {
+              const active = teamMethod === key;
+              return (
                 <button
+                  key={key}
                   type="button"
-                  key={item}
-                  aria-pressed={matchMode === item}
-                  onClick={() => changeMatchMode(item)}
-                  className={`h-11 rounded-xl border text-sm font-bold transition-all ${
-                    matchMode === item
-                      ? "bg-[#D5A33A] text-black border-[#D5A33A]"
-                      : "bg-[#0F1218] border-[#222834] text-[#AAB1BE] hover:text-white"
+                  onClick={() => changeTeamMethod(key)}
+                  aria-pressed={active}
+                  className={`rounded-2xl border p-3.5 text-left transition-all ${
+                    active
+                      ? "bg-white/[0.055] border-white/20 shadow-[inset_0_0_0_1px_rgba(255,255,255,.03)]"
+                      : "bg-[#0F1218] border-[#222834] hover:border-[#394150]"
                   }`}
                 >
-                  {item}
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className={`w-9 h-9 rounded-xl border flex items-center justify-center ${
+                        active
+                          ? "bg-white text-black border-white"
+                          : "bg-[#151923] border-[#2A303B] text-[#9AA2AF]"
+                      }`}
+                    >
+                      <Icon size={16} />
+                    </span>
+                    <div>
+                      <div className={`text-sm font-black ${active ? "text-white" : "text-[#C2C8D1]"}`}>
+                        {title}
+                      </div>
+                      <div className="text-[10px] text-[#697181] mt-0.5 leading-4">
+                        {text}
+                      </div>
+                    </div>
+                  </div>
                 </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </section>
-
-      {game && matchMode && (
-        <section className="m8-panel rounded-[22px] p-5 sm:p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-black text-sm">2</div>
-            <div>
-              <div className="brand-kicker">Teams</div>
-              <h3 className="font-display text-xl font-black">Choose the team method</h3>
-            </div>
+              );
+            })}
           </div>
 
-          <div className="grid grid-cols-2 gap-2 max-w-xl">
-            <button
-              type="button"
-              onClick={() => changeTeamMethod("auto")}
-              aria-pressed={teamMethod === "auto"}
-              className={`h-12 rounded-xl border font-bold transition-all ${
-                teamMethod === "auto"
-                  ? "bg-white text-black border-white"
-                  : "bg-[#0F1218] border-[#222834] text-[#AAB1BE]"
-              }`}
-            >
-              Auto Balance
-            </button>
-            <button
-              type="button"
-              onClick={() => changeTeamMethod("manual")}
-              aria-pressed={teamMethod === "manual"}
-              className={`h-12 rounded-xl border font-bold transition-all ${
-                teamMethod === "manual"
-                  ? "bg-white text-black border-white"
-                  : "bg-[#0F1218] border-[#222834] text-[#AAB1BE]"
-              }`}
-            >
-              Manual
-            </button>
-          </div>
+          {teamMethod === "auto" && (
+            <div className="mt-3 rounded-xl border border-[#222834] bg-[#0F1218] p-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.16em] text-[#697181]">
+                    Balance priority
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Choose what the auto builder should value most.
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-1.5 sm:w-auto">
+                  {[
+                    ["elo", "Elo"],
+                    ["chemistry", "Chemistry"],
+                    ["mixed", "Mixed"],
+                  ].map(([key, label]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => {
+                        setAutoPriority(key);
+                        setResult(null);
+                      }}
+                      className={`h-9 px-3 rounded-lg border text-[10px] font-black transition-all ${
+                        autoPriority === key
+                          ? "bg-white text-black border-white"
+                          : "bg-[#151923] border-[#2A303B] text-[#AAB1BE] hover:border-[#3A424F]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {teamMethod === "draft" && (
+            <div className="mt-3 rounded-xl border border-[#222834] bg-[#0F1218] px-3 py-2.5 flex items-center justify-between gap-3">
+              <div className="text-xs text-muted-foreground">
+                Snake order <span className="text-white font-mono font-black ml-1">A → B → B → A</span>
+              </div>
+              <span className="text-[9px] uppercase tracking-widest text-[#D5A33A]">
+                Best for 3v3 / 4v4
+              </span>
+            </div>
+          )}/div>
         </section>
       )}
 
@@ -694,17 +756,283 @@ export default function TeamBuilder() {
             </div>
           )}
 
-          <Button
-            onClick={generateTeams}
-            disabled={
-              !validLobby ||
-              (teamMethod === "manual" && (manualA.length !== perTeam || manualB.length !== perTeam))
-            }
-            className="w-full h-12 mt-4 bg-magma hover:bg-[#ff3c4c] font-black rounded-xl"
-          >
-            <Swords size={17} className="mr-2" />
-            {validLobby ? `Create ${inferredFormat} Teams` : "Select 4, 6 or 8 players"}
-          </Button>
+          {teamMethod === "draft" && validLobby && (
+            <div className="mt-4 pt-4 border-t border-[#222834]">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                <div>
+                  <div className="brand-kicker mb-1">Captain Draft</div>
+                  <div className="text-sm font-bold">
+                    {draftStarted ? "Draft the teams" : "Choose the two draft captains"}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={draftStarted}
+                    onClick={() => changeDraftCaptainMode("auto")}
+                    className={`h-8 px-3 rounded-lg border text-[10px] font-black ${
+                      draftCaptainMode === "auto"
+                        ? "bg-white text-black border-white"
+                        : "bg-[#151923] border-[#2A303B] text-[#AAB1BE]"
+                    } disabled:opacity-40`}
+                  >
+                    Auto Captains
+                  </button>
+                  <button
+                    type="button"
+                    disabled={draftStarted}
+                    onClick={() => changeDraftCaptainMode("manual")}
+                    className={`h-8 px-3 rounded-lg border text-[10px] font-black ${
+                      draftCaptainMode === "manual"
+                        ? "bg-white text-black border-white"
+                        : "bg-[#151923] border-[#2A303B] text-[#AAB1BE]"
+                    } disabled:opacity-40`}
+                  >
+                    Manual
+                  </button>
+                </div>
+              </div>
+
+              {!draftStarted ? (
+                <>
+                  {draftCaptainMode === "auto" ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {[
+                        ["A", autoDraftCaptains[0]],
+                        ["B", autoDraftCaptains[1]],
+                      ].map(([side, captain]) => (
+                        <div
+                          key={side}
+                          className="rounded-xl border border-[#222834] bg-[#0F1218] p-3 flex items-center gap-3"
+                        >
+                          <span className={`w-8 h-8 rounded-lg border inline-flex items-center justify-center font-black text-xs ${
+                            side === "A"
+                              ? "border-magma/25 bg-magma/[0.06] text-magma"
+                              : "border-[#65D5D3]/25 bg-[#65D5D3]/[0.05] text-[#65D5D3]"
+                          }`}>
+                            {side}
+                          </span>
+                          {captain ? (
+                            <>
+                              <PlayerAvatar
+                                name={captain.name}
+                                elo={captain.currentElo}
+                                size={34}
+                                avatarUrl={playerAvatars[captain.id]}
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="font-semibold text-sm truncate flex items-center gap-1.5">
+                                  <Crown size={12} className="text-[#D5A33A]" />
+                                  {captain.name}
+                                </div>
+                                <div className="text-[10px] text-muted-foreground mt-0.5">
+                                  {captain.currentElo} Elo · auto selected
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="text-xs text-muted-foreground">
+                              Select the full lobby first.
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {[
+                        ["A", draftCaptainA, setDraftCaptainA, draftCaptainB],
+                        ["B", draftCaptainB, setDraftCaptainB, draftCaptainA],
+                      ].map(([side, value, setter, other]) => (
+                        <label
+                          key={side}
+                          className="rounded-xl border border-[#222834] bg-[#0F1218] p-3"
+                        >
+                          <div className="text-[9px] uppercase tracking-widest text-[#697181] mb-2">
+                            Alpha/Bravo Draft Captain {side}
+                          </div>
+                          <select
+                            value={value}
+                            onChange={(event) => {
+                              setter(event.target.value);
+                              clearDraftProgress();
+                              setResult(null);
+                            }}
+                            className="h-10 w-full rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm"
+                          >
+                            <option value="">Choose captain</option>
+                            {selected.map((id) => {
+                              const player = contextualPlayerMap[id];
+                              if (!player || id === other) return null;
+                              return (
+                                <option key={id} value={id}>
+                                  {player.name} · {player.currentElo} Elo
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+
+                  <Button
+                    type="button"
+                    onClick={startCaptainDraft}
+                    disabled={!resolvedDraftCaptainA || !resolvedDraftCaptainB}
+                    className="w-full h-11 mt-3 bg-[#D5A33A] hover:bg-[#e1b34b] text-black font-black rounded-xl"
+                  >
+                    <Crown size={15} className="mr-2" />
+                    Start Snake Draft
+                  </Button>
+                </>
+              ) : (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-2 items-stretch">
+                    {[
+                      ["A", draftTeamA, resolvedDraftCaptainA],
+                      ["B", draftTeamB, resolvedDraftCaptainB],
+                    ].map(([side, ids, captainId]) => (
+                      <div
+                        key={side}
+                        className={`rounded-xl border p-3 ${
+                          currentDraftSide === side
+                            ? side === "A"
+                              ? "border-magma/35 bg-magma/[0.04]"
+                              : "border-[#65D5D3]/35 bg-[#65D5D3]/[0.035]"
+                            : "border-[#222834] bg-[#0F1218]"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <span className={`text-[10px] uppercase tracking-widest font-black ${
+                            side === "A" ? "text-magma" : "text-[#65D5D3]"
+                          }`}>
+                            {side === "A" ? "Alpha" : "Bravo"}
+                          </span>
+                          <span className="font-mono text-[10px] text-muted-foreground">
+                            {ids.length}/{perTeam}
+                          </span>
+                        </div>
+                        <div className="space-y-1.5">
+                          {ids.map((id) => {
+                            const player = contextualPlayerMap[id];
+                            return (
+                              <div
+                                key={id}
+                                className="h-10 px-2 rounded-lg border border-[#202631] bg-[#12161D] flex items-center gap-2"
+                              >
+                                <PlayerAvatar
+                                  name={player?.name || "Player"}
+                                  elo={player?.currentElo || 1000}
+                                  size={26}
+                                  avatarUrl={playerAvatars[id]}
+                                />
+                                <span className="text-xs font-semibold truncate flex-1">
+                                  {player?.name || "Player"}
+                                </span>
+                                {id === captainId && (
+                                  <Crown size={11} className="text-[#D5A33A] shrink-0" />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="hidden lg:flex items-center justify-center px-1">
+                      <div className="w-10 h-10 rounded-full border border-[#2A303B] bg-[#0F1218] flex items-center justify-center font-display font-black text-xs text-muted-foreground">
+                        VS
+                      </div>
+                    </div>
+                  </div>
+
+                  {!draftComplete && (
+                    <>
+                      <div className={`rounded-xl border px-3 py-2.5 flex items-center justify-between gap-3 ${
+                        currentDraftSide === "A"
+                          ? "border-magma/25 bg-magma/[0.04]"
+                          : "border-[#65D5D3]/25 bg-[#65D5D3]/[0.035]"
+                      }`}>
+                        <div>
+                          <div className="text-[9px] uppercase tracking-widest text-[#697181]">
+                            Pick {draftPickIndex + 1}
+                          </div>
+                          <div className="text-sm font-black mt-0.5">
+                            {currentDraftSide === "A" ? "Alpha" : "Bravo"} picks now
+                          </div>
+                        </div>
+                        <div className="font-mono text-[10px] text-muted-foreground">
+                          A → B → B → A
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {draftAvailable.map((id) => {
+                          const player = contextualPlayerMap[id];
+                          if (!player) return null;
+                          return (
+                            <button
+                              key={id}
+                              type="button"
+                              onClick={() => pickDraftPlayer(id)}
+                              className="rounded-xl border border-[#222834] bg-[#0F1218] p-2.5 flex items-center gap-2.5 text-left hover:border-[#3A424F] transition-all"
+                            >
+                              <PlayerAvatar
+                                name={player.name}
+                                elo={player.currentElo}
+                                size={30}
+                                avatarUrl={playerAvatars[id]}
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="font-semibold text-xs truncate">
+                                  {player.name}
+                                </div>
+                                <div className="font-mono text-[10px] text-muted-foreground mt-0.5">
+                                  {player.currentElo} Elo
+                                </div>
+                              </div>
+                              <span className="text-[10px] font-black text-[#D5A33A]">
+                                PICK
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={clearDraftProgress}
+                    className="h-9 px-3 rounded-lg border border-[#2A303B] bg-[#151923] text-[10px] font-bold text-muted-foreground hover:text-white"
+                  >
+                    <RotateCcw size={12} className="inline mr-1.5" />
+                    Restart Draft
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {teamMethod !== "draft" && (
+            <Button
+              onClick={generateTeams}
+              disabled={
+                !validLobby ||
+                (teamMethod === "manual" && (manualA.length !== perTeam || manualB.length !== perTeam))
+              }
+              className="w-full h-12 mt-4 bg-magma hover:bg-[#ff3c4c] font-black rounded-xl"
+            >
+              <Swords size={17} className="mr-2" />
+              {validLobby
+                ? teamMethod === "auto"
+                  ? `Create ${inferredFormat} · ${autoPriority === "elo" ? "Elo" : autoPriority === "chemistry" ? "Chemistry" : "Mixed"}`
+                  : `Create ${inferredFormat} Teams`
+                : "Select 4, 6 or 8 players"}
+            </Button>
+          )}
         </section>
       )}
 
@@ -715,12 +1043,14 @@ export default function TeamBuilder() {
               <div className="brand-kicker mb-1">Ready</div>
               <h3 className="font-display text-2xl font-black">Alpha vs Bravo</h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Live match created. The player who creates it is the captain. Chemistry is informational only.
+                Teams ready. Review balance, Elo and chemistry before confirming the Live Match.
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 w-full lg:w-auto lg:min-w-[390px]">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 w-full lg:w-auto lg:min-w-[620px]">
               <Metric label="Balance" value={`${result.balanceScore}%`} tone="text-emerald-400" />
+              <Metric label="Alpha Elo" value={averageElo(result.teamA)} />
+              <Metric label="Bravo Elo" value={averageElo(result.teamB)} />
               <Metric label="Alpha Chem" value={`${result.chemistryA.score}%`} />
               <Metric label="Bravo Chem" value={`${result.chemistryB.score}%`} />
             </div>
@@ -731,7 +1061,11 @@ export default function TeamBuilder() {
               <div className="flex items-center justify-between mb-3">
                 <div className="text-xs uppercase tracking-widest text-magma font-black">Alpha</div>
                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {captainSide === "A" && matchCaptain ? `Captain · ${matchCaptain.name}` : ""}
+                  {result?.draftCaptains?.A
+                    ? `Draft Captain · ${contextualPlayerMap[result.draftCaptains.A]?.name || "Player"}`
+                    : captainSide === "A" && matchCaptain
+                      ? `Captain · ${matchCaptain.name}`
+                      : ""}
                 </span>
               </div>
               <div className="space-y-2">
@@ -740,9 +1074,14 @@ export default function TeamBuilder() {
                     <PlayerAvatar name={player.name} elo={player.currentElo} size={36} avatarUrl={playerAvatars[player.id]} />
                     <div className="font-semibold truncate flex-1 flex items-center gap-2">
                       {player.name}
-                      {player.id === matchCaptainId && (
+                      {result?.draftCaptains?.A === player.id && (
                         <span className="text-[9px] uppercase tracking-wider text-[#D5A33A] inline-flex items-center gap-1">
-                          <Crown size={11} /> Captain
+                          <Crown size={11} /> Draft
+                        </span>
+                      )}
+                      {player.id === matchCaptainId && (
+                        <span className="text-[9px] uppercase tracking-wider text-emerald-400">
+                          Creator
                         </span>
                       )}
                     </div>
@@ -760,7 +1099,11 @@ export default function TeamBuilder() {
               <div className="flex items-center justify-between mb-3">
                 <div className="text-xs uppercase tracking-widest text-[#65D5D3] font-black">Bravo</div>
                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {captainSide === "B" && matchCaptain ? `Captain · ${matchCaptain.name}` : ""}
+                  {result?.draftCaptains?.B
+                    ? `Draft Captain · ${contextualPlayerMap[result.draftCaptains.B]?.name || "Player"}`
+                    : captainSide === "B" && matchCaptain
+                      ? `Captain · ${matchCaptain.name}`
+                      : ""}
                 </span>
               </div>
               <div className="space-y-2">
@@ -769,9 +1112,14 @@ export default function TeamBuilder() {
                     <PlayerAvatar name={player.name} elo={player.currentElo} size={36} avatarUrl={playerAvatars[player.id]} />
                     <div className="font-semibold truncate flex-1 flex items-center gap-2">
                       {player.name}
-                      {player.id === matchCaptainId && (
+                      {result?.draftCaptains?.B === player.id && (
                         <span className="text-[9px] uppercase tracking-wider text-[#D5A33A] inline-flex items-center gap-1">
-                          <Crown size={11} /> Captain
+                          <Crown size={11} /> Draft
+                        </span>
+                      )}
+                      {player.id === matchCaptainId && (
+                        <span className="text-[9px] uppercase tracking-wider text-emerald-400">
+                          Creator
                         </span>
                       )}
                     </div>
