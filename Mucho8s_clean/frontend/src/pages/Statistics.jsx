@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useData } from "@/context/DataContext";
+import ModeBadge, { isDirectMucho1v1 } from "@/components/ModeBadge";
 import { winRate as aggWinRate, BASE_ELO } from "@/lib/elo";
 import { GAMES } from "@/lib/demoData";
 import {
@@ -115,74 +116,98 @@ export default function Statistics() {
     ];
   }, [top5, game]);
 
-  const moneyStats = useMemo(() => {
+  const modeMoneyStats = useMemo(() => {
     const currentSeason = Number(competitionData?.current?.season_number || 1);
-    const challenges = (publicChallenges || []).filter(
-      (challenge) => Number(challenge.season_number || 1) === currentSeason
-    );
+
+    const ensurePlayer = (map, id) => {
+      if (!id) return null;
+      if (!map.has(id)) {
+        map.set(id, {
+          id,
+          name: playerMap[id]?.name || "Unknown",
+          mucho8sNet: 0,
+          mucho1v1Net: 0,
+        });
+      }
+      return map.get(id);
+    };
 
     const rows = new Map();
 
-    const ensure = (id) => {
-      if (!rows.has(id)) {
-        rows.set(id, {
-          id,
-          name: playerMap[id]?.name || "Unknown",
-          played: 0,
-          wins: 0,
-          losses: 0,
-          stake: 0,
-          settledVolume: 0,
-          net: 0,
-          matchPairings: 0,
+    let mucho8sPairings = 0;
+    let mucho8sStake = 0;
+
+    (matches || [])
+      .filter((match) => Number(match.season || 1) === currentSeason)
+      .forEach((match) => {
+        const pairings = Array.isArray(match.pairings) ? match.pairings : [];
+        pairings.filter(Boolean).forEach((pair) => {
+          const amount = Math.max(0, Number(pair.amount || 0));
+          if (!pair.playerAId || !pair.playerBId || amount <= 0) return;
+
+          mucho8sPairings += 1;
+          mucho8sStake += amount;
+
+          const winnerId = match.winner === "B" ? pair.playerBId : pair.playerAId;
+          const loserId = winnerId === pair.playerAId ? pair.playerBId : pair.playerAId;
+
+          const winner = ensurePlayer(rows, winnerId);
+          const loser = ensurePlayer(rows, loserId);
+          if (winner) winner.mucho8sNet += amount;
+          if (loser) loser.mucho8sNet -= amount;
         });
-      }
-      return rows.get(id);
-    };
-
-    challenges.forEach((challenge) => {
-      const amount = Number(challenge.amount_cents || 0) / 100;
-      const settled = Boolean(challenge.payment_received_at);
-      const ids = [challenge.challenger_player_id, challenge.challenged_player_id];
-
-      ids.forEach((id) => {
-        if (!id) return;
-        const row = ensure(id);
-        row.played += 1;
-        row.stake += amount;
-        if (challenge.source === "match_pairing") row.matchPairings += 1;
-
-        const won = challenge.reported_winner_player_id === id;
-        if (won) row.wins += 1;
-        else row.losses += 1;
-
-        if (settled) {
-          row.settledVolume += amount;
-          row.net += won ? amount : -amount;
-        }
       });
+
+    const direct1v1 = (publicChallenges || []).filter((challenge) => {
+      if (Number(challenge.season_number || 1) !== currentSeason) return false;
+      if (!isDirectMucho1v1(challenge)) return false;
+
+      const verified = Boolean(
+        challenge.status === "completed" &&
+        challenge.reported_winner_player_id &&
+        challenge.verified_at
+      );
+      const openDispute = Boolean(
+        challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at
+      );
+      return verified && !openDispute;
     });
 
-    const list = [...rows.values()]
-      .map((row) => ({
-        ...row,
-        winRate: row.played ? Math.round((row.wins / row.played) * 100) : 0,
-      }))
-      .sort((a, b) => b.wins - a.wins || b.net - a.net);
+    let mucho1v1Stake = 0;
+    direct1v1.forEach((challenge) => {
+      const amount = Math.max(0, Number(challenge.amount_cents || 0) / 100);
+      mucho1v1Stake += amount;
+
+      const winnerId = challenge.reported_winner_player_id;
+      const loserId =
+        winnerId === challenge.challenger_player_id
+          ? challenge.challenged_player_id
+          : challenge.challenger_player_id;
+
+      const winner = ensurePlayer(rows, winnerId);
+      const loser = ensurePlayer(rows, loserId);
+      if (winner) winner.mucho1v1Net += amount;
+      if (loser) loser.mucho1v1Net -= amount;
+    });
 
     return {
-      seasonName: competitionData?.current?.season_name || `Season ${currentSeason}`,
-      challenges,
-      rows: list,
-      totalStake: challenges.reduce((sum, item) => sum + Number(item.amount_cents || 0) / 100, 0),
-      settledVolume: challenges
-        .filter((item) => item.payment_received_at)
-        .reduce((sum, item) => sum + Number(item.amount_cents || 0) / 100, 0),
-      matchPairings: challenges.filter((item) => item.source === "match_pairing").length,
+      seasonName:
+        competitionData?.current?.season_name || `Season ${currentSeason}`,
+      mucho8s: {
+        count: mucho8sPairings,
+        stake: mucho8sStake,
+      },
+      mucho1v1: {
+        count: direct1v1.length,
+        stake: mucho1v1Stake,
+      },
+      rows: [...rows.values()].sort(
+        (a, b) =>
+          Math.abs(b.mucho8sNet) + Math.abs(b.mucho1v1Net) -
+          (Math.abs(a.mucho8sNet) + Math.abs(a.mucho1v1Net))
+      ),
     };
-  }, [publicChallenges, competitionData, playerMap]);
-
-  const moneyTop = moneyStats.rows.slice(0, 8);
+  }, [matches, publicChallenges, competitionData, playerMap]);
 
   const games = ["ALL", ...GAMES];
 
@@ -264,80 +289,99 @@ export default function Statistics() {
         </ChartCard>
       </div>
 
-      <section className="space-y-4" data-testid="money-chall-statistics">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <div className="brand-kicker mb-1">Money Competition · {moneyStats.seasonName}</div>
-            <h3 className="font-display text-xl font-bold">Money Chall Statistics</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Includes direct challs and Money Chall Pairings recorded inside matches.
-            </p>
-          </div>
-          <WalletCards size={20} className="text-[#D5A33A]" />
+      <section className="space-y-4" data-testid="mode-money-statistics">
+        <div>
+          <div className="brand-kicker mb-1">Money by mode · {modeMoneyStats.seasonName}</div>
+          <h3 className="font-display text-xl font-bold">Mucho Money Split</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Mucho8s uses verified match pairings. Mucho1v1 uses direct verified challenges only.
+          </p>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className={CARD}>
-            <Swords size={17} className="text-magma mb-3" />
-            <div className="brand-kicker">Verified Challs</div>
-            <div className="font-display text-2xl font-black mt-1">{moneyStats.challenges.length}</div>
-          </div>
-          <div className={CARD}>
-            <WalletCards size={17} className="text-[#D5A33A] mb-3" />
-            <div className="brand-kicker">Match Pairings</div>
-            <div className="font-display text-2xl font-black mt-1">{moneyStats.matchPairings}</div>
-          </div>
-          <div className={CARD}>
-            <Coins size={17} className="text-white mb-3" />
-            <div className="brand-kicker">Stake Value</div>
-            <div className="font-display text-2xl font-black mt-1">€{moneyStats.totalStake.toFixed(2)}</div>
-          </div>
-          <div className={CARD}>
-            <Coins size={17} className="text-emerald-400 mb-3" />
-            <div className="brand-kicker">Settled Volume</div>
-            <div className="font-display text-2xl font-black mt-1">€{moneyStats.settledVolume.toFixed(2)}</div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ChartCard icon={Trophy} title="Money Chall Wins" testid="chart-money-wins" empty={moneyTop.length === 0}>
-            <BarChart data={moneyTop}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1D222C" vertical={false} />
-              <XAxis dataKey="name" stroke="#4B5563" fontSize={10} angle={-25} textAnchor="end" height={60} interval={0} />
-              <YAxis stroke="#4B5563" fontSize={11} allowDecimals={false} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "#ffffff08" }} />
-              <Bar dataKey="wins" fill="#FF2A3B" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ChartCard>
-
-          <ChartCard icon={Coins} title="Settled Net Profit" testid="chart-money-profit" empty={moneyTop.length === 0}>
-            <BarChart data={[...moneyStats.rows].sort((a, b) => b.net - a.net).slice(0, 8)}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1D222C" vertical={false} />
-              <XAxis dataKey="name" stroke="#4B5563" fontSize={10} angle={-25} textAnchor="end" height={60} interval={0} />
-              <YAxis stroke="#4B5563" fontSize={11} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "#ffffff08" }} formatter={(value) => [`€${Number(value).toFixed(2)}`, "Net"]} />
-              <Bar dataKey="net" fill="#10B981" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ChartCard>
-        </div>
-
-        {moneyStats.rows.length > 0 && (
-          <div className="m8-panel rounded-2xl overflow-hidden">
-            <div className="hidden md:grid grid-cols-[1.5fr_100px_100px_110px_120px] gap-3 px-4 py-3 bg-[#0F1218] border-b border-[#1D222C] text-[10px] uppercase tracking-widest text-muted-foreground">
-              <div>Player</div><div>Record</div><div>Win %</div><div>Pairings</div><div className="text-right">Net</div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <div className="m8-panel rounded-2xl p-5 border-magma/20">
+            <div className="flex items-center justify-between gap-3">
+              <ModeBadge mode="mucho8s" />
+              <WalletCards size={18} className="text-magma" />
             </div>
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              <div className="m8-panel-quiet rounded-xl p-3">
+                <div className="brand-kicker">Pairings</div>
+                <div className="font-display text-2xl font-black mt-1">
+                  {modeMoneyStats.mucho8s.count}
+                </div>
+              </div>
+              <div className="m8-panel-quiet rounded-xl p-3">
+                <div className="brand-kicker">Stake Volume</div>
+                <div className="font-display text-2xl font-black mt-1 text-magma">
+                  €{modeMoneyStats.mucho8s.stake.toFixed(2)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="m8-panel rounded-2xl p-5 border-emerald-500/20">
+            <div className="flex items-center justify-between gap-3">
+              <ModeBadge mode="mucho1v1" />
+              <Swords size={18} className="text-emerald-400" />
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              <div className="m8-panel-quiet rounded-xl p-3">
+                <div className="brand-kicker">Verified 1v1</div>
+                <div className="font-display text-2xl font-black mt-1">
+                  {modeMoneyStats.mucho1v1.count}
+                </div>
+              </div>
+              <div className="m8-panel-quiet rounded-xl p-3">
+                <div className="brand-kicker">Stake Volume</div>
+                <div className="font-display text-2xl font-black mt-1 text-emerald-400">
+                  €{modeMoneyStats.mucho1v1.stake.toFixed(2)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {modeMoneyStats.rows.length > 0 && (
+          <div className="m8-panel rounded-2xl overflow-hidden">
+            <div className="grid grid-cols-[1fr_110px_110px] gap-3 px-4 py-3 bg-[#0F1218] border-b border-[#1D222C] text-[10px] uppercase tracking-widest text-muted-foreground">
+              <div>Player</div>
+              <div className="text-right text-magma">Mucho8s</div>
+              <div className="text-right text-emerald-400">Mucho1v1</div>
+            </div>
+
             <div className="divide-y divide-[#1D222C]">
-              {moneyStats.rows.slice(0, 12).map((row) => (
-                <div key={row.id} className="grid grid-cols-[1fr_auto] md:grid-cols-[1.5fr_100px_100px_110px_120px] gap-3 items-center px-4 py-3">
+              {modeMoneyStats.rows.slice(0, 12).map((row) => (
+                <div
+                  key={row.id}
+                  className="grid grid-cols-[1fr_110px_110px] gap-3 items-center px-4 py-3"
+                >
                   <div className="font-semibold truncate">{row.name}</div>
-                  <div className="hidden md:block font-mono">{row.wins}W - {row.losses}L</div>
-                  <div className="hidden md:block font-mono">{row.winRate}%</div>
-                  <div className="hidden md:block font-mono">{row.matchPairings}</div>
-                  <div className={`font-mono font-bold text-right ${row.net >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                    {row.net >= 0 ? "+" : "-"}€{Math.abs(row.net).toFixed(2)}
+
+                  <div
+                    className={`font-mono font-black text-right ${
+                      row.mucho8sNet > 0
+                        ? "text-magma"
+                        : row.mucho8sNet < 0
+                          ? "text-red-400"
+                          : "text-[#697181]"
+                    }`}
+                  >
+                    {row.mucho8sNet > 0 ? "+" : row.mucho8sNet < 0 ? "-" : ""}
+                    €{Math.abs(row.mucho8sNet).toFixed(2)}
                   </div>
-                  <div className="md:hidden col-span-2 text-xs text-muted-foreground">
-                    {row.wins}W - {row.losses}L · {row.winRate}% · {row.matchPairings} match pairings
+
+                  <div
+                    className={`font-mono font-black text-right ${
+                      row.mucho1v1Net > 0
+                        ? "text-emerald-400"
+                        : row.mucho1v1Net < 0
+                          ? "text-red-400"
+                          : "text-[#697181]"
+                    }`}
+                  >
+                    {row.mucho1v1Net > 0 ? "+" : row.mucho1v1Net < 0 ? "-" : ""}
+                    €{Math.abs(row.mucho1v1Net).toFixed(2)}
                   </div>
                 </div>
               ))}
