@@ -156,16 +156,6 @@ export default function TeamBuilder() {
   const resolvedDraftCaptainB =
     draftCaptainMode === "auto" ? autoDraftCaptains[1]?.id || "" : draftCaptainB;
 
-  const draftTeamAPlayers = useMemo(
-    () => draftTeamA.map((id) => contextualPlayerMap[id]).filter(Boolean),
-    [draftTeamA, contextualPlayerMap]
-  );
-
-  const draftTeamBPlayers = useMemo(
-    () => draftTeamB.map((id) => contextualPlayerMap[id]).filter(Boolean),
-    [draftTeamB, contextualPlayerMap]
-  );
-
   const draftAvailable = useMemo(
     () =>
       selected.filter(
@@ -881,7 +871,7 @@ export default function TeamBuilder() {
                           className="rounded-xl border border-[#222834] bg-[#0F1218] p-3"
                         >
                           <div className="text-[9px] uppercase tracking-widest text-[#697181] mb-2">
-                            Alpha/Bravo Draft Captain {side}
+                            {side === "A" ? "Alpha" : "Bravo"} Draft Captain
                           </div>
                           <select
                             value={value}
