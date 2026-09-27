@@ -51,7 +51,7 @@ const isAdmin = async (req: Request, supabase: any) => {
 };
 
 const resetPlayer = (player: any) => {
-  const elo = 1000;
+  const elo = 500;
   return {
     ...player,
     currentElo: elo,
@@ -63,6 +63,7 @@ const resetPlayer = (player: any) => {
     last10: [],
     currentStreak: 0,
     mvpCount: 0,
+    merdaCount: 0,
     eloHistory: [{ match: 0, elo }],
   };
 };
