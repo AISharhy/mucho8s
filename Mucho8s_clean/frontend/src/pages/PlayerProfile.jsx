@@ -198,6 +198,7 @@ export default function PlayerProfile() {
         const amount = Number(challenge.amount_cents || 0) / 100;
         return total + (challenge.reported_winner_player_id === id ? amount : -amount);
       }, 0),
+      mvpCount: completed.filter((challenge) => challenge.mvp_awarded === true).length,
       matchPairings: completed.filter((challenge) => challenge.source === "match_pairing").length,
     };
   }, [publicChallenges, id]);
@@ -678,8 +679,10 @@ export default function PlayerProfile() {
       counts[family] += occurrenceCount;
     });
 
+    counts.Trophy1v1 += Math.max(0, Number(challengeStats.mvpCount || 0));
+
     return counts;
-  }, [trophyCabinet]);
+  }, [trophyCabinet, challengeStats.mvpCount]);
 
   const trophyEvidence = useMemo(() => {
     if (!player) return {};
@@ -1924,7 +1927,12 @@ export default function PlayerProfile() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {challenge.mvp_awarded === true && (
+                          <span className="inline-flex items-center gap-1 h-9 px-3 rounded-lg bg-[#D5A33A]/[0.08] border border-[#D5A33A]/20 text-[#D5A33A] text-xs font-extrabold tracking-wider">
+                            <Trophy size={12} /> MVP
+                          </span>
+                        )}
                         {won && (
                           <span className="inline-flex items-center h-9 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-extrabold tracking-wider">
                             VINTA
