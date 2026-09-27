@@ -1,13 +1,8 @@
 import React from "react";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar } from "@/components/shared";
-import { CalendarDays, Trophy, Gamepad2, WalletCards } from "lucide-react";
-
-const euro = (cents) =>
-  new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency: "EUR",
-  }).format(Number(cents || 0) / 100);
+import ModeBadge from "@/components/ModeBadge";
+import { CalendarDays, Trophy, Gamepad2, Users } from "lucide-react";
 
 export default function SeasonHistory() {
   const { competitionData, playerAvatars } = useData();
@@ -22,7 +17,7 @@ export default function SeasonHistory() {
             <div className="brand-kicker mb-1">Current Competition</div>
             <h3 className="font-display text-2xl font-extrabold">{current.season_name || `Season ${current.season_number}`}</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Started {current.season_started_at ? new Date(current.season_started_at).toLocaleDateString() : "—"}
+              Started {current.season_started_at ? new Date(current.season_started_at).toLocaleDateString() : "—"} · Mode history stays separated
             </p>
           </div>
           <div className="w-12 h-12 rounded-xl bg-magma/10 border border-magma/20 flex items-center justify-center">
@@ -41,7 +36,6 @@ export default function SeasonHistory() {
             const players = Array.isArray(season.players) ? season.players : [];
             const matches = Array.isArray(season.matches) ? season.matches : [];
             const top = [...players].sort((a, b) => Number(b.currentElo || 0) - Number(a.currentElo || 0)).slice(0, 3);
-            const chall = season.challenge_stats || {};
 
             return (
               <div key={season.season_number} className="m8-panel rounded-2xl p-5">
@@ -56,19 +50,29 @@ export default function SeasonHistory() {
 
                   <div className="grid grid-cols-3 gap-2 flex-1">
                     <div className="m8-stat-card">
-                      <Gamepad2 size={15} className="text-magma mb-2" />
-                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Matches</div>
+                      <ModeBadge mode="mucho8s" compact />
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-2">
+                        Matches
+                      </div>
                       <div className="font-display text-xl font-bold mt-1">{matches.length}</div>
                     </div>
+
+                    <div className="m8-stat-card">
+                      <Users size={15} className="text-[#8D95A4] mb-2" />
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                        Players
+                      </div>
+                      <div className="font-display text-xl font-bold mt-1">{players.length}</div>
+                    </div>
+
                     <div className="m8-stat-card">
                       <Trophy size={15} className="text-[#D5A33A] mb-2" />
-                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Challs</div>
-                      <div className="font-display text-xl font-bold mt-1">{Number(chall.completed || 0)}</div>
-                    </div>
-                    <div className="m8-stat-card">
-                      <WalletCards size={15} className="text-emerald-400 mb-2" />
-                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Volume</div>
-                      <div className="font-display text-xl font-bold mt-1">{euro(chall.volume_cents)}</div>
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                        Top Elo
+                      </div>
+                      <div className="font-display text-xl font-bold mt-1">
+                        {top[0]?.currentElo || "—"}
+                      </div>
                     </div>
                   </div>
                 </div>
