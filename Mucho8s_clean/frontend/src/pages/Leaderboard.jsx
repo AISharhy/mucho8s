@@ -4,6 +4,7 @@ import { useData } from "@/context/DataContext";
 import { PlayerAvatar, MvpBadge, RankBadge } from "@/components/shared";
 import { rankProgress } from "@/lib/elo";
 import { Button } from "@/components/ui/button";
+import { isDirectMucho1v1 } from "@/components/ModeBadge";
 import { ArrowUpDown, ArrowUp, ArrowDown, Download, Medal } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,7 +22,7 @@ const COLUMNS = [
   { key: "totalPoints", label: "Elo", sortable: true },
   { key: "matchWins", label: "Record", sortable: true },
   { key: "winRate", label: "Win %", sortable: true },
-  { key: "earnings", label: "Earnings", sortable: true },
+  { key: "earnings", label: "Money", sortable: true },
   { key: "currentStreak", label: "Streak", sortable: true },
   { key: "mvpCount", label: "MVP", sortable: true },
 ];
@@ -40,18 +41,22 @@ export default function Leaderboard() {
 
   const currentSeason = Number(competitionData?.current?.season_number || 1);
 
-  const challStatsById = useMemo(() => {
+  const modeMoneyById = useMemo(() => {
     const stats = new Map();
 
-    (players || []).forEach((player) => {
-      stats.set(player.id, {
-        wins: 0,
-        losses: 0,
-        points: 0,
-        moneyWon: 0,
-        moneyLost: 0,
-      });
-    });
+    const ensure = (id) => {
+      if (!stats.has(id)) {
+        stats.set(id, {
+          mucho8sNet: 0,
+          mucho1v1Net: 0,
+          mucho1v1Wins: 0,
+          mucho1v1Losses: 0,
+        });
+      }
+      return stats.get(id);
+    };
+
+    (players || []).forEach((player) => ensure(player.id));
 
     (publicChallenges || []).forEach((challenge) => {
       if (Number(challenge.season_number || 1) !== currentSeason) return;
@@ -66,6 +71,10 @@ export default function Leaderboard() {
       );
       if (!verified || openDispute) return;
 
+      const source = String(challenge.source || "").toLowerCase();
+      if (source === "balancer_pairing") return;
+
+      const direct1v1 = isDirectMucho1v1(challenge);
       const amount = Number(challenge.amount_cents || 0) / 100;
       const ids = [
         challenge.challenger_player_id,
@@ -73,25 +82,17 @@ export default function Leaderboard() {
       ];
 
       ids.forEach((id) => {
-        if (!stats.has(id)) {
-          stats.set(id, {
-            wins: 0,
-            losses: 0,
-            points: 0,
-            moneyWon: 0,
-            moneyLost: 0,
-          });
-        }
+        if (!id) return;
+        const row = ensure(id);
+        const won = challenge.reported_winner_player_id === id;
+        const delta = won ? amount : -amount;
 
-        const row = stats.get(id);
-        if (challenge.reported_winner_player_id === id) {
-          row.wins += 1;
-          row.points += amount;
-          row.moneyWon += amount;
-        } else {
-          row.losses += 1;
-          row.points -= amount;
-          row.moneyLost += amount;
+        if (direct1v1) {
+          row.mucho1v1Net += delta;
+          if (won) row.mucho1v1Wins += 1;
+          else row.mucho1v1Losses += 1;
+        } else if (source === "match_pairing") {
+          row.mucho8sNet += delta;
         }
       });
     });
@@ -102,24 +103,22 @@ export default function Leaderboard() {
   const rows = useMemo(
     () =>
       (players || []).map((player) => {
-        const chall = challStatsById.get(player.id) || {
-          wins: 0,
-          losses: 0,
-          points: 0,
-          moneyWon: 0,
-          moneyLost: 0,
+        const moneyByMode = modeMoneyById.get(player.id) || {
+          mucho8sNet: 0,
+          mucho1v1Net: 0,
+          mucho1v1Wins: 0,
+          mucho1v1Losses: 0,
         };
 
         return {
           ...player,
           matchWins: Number(player.wins || 0),
           matchLosses: Number(player.losses || 0),
-          challWins: chall.wins,
-          challLosses: chall.losses,
-          challPoints: chall.points,
-          moneyWon: chall.moneyWon,
-          moneyLost: chall.moneyLost,
-          earnings: chall.moneyWon - chall.moneyLost,
+          mucho8sNet: moneyByMode.mucho8sNet,
+          mucho1v1Net: moneyByMode.mucho1v1Net,
+          mucho1v1Wins: moneyByMode.mucho1v1Wins,
+          mucho1v1Losses: moneyByMode.mucho1v1Losses,
+          earnings: moneyByMode.mucho8sNet + moneyByMode.mucho1v1Net,
           winRate:
             Number(player.totalMatches || 0) > 0
               ? (Number(player.wins || 0) / Number(player.totalMatches || 0)) * 100
@@ -127,7 +126,7 @@ export default function Leaderboard() {
           totalPoints: Number(player.currentElo || 0),
         };
       }),
-    [players, challStatsById]
+    [players, modeMoneyById]
   );
 
   const rankingOrder = useMemo(
@@ -190,7 +189,8 @@ export default function Leaderboard() {
       "Elo",
       "Record",
       "Win %",
-      "Earnings",
+      "Mucho8s Net",
+      "Mucho1v1 Net",
       "Streak",
       "MVP",
     ];
@@ -202,7 +202,8 @@ export default function Leaderboard() {
       p.totalPoints,
       `${p.matchWins}-${p.matchLosses}`,
       p.winRate.toFixed(1),
-      p.earnings,
+      p.mucho8sNet,
+      p.mucho1v1Net,
       p.currentStreak > 0
         ? `W${p.currentStreak}`
         : p.currentStreak < 0
@@ -243,7 +244,7 @@ export default function Leaderboard() {
             </h3>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Competitive view: Elo, record, win rate, net earnings, streak and MVP.
+            Global Elo with Mucho8s and Mucho1v1 money kept separate.
           </p>
         </div>
 
@@ -298,16 +299,14 @@ export default function Leaderboard() {
                   <div className="font-mono text-sm font-bold mt-0.5">{p.matchWins}-{p.matchLosses}</div>
                 </div>
                 <div className="m8-panel-quiet rounded-lg px-2.5 py-2">
-                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">Earnings</div>
-                  <div className={`font-mono text-sm font-bold mt-0.5 ${
-                    p.earnings > 0
-                      ? "text-emerald-400"
-                      : p.earnings < 0
-                        ? "text-red-400"
-                        : ""
-                  }`}>
-                    {p.earnings > 0 ? "+" : p.earnings < 0 ? "-" : ""}
-                    {euro(Math.abs(p.earnings))}
+                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">Money</div>
+                  <div className="mt-1 space-y-0.5 font-mono text-[10px] font-black">
+                    <div className="text-magma" title="Mucho8s net">
+                      ● {p.mucho8sNet >= 0 ? "+" : "-"}{euro(Math.abs(p.mucho8sNet))}
+                    </div>
+                    <div className="text-emerald-400" title="Mucho1v1 net">
+                      ● {p.mucho1v1Net >= 0 ? "+" : "-"}{euro(Math.abs(p.mucho1v1Net))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -356,12 +355,6 @@ export default function Leaderboard() {
               )}
 
               {sorted.map((p) => {
-                const earningsTone =
-                  p.earnings > 0
-                    ? "text-emerald-400"
-                    : p.earnings < 0
-                      ? "text-red-400"
-                      : "text-muted-foreground";
                 const streak = Number(p.currentStreak || 0);
 
                 return (
@@ -413,9 +406,15 @@ export default function Leaderboard() {
                       {p.winRate.toFixed(1)}%
                     </td>
 
-                    <td className={`px-4 py-3 font-mono font-black ${earningsTone}`}>
-                      {p.earnings > 0 ? "+" : p.earnings < 0 ? "-" : ""}
-                      {euro(Math.abs(p.earnings))}
+                    <td className="px-4 py-3">
+                      <div className="space-y-0.5 font-mono text-[11px] font-black">
+                        <div className="text-magma" title="Mucho8s net">
+                          ● {p.mucho8sNet >= 0 ? "+" : "-"}{euro(Math.abs(p.mucho8sNet))}
+                        </div>
+                        <div className="text-emerald-400" title="Mucho1v1 net">
+                          ● {p.mucho1v1Net >= 0 ? "+" : "-"}{euro(Math.abs(p.mucho1v1Net))}
+                        </div>
+                      </div>
                     </td>
 
                     <td className="px-4 py-3">
