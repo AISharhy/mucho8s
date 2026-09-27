@@ -1451,7 +1451,7 @@ export default function PlayerProfile() {
         >
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
             <div>
-              <div className="brand-kicker mb-1 text-magma">Trophy Progress</div>
+              <div className="brand-kicker mb-1 text-[#AEB6C3]">Trophy Progress</div>
               <h3 className="font-display font-black text-xl tracking-[-0.02em]">
                 Next Trophies
               </h3>
@@ -1524,7 +1524,7 @@ export default function PlayerProfile() {
             <Trophy size={28} className="text-[#3D4654] mx-auto mb-2" />
             <div className="font-semibold">No awards yet</div>
             <div className="text-xs text-muted-foreground mt-1">
-              Earn an MVP 🏆 or a MERDA 💩 to appear here.
+              Unlock a General Trophy, earn an MVP, or get a MERDA 💩 to appear here.
             </div>
           </div>
         ) : (
