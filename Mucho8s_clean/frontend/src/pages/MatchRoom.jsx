@@ -14,6 +14,12 @@ import {
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar } from "@/components/shared";
 import ModeBadge from "@/components/ModeBadge";
+import {
+  TROPHY8S_RULES,
+  MAX_TROPHY_LEVEL,
+  trophyGoalForLevel,
+  trophyRewardForLevel,
+} from "@/lib/trophyRules";
 import { Button } from "@/components/ui/button";
 import { RecordMatchDialog } from "@/components/RecordMatchDialog";
 import {
@@ -152,13 +158,15 @@ export default function MatchRoom() {
           new Date(a?.date || 0).getTime() - new Date(b?.date || 0).getTime()
       );
 
-    const unlocked = new Set();
     const h2h = new Map();
     const lastByOpponent = new Map();
     let streak = 0;
     let wonValue = 0;
+    let maxWonPairing = 0;
+    let cleanSweepCount = 0;
+    let runItBackCount = 0;
 
-    history.forEach((item, index) => {
+    history.forEach((item) => {
       const teamA = (item.teamA || []).map(String);
       const teamB = (item.teamB || []).map(String);
       const inA = teamA.includes(playerId);
@@ -170,12 +178,7 @@ export default function MatchRoom() {
         ? (streak > 0 ? streak + 1 : 1)
         : (streak < 0 ? streak - 1 : -1);
 
-      if (won && streak >= 4) {
-        unlocked.add("on-fire");
-        unlocked.add("clean-sweep");
-      }
-      if (won && streak >= 8) unlocked.add("unstoppable");
-      if (index + 1 >= 40) unlocked.add("veteran");
+      if (won && streak > 0 && streak % 4 === 0) cleanSweepCount += 1;
 
       const pairing = (Array.isArray(item.pairings) ? item.pairings : []).find(
         (pair) =>
@@ -186,10 +189,10 @@ export default function MatchRoom() {
 
       if (won && amount > 0) {
         wonValue += amount;
-        if (wonValue >= 50) unlocked.add("money-maker");
-        if (amount >= 20) unlocked.add("high-roller");
+        maxWonPairing = Math.max(maxWonPairing, amount);
       }
 
+      let didRunItBack = false;
       opponents.forEach((opponentId) => {
         const key = String(opponentId);
         const row = h2h.get(key) || { played: 0, wins: 0 };
@@ -199,35 +202,46 @@ export default function MatchRoom() {
         if (won) row.wins += 1;
         h2h.set(key, row);
 
-        if (row.played >= 8) unlocked.add("rivalry");
-        if (row.wins >= 4) unlocked.add("nemesis");
-        if (won && previous === "L") unlocked.add("run-it-back");
-
+        if (won && previous === "L") didRunItBack = true;
         lastByOpponent.set(key, won ? "W" : "L");
       });
+      if (didRunItBack) runItBackCount += 1;
     });
 
+    let maxH2HPlayed = 0;
+    let maxH2HWins = 0;
+    h2h.forEach((row) => {
+      maxH2HPlayed = Math.max(maxH2HPlayed, Number(row?.played || 0));
+      maxH2HWins = Math.max(maxH2HWins, Number(row?.wins || 0));
+    });
+
+    const currentLevels = playerMap?.[playerId]?.trophy8sLevels || {};
     const opportunities = [];
-    const add = (opportunityId, title, detail) => {
-      if (
-        unlocked.has(opportunityId) ||
-        opportunities.some((item) => item.id === opportunityId)
-      ) {
-        return;
-      }
-      opportunities.push({ id: opportunityId, title, detail, reward: 3 });
+
+    const addIfReached = (trophyId, potentialValue, detail) => {
+      const rule = TROPHY8S_RULES[trophyId];
+      const level = Math.max(0, Number(currentLevels?.[trophyId] || 0));
+      if (!rule || level >= MAX_TROPHY_LEVEL) return;
+
+      const nextLevel = level + 1;
+      const goal = trophyGoalForLevel(rule, nextLevel);
+      if (Number(potentialValue || 0) < goal) return;
+
+      opportunities.push({
+        id: trophyId,
+        title: rule.title,
+        level: nextLevel,
+        goal,
+        reward: trophyRewardForLevel(rule, nextLevel),
+        detail,
+      });
     };
 
-    if (streak === 3) {
-      add("on-fire", "On Fire", "Win this Mucho8s · reach 4W");
-      add("clean-sweep", "Clean Sweep", "Win this Mucho8s · 4 straight wins");
-    }
-    if (streak === 7) {
-      add("unstoppable", "Unstoppable", "Win this Mucho8s · reach 8W");
-    }
-    if (history.length === 39) {
-      add("veteran", "Veteran", "Complete this Mucho8s · match #40");
-    }
+    const nextWinStreak = streak > 0 ? streak + 1 : 1;
+    const nextCleanSweepCount =
+      nextWinStreak > 0 && nextWinStreak % 4 === 0
+        ? cleanSweepCount + 1
+        : cleanSweepCount;
 
     const livePairing = (Array.isArray(match.pairings) ? match.pairings : []).find(
       (pair) =>
@@ -236,43 +250,66 @@ export default function MatchRoom() {
     );
     const liveAmount = Math.max(0, Number(livePairing?.amount) || 0);
 
-    if (liveAmount >= 20) {
-      add(
-        "high-roller",
-        "High Roller",
-        "Win your €" + liveAmount.toFixed(0) + " pairing"
-      );
-    }
-    if (wonValue < 50 && liveAmount > 0 && wonValue + liveAmount >= 50) {
-      add(
-        "money-maker",
-        "Money Maker",
-        "Win this pairing · €" +
-          wonValue.toFixed(0) +
-          " → €" +
-          (wonValue + liveAmount).toFixed(0)
-      );
-    }
-
     const liveOpponents = liveA.includes(playerId) ? liveB : liveA;
-    liveOpponents.forEach((opponentId) => {
-      const opponent = playerMap[opponentId]?.name || "opponent";
-      const row = h2h.get(String(opponentId)) || { played: 0, wins: 0 };
+    let nextMaxPlayed = maxH2HPlayed;
+    let nextMaxWins = maxH2HWins;
+    let canRunItBack = false;
 
-      if (row.played === 7) {
-        add("rivalry", "Rivalry", "Play vs " + opponent + " · meeting #8");
-      }
-      if (row.wins === 3) {
-        add("nemesis", "Nemesis", "Beat " + opponent + " · win #4");
-      }
-      if (lastByOpponent.get(String(opponentId)) === "L") {
-        add(
-          "run-it-back",
-          "Run It Back",
-          "Beat " + opponent + " after the last loss"
-        );
-      }
+    liveOpponents.forEach((opponentId) => {
+      const key = String(opponentId);
+      const row = h2h.get(key) || { played: 0, wins: 0 };
+      nextMaxPlayed = Math.max(nextMaxPlayed, row.played + 1);
+      nextMaxWins = Math.max(nextMaxWins, row.wins + 1);
+      if (lastByOpponent.get(key) === "L") canRunItBack = true;
     });
+
+    addIfReached(
+      "veteran",
+      history.length + 1,
+      "Complete this Mucho8s · match #" + (history.length + 1)
+    );
+    addIfReached(
+      "on-fire",
+      nextWinStreak,
+      "Win this Mucho8s · reach " + nextWinStreak + "W"
+    );
+    addIfReached(
+      "unstoppable",
+      nextWinStreak,
+      "Win this Mucho8s · reach " + nextWinStreak + "W"
+    );
+    addIfReached(
+      "clean-sweep",
+      nextCleanSweepCount,
+      "Win this Mucho8s · complete another 4W sweep"
+    );
+    addIfReached(
+      "money-maker",
+      wonValue + liveAmount,
+      "Win this pairing · total €" + (wonValue + liveAmount).toFixed(0)
+    );
+    addIfReached(
+      "high-roller",
+      Math.max(maxWonPairing, liveAmount),
+      "Win your €" + liveAmount.toFixed(0) + " pairing"
+    );
+    addIfReached(
+      "rivalry",
+      nextMaxPlayed,
+      "Play this Mucho8s · rivalry meeting milestone"
+    );
+    addIfReached(
+      "nemesis",
+      nextMaxWins,
+      "Win this Mucho8s · head-to-head win milestone"
+    );
+    if (canRunItBack) {
+      addIfReached(
+        "run-it-back",
+        runItBackCount + 1,
+        "Win this Mucho8s after the previous loss"
+      );
+    }
 
     return opportunities;
   }, [match, matches, discordPlayer?.id, playerMap]);
@@ -476,10 +513,10 @@ export default function MatchRoom() {
               <div>
                 <div className="brand-kicker text-magma">Trophy8s Opportunity</div>
                 <div className="text-sm font-bold mt-0.5">
-                  This Mucho8s can unlock{" "}
+                  This Mucho8s can level up{" "}
                   {trophyOpportunities.length === 1
-                    ? "a Trophy"
-                    : trophyOpportunities.length + " Trophies"}
+                    ? "1 challenge"
+                    : trophyOpportunities.length + " challenges"}
                 </div>
               </div>
             </div>
@@ -496,7 +533,9 @@ export default function MatchRoom() {
                 className="rounded-xl border border-magma/15 bg-[#0F1218] px-3 py-2"
               >
                 <div className="flex items-center gap-2">
-                  <span className="font-display font-bold text-sm">{item.title}</span>
+                  <span className="font-display font-bold text-sm">
+                    {item.title} · Lv {item.level}/{MAX_TROPHY_LEVEL}
+                  </span>
                   <span className="font-mono text-[9px] font-black text-magma">
                     +{item.reward}
                   </span>
