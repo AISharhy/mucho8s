@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useData } from "@/context/DataContext";
-import { PlayerAvatar, EloBadge, RankBadge } from "@/components/shared";
-import ModeBadge from "@/components/ModeBadge";
+import { PlayerAvatar, EloBadge, RankBadge, RankProgress } from "@/components/shared";
+import ModeBadge, { isDirectMucho1v1 } from "@/components/ModeBadge";
 import { Button } from "@/components/ui/button";
 import {
   ArrowUpRight,
@@ -323,6 +323,7 @@ const PersonalDashboard = ({
   isAdmin,
   adminChallengeAlertCount,
   players,
+  publicChallenges,
 }) => {
   const allPersonalMatches = useMemo(
     () =>
@@ -362,6 +363,82 @@ const PersonalDashboard = ({
       }, 0),
     [allPersonalMatches, discordPlayer.id]
   );
+
+  const dashboardProgress = useMemo(() => {
+    const chronological = [...allPersonalMatches].sort(
+      (a, b) => new Date(a?.date || 0) - new Date(b?.date || 0)
+    );
+
+    let runningWins = 0;
+    let bestWinStreak = 0;
+
+    chronological.forEach((match) => {
+      const inA = (match.teamA || []).includes(discordPlayer.id);
+      const winnerSide = match.winner === "B" ? "B" : "A";
+      const won = (inA && winnerSide === "A") || (!inA && winnerSide === "B");
+
+      runningWins = won ? runningWins + 1 : 0;
+      bestWinStreak = Math.max(bestWinStreak, runningWins);
+    });
+
+    const candidates = [
+      {
+        id: "veteran",
+        title: "Veteran",
+        value: Number(discordPlayer.totalMatches || 0),
+        goal: 40,
+        detail: "Play 40 Mucho8s",
+      },
+      {
+        id: "on-fire",
+        title: "On Fire",
+        value: bestWinStreak,
+        goal: 4,
+        detail: "Reach a 4-win streak",
+      },
+      {
+        id: "money-maker",
+        title: "Money Maker",
+        value: Number(moneyWon || 0),
+        goal: 50,
+        detail: "Win €50 in Mucho8s pairings",
+      },
+    ]
+      .filter((item) => item.value < item.goal)
+      .map((item) => ({
+        ...item,
+        progress: Math.min(100, Math.round((item.value / item.goal) * 100)),
+      }))
+      .sort((a, b) => b.progress - a.progress);
+
+    return {
+      bestWinStreak,
+      nextTrophy: candidates[0] || null,
+    };
+  }, [allPersonalMatches, discordPlayer.id, discordPlayer.totalMatches, moneyWon]);
+
+  const mucho1v1Stats = useMemo(() => {
+    const completed = (publicChallenges || []).filter(
+      (challenge) =>
+        isDirectMucho1v1(challenge) &&
+        challenge.status === "completed" &&
+        challenge.verified_at &&
+        (
+          challenge.challenger_player_id === discordPlayer.id ||
+          challenge.challenged_player_id === discordPlayer.id
+        )
+    );
+
+    const wins = completed.filter(
+      (challenge) => challenge.reported_winner_player_id === discordPlayer.id
+    ).length;
+
+    return {
+      played: completed.length,
+      wins,
+      losses: Math.max(0, completed.length - wins),
+    };
+  }, [publicChallenges, discordPlayer.id]);
 
   const rankPosition = useMemo(() => {
     const sorted = [...(players || [])].sort(
@@ -434,6 +511,10 @@ const PersonalDashboard = ({
                 <span className="font-mono text-xs font-black text-white">
                   {discordPlayer.currentElo} Elo
                 </span>
+              </div>
+
+              <div className="mt-3 max-w-md">
+                <RankProgress elo={discordPlayer.currentElo} compact />
               </div>
             </div>
           </div>
@@ -591,6 +672,138 @@ const PersonalDashboard = ({
           )}
         </div>
       </section>
+
+      <section className="grid grid-cols-1 xl:grid-cols-[1.1fr_.9fr] gap-4">
+        <div className="m8-panel rounded-[22px] p-5 sm:p-6">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="brand-kicker mb-1">Progress Center</div>
+              <h3 className="font-display font-black text-xl">Your next milestones</h3>
+            </div>
+            <Trophy size={18} className="text-magma" />
+          </div>
+
+          <div className="mt-5">
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div>
+                <div className="text-[9px] uppercase tracking-widest text-[#697181]">Rank Progress</div>
+                <div className="font-semibold text-sm mt-0.5">{discordPlayer.currentElo} Elo</div>
+              </div>
+              <Link
+                to="/ranking"
+                className="text-[10px] uppercase tracking-widest text-[#697181] hover:text-white"
+              >
+                Ranking
+              </Link>
+            </div>
+            <RankProgress elo={discordPlayer.currentElo} />
+          </div>
+
+          <div className="mt-5 pt-4 border-t border-[#1D222C]">
+            {dashboardProgress.nextTrophy ? (
+              <Link
+                to={"/players/" + discordPlayer.id}
+                className="group block rounded-2xl border border-magma/20 bg-magma/[0.035] p-4 hover:border-magma/40 transition-all"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="brand-kicker text-magma mb-1">Next Trophy8s</div>
+                    <div className="font-display font-black text-lg">
+                      {dashboardProgress.nextTrophy.title}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {dashboardProgress.nextTrophy.detail}
+                    </div>
+                  </div>
+                  <div className="font-mono text-sm font-black text-magma">
+                    {dashboardProgress.nextTrophy.value}/{dashboardProgress.nextTrophy.goal}
+                  </div>
+                </div>
+
+                <div className="mt-4 h-2 rounded-full border border-[#242A35] bg-[#090C11] overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-magma"
+                    style={{ width: `${dashboardProgress.nextTrophy.progress}%` }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between gap-3 mt-2 text-[10px]">
+                  <span className="text-[#697181]">
+                    {dashboardProgress.nextTrophy.progress}% complete
+                  </span>
+                  <span className="font-black text-magma inline-flex items-center gap-1">
+                    +3 Elo on unlock <ArrowUpRight size={11} />
+                  </span>
+                </div>
+              </Link>
+            ) : (
+              <div className="rounded-xl border border-[#222834] bg-[#0F1218] p-4 text-sm text-muted-foreground">
+                Core Trophy8s milestones completed.
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="m8-panel rounded-[22px] p-5 sm:p-6">
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <div className="brand-kicker mb-1">Mucho Ecosystem</div>
+              <h3 className="font-display font-black text-xl">Your modes</h3>
+            </div>
+            <Gamepad2 size={18} className="text-[#697181]" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <Link
+              to="/matches"
+              className="rounded-xl border border-magma/20 bg-magma/[0.025] p-3.5 hover:border-magma/40 transition-all"
+            >
+              <ModeBadge mode="mucho8s" compact />
+              <div className="font-display text-xl font-black mt-3">
+                {discordPlayer.totalMatches || 0}
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-1">
+                verified matches
+              </div>
+            </Link>
+
+            <Link
+              to="/challenges"
+              className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.025] p-3.5 hover:border-emerald-500/40 transition-all"
+            >
+              <ModeBadge mode="mucho1v1" compact />
+              <div className="font-display text-xl font-black mt-3">
+                {mucho1v1Stats.played}
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-1">
+                {mucho1v1Stats.played
+                  ? `${mucho1v1Stats.wins}W · ${mucho1v1Stats.losses}L`
+                  : "no verified 1v1 yet"}
+              </div>
+            </Link>
+
+            <div className="rounded-xl border border-[#4F8CFF]/20 bg-[#4F8CFF]/[0.025] p-3.5">
+              <ModeBadge mode="muchoranked" compact />
+              <div className="font-display text-sm font-black mt-3 text-[#4F8CFF]">
+                COMING SOON
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-1">
+                ranked queue
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-[#D5A33A]/20 bg-[#D5A33A]/[0.025] p-3.5">
+              <ModeBadge mode="muchotourney" compact />
+              <div className="font-display text-sm font-black mt-3 text-[#D5A33A]">
+                COMING SOON
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-1">
+                tournament events
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };
@@ -609,6 +822,7 @@ export default function Dashboard() {
     isAdmin,
     adminChallengeAlertCount,
     liveMatches,
+    publicChallenges,
   } = useData();
 
   const season = dashboardData?.competition || { season_number: 1, season_name: "Season 1" };
@@ -638,6 +852,7 @@ export default function Dashboard() {
       isAdmin={isAdmin}
       adminChallengeAlertCount={adminChallengeAlertCount}
       players={players}
+      publicChallenges={publicChallenges}
     />
   );
 }
