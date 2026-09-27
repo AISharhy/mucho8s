@@ -583,10 +583,10 @@ export default function PlayerProfile() {
       challenge({
         id: "veteran",
         title: "Veteran",
-        description: "Play 40 Mucho8s matches",
+        description: "Play 50 Mucho8s matches",
         emoji: "🧱",
         value: Number(player.totalMatches || 0),
-        goal: 40,
+        goal: 50,
         unit: " matches",
       }),
       challenge({
@@ -764,10 +764,10 @@ export default function PlayerProfile() {
       "Unlocked after 4 consecutive Mucho8s wins"
     );
 
-    if (chronologicalMatches.length >= 40) {
+    if (chronologicalMatches.length >= 50) {
       byId.veteran = [
-        matchEvent(chronologicalMatches[39], {
-          note: "This was the 40th recorded Mucho8s match",
+        matchEvent(chronologicalMatches[49], {
+          note: "This was the 50th recorded Mucho8s match",
         }),
       ];
     } else {
@@ -1338,6 +1338,68 @@ export default function PlayerProfile() {
             </div>
           </div>
         </>
+      )}
+
+      {(!isOwnProfile || profileTab === "overview") && nextTrophyChallenges.length > 0 && (
+        <div
+          className="m8-panel rounded-[22px] p-4 sm:p-5 order-4"
+          data-testid="next-trophy-challenges"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
+            <div>
+              <div className="brand-kicker mb-1 text-magma">Trophy8s Progress</div>
+              <h3 className="font-display font-black text-xl tracking-[-0.02em]">
+                Next Trophies
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Your closest Mucho8s objectives. Each new unlock gives +3 Elo.
+              </p>
+            </div>
+            <ModeBadge mode="mucho8s" compact />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {nextTrophyChallenges.map((item) => (
+              <div
+                key={item.id}
+                className="rounded-2xl border border-magma/15 bg-[#0F1218] p-4 relative overflow-hidden"
+              >
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-magma to-transparent" />
+
+                <div className="flex items-start justify-between gap-3">
+                  <div className="w-10 h-10 rounded-xl border border-magma/20 bg-magma/[0.06] flex items-center justify-center text-xl">
+                    <span aria-hidden="true">{item.emoji}</span>
+                  </div>
+                  <span className="font-mono text-[10px] font-black text-magma">
+                    {item.value}/{item.goal}
+                  </span>
+                </div>
+
+                <div className="font-display font-black mt-3">{item.title}</div>
+                <div className="text-[11px] text-muted-foreground mt-1 leading-5">
+                  {item.description}
+                </div>
+
+                <div className="mt-4">
+                  <div className="flex items-center justify-between text-[9px] uppercase tracking-wider mb-1.5">
+                    <span className="text-[#697181]">Progress</span>
+                    <span className="font-black text-magma">{item.progress}%</span>
+                  </div>
+                  <div className="h-2 rounded-full border border-[#242A35] bg-[#090C11] overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-magma transition-all duration-500"
+                      style={{ width: `${item.progress}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-3 text-[10px] font-black text-magma">
+                  +3 Elo on unlock
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {(!isOwnProfile || profileTab === "overview") && (
