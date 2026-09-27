@@ -511,7 +511,7 @@ export default function AdminPanel() {
             <Input
               value={seasonName}
               onChange={(e) => setSeasonName(e.target.value)}
-              placeholder={`Season ${Number(competitionData?.current?.season_number || 1) + 1}`}
+              placeholder={`Season ${Number(competitionData?.current?.season_number ?? 0) + 1}`}
               className="h-11 bg-[#0F1218] border-[#222834] sm:w-52"
             />
             <AlertDialog>
