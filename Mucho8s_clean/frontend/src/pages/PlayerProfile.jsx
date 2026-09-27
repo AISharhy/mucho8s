@@ -5,7 +5,7 @@ import { winRate, tierOf } from "@/lib/elo";
 import { duoChemistry } from "@/lib/chemistry";
 import { analyzeBountyHistory, buildBountyAchievementCatalog } from "@/lib/bountyAchievements";
 import { buildPlayerRivalries } from "@/lib/rivalries";
-import { PlayerAvatar, EloBadge, Last10, StreakBadge, MvpBadge, MerdaBadge, RankBadge } from "@/components/shared";
+import { PlayerAvatar, EloBadge, Last10, MerdaBadge } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -1003,20 +1003,49 @@ export default function PlayerProfile() {
             </div>
 
             <div className="min-w-0 flex-1 pb-1">
-              <div className="brand-kicker mb-1">{isOwnProfile ? "My Competitive Profile" : "Competitive Player Profile"}</div>
-              <div className="flex flex-col sm:flex-row sm:items-end gap-2 sm:gap-4">
-                <h2 className="font-display text-3xl sm:text-[42px] leading-none font-black tracking-[-0.045em] truncate">
-                  {player.name}
-                </h2>
-                <div className="flex flex-wrap items-center gap-2 pb-0.5">
-                  <RankBadge elo={player.currentElo} />
-                  <StreakBadge streak={player.currentStreak} />
+              <div className="brand-kicker mb-2">
+                {isOwnProfile ? "My Competitive Profile" : "Competitive Player Profile"}
+              </div>
+
+              <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+                <div className="min-w-0">
+                  <div className="text-[9px] uppercase tracking-[0.18em] text-[#697181] font-bold">
+                    Name
+                  </div>
+                  <div className="font-display text-3xl sm:text-[38px] leading-none font-black tracking-[-0.04em] truncate mt-1">
+                    {player.name}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[9px] uppercase tracking-[0.18em] text-[#697181] font-bold">
+                    Rank
+                  </div>
+                  <div className="font-display text-sm sm:text-base font-black uppercase text-[#D5A33A] mt-1">
+                    {tier.name}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[9px] uppercase tracking-[0.18em] text-[#697181] font-bold">
+                    Elo
+                  </div>
+                  <div className="font-mono text-sm sm:text-base font-black text-white mt-1">
+                    {player.currentElo}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[9px] uppercase tracking-[0.18em] text-[#697181] font-bold">
+                    Role
+                  </div>
+                  <div className="font-display text-sm sm:text-base font-black uppercase text-white mt-1">
+                    {player.role || "—"}
+                  </div>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-3 text-xs text-[#8A94A4]">
-                <span><strong className="text-white font-mono">{player.currentElo}</strong> Elo</span>
-                {player.role && <span className="font-bold text-white">{player.role}</span>}
+              <div className="mt-3 text-xs text-[#8A94A4]">
                 <span className="text-[#C8CED8]">{player.totalMatches || 0} matches</span>
               </div>
             </div>
@@ -1034,7 +1063,6 @@ export default function PlayerProfile() {
 
           <div className="m8-profile-stat-strip mt-6">
             {[
-              { label: "Elo attuale", value: player.currentElo, tone: "text-white" },
               { label: "Picco Elo", value: player.peakElo, tone: "text-[#D5A33A]" },
               { label: "Record matches", value: `${player.wins || 0}W - ${player.losses || 0}L`, tone: "text-white" },
               { label: "Win Rate", value: `${winRate(player)}%`, tone: "text-white" },
