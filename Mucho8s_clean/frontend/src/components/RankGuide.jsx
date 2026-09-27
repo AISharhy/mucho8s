@@ -197,65 +197,81 @@ export default function RankGuide() {
           <div className="rounded-2xl border border-magma/20 bg-[#0F1218] p-4 sm:p-5">
             <div className="flex items-center gap-2">
               <ModeBadge mode="mucho8s" compact />
-              <span className="text-[10px] text-muted-foreground">Formula</span>
+              <span className="text-[10px] text-muted-foreground">Team Elo</span>
             </div>
 
             <div className="font-mono font-black text-base sm:text-lg mt-4">
-              <span className="text-magma">±25 result</span>
+              <span className="text-white">dynamic result</span>
               <span className="text-[#596170]"> + </span>
               <span className="text-emerald-400">± stake</span>
               <span className="text-[#596170]"> + </span>
               <span className="text-white">bonuses</span>
             </div>
 
+            <div className="text-[11px] text-muted-foreground mt-3 leading-5">
+              Mucho8s compares the <strong className="text-white">average Elo of Alpha vs Bravo</strong>.
+              The result part is between <strong className="text-white">5 and 45 Elo</strong>.
+              Equal teams are still worth about ±25.
+            </div>
+
             <div className="mt-4 rounded-xl border border-[#242A35] bg-[#090C11] p-3.5">
-              <div className="text-[9px] uppercase tracking-widest text-[#697181]">Example · €5 pairing</div>
+              <div className="text-[9px] uppercase tracking-widest text-[#697181]">
+                Example · Alpha 1050 vs Bravo 1200
+              </div>
               <div className="grid grid-cols-2 gap-3 mt-2">
                 <div>
-                  <div className="text-xs text-muted-foreground">Win</div>
+                  <div className="text-xs text-muted-foreground">Alpha upset win</div>
                   <div className="font-mono font-black text-emerald-400 mt-0.5">
-                    +25 + 5 = +30
+                    about +35 base
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground">Loss</div>
-                  <div className="font-mono font-black text-red-400 mt-0.5">
-                    -25 - 5 = -30
+                  <div className="text-xs text-muted-foreground">Bravo expected win</div>
+                  <div className="font-mono font-black text-emerald-400 mt-0.5">
+                    about +15 base
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="text-[11px] text-muted-foreground mt-3 leading-5">
-              The stake is converted 1:1 into Elo points for that pairing. A €10 pairing adds ±10, a €20 pairing adds ±20.
+              After the dynamic result, the personal money pairing is applied 1:1:
+              €5 = ±5 Elo, €10 = ±10 Elo, €20 = ±20 Elo.
             </div>
           </div>
 
           <div className="rounded-2xl border border-emerald-500/20 bg-[#0F1218] p-4 sm:p-5">
             <div className="flex items-center gap-2">
               <ModeBadge mode="mucho1v1" compact />
-              <span className="text-[10px] text-muted-foreground">Formula</span>
+              <span className="text-[10px] text-muted-foreground">Direct Elo</span>
             </div>
 
             <div className="font-mono font-black text-base sm:text-lg mt-4">
-              <span className="text-emerald-400">±25 result</span>
+              <span className="text-white">player vs player</span>
               <span className="text-[#596170]"> + </span>
-              <span className="text-white">± stake</span>
+              <span className="text-emerald-400">± stake</span>
+            </div>
+
+            <div className="text-[11px] text-muted-foreground mt-3 leading-5">
+              Mucho1v1 compares the two players directly. Beating a higher-Elo player gives more;
+              beating a much lower-Elo player gives less.
             </div>
 
             <div className="mt-4 rounded-xl border border-[#242A35] bg-[#090C11] p-3.5">
-              <div className="text-[9px] uppercase tracking-widest text-[#697181]">Example · €10 Mucho1v1</div>
+              <div className="text-[9px] uppercase tracking-widest text-[#697181]">
+                Example · 1000 Elo vs 1200 Elo · €10
+              </div>
               <div className="grid grid-cols-2 gap-3 mt-2">
                 <div>
-                  <div className="text-xs text-muted-foreground">Winner</div>
+                  <div className="text-xs text-muted-foreground">1000 player wins</div>
                   <div className="font-mono font-black text-emerald-400 mt-0.5">
-                    +25 + 10 = +35
+                    about +38 +10 = +48
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground">Loser</div>
-                  <div className="font-mono font-black text-red-400 mt-0.5">
-                    -25 - 10 = -35
+                  <div className="text-xs text-muted-foreground">1200 player wins</div>
+                  <div className="font-mono font-black text-emerald-400 mt-0.5">
+                    about +12 +10 = +22
                   </div>
                 </div>
               </div>
@@ -268,15 +284,24 @@ export default function RankGuide() {
         </div>
 
         <div className="mt-4 rounded-xl border border-[#2A303B] bg-[#0F1218] p-4">
-          <div className="text-[9px] uppercase tracking-widest text-[#697181]">Full Mucho8s example</div>
-          <div className="text-sm mt-2 leading-6">
-            Win a <strong className="text-white">€5 pairing</strong> on your
-            <strong className="text-magma"> 3rd consecutive win</strong>:
-            <span className="font-mono font-black text-emerald-400"> +30 Elo</span>
-            {" "}for the match + <span className="font-mono font-black text-[#D5A33A]">+5 Elo</span> MVP =
-            <span className="font-mono font-black text-white"> +35 Elo</span>.
-            If you level up a Trophy8s challenge in that match, its Elo reward is added too. Challenge rewards range from <strong>+3 to +15 Elo</strong>.
+          <div className="text-[9px] uppercase tracking-widest text-[#697181]">
+            Full Mucho8s example
           </div>
+          <div className="text-sm mt-2 leading-6">
+            Alpha has average Elo <strong>1050</strong>, Bravo <strong>1200</strong>.
+            Alpha wins, so the upset is worth about
+            <span className="font-mono font-black text-white"> +35 Elo</span>.
+            With a <strong className="text-emerald-400">€5 pairing</strong> that becomes
+            <span className="font-mono font-black text-emerald-400"> +40</span>.
+            If it is also your 3rd consecutive Mucho8s win, MVP adds
+            <span className="font-mono font-black text-magma"> +5</span>,
+            for about <span className="font-mono font-black text-white">+45 Elo</span>.
+            Any General Trophy level-up is added after that.
+          </div>
+        </div>
+
+        <div className="mt-3 text-[10px] text-[#697181]">
+          Elo formula: K=50 · scale=400 · result component clamped to 5–45 Elo.
         </div>
       </section>
 
