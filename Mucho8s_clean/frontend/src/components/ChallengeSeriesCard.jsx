@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Lock, RotateCcw } from "lucide-react";
+import ModeBadge from "@/components/ModeBadge";
 
 const money = (cents, currency = "EUR") =>
   new Intl.NumberFormat("it-IT", {
@@ -55,7 +56,8 @@ export default function ChallengeSeriesCard({
     <div className="m8-panel rounded-[22px] p-5 sm:p-6" data-testid="chall-series-card">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <div className="brand-kicker mb-1">Match Series</div>
+          <ModeBadge mode="mucho1v1" compact />
+          <div className="brand-kicker mb-1 mt-2 text-emerald-400">Mucho1v1 Series</div>
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-display text-2xl font-black tracking-[-0.025em]">
               {rounds.length} {rounds.length === 1 ? "match" : "matches"}
@@ -67,7 +69,7 @@ export default function ChallengeSeriesCard({
         </div>
 
         <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-          Each verified match is paid separately · {platformLabel}
+          Each verified Mucho1v1 is paid separately · {platformLabel}
         </div>
       </div>
 
@@ -90,7 +92,7 @@ export default function ChallengeSeriesCard({
       </div>
 
       <div className="mt-5">
-        <div className="text-[10px] uppercase tracking-[0.16em] text-[#697181] font-bold mb-2">History</div>
+        <div className="text-[10px] uppercase tracking-[0.16em] text-[#697181] font-bold mb-2">Mucho1v1 History</div>
         <div className="space-y-2">
           {rounds.map((round) => {
             const winner = round.reported_winner_player_id
@@ -130,7 +132,7 @@ export default function ChallengeSeriesCard({
       {series?.status === "open" && challenge?.status === "completed" && challenge?.payment_received_at && (
         <div className="mt-5 pt-5 border-t border-[#232A35]">
           <div className="text-[10px] uppercase tracking-[0.16em] text-[#697181] font-bold mb-2">
-            Next match
+            Next Mucho1v1
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr_auto] gap-2">
@@ -150,9 +152,9 @@ export default function ChallengeSeriesCard({
             <Button
               onClick={() => onRechallenge(Number(amount))}
               disabled={Boolean(busy) || !Number.isFinite(Number(amount)) || Number(amount) <= 0}
-              className="m8-action m8-action-primary h-11 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-bold"
+              className="m8-action h-11 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black"
             >
-              <RotateCcw size={16} className="mr-2" /> REMATCH · {platformLabel}
+              <RotateCcw size={16} className="mr-2" /> MUCHO1V1 AGAIN · {platformLabel}
             </Button>
 
             <Button
@@ -165,14 +167,14 @@ export default function ChallengeSeriesCard({
           </div>
 
           <div className="text-[10px] text-muted-foreground mt-2">
-            The current match is already paid. Rematch creates the next one with the same player and payment method.
+            The current Mucho1v1 is already paid. This creates the next round with the same player and payment method.
           </div>
         </div>
       )}
 
       {series?.status !== "open" && (
         <div className="mt-5 rounded-xl bg-[#0F1218] border border-[#242A35] p-4 text-sm text-muted-foreground">
-          Series ended. Every verified match keeps its own result, money record and Elo change.
+          Series ended. Every verified Mucho1v1 keeps its own result, money record and Elo change.
         </div>
       )}
     </div>
