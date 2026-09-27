@@ -273,8 +273,8 @@ export default function RankGuide() {
             Win a <strong className="text-white">€5 pairing</strong> on your
             <strong className="text-magma"> 3rd consecutive win</strong>:
             <span className="font-mono font-black text-emerald-400"> +30 Elo</span>
-            {" "}for the match + <span className="font-mono font-black text-magma">+3 Elo</span> MVP =
-            <span className="font-mono font-black text-white"> +33 Elo</span>.
+            {" "}for the match + <span className="font-mono font-black text-[#D5A33A]">+5 Elo</span> MVP =
+            <span className="font-mono font-black text-white"> +35 Elo</span>.
             If you also unlock a new Trophy8s in that match, add another <strong>+3 Elo per Trophy</strong>.
           </div>
         </div>
@@ -286,8 +286,8 @@ export default function RankGuide() {
           <Rule
             icon={Trophy}
             title="MVP · Trophy8s"
-            value="Every 3 wins = +1 MVP +3 Elo"
-            text="MVP is repeatable. At 3 straight wins you earn one; at 6 straight wins you earn another; at 9 you earn another. Every 3-win milestone also removes 1 active MERDA if you have one."
+            value="Every 3 wins = +1 MVP +5 Elo"
+            text="Mucho8s MVP is repeatable. At 3 straight wins you earn +1 MVP and +5 Elo; at 6 you earn another, then again at 9. Every 3-win milestone also removes 1 active MERDA if you have one."
             accent="text-magma"
           />
           <Rule
@@ -298,6 +298,32 @@ export default function RankGuide() {
             accent="text-[#C79A6B]"
           />
         </div>
+      </section>
+
+      <section className="m8-panel rounded-[22px] p-5 sm:p-6">
+        <div className="brand-kicker mb-1">Mode MVP rules</div>
+        <h2 className="font-display text-xl font-black">MVP rewards depend on the mode</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5 mt-4">
+          {[
+            ["mucho8s", "Every 3W", "+5 Elo +1 MVP"],
+            ["mucho1v1", "Every 3W", "+3 Elo +1 MVP"],
+            ["muchoranked", "Every 3W", "+4 Elo +1 MVP"],
+            ["muchotourney", "Tournament win", "+25 Elo +1 MVP"],
+          ].map(([mode, trigger, reward]) => (
+            <div key={mode} className="rounded-xl border border-[#222834] bg-[#0F1218] p-3.5">
+              <ModeBadge mode={mode} compact />
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-3">
+                {trigger}
+              </div>
+              <div className="font-mono font-black text-sm text-[#D5A33A] mt-1">
+                {reward}
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-3">
+          MuchoRanked and MuchoTourney rewards become active when those modes go live.
+        </p>
       </section>
 
       <section className="m8-panel rounded-[22px] p-5 sm:p-6">
