@@ -4,6 +4,7 @@ import { useData } from "@/context/DataContext";
 import { PlayerAvatar } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ProductState";
+import ModeBadge from "@/components/ModeBadge";
 import {
   Bell,
   Check,
@@ -169,10 +170,10 @@ export default function ChallengeInbox() {
     if (!updated) return;
 
     if (decision === "accept") {
-      toast.success("Challenge accepted");
+      toast.success("Mucho1v1 accepted");
       navigate(`/challenges/${challenge.id}`);
     } else {
-      toast("Challenge declined");
+      toast("Mucho1v1 declined");
     }
   };
 
@@ -181,8 +182,8 @@ export default function ChallengeInbox() {
       <div className="max-w-xl mx-auto">
         <EmptyState
           icon={Bell}
-          title="Challenge Inbox"
-          description="Login with Discord to see direct 1v1 challenges sent between players."
+          title="Mucho1v1 Inbox"
+          description="Login with Discord to see your direct Mucho1v1 requests and history."
         />
       </div>
     );
@@ -192,10 +193,10 @@ export default function ChallengeInbox() {
     <div className="m8-page-stack">
       <section className="m8-panel rounded-2xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
         <div>
-          <div className="brand-kicker mb-1">Challenge Center</div>
-          <h2 className="font-display text-3xl font-black tracking-[-0.03em]">Challenge Inbox</h2>
+          <div className="brand-kicker mb-1">Mucho1v1</div>
+          <h2 className="font-display text-3xl font-black tracking-[-0.03em]">Mucho1v1 Inbox</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Direct 1v1 challenges only: accept requests, follow active challs and verify results.
+            Direct Mucho1v1 only: requests, active series, results and payouts in one place.
           </p>
         </div>
 
@@ -225,12 +226,12 @@ export default function ChallengeInbox() {
       {visible.length === 0 ? (
         <EmptyState
           icon={ShieldCheck}
-          title={tab === "action" ? "You're all caught up" : tab === "active" ? "No active challenges" : "No challenge history yet"}
+          title={tab === "action" ? "You're all caught up" : tab === "active" ? "No active Mucho1v1" : "No Mucho1v1 history yet"}
           description={tab === "action"
-            ? "You have no challenge actions waiting for you."
+            ? "You have no Mucho1v1 actions waiting for you."
             : tab === "active"
-              ? "Accepted challs and open ReChall Series will appear here."
-              : "Completed and closed challenges will appear here."}
+              ? "Accepted Mucho1v1 and open series will appear here."
+              : "Completed Mucho1v1 results will appear here."}
         />
       ) : (
         <div className="space-y-3">
@@ -257,6 +258,7 @@ export default function ChallengeInbox() {
               >
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <ModeBadge mode="mucho1v1" compact />
                     <PlayerAvatar
                       name={opponent?.name || "Player"}
                       elo={opponent?.currentElo || 1000}
@@ -268,7 +270,7 @@ export default function ChallengeInbox() {
                       <div className="text-xs text-muted-foreground mt-1">
                         {series ? (
                           <>
-                            CHALL SERIES · {roundCount} {roundCount === 1 ? "match" : "matches"} ·{" "}
+                            MUCHO1V1 SERIES · {roundCount} {roundCount === 1 ? "match" : "matches"} ·{" "}
                             {series.status === "open"
                               ? Number(series.current_amount_cents || 0) === 0
                                 ? "net €0"
@@ -322,7 +324,7 @@ export default function ChallengeInbox() {
                             ? "text-red-400 border-red-500/20 bg-red-500/5"
                             : challenge.status === "accepted"
                               ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/5"
-                              : "text-[#D5A33A] border-[#D5A33A]/25 bg-[#D5A33A]/5"
+                              : "text-emerald-400 border-emerald-500/25 bg-emerald-500/[0.05]"
                       }`}>
                         {statusText[challenge.status] || challenge.status}
                       </span>
@@ -341,7 +343,7 @@ export default function ChallengeInbox() {
                         <Button
                           disabled={busyId === challenge.id}
                           onClick={() => respond(challenge, "accept")}
-                          className="h-10 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white"
+                          className="h-10 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black"
                         >
                           <Check size={15} className="mr-1.5" /> Accept
                         </Button>
@@ -352,7 +354,7 @@ export default function ChallengeInbox() {
                         className="h-10 px-4 rounded-xl bg-[#181B26] border border-[#2A303B] text-sm font-semibold text-white inline-flex items-center justify-center hover:bg-white/[0.05]"
                       >
                         {needsAction ? <AlertTriangle size={14} className="mr-1.5 text-[#D5A33A]" /> : <Swords size={14} className="mr-1.5" />}
-                        {series ? "Open Series" : "Open Match"}
+                        {series ? "Open Series" : "Open Mucho1v1"}
                       </Link>
                     )}
                   </div>
