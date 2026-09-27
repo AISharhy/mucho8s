@@ -118,8 +118,8 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     if (configError) throw configError;
-    const currentSeason = Number(config?.season_number || 1);
-    const currentName = String(config?.season_name || `Season ${currentSeason}`);
+    const currentSeason = Number(config?.season_number ?? 1);
+    const currentName = String(config?.season_name || (currentSeason === 0 ? "Pre-Season" : `Season ${currentSeason}`));
 
     const { data: state, error: stateError } = await supabase
       .from("app_state")
