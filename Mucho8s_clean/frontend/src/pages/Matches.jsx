@@ -129,7 +129,6 @@ export default function Matches() {
     playerAvatars,
     deleteMatch,
     isAdmin,
-    createLiveMatch,
   } = useData();
 
   const safeMatches = useMemo(
