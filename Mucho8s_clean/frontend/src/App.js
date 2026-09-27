@@ -15,6 +15,8 @@ import TeamBuilder from "@/pages/TeamBuilder";
 import AdminPanel from "@/pages/AdminPanel";
 import ChallengeMatch from "@/pages/ChallengeMatch";
 import ChallengeInbox from "@/pages/ChallengeInbox";
+import MatchRoom from "@/pages/MatchRoom";
+import Rivalries from "@/pages/Rivalries";
 
 function IntroSplash({ onDone }) {
   useEffect(() => {
@@ -91,7 +93,9 @@ function App() {
               <Route path="balancer" element={<TeamBuilder />} />
               <Route path="draft" element={<TeamBuilder />} />
               <Route path="matches" element={<Matches />} />
+              <Route path="matches/live/:id" element={<MatchRoom />} />
               <Route path="ranking" element={<Ranking />} />
+              <Route path="rivalries" element={<Rivalries />} />
               <Route path="leaderboard" element={<Ranking initialTab="leaderboard" />} />
               <Route path="statistics" element={<Ranking initialTab="statistics" />} />
               <Route path="challenge-ranking" element={<Ranking initialTab="challenges" />} />
