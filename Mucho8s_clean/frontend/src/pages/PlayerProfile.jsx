@@ -583,10 +583,10 @@ export default function PlayerProfile() {
       challenge({
         id: "veteran",
         title: "Veteran",
-        description: "Play 50 Mucho8s matches",
+        description: "Play 40 Mucho8s matches",
         emoji: "🧱",
         value: Number(player.totalMatches || 0),
-        goal: 50,
+        goal: 40,
         unit: " matches",
       }),
       challenge({
@@ -764,10 +764,10 @@ export default function PlayerProfile() {
       "Unlocked after 4 consecutive Mucho8s wins"
     );
 
-    if (chronologicalMatches.length >= 50) {
+    if (chronologicalMatches.length >= 40) {
       byId.veteran = [
-        matchEvent(chronologicalMatches[49], {
-          note: "This was the 50th recorded Mucho8s match",
+        matchEvent(chronologicalMatches[39], {
+          note: "This was the 40th recorded Mucho8s match",
         }),
       ];
     } else {
