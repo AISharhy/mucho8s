@@ -39,25 +39,25 @@ const RivalryBadge = ({ children, tone = "neutral", icon: Icon = null }) => {
   );
 };
 
-const FormStrip = ({ items, playerAId, playerAName, playerBName }) => (
+const FormStrip = ({ items, focusPlayerId, focusPlayerName }) => (
   <div className="flex items-center gap-1.5">
     {items.length === 0 ? (
       <span className="text-[10px] text-[#697181]">No form yet</span>
     ) : (
       items.map((item, index) => {
-        const aWon = String(item.winnerId) === String(playerAId);
+        const won = String(item.winnerId) === String(focusPlayerId);
         return (
           <span
             key={`${item.id}-${index}`}
-            title={`${aWon ? playerAName : playerBName} won`}
-            aria-label={`${aWon ? playerAName : playerBName} won`}
+            title={`${focusPlayerName} ${won ? "won" : "lost"}`}
+            aria-label={`${focusPlayerName} ${won ? "won" : "lost"}`}
             className={`w-7 h-7 rounded-lg border inline-flex items-center justify-center text-[9px] font-black ${
-              aWon
-                ? "border-magma/25 bg-magma/[0.08] text-magma"
-                : "border-[#65D5D3]/25 bg-[#65D5D3]/[0.06] text-[#65D5D3]"
+              won
+                ? "border-emerald-500/25 bg-emerald-500/[0.08] text-emerald-400"
+                : "border-red-500/20 bg-red-500/[0.06] text-red-400"
             }`}
           >
-            {aWon ? "A" : "B"}
+            {won ? "W" : "L"}
           </span>
         );
       })
@@ -133,19 +133,27 @@ export default function Rivalries() {
       ) : (
         <section className="grid grid-cols-1 xl:grid-cols-2 gap-3">
           {visible.map((row) => {
-            const playerA = playerMap[row.playerAId];
-            const playerB = playerMap[row.playerBId];
-            const playerAName = playerA?.name || "Player";
-            const playerBName = playerB?.name || "Player";
-            const netA = Number(row.playerANet || 0);
+            const swapSides = Number(row.playerBWins || 0) > Number(row.playerAWins || 0);
+            const leftId = swapSides ? row.playerBId : row.playerAId;
+            const rightId = swapSides ? row.playerAId : row.playerBId;
+            const leftPlayer = playerMap[leftId];
+            const rightPlayer = playerMap[rightId];
+            const leftName = leftPlayer?.name || "Player";
+            const rightName = rightPlayer?.name || "Player";
+            const leftWins = swapSides ? row.playerBWins : row.playerAWins;
+            const rightWins = swapSides ? row.playerAWins : row.playerBWins;
+            const leadBy = Math.max(0, Number(leftWins || 0) - Number(rightWins || 0));
+            const leftNet = swapSides
+              ? -Number(row.playerANet || 0)
+              : Number(row.playerANet || 0);
             const moneyLeader =
-              netA > 0 ? playerAName : netA < 0 ? playerBName : "Even";
-            const moneyEdge = Math.abs(netA);
+              leftNet > 0 ? leftName : leftNet < 0 ? rightName : "Even";
+            const moneyEdge = Math.abs(leftNet);
             const streakName =
-              row.streakWinnerId === row.playerAId
-                ? playerAName
-                : row.streakWinnerId === row.playerBId
-                  ? playerBName
+              row.streakWinnerId === leftId
+                ? leftName
+                : row.streakWinnerId === rightId
+                  ? rightName
                   : "";
             const isMostPlayed = row.meetings === maxMeetings && maxMeetings > 0;
             const isHot = row.meetings >= 8 && row.scoreDiff <= 2;
@@ -181,53 +189,66 @@ export default function Rivalries() {
 
                 <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
                   <Link
-                    to={`/players/${row.playerAId}`}
+                    to={`/players/${leftId}`}
                     className="min-w-0 flex items-center gap-2.5 hover:opacity-90"
                   >
-                    <PlayerAvatar
-                      name={playerAName}
-                      elo={playerA?.currentElo || 1000}
-                      size={42}
-                      avatarUrl={playerAvatars[row.playerAId]}
-                    />
+                    <div className={`rounded-xl ${leadBy > 0 ? "ring-1 ring-emerald-500/20" : ""}`}>
+                      <PlayerAvatar
+                        name={leftName}
+                        elo={leftPlayer?.currentElo || 1000}
+                        size={42}
+                        avatarUrl={playerAvatars[leftId]}
+                      />
+                    </div>
                     <div className="min-w-0">
-                      <div className="font-display font-black text-base sm:text-lg truncate">
-                        {playerAName}
+                      <div className={`font-display font-black text-base sm:text-lg truncate ${
+                        leadBy > 0 ? "text-white" : ""
+                      }`}>
+                        {leftName}
                       </div>
                       <div className="font-mono text-[10px] text-[#697181] mt-0.5">
-                        {Number(playerA?.currentElo || 1000)} Elo
+                        {Number(leftPlayer?.currentElo || 1000)} Elo
                       </div>
                     </div>
                   </Link>
 
                   <div className="text-center px-1">
                     <div className="font-display font-black text-2xl sm:text-3xl tracking-[-0.04em]">
-                      {row.playerAWins}
+                      <span className={leadBy > 0 ? "text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,.18)]" : "text-white"}>
+                        {leftWins}
+                      </span>
                       <span className="text-[#596170] mx-2">-</span>
-                      {row.playerBWins}
+                      <span className={leadBy > 0 ? "text-[#7D8795]" : "text-white"}>
+                        {rightWins}
+                      </span>
                     </div>
-                    <div className="text-[9px] uppercase tracking-[0.18em] text-[#697181] mt-1">
+                    <div className={`text-[9px] uppercase tracking-[0.16em] mt-1 ${
+                      leadBy > 0 ? "text-emerald-400/80" : "text-[#697181]"
+                    }`}>
+                      {leadBy > 0 ? `${leftName} leads by ${leadBy}` : "Tied rivalry"}
+                    </div>
+                    <div className="text-[9px] uppercase tracking-[0.18em] text-[#596170] mt-0.5">
                       {row.meetings} meetings
                     </div>
                   </div>
 
                   <Link
-                    to={`/players/${row.playerBId}`}
+                    to={`/players/${rightId}`}
                     className="min-w-0 flex items-center justify-end gap-2.5 hover:opacity-90"
                   >
                     <div className="min-w-0 text-right">
-                      <div className="font-display font-black text-base sm:text-lg truncate">
-                        {playerBName}
+                      <div className="font-display font-black text-base sm:text-lg truncate text-[#C5CBD4]">
+                        {rightName}
                       </div>
                       <div className="font-mono text-[10px] text-[#697181] mt-0.5">
-                        {Number(playerB?.currentElo || 1000)} Elo
+                        {Number(rightPlayer?.currentElo || 1000)} Elo
                       </div>
                     </div>
                     <PlayerAvatar
-                      name={playerBName}
-                      elo={playerB?.currentElo || 1000}
+                      name={rightName}
+                      elo={rightPlayer?.currentElo || 1000}
                       size={42}
-                      avatarUrl={playerAvatars[row.playerBId]}
+                      avatarUrl={playerAvatars[rightId]}
                     />
                   </Link>
                 </div>
@@ -239,9 +260,8 @@ export default function Rivalries() {
                     </div>
                     <FormStrip
                       items={row.recentFive}
-                      playerAId={row.playerAId}
-                      playerAName={playerAName}
-                      playerBName={playerBName}
+                      focusPlayerId={leftId}
+                      focusPlayerName={leftName}
                     />
                   </div>
 
