@@ -453,8 +453,8 @@ export default function Matches() {
               Winner
             </div>
             <div className="font-semibold mt-1">{winner?.name || "Player"}</div>
-            <div className="font-mono text-sm font-black text-emerald-400 mt-1">
-              +{25 + Math.max(0, Math.round(amount))} Elo
+            <div className="font-mono text-[11px] font-black text-emerald-400 mt-1">
+              Dynamic Elo + €{Math.max(0, Math.round(amount))} stake
             </div>
           </div>
 
@@ -463,8 +463,8 @@ export default function Matches() {
               Loser
             </div>
             <div className="font-semibold mt-1">{loser?.name || "Player"}</div>
-            <div className="font-mono text-sm font-black text-red-400 mt-1">
-              -{25 + Math.max(0, Math.round(amount))} Elo
+            <div className="font-mono text-[11px] font-black text-red-400 mt-1">
+              Dynamic Elo + stake
             </div>
           </div>
         </div>
@@ -514,6 +514,14 @@ export default function Matches() {
           {match.mode && (
             <span className="px-2 py-0.5 rounded-md bg-[#0F1218] text-xs border border-[#222834] text-[#AAB1BE]">
               {match.mode}
+            </span>
+          )}
+          {Number(match?.eloContext?.resultDelta) > 0 && (
+            <span
+              className="px-2 py-0.5 rounded-md bg-[#11151C] text-[10px] border border-[#2C333E] text-[#C8CED8] font-mono"
+              title={`Alpha avg ${match.eloContext.teamAElo} · Bravo avg ${match.eloContext.teamBElo}`}
+            >
+              Elo base ±{match.eloContext.resultDelta}
             </span>
           )}
         </div>
