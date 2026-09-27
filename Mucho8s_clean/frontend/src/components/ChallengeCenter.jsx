@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { Button } from "@/components/ui/button";
 import { PlayerAvatar } from "@/components/shared";
+import ModeBadge from "@/components/ModeBadge";
 import { Check, X, Swords, ShieldCheck, AlertTriangle, Trophy } from "lucide-react";
 import { toast } from "sonner";
 
@@ -173,10 +174,10 @@ export default function ChallengeCenter() {
     if (!updated) return;
 
     if (decision === "accept") {
-      toast.success("Challenge accepted");
+      toast.success("Mucho1v1 accepted");
       navigate(`/challenges/${challenge.id}`);
     } else {
-      toast("Challenge declined");
+      toast("Mucho1v1 declined");
     }
   };
 
@@ -209,10 +210,10 @@ export default function ChallengeCenter() {
         <div className="p-6 sm:p-7">
           <div className="flex items-center justify-center mb-5">
             <div className="relative">
-              <div className="absolute inset-0 rounded-2xl bg-magma/20 blur-xl animate-pulse" />
-              <div className="relative w-16 h-16 rounded-2xl bg-[#151923] border border-magma/30 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-2xl bg-emerald-500/20 blur-xl animate-pulse" />
+              <div className="relative w-16 h-16 rounded-2xl bg-[#151923] border border-emerald-500/30 flex items-center justify-center">
                 {attention.type === "incoming" ? (
-                  <Swords size={30} className="text-magma" />
+                  <Swords size={30} className="text-emerald-400" />
                 ) : attention.type === "verify" ? (
                   <ShieldCheck size={30} className="text-emerald-400" />
                 ) : challenge.status === "completed" ? (
@@ -227,10 +228,13 @@ export default function ChallengeCenter() {
           {attention.type === "incoming" && (
             <>
               <div className="text-center">
-                <div className="brand-kicker mb-2">Incoming Challenge</div>
-                <h2 className="font-display text-2xl font-extrabold">YOU'VE BEEN CHALLENGED</h2>
+                <div className="flex justify-center mb-2">
+                  <ModeBadge mode="mucho1v1" compact />
+                </div>
+                <div className="brand-kicker mb-2 text-emerald-400">Incoming Mucho1v1</div>
+                <h2 className="font-display text-2xl font-extrabold">MUCHO1V1 REQUEST</h2>
                 <p className="text-sm text-muted-foreground mt-2">
-                  {challenger?.name || "A player"} wants to challenge you via {platform}.
+                  {challenger?.name || "A player"} sent you a direct Mucho1v1 via {platform}.
                 </p>
               </div>
 
@@ -243,7 +247,7 @@ export default function ChallengeCenter() {
                 />
                 <div className="min-w-0 flex-1">
                   <div className="font-display font-bold text-lg truncate">{challenger?.name || "Player"}</div>
-                  <div className="text-xs text-muted-foreground">{platform} challenge</div>
+                  <div className="text-xs text-muted-foreground">{platform} · Mucho1v1</div>
                 </div>
                 <div className="text-right">
                   <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Stake</div>
@@ -262,7 +266,7 @@ export default function ChallengeCenter() {
                 <Button
                   disabled={busy}
                   onClick={() => respond("accept")}
-                  className="h-12 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-bold magma-glow"
+                  className="h-12 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black"
                 >
                   <Check size={17} className="mr-2" /> Accept
                 </Button>
@@ -273,7 +277,7 @@ export default function ChallengeCenter() {
           {attention.type === "verify" && (
             <>
               <div className="text-center">
-                <div className="brand-kicker mb-2">Result Verification</div>
+                <div className="brand-kicker mb-2 text-emerald-400">Mucho1v1 Result</div>
                 <h2 className="font-display text-2xl font-extrabold">VERIFY THE RESULT</h2>
                 <p className="text-sm text-muted-foreground mt-2">
                   The other player reported the winner. Confirm only if the result is correct.
@@ -315,22 +319,9 @@ export default function ChallengeCenter() {
           {attention.type === "event" && (
             <>
               <div className="text-center">
-                <div className="brand-kicker mb-2">Challenge Update</div>
-                {challenge.last_event === "pairing_assigned" ? (
-                  <>
-                    <h2 className="font-display text-2xl font-extrabold text-magma">MONEY MATCHUP ASSIGNED</h2>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      You have been paired vs {challenge.challenger_player_id === discordPlayer.id ? challenged?.name : challenger?.name} for {money(challenge)} via {platform}.
-                    </p>
-                  </>
-                ) : challenge.last_event === "match_pairing_verified" ? (
-                  <>
-                    <h2 className="font-display text-2xl font-extrabold text-emerald-400">MONEY MATCHUP VERIFIED</h2>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      The match result is official and now counts in Chall Ranking and money statistics.
-                    </p>
-                  </>
-                ) : challenge.last_event === "payout_disputed" ? (
+                <div className="flex justify-center mb-2"><ModeBadge mode="mucho1v1" compact /></div>
+                <div className="brand-kicker mb-2 text-emerald-400">Mucho1v1 Update</div>
+                {challenge.last_event === "payout_disputed" ? (
                   <>
                     <h2 className="font-display text-2xl font-extrabold text-orange-400">PAYMENT DISPUTE</h2>
                     <p className="text-sm text-muted-foreground mt-2">
@@ -362,23 +353,23 @@ export default function ChallengeCenter() {
                   </>
                 ) : challenge.status === "declined" ? (
                   <>
-                    <h2 className="font-display text-2xl font-extrabold text-red-400">CHALLENGE DECLINED</h2>
+                    <h2 className="font-display text-2xl font-extrabold text-red-400">MUCHO1V1 DECLINED</h2>
                     <p className="text-sm text-muted-foreground mt-2">
-                      {challenged?.name || "The player"} declined your challenge.
+                      {challenged?.name || "The player"} declined your Mucho1v1.
                     </p>
                   </>
                 ) : challenge.status === "disputed" ? (
                   <>
                     <h2 className="font-display text-2xl font-extrabold text-orange-400">RESULT DISPUTED</h2>
                     <p className="text-sm text-muted-foreground mt-2">
-                      The challenge needs Admin review.
+                      The Mucho1v1 needs Admin review.
                     </p>
                   </>
                 ) : (
                   <>
-                    <h2 className="font-display text-2xl font-extrabold">CHALLENGE UPDATED</h2>
+                    <h2 className="font-display text-2xl font-extrabold">MUCHO1V1 UPDATED</h2>
                     <p className="text-sm text-muted-foreground mt-2">
-                      Open the match room to see the latest update.
+                      Open Mucho1v1 to see the latest update.
                     </p>
                   </>
                 )}
@@ -391,9 +382,9 @@ export default function ChallengeCenter() {
                       void markChallengeSeen(challenge.id);
                       navigate(`/challenges/${challenge.id}`);
                     }}
-                    className="h-12 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-bold"
+                    className="h-12 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black"
                   >
-                    OPEN MATCH
+                    OPEN MUCHO1V1
                   </Button>
                 )}
                 <Button
@@ -410,7 +401,7 @@ export default function ChallengeCenter() {
 
           {attention.type !== "event" && (
             <div className="mt-4 text-center text-[11px] text-[#596170]">
-              A win is official only after the other player verifies it.
+              A Mucho1v1 result is official only after the other player verifies it.
             </div>
           )}
         </div>
