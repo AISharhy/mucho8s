@@ -50,8 +50,8 @@ const isAdmin = async (req: Request, supabase: any) => {
   );
 };
 
-const resetPlayer = (player: any) => {
-  const elo = 500;
+const resetPlayer = (player: any, startingElo = 500) => {
+  const elo = Math.max(500, Math.round(Number(startingElo) || 500));
   return {
     ...player,
     currentElo: elo,
@@ -84,7 +84,7 @@ Deno.serve(async (req: Request) => {
       const [{ data: config, error: configError }, { data: archives, error: archiveError }] = await Promise.all([
         supabase
           .from("competition_config")
-          .select("season_number,season_name,season_started_at,updated_at")
+          .select("season_number,season_name,season_started_at,starting_elo,rollover_mode,rollover_day,leaderboard_min_matches,updated_at")
           .eq("id", "main")
           .maybeSingle(),
         supabase
@@ -109,11 +109,52 @@ Deno.serve(async (req: Request) => {
     const body = await req.json().catch(() => ({}));
     const action = String(body?.action || "").trim().toLowerCase();
 
+    if (action === "update-config") {
+      const seasonName = String(body?.seasonName || "").trim().slice(0, 60);
+      const startingElo = Math.max(500, Math.min(3000, Math.round(Number(body?.startingElo) || 500)));
+      const rolloverMode = String(body?.rolloverMode || "monthly").toLowerCase() === "manual" ? "manual" : "monthly";
+      const rolloverDay = Math.max(1, Math.min(28, Math.round(Number(body?.rolloverDay) || 1)));
+      const leaderboardMinMatches = Math.max(0, Math.min(100, Math.round(Number(body?.leaderboardMinMatches) || 0)));
+
+      const updates: Record<string, unknown> = {
+        starting_elo: startingElo,
+        rollover_mode: rolloverMode,
+        rollover_day: rolloverDay,
+        leaderboard_min_matches: leaderboardMinMatches,
+        updated_at: new Date().toISOString(),
+      };
+      if (seasonName) updates.season_name = seasonName;
+
+      const { data: updatedConfig, error: updateError } = await supabase
+        .from("competition_config")
+        .update(updates)
+        .eq("id", "main")
+        .select("*")
+        .single();
+
+      if (updateError) throw updateError;
+
+      await supabase.from("admin_audit_log").insert({
+        action: "competition.config.update",
+        entity_type: "competition",
+        entity_id: "main",
+        details: {
+          season_name: updatedConfig.season_name,
+          starting_elo: updatedConfig.starting_elo,
+          rollover_mode: updatedConfig.rollover_mode,
+          rollover_day: updatedConfig.rollover_day,
+          leaderboard_min_matches: updatedConfig.leaderboard_min_matches,
+        },
+      });
+
+      return json({ ok: true, current: updatedConfig });
+    }
+
     if (action === "repair-elo") {
       const [{ data: config, error: configError }, { data: state, error: stateError }] = await Promise.all([
         supabase
           .from("competition_config")
-          .select("season_number,season_started_at")
+          .select("season_number,season_started_at,starting_elo")
           .eq("id", "main")
           .maybeSingle(),
         supabase
@@ -127,6 +168,7 @@ Deno.serve(async (req: Request) => {
       if (stateError) throw stateError;
 
       const currentSeason = Number(config?.season_number ?? 1);
+      const startingElo = Math.max(500, Number(config?.starting_elo || 500));
       const seasonStartedAt = new Date(config?.season_started_at || 0).getTime();
       const players = Array.isArray(state?.players) ? state.players : [];
       const matches = Array.isArray(state?.matches) ? state.matches : [];
@@ -168,7 +210,7 @@ Deno.serve(async (req: Request) => {
         const elo = Number(rawElo);
         if (!Number.isFinite(elo)) continue;
 
-        baselines.set(id, { elo: Math.max(500, Math.round(elo)), at });
+        baselines.set(id, { elo: Math.max(startingElo, Math.round(elo)), at });
       }
 
       const challengeById = new Map(
@@ -177,7 +219,7 @@ Deno.serve(async (req: Request) => {
 
       const nextPlayers = players.map((player: any) => {
         const id = String(player?.id || "");
-        const baseline = baselines.get(id) || { elo: 500, at: seasonStartedAt };
+        const baseline = baselines.get(id) || { elo: startingElo, at: seasonStartedAt };
         const events: Array<{ at: number; order: number; delta: number }> = [];
 
         for (const match of matches) {
@@ -209,10 +251,10 @@ Deno.serve(async (req: Request) => {
         events.sort((a, b) => a.at - b.at || a.order - b.order);
 
         let repairedElo = baseline.elo;
-        for (const event of events) repairedElo = Math.max(500, repairedElo + event.delta);
+        for (const event of events) repairedElo = Math.max(startingElo, repairedElo + event.delta);
         repairedElo = Math.round(repairedElo);
 
-        const oldElo = Math.round(Number(player?.currentElo) || 500);
+        const oldElo = Math.round(Number(player?.currentElo) || startingElo);
         const history = Array.isArray(player?.eloHistory) && player.eloHistory.length
           ? [...player.eloHistory]
           : [{ match: Number(player?.totalMatches || 0), elo: repairedElo }];
@@ -288,6 +330,7 @@ Deno.serve(async (req: Request) => {
 
     if (configError) throw configError;
     const currentSeason = Number(config?.season_number ?? 1);
+    const startingElo = Math.max(500, Number(config?.starting_elo || 500));
     const currentName = String(config?.season_name || (currentSeason === 0 ? "Pre-Season" : `Season ${currentSeason}`));
 
     const { data: state, error: stateError } = await supabase
@@ -335,7 +378,7 @@ Deno.serve(async (req: Request) => {
     const resetStats = body?.resetStats !== false;
 
     if (resetStats) {
-      const nextPlayers = players.map(resetPlayer);
+      const nextPlayers = players.map((player: any) => resetPlayer(player, startingElo));
       const { error: stateUpdateError } = await supabase
         .from("app_state")
         .update({
