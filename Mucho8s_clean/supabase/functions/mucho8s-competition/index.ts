@@ -109,6 +109,175 @@ Deno.serve(async (req: Request) => {
     const body = await req.json().catch(() => ({}));
     const action = String(body?.action || "").trim().toLowerCase();
 
+    if (action === "repair-elo") {
+      const [{ data: config, error: configError }, { data: state, error: stateError }] = await Promise.all([
+        supabase
+          .from("competition_config")
+          .select("season_number,season_started_at")
+          .eq("id", "main")
+          .maybeSingle(),
+        supabase
+          .from("app_state")
+          .select("players,matches")
+          .eq("id", "main")
+          .maybeSingle(),
+      ]);
+
+      if (configError) throw configError;
+      if (stateError) throw stateError;
+
+      const currentSeason = Number(config?.season_number ?? 1);
+      const seasonStartedAt = new Date(config?.season_started_at || 0).getTime();
+      const players = Array.isArray(state?.players) ? state.players : [];
+      const matches = Array.isArray(state?.matches) ? state.matches : [];
+
+      const [{ data: auditRows, error: auditError }, { data: challengeRows, error: challengeError }, { data: eloEvents, error: eloError }] = await Promise.all([
+        supabase
+          .from("admin_audit_log")
+          .select("action,entity_id,details,created_at")
+          .in("action", ["player.update", "player.add", "player.elo_repair", "player.elo_checkpoint"])
+          .order("created_at", { ascending: false })
+          .limit(2000),
+        supabase
+          .from("player_challenges")
+          .select("id,season_number,verified_at")
+          .eq("season_number", currentSeason)
+          .not("verified_at", "is", null)
+          .limit(2000),
+        supabase
+          .from("challenge_elo_events")
+          .select("challenge_id,winner_player_id,loser_player_id,winner_delta,loser_delta,updated_at")
+          .limit(2000),
+      ]);
+
+      if (auditError) throw auditError;
+      if (challengeError) throw challengeError;
+      if (eloError) throw eloError;
+
+      const playerIds = new Set(players.map((player: any) => String(player?.id || "")).filter(Boolean));
+      const baselines = new Map<string, { elo: number; at: number }>();
+
+      for (const row of auditRows || []) {
+        const id = String(row?.entity_id || "");
+        if (!playerIds.has(id) || baselines.has(id)) continue;
+
+        const at = new Date(row?.created_at || 0).getTime();
+        if (!Number.isFinite(at) || at < seasonStartedAt) continue;
+
+        const rawElo = row?.details?.to_elo ?? row?.details?.elo;
+        const elo = Number(rawElo);
+        if (!Number.isFinite(elo)) continue;
+
+        baselines.set(id, { elo: Math.max(500, Math.round(elo)), at });
+      }
+
+      const challengeById = new Map(
+        (challengeRows || []).map((row: any) => [String(row.id), row])
+      );
+
+      const nextPlayers = players.map((player: any) => {
+        const id = String(player?.id || "");
+        const baseline = baselines.get(id) || { elo: 500, at: seasonStartedAt };
+        const events: Array<{ at: number; order: number; delta: number }> = [];
+
+        for (const match of matches) {
+          const teamA = Array.isArray(match?.teamA) ? match.teamA.map(String) : [];
+          const teamB = Array.isArray(match?.teamB) ? match.teamB.map(String) : [];
+          if (!teamA.includes(id) && !teamB.includes(id)) continue;
+
+          const at = new Date(match?.date || 0).getTime();
+          const delta = Number(match?.eloChanges?.[id] ?? 0);
+          if (!Number.isFinite(at) || at <= baseline.at || !Number.isFinite(delta) || delta === 0) continue;
+          events.push({ at, order: 0, delta });
+        }
+
+        for (const event of eloEvents || []) {
+          const challenge = challengeById.get(String(event?.challenge_id || ""));
+          if (!challenge) continue;
+
+          const at = new Date(challenge?.verified_at || event?.updated_at || 0).getTime();
+          if (!Number.isFinite(at) || at <= baseline.at) continue;
+
+          let delta = 0;
+          if (String(event?.winner_player_id || "") === id) delta = Number(event?.winner_delta || 0);
+          else if (String(event?.loser_player_id || "") === id) delta = Number(event?.loser_delta || 0);
+          if (!Number.isFinite(delta) || delta === 0) continue;
+
+          events.push({ at, order: 1, delta });
+        }
+
+        events.sort((a, b) => a.at - b.at || a.order - b.order);
+
+        let repairedElo = baseline.elo;
+        for (const event of events) repairedElo = Math.max(500, repairedElo + event.delta);
+        repairedElo = Math.round(repairedElo);
+
+        const oldElo = Math.round(Number(player?.currentElo) || 500);
+        const history = Array.isArray(player?.eloHistory) && player.eloHistory.length
+          ? [...player.eloHistory]
+          : [{ match: Number(player?.totalMatches || 0), elo: repairedElo }];
+
+        history[history.length - 1] = {
+          ...history[history.length - 1],
+          elo: repairedElo,
+        };
+
+        return {
+          ...player,
+          currentElo: repairedElo,
+          peakElo: Math.max(Number(player?.peakElo) || repairedElo, repairedElo),
+          eloHistory: history,
+          __repair: { oldElo, repairedElo },
+        };
+      });
+
+      const changed = nextPlayers
+        .filter((player: any) => player.__repair.oldElo !== player.__repair.repairedElo)
+        .map((player: any) => ({
+          id: player.id,
+          name: player.name,
+          from: player.__repair.oldElo,
+          to: player.__repair.repairedElo,
+        }));
+
+      const persistedPlayers = nextPlayers.map(({ __repair, ...player }: any) => player);
+      const now = new Date().toISOString();
+
+      const { error: updateStateError } = await supabase
+        .from("app_state")
+        .update({
+          players: persistedPlayers,
+          version: Date.now(),
+          updated_at: now,
+        })
+        .eq("id", "main");
+
+      if (updateStateError) throw updateStateError;
+
+      if (persistedPlayers.length) {
+        const checkpoints = persistedPlayers.map((player: any) => ({
+          action: "player.elo_checkpoint",
+          entity_type: "player",
+          entity_id: String(player.id),
+          details: {
+            name: player.name,
+            elo: Number(player.currentElo || 500),
+            source: "repair-elo",
+            season_number: currentSeason,
+          },
+          created_at: now,
+        }));
+        const { error: checkpointError } = await supabase.from("admin_audit_log").insert(checkpoints);
+        if (checkpointError) throw checkpointError;
+      }
+
+      return json({
+        ok: true,
+        checked: persistedPlayers.length,
+        changed,
+      });
+    }
+
     if (action !== "new-season") return json({ error: "Unknown action" }, 400);
 
     const { data: config, error: configError } = await supabase
