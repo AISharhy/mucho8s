@@ -31,7 +31,6 @@ import {
   ShieldCheck,
   Flame,
   Award,
-  UsersRound,
   Medal,
   Star,
   Coins,
