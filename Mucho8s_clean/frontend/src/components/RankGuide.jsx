@@ -193,6 +193,24 @@ export default function RankGuide() {
           Mucho8s and Mucho1v1 currently use the same global Elo. The minimum Elo is 500.
         </p>
 
+        <div className="mt-4 rounded-xl border border-[#343B48] bg-[#11151C] p-4">
+          <div className="text-[9px] uppercase tracking-widest text-[#697181]">
+            Final Elo formula
+          </div>
+          <div className="font-mono font-black text-sm sm:text-base mt-2 flex flex-wrap items-center gap-2">
+            <span className="text-white">Dynamic result</span>
+            <span className="text-[#596170]">±</span>
+            <span className="text-emerald-400">Stake</span>
+            <span className="text-[#596170]">+</span>
+            <span className="text-[#D5A33A]">MVP</span>
+            <span className="text-[#596170]">+</span>
+            <span className="text-[#C8CED8]">General Trophy</span>
+          </div>
+          <div className="text-[10px] text-muted-foreground mt-2">
+            Stake is always 1€ = 1 Elo. Win adds it, loss subtracts it.
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-5">
           <div className="rounded-2xl border border-magma/20 bg-[#0F1218] p-4 sm:p-5">
             <div className="flex items-center gap-2">
