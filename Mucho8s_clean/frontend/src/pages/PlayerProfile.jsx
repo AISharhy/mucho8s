@@ -1485,6 +1485,12 @@ export default function PlayerProfile() {
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
             {trophyCabinet.map((trophy) => {
               const family = trophyFamilyStyle(trophy.source || "Trophy8s");
+              const semanticIconText =
+                trophy.id === "mvp" ? "text-[#D5A33A]" : family.text;
+              const semanticIconBorder =
+                trophy.id === "mvp" ? "border-[#D5A33A]/25" : family.border;
+              const semanticIconBg =
+                trophy.id === "mvp" ? "bg-[#D5A33A]/[0.06]" : family.bg;
               return (
               <button
                 type="button"
@@ -1500,9 +1506,9 @@ export default function PlayerProfile() {
                   }}
                 />
                 <div className="flex items-start justify-between gap-3">
-                  <div className={`w-12 h-12 rounded-xl border bg-[#0F1218] flex items-center justify-center text-2xl shadow-[0_8px_24px_rgba(0,0,0,.22)] ${family.border} ${family.bg}`}>
+                  <div className={`w-12 h-12 rounded-xl border bg-[#0F1218] flex items-center justify-center text-2xl shadow-[0_8px_24px_rgba(0,0,0,.22)] ${semanticIconBorder} ${semanticIconBg}`}>
                     {trophy.iconType === "trophy" ? (
-                      <Trophy size={24} className={family.text} strokeWidth={2.2} />
+                      <Trophy size={24} className={semanticIconText} strokeWidth={2.2} />
                     ) : (
                       <span aria-hidden="true">{trophy.emoji}</span>
                     )}
@@ -1553,7 +1559,11 @@ export default function PlayerProfile() {
                       <Trophy
                         size={24}
                         strokeWidth={2.2}
-                        className={trophyFamilyStyle(selectedTrophy.source || "Trophy8s").text}
+                        className={
+                          selectedTrophy.id === "mvp"
+                            ? "text-[#D5A33A]"
+                            : trophyFamilyStyle(selectedTrophy.source || "Trophy8s").text
+                        }
                       />
                     ) : (
                       <span aria-hidden="true">{selectedTrophy.emoji}</span>
@@ -1759,7 +1769,7 @@ export default function PlayerProfile() {
 
                     <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                       {pairing && Number(pairing.amount || 0) > 0 && (
-                        <span className="m8-pill text-magma">
+                        <span className="m8-pill text-emerald-400">
                           €{Number(pairing.amount).toFixed(2)}
                         </span>
                       )}
@@ -2032,7 +2042,7 @@ export default function PlayerProfile() {
                 </div>
                 <div className="flex items-center gap-3">
                   {((Array.isArray(m.mvpIds) ? m.mvpIds : []).includes(player.id) || m.mvpId === player.id) && (
-                    <Trophy size={14} className="text-magma" aria-label="MVP · Trophy8s" />
+                    <Trophy size={14} className="text-[#D5A33A]" aria-label="MVP" />
                   )}
                   {((Array.isArray(m.merdaIds) && m.merdaIds.includes(player.id)) || m.merdaId === player.id) && (
                     <span title="MERDA">💩</span>
