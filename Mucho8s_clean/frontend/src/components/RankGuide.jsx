@@ -275,7 +275,7 @@ export default function RankGuide() {
             <span className="font-mono font-black text-emerald-400"> +30 Elo</span>
             {" "}for the match + <span className="font-mono font-black text-[#D5A33A]">+5 Elo</span> MVP =
             <span className="font-mono font-black text-white"> +35 Elo</span>.
-            If you also unlock a new Trophy8s in that match, add another <strong>+3 Elo per Trophy</strong>.
+            If you level up a Trophy8s challenge in that match, its Elo reward is added too. Challenge rewards range from <strong>+3 to +15 Elo</strong>.
           </div>
         </div>
       </section>
@@ -332,26 +332,27 @@ export default function RankGuide() {
           <div className="max-w-2xl">
             <h2 className="font-display text-2xl font-black">One-time achievements</h2>
             <p className="text-sm text-muted-foreground mt-1.5 leading-6">
-              Each new Trophy8s gives <strong className="text-white">+3 Elo once</strong>.
-              If the same Mucho8s unlocks multiple new Trophies, every +3 stacks with no cap.
+              Each Trophy8s challenge has <strong className="text-white">10 levels</strong>.
+              The target increases with the level: Veteran I is 40 matches, Veteran II is 80, then 120, up to Veteran X at 400.
+              Rewards scale with difficulty from <strong className="text-white">+3 to +15 Elo</strong>, and multiple level-ups in the same verified match stack.
             </p>
           </div>
           <span className="h-8 px-3 rounded-lg border border-magma/25 bg-magma/[0.06] text-magma inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider">
-            <Trophy size={11} /> +3 Elo each
+            <Trophy size={11} /> Lv I → X · +3 to +15 Elo
           </span>
         </div>
 
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-2.5 mt-4">
           {[
-            ["Veteran", "Play 40 Mucho8s"],
-            ["Money Maker", "Win €50 through Mucho8s pairings"],
-            ["High Roller", "Win a pairing worth at least €20"],
-            ["Rivalry", "Meet the same player 8 times"],
-            ["Nemesis", "Beat the same player 4 times"],
-            ["Run It Back", "Lose to a player, then beat them next time"],
-            ["On Fire", "Reach a 4-win streak"],
-            ["Unstoppable", "Reach an 8-win streak"],
-            ["Clean Sweep", "Win 4 Mucho8s in a row"],
+            ["Veteran", "40 matches per level · +5 Elo from Lv I"],
+            ["Money Maker", "€50 won per level · +5 Elo from Lv I"],
+            ["High Roller", "€20 stake threshold per level · +8 Elo from Lv I"],
+            ["Rivalry", "8 meetings per level · +4 Elo from Lv I"],
+            ["Nemesis", "4 H2H wins per level · +6 Elo from Lv I"],
+            ["Run It Back", "1 comeback per level · +3 Elo from Lv I"],
+            ["On Fire", "4 streak wins per level · +6 Elo from Lv I"],
+            ["Unstoppable", "8 streak wins per level · +10 Elo from Lv I"],
+            ["Clean Sweep", "1 four-win sweep per level · +7 Elo from Lv I"],
           ].map(([name, text]) => (
             <div key={name} className="rounded-xl border border-magma/15 bg-magma/[0.025] p-3">
               <div className="font-display font-black text-sm">{name}</div>
