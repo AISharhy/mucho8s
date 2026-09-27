@@ -1723,6 +1723,43 @@ export const DataProvider = ({ children }) => {
     }
   }, [admin, fetchState, fetchCompetitionData, fetchDashboardData, fetchPublicChallenges]);
 
+  const repairElo = useCallback(async () => {
+    if (!HAS_SUPABASE || !admin?.sessionToken) {
+      toast.error("Admin access required");
+      return false;
+    }
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/mucho8s-competition`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_ANON_KEY,
+          "X-Admin-Session": admin.sessionToken,
+        },
+        body: JSON.stringify({ action: "repair-elo" }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data?.error || "Could not repair Elo");
+        return false;
+      }
+
+      versionRef.current = -1;
+      await Promise.all([
+        fetchState(),
+        fetchCompetitionData(),
+        fetchDashboardData(),
+        fetchPublicChallenges(),
+      ]);
+      return data;
+    } catch {
+      toast.error("Competition service unavailable");
+      return false;
+    }
+  }, [admin, fetchState, fetchCompetitionData, fetchDashboardData, fetchPublicChallenges]);
+
   const addPlayer = useCallback(async (name, startElo = MIN_ELO) => {
     if (STORAGE_MODE === "backend") return backendWrite("/players", { body: { name, startElo } });
     const player = makePlayer(name, startElo);
@@ -2014,6 +2051,7 @@ export const DataProvider = ({ children }) => {
     refreshCompetitionData: fetchCompetitionData,
     refreshAdminChallengeAlerts,
     startNewSeason,
+    repairElo,
     refreshPlayerAvatars: fetchPlayerAvatars,
     saveMyChallengeLinks,
     signInWithDiscord,
