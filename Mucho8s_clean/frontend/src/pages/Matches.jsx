@@ -68,7 +68,7 @@ const TeamList = ({ ids, playerMap, playerAvatars, eloChanges, pairings = [], mv
             <div className="text-sm font-semibold truncate flex items-center gap-1.5">
               <span className="truncate">{p.name}</span>
               {isMvp && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-magma/[0.07] border border-magma/20 text-magma text-[8px] font-black uppercase tracking-wider shrink-0">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#D5A33A]/[0.08] border border-[#D5A33A]/20 text-[#D5A33A] text-[8px] font-black uppercase tracking-wider shrink-0">
                   <Trophy size={9} /> MVP
                 </span>
               )}
@@ -326,7 +326,7 @@ export default function Matches() {
           )}
 
           {totalStake > 0 && (
-            <span className="font-mono font-black text-sm text-[#D5A33A]">
+            <span className="font-mono font-black text-sm text-emerald-400">
               {money(totalStake)}
             </span>
           )}
@@ -361,7 +361,7 @@ export default function Matches() {
           </div>
         </div>
         <div className="text-right shrink-0">
-          <div className="font-mono font-black text-[#D5A33A]">{money(amount)}</div>
+          <div className="font-mono font-black text-emerald-400">{money(amount)}</div>
           <div className="text-[10px] text-muted-foreground mt-1">OPEN</div>
         </div>
       </Link>
@@ -669,7 +669,7 @@ export default function Matches() {
             data-testid={`match-money-pairings-${match.id}`}
           >
             <div className="flex items-center gap-2 mb-3">
-              <WalletCards size={15} className="text-[#D5A33A]" />
+              <WalletCards size={15} className="text-emerald-400" />
               <span className="brand-kicker text-magma">Mucho8s Pairings</span>
               <span className="ml-auto text-[10px] text-muted-foreground">
                 {match.pairings.length} pairings
