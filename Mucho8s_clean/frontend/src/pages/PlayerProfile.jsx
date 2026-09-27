@@ -38,6 +38,8 @@ import {
   Rocket,
   UserCircle,
   Pencil,
+  CalendarDays,
+  ChevronRight,
 } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer, Tooltip, YAxis, XAxis, CartesianGrid } from "recharts";
 import { toast } from "sonner";
@@ -86,6 +88,7 @@ export default function PlayerProfile() {
   const [sendingChallenge, setSendingChallenge] = useState("");
   const [challengePlatform, setChallengePlatform] = useState("");
   const [challengeAmount, setChallengeAmount] = useState("5");
+  const [selectedTrophyId, setSelectedTrophyId] = useState("");
 
   useEffect(() => {
     setLinks({
@@ -466,6 +469,206 @@ export default function PlayerProfile() {
 
     return awards;
   }, [player, trophyChallenges]);
+
+  const trophyEvidence = useMemo(() => {
+    if (!player) return {};
+
+    const byId = {};
+    const chronologicalMatches = [...playerMatches].sort(
+      (a, b) => new Date(a.date || 0) - new Date(b.date || 0)
+    );
+    const chronologicalChallenges = [...challengeStats.completed].sort(
+      (a, b) =>
+        new Date(a.verified_at || a.created_at || 0) -
+        new Date(b.verified_at || b.created_at || 0)
+    );
+
+    const opponentName = (opponentId) =>
+      playerMap?.[opponentId]?.name || "Unknown player";
+
+    const matchEvent = (match, extra = {}) => {
+      const inA = (match.teamA || []).includes(id);
+      const opponents = (inA ? match.teamB : match.teamA) || [];
+      const winnerSide = match.winner === "B" ? "B" : "A";
+      const won = (inA && winnerSide === "A") || (!inA && winnerSide === "B");
+      const pairing = (Array.isArray(match.pairings) ? match.pairings : []).find(
+        (pair) => pair?.playerAId === id || pair?.playerBId === id
+      );
+
+      return {
+        id: String(match.id || `match-${match.date || Math.random()}`),
+        date: match.date || null,
+        opponent: opponents.map(opponentName).join(" · ") || "Opponent team",
+        result: won ? "Win" : "Loss",
+        context: [match.game, match.mode].filter(Boolean).join(" · "),
+        stake: Math.max(0, Number(pairing?.amount) || 0),
+        ...extra,
+      };
+    };
+
+    const challengeEvent = (challenge, extra = {}) => {
+      const opponentId =
+        challenge.challenger_player_id === id
+          ? challenge.challenged_player_id
+          : challenge.challenger_player_id;
+      const won = challenge.reported_winner_player_id === id;
+      return {
+        id: String(challenge.id || `chall-${challenge.verified_at || challenge.created_at || Math.random()}`),
+        date: challenge.verified_at || challenge.result_reported_at || challenge.created_at || null,
+        opponent: opponentName(opponentId),
+        result: won ? "Win" : "Loss",
+        context: "1v1 Chall",
+        stake: Math.max(0, Number(challenge.amount_cents || 0) / 100),
+        platform: String(challenge.platform || "").toLowerCase(),
+        ...extra,
+      };
+    };
+
+    byId.mvp = chronologicalMatches
+      .filter(
+        (match) =>
+          (Array.isArray(match.mvpIds) && match.mvpIds.includes(id)) ||
+          match.mvpId === id
+      )
+      .map((match, index) =>
+        matchEvent(match, {
+          note: `MVP #${index + 1} · awarded on the 3-win streak trigger`,
+        })
+      );
+
+    byId.merda = chronologicalMatches
+      .filter(
+        (match) =>
+          (Array.isArray(match.merdaIds) && match.merdaIds.includes(id)) ||
+          match.merdaId === id
+      )
+      .map((match, index) =>
+        matchEvent(match, {
+          note: `MERDA #${index + 1} · awarded on the 3-loss streak trigger`,
+        })
+      );
+
+    const findMatchStreakTrigger = (goal) => {
+      let streak = 0;
+      for (const match of chronologicalMatches) {
+        const inA = (match.teamA || []).includes(id);
+        const winnerSide = match.winner === "B" ? "B" : "A";
+        const won = (inA && winnerSide === "A") || (!inA && winnerSide === "B");
+        streak = won ? streak + 1 : 0;
+        if (streak === goal) {
+          return [matchEvent(match, { note: `Unlocked after ${goal} consecutive match wins` })];
+        }
+      }
+      return [];
+    };
+
+    byId["on-fire"] = findMatchStreakTrigger(4);
+    byId.unstoppable = findMatchStreakTrigger(8);
+
+    if (chronologicalMatches.length >= 40) {
+      byId.veteran = [
+        matchEvent(chronologicalMatches[39], {
+          note: "This was the 40th recorded match",
+        }),
+      ];
+    } else {
+      byId.veteran = [];
+    }
+
+    const moneyMakerEvents = [];
+    let cumulativeWonValue = 0;
+    for (const challenge of chronologicalChallenges) {
+      if (challenge.reported_winner_player_id !== id) continue;
+      cumulativeWonValue += Math.max(0, Number(challenge.amount_cents || 0) / 100);
+      if (cumulativeWonValue >= 50) {
+        moneyMakerEvents.push(
+          challengeEvent(challenge, {
+            note: `This win pushed verified winnings to €${cumulativeWonValue.toFixed(2)}`,
+          })
+        );
+        break;
+      }
+    }
+    byId["money-maker"] = moneyMakerEvents;
+
+    const highRoller = chronologicalChallenges.find(
+      (challenge) =>
+        challenge.reported_winner_player_id === id &&
+        Number(challenge.amount_cents || 0) / 100 >= 20
+    );
+    byId["high-roller"] = highRoller
+      ? [challengeEvent(highRoller, { note: "Won a single chall worth at least €20" })]
+      : [];
+
+    const playedByOpponent = new Map();
+    const winsByOpponent = new Map();
+    let rivalryTrigger = null;
+    let nemesisTrigger = null;
+    let challengeWinStreak = 0;
+    let cleanSweepTrigger = null;
+    const lastByOpponent = new Map();
+    let runItBackTrigger = null;
+
+    for (const challenge of chronologicalChallenges) {
+      const opponentId =
+        challenge.challenger_player_id === id
+          ? challenge.challenged_player_id
+          : challenge.challenger_player_id;
+      if (!opponentId) continue;
+
+      const won = challenge.reported_winner_player_id === id;
+      const played = Number(playedByOpponent.get(opponentId) || 0) + 1;
+      playedByOpponent.set(opponentId, played);
+      if (!rivalryTrigger && played === 8) {
+        rivalryTrigger = challengeEvent(challenge, {
+          note: `8th verified chall against ${opponentName(opponentId)}`,
+        });
+      }
+
+      if (won) {
+        const wins = Number(winsByOpponent.get(opponentId) || 0) + 1;
+        winsByOpponent.set(opponentId, wins);
+        if (!nemesisTrigger && wins === 4) {
+          nemesisTrigger = challengeEvent(challenge, {
+            note: `4th win against ${opponentName(opponentId)}`,
+          });
+        }
+      }
+
+      challengeWinStreak = won ? challengeWinStreak + 1 : 0;
+      if (!cleanSweepTrigger && challengeWinStreak === 4) {
+        cleanSweepTrigger = challengeEvent(challenge, {
+          note: "4th consecutive verified challenge win",
+        });
+      }
+
+      const previous = lastByOpponent.get(opponentId);
+      if (!runItBackTrigger && won && previous?.result === "L") {
+        runItBackTrigger = challengeEvent(challenge, {
+          note: `Beat ${opponentName(opponentId)} immediately after losing the previous chall to them`,
+          previousDate: previous.date,
+        });
+      }
+      lastByOpponent.set(opponentId, {
+        result: won ? "W" : "L",
+        date: challenge.verified_at || challenge.created_at || null,
+      });
+    }
+
+    byId.rivalry = rivalryTrigger ? [rivalryTrigger] : [];
+    byId.nemesis = nemesisTrigger ? [nemesisTrigger] : [];
+    byId["clean-sweep"] = cleanSweepTrigger ? [cleanSweepTrigger] : [];
+    byId["run-it-back"] = runItBackTrigger ? [runItBackTrigger] : [];
+
+    return byId;
+  }, [player, playerMatches, challengeStats.completed, playerMap, id]);
+
+  const selectedTrophy = trophyCabinet.find(
+    (trophy) => trophy.id === selectedTrophyId
+  ) || null;
+  const selectedTrophyEvents = selectedTrophy
+    ? trophyEvidence[selectedTrophy.id] || []
+    : [];
 
   if (!player) {
     return (
@@ -1045,9 +1248,12 @@ export default function PlayerProfile() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
             {trophyCabinet.map((trophy) => (
-              <div
+              <button
+                type="button"
                 key={trophy.id}
-                className="rounded-2xl bg-gradient-to-b from-[#171C25] to-[#0D1118] border border-[#D5A33A]/20 p-4 relative overflow-hidden transition-transform duration-200 hover:-translate-y-1 hover:border-[#D5A33A]/35"
+                onClick={() => setSelectedTrophyId(trophy.id)}
+                className="rounded-2xl bg-gradient-to-b from-[#171C25] to-[#0D1118] border border-[#D5A33A]/20 p-4 relative overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:border-[#D5A33A]/40 text-left group focus:outline-none focus:ring-2 focus:ring-[#D5A33A]/30"
+                aria-label={`Open details for ${trophy.title}`}
               >
                 <div
                   className="absolute inset-x-0 top-0 h-[2px]"
@@ -1057,22 +1263,151 @@ export default function PlayerProfile() {
                       : "linear-gradient(90deg, transparent, #8B5E3C, transparent)",
                   }}
                 />
-                <div className="w-12 h-12 rounded-xl border border-[#2A303B] bg-[#0F1218] flex items-center justify-center text-2xl shadow-[0_8px_24px_rgba(0,0,0,.22)]">
-                  <span aria-hidden="true">{trophy.emoji}</span>
-                </div>
-                {trophy.count !== null && trophy.count !== undefined && (
-                  <div className="absolute top-3 right-3 px-2 py-1 rounded-lg border border-[#343B48] bg-[#101319] text-xs font-mono font-black">
-                    ×{trophy.count}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="w-12 h-12 rounded-xl border border-[#2A303B] bg-[#0F1218] flex items-center justify-center text-2xl shadow-[0_8px_24px_rgba(0,0,0,.22)]">
+                    <span aria-hidden="true">{trophy.emoji}</span>
                   </div>
-                )}
+                  <div className="flex items-center gap-2">
+                    {trophy.count !== null && trophy.count !== undefined && (
+                      <div className="px-2 py-1 rounded-lg border border-[#343B48] bg-[#101319] text-xs font-mono font-black">
+                        ×{trophy.count}
+                      </div>
+                    )}
+                    <ChevronRight
+                      size={15}
+                      className="text-[#596170] group-hover:text-[#D5A33A] group-hover:translate-x-0.5 transition-all"
+                    />
+                  </div>
+                </div>
                 <div className="font-display font-bold mt-3">{trophy.title}</div>
                 <div className="text-xs text-muted-foreground mt-1">{trophy.detail}</div>
-              </div>
+                <div className="text-[9px] uppercase tracking-widest text-[#697181] mt-3 group-hover:text-[#D5A33A] transition-colors">
+                  View unlock history
+                </div>
+              </button>
             ))}
           </div>
         )}
       </div>
       )}
+
+      <Dialog
+        open={Boolean(selectedTrophy)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedTrophyId("");
+        }}
+      >
+        <DialogContent className="bg-[#101319] border-[#242A35] sm:max-w-[620px] max-h-[82vh] overflow-y-auto">
+          {selectedTrophy && (
+            <>
+              <DialogHeader>
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 rounded-xl border border-[#D5A33A]/20 bg-[#D5A33A]/[0.06] flex items-center justify-center text-2xl shrink-0">
+                    <span aria-hidden="true">{selectedTrophy.emoji}</span>
+                  </div>
+                  <div className="min-w-0">
+                    <DialogTitle className="font-display text-xl font-black">
+                      {selectedTrophy.title}
+                    </DialogTitle>
+                    <DialogDescription className="mt-1">
+                      {selectedTrophy.detail}
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="mt-2">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div>
+                    <div className="brand-kicker mb-1">Unlock history</div>
+                    <div className="text-sm font-bold">
+                      {selectedTrophyEvents.length > 0
+                        ? selectedTrophy.id === "mvp" || selectedTrophy.id === "merda"
+                          ? `${selectedTrophyEvents.length} recorded occurrence${selectedTrophyEvents.length === 1 ? "" : "s"}`
+                          : "Trigger event"
+                        : "Historical trigger unavailable"}
+                    </div>
+                  </div>
+                  {selectedTrophy.count !== null && selectedTrophy.count !== undefined && (
+                    <span className="m8-pill text-[#D5A33A] border-[#D5A33A]/20">
+                      Total ×{selectedTrophy.count}
+                    </span>
+                  )}
+                </div>
+
+                {selectedTrophyEvents.length === 0 ? (
+                  <div className="rounded-xl border border-[#222834] bg-[#0F1218] p-5 text-center">
+                    <Trophy size={22} className="mx-auto text-[#596170]" />
+                    <div className="text-sm font-semibold mt-2">
+                      Exact historical event not available
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      The award is unlocked from the current profile totals, but the older match that triggered it was not saved with enough detail.
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {[...selectedTrophyEvents].reverse().map((event, index) => (
+                      <div
+                        key={`${event.id}-${index}`}
+                        className="rounded-xl border border-[#222834] bg-[#0F1218] p-3.5"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                          <div className="w-9 h-9 rounded-lg border border-[#2A303B] bg-[#151923] flex items-center justify-center shrink-0">
+                            <Trophy size={14} className="text-[#D5A33A]" />
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className={`text-xs font-black uppercase tracking-wider ${
+                                event.result === "Win" ? "text-emerald-400" : "text-red-400"
+                              }`}>
+                                {event.result}
+                              </span>
+                              {event.context && (
+                                <span className="text-[10px] text-[#697181]">
+                                  {event.context}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="font-semibold text-sm mt-1">
+                              vs {event.opponent}
+                            </div>
+
+                            {event.note && (
+                              <div className="text-xs text-muted-foreground mt-1.5">
+                                {event.note}
+                              </div>
+                            )}
+
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2.5 text-[10px] text-[#697181]">
+                              {event.date && (
+                                <span className="inline-flex items-center gap-1.5">
+                                  <CalendarDays size={11} />
+                                  {new Date(event.date).toLocaleDateString()}
+                                </span>
+                              )}
+                              {Number(event.stake || 0) > 0 && (
+                                <span className="font-mono font-black text-[#D5A33A]">
+                                  €{Number(event.stake).toFixed(2)}
+                                </span>
+                              )}
+                              {event.platform && (
+                                <span className="uppercase">{event.platform}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {isOwnProfile && profileTab === "edit" && (
         <div className="m8-panel rounded-2xl p-4 sm:p-5 order-4" data-testid="edit-profile-panel">
