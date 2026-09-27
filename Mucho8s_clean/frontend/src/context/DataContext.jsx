@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { load, save, uid } from "@/lib/storage";
-import { BASE_ELO, MIN_ELO, WIN_DELTA, LOSS_DELTA, MVP_BONUS } from "@/lib/elo";
+import { BASE_ELO, MIN_ELO, WIN_DELTA, LOSS_DELTA, MVP_BONUS, eloResultDelta } from "@/lib/elo";
 import { toast } from "sonner";
 import { supabaseAuth, hasSupabaseAuth } from "@/lib/supabaseClient";
 
@@ -196,6 +196,11 @@ const recomputeAwardState = (byId, matches) => {
         }
       });
 
+      const previousMvpSet = new Set(
+        Array.isArray(match?.mvpIds)
+          ? match.mvpIds
+          : (match?.mvpId ? [match.mvpId] : [])
+      );
       const mvpSet = new Set(mvpIds);
       const nextChanges = {};
 
@@ -204,11 +209,20 @@ const recomputeAwardState = (byId, matches) => {
         if (!player) return;
 
         const won = winnerSet.has(pid);
-        const nextDelta = (won ? WIN_DELTA : -LOSS_DELTA) + (mvpSet.has(pid) ? MVP_BONUS : 0);
         const oldDelta = Number(match?.eloChanges?.[pid]);
 
+        let baseDelta = won ? WIN_DELTA : -LOSS_DELTA;
+        if (Number.isFinite(oldDelta) && oldDelta !== 0) {
+          baseDelta = oldDelta - (previousMvpSet.has(pid) ? MVP_BONUS : 0);
+        }
+
+        const nextDelta = baseDelta + (mvpSet.has(pid) ? MVP_BONUS : 0);
+
         if (Number.isFinite(oldDelta) && oldDelta !== 0 && oldDelta !== nextDelta) {
-          player.currentElo = Math.max(MIN_ELO, Number(player.currentElo || BASE_ELO) + (nextDelta - oldDelta));
+          player.currentElo = Math.max(
+            MIN_ELO,
+            Number(player.currentElo || BASE_ELO) + (nextDelta - oldDelta)
+          );
         }
 
         nextChanges[pid] = nextDelta;
@@ -243,11 +257,25 @@ const applyEffects = (byId, teamA, teamB, winner, mvpIds = [], merdaIds = [], me
   const clearedSet = new Set(merdaClearedIds || []);
   const changes = {};
 
+  const averageElo = (ids) => {
+    const values = (ids || [])
+      .map((pid) => Number(byId[pid]?.currentElo || BASE_ELO))
+      .filter(Number.isFinite);
+    return values.length
+      ? values.reduce((sum, value) => sum + value, 0) / values.length
+      : BASE_ELO;
+  };
+
+  const averageA = averageElo(teamA);
+  const averageB = averageElo(teamB);
+  const teamADelta = eloResultDelta(averageA, averageB, winner === "A");
+  const teamBDelta = eloResultDelta(averageB, averageA, winner === "B");
+
   [...teamA, ...teamB].forEach((pid) => {
     const p = byId[pid];
     if (!p) return;
     const won = winners.includes(pid);
-    let delta = won ? WIN_DELTA : -LOSS_DELTA;
+    let delta = teamA.includes(pid) ? teamADelta : teamBDelta;
     if (mvpSet.has(pid)) delta += MVP_BONUS;
 
     const nextElo = Math.max(MIN_ELO, p.currentElo + delta);
