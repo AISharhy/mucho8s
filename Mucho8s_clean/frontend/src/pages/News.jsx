@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ArrowRight,
   CalendarDays,
@@ -66,8 +66,6 @@ export default function News() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const tickerItems = useMemo(() => [...NEWS, ...NEWS], []);
-
   const changeSlide = (direction) => {
     setActiveIndex((currentIndex) => {
       const next = currentIndex + direction;
@@ -84,13 +82,18 @@ export default function News() {
           <span className="m8-live-dot" />
           LIVE NEWS
         </div>
+
         <div className="m8-news-ticker-window">
           <div className="m8-news-ticker-track">
-            {tickerItems.map((post, index) => (
-              <div className="m8-news-ticker-item" key={`${post.id}-${index}`}>
-                <span style={{ color: post.accent }}>{post.category}</span>
-                <strong>{post.title}</strong>
-                <span className="m8-news-ticker-separator">•</span>
+            {[0, 1].map((copy) => (
+              <div className="m8-news-ticker-group" key={copy}>
+                {NEWS.map((post) => (
+                  <div className="m8-news-ticker-item" key={`${copy}-${post.id}`}>
+                    <span style={{ color: post.accent }}>{post.category}</span>
+                    <strong>{post.title}</strong>
+                    <span className="m8-news-ticker-separator">•</span>
+                  </div>
+                ))}
               </div>
             ))}
           </div>
