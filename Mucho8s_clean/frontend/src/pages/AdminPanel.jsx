@@ -57,6 +57,7 @@ export default function AdminPanel() {
     adminChallengeAlertCount,
     competitionData,
     startNewSeason,
+    updateCompetitionConfig,
     repairElo,
   } = useData();
   const [newName, setNewName] = useState("");
@@ -82,7 +83,29 @@ export default function AdminPanel() {
   const [seasonName, setSeasonName] = useState("");
   const [seasonBusy, setSeasonBusy] = useState(false);
   const [eloRepairBusy, setEloRepairBusy] = useState(false);
+  const [competitionEdit, setCompetitionEdit] = useState(false);
+  const [competitionBusy, setCompetitionBusy] = useState(false);
+  const [competitionDraft, setCompetitionDraft] = useState({
+    seasonName: "",
+    startingElo: 500,
+    rolloverMode: "monthly",
+    rolloverDay: 1,
+    leaderboardMinMatches: 1,
+  });
   const fileRef = useRef(null);
+
+  useEffect(() => {
+    const current = competitionData?.current;
+    if (!current || competitionEdit) return;
+
+    setCompetitionDraft({
+      seasonName: current.season_name || "",
+      startingElo: Number(current.starting_elo ?? 500),
+      rolloverMode: current.rollover_mode || "monthly",
+      rolloverDay: Number(current.rollover_day ?? 1),
+      leaderboardMinMatches: Number(current.leaderboard_min_matches ?? 1),
+    });
+  }, [competitionData?.current, competitionEdit]);
 
   const loadDiscordAccounts = useCallback(async () => {
     const list = await listDiscordAccounts();
@@ -443,6 +466,24 @@ export default function AdminPanel() {
     toast.success("Mucho1v1 deleted");
   };
 
+  const saveCompetitionRules = async () => {
+    if (competitionBusy) return;
+    setCompetitionBusy(true);
+    const result = await updateCompetitionConfig({
+      seasonName: competitionDraft.seasonName.trim(),
+      startingElo: Number(competitionDraft.startingElo),
+      rolloverMode: competitionDraft.rolloverMode,
+      rolloverDay: Number(competitionDraft.rolloverDay),
+      leaderboardMinMatches: Number(competitionDraft.leaderboardMinMatches),
+    });
+    setCompetitionBusy(false);
+    if (!result) return;
+
+    setCompetitionEdit(false);
+    toast.success("Competition rules updated");
+    void loadAuditLogs();
+  };
+
   const beginNewSeason = async () => {
     setSeasonBusy(true);
     const ok = await startNewSeason({
@@ -520,7 +561,7 @@ export default function AdminPanel() {
               {competitionData?.current?.season_name || `Season ${competitionData?.current?.season_number || 1}`}
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Starting a new season archives the current ranking and resets Elo/statistics to 500 (Iron).
+              Starting a new season archives the current ranking and resets Elo/statistics to {Number(competitionData?.current?.starting_elo ?? 500)}.
             </p>
           </div>
 
@@ -544,7 +585,7 @@ export default function AdminPanel() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Start a new season?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    The current season will be archived. Player Elo and seasonal statistics will reset to 500 (Iron), and current match history will move into the season archive.
+                    The current season will be archived. Player Elo and seasonal statistics will reset to the configured starting Elo ({Number(competitionData?.current?.starting_elo ?? 500)}), and current match history will move into the season archive.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -577,22 +618,136 @@ export default function AdminPanel() {
         </div>
 
         <div className="m8-panel rounded-2xl p-5">
-          <div className="brand-kicker mb-1">Current cycle</div>
-          <h3 className="font-display font-black text-lg">Season Rules</h3>
-          <div className="mt-4 space-y-2 text-sm">
-            <div className="m8-panel-quiet rounded-xl px-3 py-2 flex justify-between gap-3">
-              <span className="text-muted-foreground">Starting Elo</span>
-              <strong>500 · Iron</strong>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="brand-kicker mb-1">Current cycle</div>
+              <h3 className="font-display font-black text-lg">Season Rules</h3>
             </div>
-            <div className="m8-panel-quiet rounded-xl px-3 py-2 flex justify-between gap-3">
-              <span className="text-muted-foreground">Season rollover</span>
-              <strong>Monthly</strong>
-            </div>
-            <div className="m8-panel-quiet rounded-xl px-3 py-2 flex justify-between gap-3">
-              <span className="text-muted-foreground">Leaderboard entry</span>
-              <strong>After first match</strong>
-            </div>
+            {!competitionEdit && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setCompetitionEdit(true)}
+                className="h-9 px-3 bg-[#0F1218] border border-[#222834]"
+              >
+                <Pencil size={14} className="mr-1.5" /> Edit
+              </Button>
+            )}
           </div>
+
+          {competitionEdit ? (
+            <div className="mt-4 space-y-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Current season name</Label>
+                <Input
+                  value={competitionDraft.seasonName}
+                  onChange={(e) => setCompetitionDraft((prev) => ({ ...prev, seasonName: e.target.value }))}
+                  className="mt-1 bg-[#0F1218] border-[#222834]"
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs text-muted-foreground">Starting Elo</Label>
+                <Input
+                  type="number"
+                  min="500"
+                  max="3000"
+                  value={competitionDraft.startingElo}
+                  onChange={(e) => setCompetitionDraft((prev) => ({ ...prev, startingElo: e.target.value }))}
+                  className="mt-1 bg-[#0F1218] border-[#222834]"
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs text-muted-foreground">Season rollover</Label>
+                <select
+                  value={competitionDraft.rolloverMode}
+                  onChange={(e) => setCompetitionDraft((prev) => ({ ...prev, rolloverMode: e.target.value }))}
+                  className="mt-1 h-10 w-full rounded-md bg-[#0F1218] border border-[#222834] px-3 text-sm"
+                >
+                  <option value="monthly">Monthly automatic</option>
+                  <option value="manual">Manual only</option>
+                </select>
+              </div>
+
+              {competitionDraft.rolloverMode === "monthly" && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Rollover day</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="28"
+                    value={competitionDraft.rolloverDay}
+                    onChange={(e) => setCompetitionDraft((prev) => ({ ...prev, rolloverDay: e.target.value }))}
+                    className="mt-1 bg-[#0F1218] border-[#222834]"
+                  />
+                </div>
+              )}
+
+              <div>
+                <Label className="text-xs text-muted-foreground">Leaderboard entry · minimum matches</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={competitionDraft.leaderboardMinMatches}
+                  onChange={(e) => setCompetitionDraft((prev) => ({ ...prev, leaderboardMinMatches: e.target.value }))}
+                  className="mt-1 bg-[#0F1218] border-[#222834]"
+                />
+                <div className="text-[11px] text-muted-foreground mt-1">
+                  0 = visible immediately · 1 = after first match.
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <Button
+                  type="button"
+                  onClick={saveCompetitionRules}
+                  disabled={competitionBusy}
+                  className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold"
+                >
+                  <Check size={15} className="mr-1.5" />
+                  {competitionBusy ? "Saving..." : "Save Rules"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setCompetitionEdit(false)}
+                  disabled={competitionBusy}
+                  className="bg-[#0F1218] border border-[#222834]"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-4 space-y-2 text-sm">
+              <div className="m8-panel-quiet rounded-xl px-3 py-2 flex justify-between gap-3">
+                <span className="text-muted-foreground">Season name</span>
+                <strong>{competitionData?.current?.season_name || "Season"}</strong>
+              </div>
+              <div className="m8-panel-quiet rounded-xl px-3 py-2 flex justify-between gap-3">
+                <span className="text-muted-foreground">Starting Elo</span>
+                <strong>{Number(competitionData?.current?.starting_elo ?? 500)}</strong>
+              </div>
+              <div className="m8-panel-quiet rounded-xl px-3 py-2 flex justify-between gap-3">
+                <span className="text-muted-foreground">Season rollover</span>
+                <strong>
+                  {competitionData?.current?.rollover_mode === "manual"
+                    ? "Manual"
+                    : `Monthly · day ${Number(competitionData?.current?.rollover_day ?? 1)}`}
+                </strong>
+              </div>
+              <div className="m8-panel-quiet rounded-xl px-3 py-2 flex justify-between gap-3">
+                <span className="text-muted-foreground">Leaderboard entry</span>
+                <strong>
+                  {Number(competitionData?.current?.leaderboard_min_matches ?? 1) === 0
+                    ? "Immediately"
+                    : `After ${Number(competitionData?.current?.leaderboard_min_matches ?? 1)} match${Number(competitionData?.current?.leaderboard_min_matches ?? 1) === 1 ? "" : "es"}`}
+                </strong>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
