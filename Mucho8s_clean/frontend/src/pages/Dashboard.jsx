@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar, EloBadge, RankBadge } from "@/components/shared";
+import ModeBadge from "@/components/ModeBadge";
 import { Button } from "@/components/ui/button";
 import {
   ArrowUpRight,
@@ -161,9 +162,7 @@ const CompetitionOverview = ({
                 key={match.id}
                 className="interactive-row rounded-xl p-3.5 flex items-center gap-3"
               >
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/15 flex items-center justify-center shrink-0">
-                  <Trophy size={14} className="text-emerald-400" />
-                </div>
+                <ModeBadge mode="mucho8s" compact className="shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-bold">
                     {match.winner === "A" ? "Team A" : "Team B"} won
@@ -206,8 +205,11 @@ const CompetitionOverview = ({
 
             return (
               <Link key={match.id} to="/matches" className="interactive-row rounded-xl p-3.5 block">
-                <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-emerald-400 font-bold">
-                  <Radio size={12} /> {match.format || "MATCH"} · {match.game || "Game"}{match.mode ? ` · ${match.mode}` : ""} · {liveDuration(match.created_at, liveNow)}
+                <div className="flex flex-wrap items-center gap-2">
+                  <ModeBadge mode="mucho8s" compact />
+                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-emerald-400 font-bold">
+                    <Radio size={12} /> {match.format || "MATCH"} · {match.game || "Game"}{match.mode ? ` · ${match.mode}` : ""} · {liveDuration(match.created_at, liveNow)}
+                  </div>
                 </div>
                 <div className="text-sm font-display font-extrabold mt-2 truncate">
                   {alpha.join(", ") || "Alpha"} <span className="text-[#596170] font-medium">vs</span> {bravo.join(", ") || "Bravo"}
@@ -255,10 +257,10 @@ const GuestDashboard = ({
             </div>
             <h2 className="font-display text-4xl sm:text-5xl lg:text-[56px] leading-[0.98] font-black tracking-[-0.045em] max-w-3xl">
               Your competitive hub
-              <span className="block text-magma mt-1">for 8s and challs.</span>
+              <span className="block text-magma mt-1">for every Mucho mode.</span>
             </h2>
             <p className="text-sm sm:text-base text-[#9199A7] mt-5 max-w-xl leading-6">
-              Ranking, verified results, live challenges and player progression in one place.
+              Mucho8s and Mucho1v1 are live. MuchoRanked and MuchoTourney are coming next.
             </p>
 
             <div className="flex flex-wrap gap-2 mt-6">
@@ -565,16 +567,7 @@ const PersonalDashboard = ({
                   to="/matches"
                   className="group rounded-xl border border-[#222834] bg-[#0F1218] p-3.5 flex items-center gap-3 transition-all hover:border-[#3A4350] hover:bg-[#131820]"
                 >
-                  <div
-                    className={
-                      "w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 " +
-                      (item.won
-                        ? "bg-emerald-500/[0.07] border-emerald-500/20 text-emerald-400"
-                        : "bg-red-500/[0.06] border-red-500/20 text-red-400")
-                    }
-                  >
-                    <Trophy size={16} />
-                  </div>
+                  <ModeBadge mode="mucho8s" compact className="shrink-0" />
 
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm flex items-center gap-1.5">
