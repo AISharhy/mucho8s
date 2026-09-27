@@ -285,7 +285,7 @@ export default function RankGuide() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Rule
             icon={Trophy}
-            title="MVP · Trophy8s"
+            title="MVP · Mucho8s"
             value="Every 3 wins = +1 MVP +5 Elo"
             text="Mucho8s MVP is repeatable. At 3 straight wins you earn +1 MVP and +5 Elo; at 6 you earn another, then again at 9. Every 3-win milestone also removes 1 active MERDA if you have one."
             accent="text-magma"
@@ -305,17 +305,17 @@ export default function RankGuide() {
         <h2 className="font-display text-xl font-black">MVP rewards depend on the mode</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5 mt-4">
           {[
-            ["mucho8s", "Every 3W", "+5 Elo +1 MVP"],
-            ["mucho1v1", "Every 3W", "+3 Elo +1 MVP"],
-            ["muchoranked", "Every 3W", "+4 Elo +1 MVP"],
-            ["muchotourney", "Tournament win", "+25 Elo +1 MVP"],
-          ].map(([mode, trigger, reward]) => (
+            ["mucho8s", "Every 3W", "+5 Elo +1 MVP", "text-magma"],
+            ["mucho1v1", "Every 3W", "+3 Elo +1 MVP", "text-emerald-400"],
+            ["muchoranked", "Every 3W", "+4 Elo +1 MVP", "text-[#4F8CFF]"],
+            ["muchotourney", "Tournament win", "+25 Elo +1 MVP", "text-[#D5A33A]"],
+          ].map(([mode, trigger, reward, rewardClass]) => (
             <div key={mode} className="rounded-xl border border-[#222834] bg-[#0F1218] p-3.5">
               <ModeBadge mode={mode} compact />
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-3">
                 {trigger}
               </div>
-              <div className="font-mono font-black text-sm text-[#D5A33A] mt-1">
+              <div className={`font-mono font-black text-sm mt-1 ${rewardClass}`}>
                 {reward}
               </div>
             </div>
@@ -327,17 +327,17 @@ export default function RankGuide() {
       </section>
 
       <section className="m8-panel rounded-[22px] p-5 sm:p-6">
-        <div className="brand-kicker mb-1">4 · Trophy8s</div>
+        <div className="brand-kicker mb-1">4 · General Trophies</div>
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div className="max-w-2xl">
-            <h2 className="font-display text-2xl font-black">One-time achievements</h2>
+            <h2 className="font-display text-2xl font-black">One shared Trophy system</h2>
             <p className="text-sm text-muted-foreground mt-1.5 leading-6">
-              Each Trophy8s challenge has <strong className="text-white">10 levels</strong>.
+              General Trophies are not tied to a mode. Each challenge has <strong className="text-white">10 levels</strong>.
               The target increases with the level: Veteran I is 40 matches, Veteran II is 80, then 120, up to Veteran X at 400.
               Rewards scale with difficulty from <strong className="text-white">+3 to +15 Elo</strong>, and multiple level-ups in the same verified match stack.
             </p>
           </div>
-          <span className="h-8 px-3 rounded-lg border border-magma/25 bg-magma/[0.06] text-magma inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider">
+          <span className="h-8 px-3 rounded-lg border border-[#343B48] bg-[#11151C] text-[#C8CED8] inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider">
             <Trophy size={11} /> Lv I → X · +3 to +15 Elo
           </span>
         </div>
@@ -354,7 +354,7 @@ export default function RankGuide() {
             ["Unstoppable", "8 streak wins per level · +10 Elo from Lv I"],
             ["Clean Sweep", "1 four-win sweep per level · +7 Elo from Lv I"],
           ].map(([name, text]) => (
-            <div key={name} className="rounded-xl border border-magma/15 bg-magma/[0.025] p-3">
+            <div key={name} className="rounded-xl border border-[#2C333E] bg-[#11151C] p-3">
               <div className="font-display font-black text-sm">{name}</div>
               <div className="text-[10px] text-muted-foreground mt-1">{text}</div>
             </div>
@@ -376,28 +376,35 @@ export default function RankGuide() {
       </section>
 
       <section className="m8-panel rounded-[22px] p-5 sm:p-6">
-        <div className="brand-kicker mb-1">5 · Trophy families</div>
-        <h2 className="font-display text-xl font-black">Every mode keeps its own awards</h2>
+        <div className="brand-kicker mb-1">5 · Trophy identity</div>
+        <h2 className="font-display text-xl font-black">General Trophies are neutral</h2>
         <p className="text-sm text-muted-foreground mt-1.5">
-          Trophy8s is active now. The other Trophy families will get their own objectives as their modes are completed.
+          Veteran, Rivalry, Nemesis, Money Maker and the other progression Trophies use one neutral visual identity.
+          Only MVP is color-coded by mode.
         </p>
 
-        <div className="flex flex-wrap gap-2 mt-4">
-          {[
-            ["Trophy8s", "text-magma border-magma/25 bg-magma/[0.06]", "Active"],
-            ["Trophy1v1", "text-emerald-400 border-emerald-500/25 bg-emerald-500/[0.06]", "Next"],
-            ["TrophyRanked", "text-[#4F8CFF] border-[#4F8CFF]/25 bg-[#4F8CFF]/[0.06]", "Soon"],
-            ["TrophyTourney", "text-[#D5A33A] border-[#D5A33A]/25 bg-[#D5A33A]/[0.06]", "Soon"],
-          ].map(([name, classes, status]) => (
-            <span
-              key={name}
-              className={`h-9 px-3 rounded-lg border inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-wider ${classes}`}
-            >
-              <Trophy size={11} />
-              {name}
-              <span className="opacity-55">· {status}</span>
-            </span>
-          ))}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-3 mt-4">
+          <div className="rounded-xl border border-[#343B48] bg-[#11151C] p-4">
+            <div className="flex items-center gap-2 text-[#C8CED8]">
+              <Trophy size={15} />
+              <span className="font-black text-sm">General Trophy</span>
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-2">
+              Neutral color · shared progression · Level I → X
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-[#222834] bg-[#0F1218] p-4">
+            <div className="text-[9px] uppercase tracking-widest text-[#697181] mb-3">
+              MVP by mode
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <ModeBadge mode="mucho8s" compact />
+              <ModeBadge mode="mucho1v1" compact />
+              <ModeBadge mode="muchoranked" compact />
+              <ModeBadge mode="muchotourney" compact />
+            </div>
+          </div>
         </div>
       </section>
 
