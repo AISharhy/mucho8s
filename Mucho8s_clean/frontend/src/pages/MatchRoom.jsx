@@ -380,7 +380,7 @@ export default function MatchRoom() {
                 Captain · <strong className="text-white">{playerMap[captainId]?.name || "Player"}</strong>
               </span>
               <span>
-                Total stake · <strong className="text-magma">{euro(totalStake)}</strong>
+                Total stake · <strong className="text-emerald-400">{euro(totalStake)}</strong>
               </span>
             </div>
           </div>
