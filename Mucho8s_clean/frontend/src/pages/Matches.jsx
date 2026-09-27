@@ -126,14 +126,11 @@ export default function Matches() {
     publicChallenges,
     matchReports,
     liveMatches,
-    discordPlayer,
     playerMap,
     playerAvatars,
     deleteMatch,
     isAdmin,
     createLiveMatch,
-    requestCancelLiveMatch,
-    cancelLiveMatch,
   } = useData();
 
   const safeMatches = useMemo(
@@ -147,7 +144,6 @@ export default function Matches() {
   );
 
   const [editData, setEditData] = useState(null);
-  const [reportLiveMatch, setReportLiveMatch] = useState(null);
   const [verificationReportId, setVerificationReportId] = useState("");
   const [liveNow, setLiveNow] = useState(Date.now());
   const [view, setView] = useState("live");
@@ -155,30 +151,11 @@ export default function Matches() {
   const [winnerFilter, setWinnerFilter] = useState("all");
   const [gameFilter, setGameFilter] = useState("ALL");
   const [rematchBusyId, setRematchBusyId] = useState(null);
-  const [liveActionBusyId, setLiveActionBusyId] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => setLiveNow(Date.now()), 30000);
     return () => clearInterval(timer);
   }, []);
-
-  const requestLiveCancellation = async (match) => {
-    if (!match?.id || liveActionBusyId) return;
-    setLiveActionBusyId(match.id);
-    const ok = await requestCancelLiveMatch(match.id);
-    setLiveActionBusyId(null);
-    if (!ok) return;
-    toast.success("Cancellation request sent to Admin");
-  };
-
-  const cancelLiveAsAdmin = async (match) => {
-    if (!match?.id || !isAdmin || liveActionBusyId) return;
-    setLiveActionBusyId(match.id);
-    const ok = await cancelLiveMatch(match.id);
-    setLiveActionBusyId(null);
-    if (!ok) return;
-    toast.success("Live match cancelled");
-  };
 
   const createRematch = async (match) => {
     if (!isAdmin || !match) return;
@@ -355,18 +332,17 @@ export default function Matches() {
     const names = (ids) =>
       ids.map((id) => safePlayerMap[id]?.name || "Player").join(" · ");
     const captain = safePlayerMap[match.captain_player_id];
-    const isCaptain = Boolean(
-      discordPlayer?.id &&
-      String(discordPlayer.id) === String(match.captain_player_id || "")
-    );
-    const canReportLive = isAdmin || isCaptain;
     const cancelRequested = Boolean(match.cancel_requested_at);
-    const busy = liveActionBusyId === match.id;
+    const totalStake = (Array.isArray(match.pairings) ? match.pairings : []).reduce(
+      (sum, pair) => sum + Math.max(0, Number(pair?.amount) || 0),
+      0
+    );
 
     return (
-      <div
+      <Link
         key={`live-team-${match.id}`}
-        className="m8-panel rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-4"
+        to={`/matches/live/${match.id}`}
+        className="m8-panel rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:border-[#394150] transition-all"
       >
         <div className="flex items-center gap-4 min-w-0 flex-1">
           <Gamepad2 size={18} className="text-emerald-400 shrink-0" />
@@ -384,86 +360,24 @@ export default function Matches() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:justify-end shrink-0 flex-wrap">
-          <div className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            Live
-          </div>
-
+        <div className="flex items-center gap-2 sm:justify-end shrink-0">
           {cancelRequested && (
-            <span className="h-9 px-3 rounded-lg border border-orange-500/20 bg-orange-500/[0.06] text-orange-400 inline-flex items-center text-[10px] font-black uppercase tracking-wider">
-              <AlertTriangle size={13} className="mr-1.5" />
+            <span className="h-8 px-2.5 rounded-lg border border-orange-500/20 bg-orange-500/[0.06] text-orange-400 inline-flex items-center text-[10px] font-black uppercase tracking-wider">
               Cancel requested
             </span>
           )}
 
-          {isCaptain && !isAdmin && (
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              disabled={busy || cancelRequested}
-              onClick={() => requestLiveCancellation(match)}
-              className="h-9 rounded-lg border border-orange-500/20 bg-orange-500/[0.04] text-orange-400 hover:bg-orange-500/[0.08] hover:text-orange-300"
-            >
-              <AlertTriangle size={14} className="mr-1.5" />
-              {cancelRequested ? "Requested" : "Request Cancel"}
-            </Button>
+          {totalStake > 0 && (
+            <span className="font-mono font-black text-sm text-[#D5A33A]">
+              {money(totalStake)}
+            </span>
           )}
 
-          {isAdmin && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  disabled={busy}
-                  className="h-9 rounded-lg border border-red-500/20 bg-red-500/[0.04] text-red-400 hover:bg-red-500/[0.08] hover:text-red-300"
-                >
-                  <Trash2 size={14} className="mr-1.5" />
-                  Cancel Match
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="bg-[#101319] border-[#242A35]">
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Cancel this live match?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This closes the live match without recording a result.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel className="bg-[#181B26] border-[#2A303B]">
-                    Keep Match
-                  </AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => void cancelLiveAsAdmin(match)}
-                    className="bg-red-500 hover:bg-red-400 text-white"
-                  >
-                    Cancel Match
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-
-          <Button
-            type="button"
-            size="sm"
-            disabled={!canReportLive || busy}
-            onClick={() => setReportLiveMatch(match)}
-            className="h-9 rounded-lg bg-magma hover:bg-[#ff3c4c] text-white font-bold"
-            title={
-              canReportLive
-                ? "Report the final result"
-                : "Only the match captain or Admin can report this result"
-            }
-          >
-            <Trophy size={14} className="mr-1.5" />
-            Report Result
-          </Button>
+          <span className="h-9 px-3 rounded-lg bg-magma text-white inline-flex items-center text-xs font-bold">
+            Open Match
+          </span>
         </div>
-      </div>
+      </Link>
     );
   };
 
@@ -1033,67 +947,6 @@ export default function Matches() {
           />
         </DialogContent>
       </Dialog>
-
-      <RecordMatchDialog
-        open={!!reportLiveMatch}
-        onOpenChange={(open) => !open && setReportLiveMatch(null)}
-        title="Report Final Result"
-        lockTeams
-        lockContext
-        initialTeams={
-          reportLiveMatch
-            ? {
-                teamA: Array.isArray(reportLiveMatch.team_a)
-                  ? reportLiveMatch.team_a
-                  : [],
-                teamB: Array.isArray(reportLiveMatch.team_b)
-                  ? reportLiveMatch.team_b
-                  : [],
-                pairings:
-                  Array.isArray(reportLiveMatch.pairings) &&
-                  reportLiveMatch.pairings.length > 0
-                    ? reportLiveMatch.pairings
-                    : (
-                        Array.isArray(reportLiveMatch.team_a)
-                          ? reportLiveMatch.team_a
-                          : []
-                      ).map((playerAId, index) => ({
-                        playerAId,
-                        playerBId: (
-                          Array.isArray(reportLiveMatch.team_b)
-                            ? reportLiveMatch.team_b
-                            : []
-                        )[index] || "",
-                        amount: 5,
-                        platform: "paypal",
-                      })),
-              }
-            : null
-        }
-        initialCaptains={
-          reportLiveMatch
-            ? {
-                A: (Array.isArray(reportLiveMatch.team_a)
-                  ? reportLiveMatch.team_a
-                  : []
-                ).includes(reportLiveMatch.captain_player_id)
-                  ? reportLiveMatch.captain_player_id
-                  : (reportLiveMatch.team_a || [])[0] || "",
-                B: (Array.isArray(reportLiveMatch.team_b)
-                  ? reportLiveMatch.team_b
-                  : []
-                ).includes(reportLiveMatch.captain_player_id)
-                  ? reportLiveMatch.captain_player_id
-                  : (reportLiveMatch.team_b || [])[0] || "",
-              }
-            : null
-        }
-        creatorPlayerId={reportLiveMatch?.captain_player_id || ""}
-        liveMatchId={reportLiveMatch?.id || ""}
-        defaultGame={reportLiveMatch?.game || undefined}
-        defaultMode={reportLiveMatch?.mode || undefined}
-        onReported={() => setReportLiveMatch(null)}
-      />
 
       <RecordMatchDialog
         open={!!editData}
