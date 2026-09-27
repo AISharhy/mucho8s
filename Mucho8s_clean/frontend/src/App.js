@@ -18,6 +18,7 @@ import ChallengeInbox from "@/pages/ChallengeInbox";
 import MatchRoom from "@/pages/MatchRoom";
 import Rivalries from "@/pages/Rivalries";
 import RivalryDetail from "@/pages/RivalryDetail";
+import News from "@/pages/News";
 
 function IntroSplash({ onDone }) {
   useEffect(() => {
@@ -87,6 +88,7 @@ function App() {
           <Routes>
             <Route element={<Layout />}>
               <Route index element={<Dashboard />} />
+              <Route path="news" element={<News />} />
               <Route path="play" element={<Play />} />
               <Route path="players" element={<Players />} />
               <Route path="players/:id" element={<PlayerProfile />} />
