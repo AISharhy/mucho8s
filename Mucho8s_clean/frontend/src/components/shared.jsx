@@ -1,6 +1,6 @@
 import React from "react";
 import { tierOf, rankProgress, winRate } from "@/lib/elo";
-import { Crown, Flame, TrendingUp, TrendingDown, ChevronUp } from "lucide-react";
+import { Crown, Flame, TrendingUp, TrendingDown, ChevronUp, Trophy } from "lucide-react";
 
 export const PlayerAvatar = ({ name, size = 40, elo, avatarUrl }) => {
   const tier = tierOf(elo ?? 1000);
@@ -192,8 +192,8 @@ export const StreakBadge = ({ streak }) => {
 };
 
 export const MvpBadge = ({ count }) => (
-  <span className="inline-flex items-center gap-1 text-[#D5A33A] font-mono font-bold" title="MVP">
-    <span aria-hidden="true">🏆</span>
+  <span className="inline-flex items-center gap-1 text-magma font-mono font-bold" title="MVP · Trophy8s">
+    <Trophy size={13} strokeWidth={2.2} />
     {count}
   </span>
 );
