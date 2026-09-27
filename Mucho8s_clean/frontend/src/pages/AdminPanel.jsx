@@ -107,6 +107,11 @@ export default function AdminPanel() {
     });
   }, [competitionData?.current, competitionEdit]);
 
+  useEffect(() => {
+    if (newName.trim()) return;
+    setNewElo(Number(competitionData?.current?.starting_elo ?? 500));
+  }, [competitionData?.current?.starting_elo]);
+
   const loadDiscordAccounts = useCallback(async () => {
     const list = await listDiscordAccounts();
     if (list) setDiscordAccounts(list);
@@ -290,10 +295,11 @@ export default function AdminPanel() {
 
   const handleAdd = () => {
     if (!newName.trim()) return toast.error("Enter a player name");
-    addPlayer(newName.trim(), Number(newElo) || 500);
+    const configuredStartingElo = Number(competitionData?.current?.starting_elo ?? 500);
+    addPlayer(newName.trim(), Number(newElo) || configuredStartingElo);
     toast.success(`${newName.trim()} added to the roster`);
     setNewName("");
-    setNewElo(500);
+    setNewElo(configuredStartingElo);
   };
 
   const savePlayer = async (id) => {
