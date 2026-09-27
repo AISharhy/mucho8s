@@ -246,6 +246,13 @@ export default function TeamBuilder() {
       return;
     }
 
+    const pairings = (Array.isArray(result.pairings) ? result.pairings : []).map((pair) => ({
+      playerAId: pair.playerA?.id || pair.playerAId || "",
+      playerBId: pair.playerB?.id || pair.playerBId || "",
+      amount: 5,
+      platform: "paypal",
+    }));
+
     setConfirmBusy(true);
     const created = await createLiveMatch({
       teamA: result.teamA.map((player) => player.id),
@@ -253,6 +260,7 @@ export default function TeamBuilder() {
       game,
       mode: matchMode,
       format: formatForCount(result.teamA.length + result.teamB.length),
+      pairings,
     });
     setConfirmBusy(false);
 
