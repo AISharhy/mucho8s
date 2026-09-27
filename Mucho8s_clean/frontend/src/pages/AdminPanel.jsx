@@ -11,16 +11,16 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Shield, UserPlus, Trash2, Pencil, RotateCcw, Upload, Download, LogOut, History, Database, Check,  MessageCircle, Send, Link2, Swords, WalletCards, AlertTriangle, Flag, Trophy, ExternalLink, Users, Gamepad2 } from "lucide-react";
+import { Shield, UserPlus, Trash2, Pencil, RotateCcw, Upload, Download, LogOut, History, Database, Check, MessageCircle, Send, Link2, Swords, WalletCards, AlertTriangle, Flag, Trophy, ExternalLink, Users, Gamepad2, Newspaper, Settings } from "lucide-react";
 import { toast } from "sonner";
 
 const ADMIN_TABS = [
   { key: "overview", label: "Overview", icon: Shield },
   { key: "players", label: "Players", icon: Users },
   { key: "matches", label: "Matches", icon: Gamepad2 },
-  { key: "discord", label: "Discord", icon: MessageCircle },
   { key: "competition", label: "Competition", icon: Trophy },
-  { key: "system", label: "System", icon: Database },
+  { key: "content", label: "Content", icon: Newspaper },
+  { key: "settings", label: "Settings", icon: Settings },
 ];
 
 export default function AdminPanel() {
@@ -78,7 +78,7 @@ export default function AdminPanel() {
   const [reportMatchData, setReportMatchData] = useState(null);
   const [auditLogs, setAuditLogs] = useState([]);
   const [activeTab, setActiveTab] = useState("overview");
-  const [matchControlFilter, setMatchControlFilter] = useState("all");
+  const [matchControlFilter, setMatchControlFilter] = useState("live");
   const [seasonName, setSeasonName] = useState("");
   const [seasonBusy, setSeasonBusy] = useState(false);
   const [eloRepairBusy, setEloRepairBusy] = useState(false);
@@ -179,22 +179,20 @@ export default function AdminPanel() {
   }, [matches, sortedAdminChallenges]);
 
   const visibleAdminMatchRows = useMemo(() => {
-    if (matchControlFilter === "active") {
+    if (matchControlFilter === "live") {
       return adminMatchRows.filter((row) =>
         row.type === "challenge" &&
-        ["pending", "accepted", "result_pending", "disputed"].includes(row.status)
+        ["pending", "accepted"].includes(row.status)
       );
     }
 
-    if (matchControlFilter === "attention") {
-      return adminMatchRows.filter((row) => row.attention);
+    if (matchControlFilter === "pending") {
+      return adminMatchRows.filter((row) =>
+        row.attention || row.status === "result_pending" || row.status === "disputed"
+      );
     }
 
-    if (matchControlFilter === "completed") {
-      return adminMatchRows.filter((row) => row.status === "completed");
-    }
-
-    return adminMatchRows;
+    return adminMatchRows.filter((row) => row.status === "completed");
   }, [adminMatchRows, matchControlFilter]);
 
   const paymentLinkStats = useMemo(() => {
@@ -561,10 +559,47 @@ export default function AdminPanel() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="m8-panel rounded-2xl p-5">
+          <div className="brand-kicker mb-1">Ranking health</div>
+          <h3 className="font-display font-black text-lg">Elo Maintenance</h3>
+          <p className="text-sm text-muted-foreground mt-1 mb-4">
+            Check every player against trusted season checkpoints, verified matches and verified Money Chall results.
+          </p>
+          <ConfirmButton
+            testid="admin-repair-elo-btn"
+            label={eloRepairBusy ? "Repairing Elo..." : "Repair Elo"}
+            icon={<RotateCcw size={18} className="mr-2 text-emerald-400" />}
+            title="Repair all player Elo?"
+            desc="Rebuilds each player's current Elo from trusted checkpoints and verified competitive results. Match records and statistics are not deleted."
+            onConfirm={runEloRepair}
+          />
+        </div>
+
+        <div className="m8-panel rounded-2xl p-5">
+          <div className="brand-kicker mb-1">Current cycle</div>
+          <h3 className="font-display font-black text-lg">Season Rules</h3>
+          <div className="mt-4 space-y-2 text-sm">
+            <div className="m8-panel-quiet rounded-xl px-3 py-2 flex justify-between gap-3">
+              <span className="text-muted-foreground">Starting Elo</span>
+              <strong>500 · Iron</strong>
+            </div>
+            <div className="m8-panel-quiet rounded-xl px-3 py-2 flex justify-between gap-3">
+              <span className="text-muted-foreground">Season rollover</span>
+              <strong>Monthly</strong>
+            </div>
+            <div className="m8-panel-quiet rounded-xl px-3 py-2 flex justify-between gap-3">
+              <span className="text-muted-foreground">Leaderboard entry</span>
+              <strong>After first match</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
         </>
       )}
 
-      {activeTab === "system" && storageMode === "local" && (
+      {activeTab === "settings" && storageMode === "local" && (
         <div className="rounded-xl border border-[#3A3320] bg-[#D5A33A]/5 px-4 py-3 text-sm text-muted-foreground">
           <span className="text-[#D5A33A] font-semibold">Local mode:</span> player e match sono salvati solo in questo browser. Collega Supabase per avere lo stesso database su PC e telefono.
         </div>
@@ -625,28 +660,31 @@ export default function AdminPanel() {
             <h3 className="font-display font-bold text-lg mb-4">Manage competition</h3>
             <div className="grid grid-cols-2 gap-2">
               <Button onClick={() => setActiveTab("players")} className="m8-action h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150]">
-                <UserPlus size={15} className="mr-2" /> Players
+                <UserPlus size={15} className="mr-2" /> Add Player
               </Button>
               <Button onClick={() => setActiveTab("matches")} className="m8-action h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150]">
-                <Gamepad2 size={15} className="mr-2" /> Match Control
+                <Gamepad2 size={15} className="mr-2" /> Matches
               </Button>
               <Button onClick={() => setActiveTab("competition")} className="m8-action h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150]">
-                <Trophy size={15} className="mr-2" /> Season
+                <Trophy size={15} className="mr-2" /> Competition
+              </Button>
+              <Button onClick={() => setActiveTab("content")} className="m8-action h-11 bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150]">
+                <Newspaper size={15} className="mr-2" /> News
               </Button>
             </div>
           </div>
         </div>
       )}
 
-      {(activeTab === "players" || activeTab === "system") && (
+      {(activeTab === "players" || activeTab === "settings") && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Add player */}
-        <div className={`${activeTab === "players" ? "" : "hidden"} m8-panel rounded-2xl p-5`}>
+        <div className={`${activeTab === "players" ? "lg:col-span-3" : "hidden"} m8-panel rounded-2xl p-5`}>
           <div className="flex items-center gap-2 mb-4">
             <UserPlus size={18} className="text-emerald-400" />
             <h3 className="font-display font-black text-lg tracking-[-0.015em]">Add Player</h3>
           </div>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_150px_auto] gap-3 sm:items-end">
             <div>
               <Label className="text-xs text-muted-foreground">Nickname</Label>
               <Input data-testid="admin-new-name" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Reaper" className="bg-[#0F1218] border-[#222834] mt-1" />
@@ -655,17 +693,17 @@ export default function AdminPanel() {
               <Label className="text-xs text-muted-foreground">Starting Elo</Label>
               <Input data-testid="admin-new-elo" type="number" value={newElo} onChange={(e) => setNewElo(e.target.value)} className="bg-[#0F1218] border-[#222834] mt-1" />
             </div>
-            <Button onClick={handleAdd} data-testid="admin-add-player-btn" className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold">
-              <UserPlus size={16} className="mr-1" /> Add to Roster
+            <Button onClick={handleAdd} data-testid="admin-add-player-btn" className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold sm:px-6">
+              <UserPlus size={16} className="mr-1" /> Add Player
             </Button>
           </div>
         </div>
 
         {/* Data actions */}
-        <div className={`${activeTab === "system" ? "lg:col-span-3" : "hidden"} m8-panel rounded-2xl p-5`}>
+        <div className={`${activeTab === "settings" ? "lg:col-span-3" : "hidden"} m8-panel rounded-2xl p-5`}>
           <div className="flex items-center gap-2 mb-4">
             <Database size={18} className="text-[#D5A33A]" />
-            <h3 className="font-display font-black text-lg tracking-[-0.015em]">Data & Records</h3>
+            <h3 className="font-display font-black text-lg tracking-[-0.015em]">Database & Maintenance</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Button onClick={handleExport} data-testid="admin-export-btn" className="m8-action justify-start bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150] h-14 rounded-xl">
@@ -686,15 +724,6 @@ export default function AdminPanel() {
               onConfirm={() => { resetStats(); toast.success("Statistics reset"); }}
             />
 
-            <ConfirmButton
-              testid="admin-repair-elo-btn"
-              label={eloRepairBusy ? "Repairing Elo..." : "Repair Elo"}
-              icon={<RotateCcw size={18} className="mr-2 text-emerald-400" />}
-              title="Repair all player Elo?"
-              desc="Rebuilds each player's current Elo from the latest trusted season/admin checkpoint, verified match Elo changes and verified challenge Elo changes. Match records and statistics are not deleted."
-              onConfirm={runEloRepair}
-            />
-
             <Button onClick={() => setHistOpen(true)} data-testid="admin-add-historical-btn" className="m8-action justify-start bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150] h-14 rounded-xl">
               <History size={18} className="mr-2 text-magma" /> Add Historical Mucho8s
             </Button>
@@ -710,10 +739,10 @@ export default function AdminPanel() {
             <div className="min-w-0">
               <div className="brand-kicker mb-1">Match Control</div>
               <h3 className="font-display font-black text-xl tracking-[-0.025em]">
-                Manage Match Modes
+                Matches
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
-                One control center. Mucho8s and Mucho1v1 stay clearly separated.
+                Live activity, results waiting for Admin and complete match history.
               </p>
 
               <div className="flex flex-wrap items-center gap-2 mt-3">
@@ -747,23 +776,22 @@ export default function AdminPanel() {
 
           <div className="flex flex-wrap gap-2 mb-4">
             {[
-              ["all", "All"],
-              ["active", "Active"],
-              ["attention", "Attention"],
-              ["completed", "Completed"],
+              ["live", "Live"],
+              ["pending", "Pending"],
+              ["history", "History"],
             ].map(([key, label]) => {
               const active = matchControlFilter === key;
               const count =
-                key === "all"
-                  ? adminMatchRows.length
-                  : key === "active"
+                key === "live"
+                  ? adminMatchRows.filter((row) =>
+                      row.type === "challenge" &&
+                      ["pending", "accepted"].includes(row.status)
+                    ).length
+                  : key === "pending"
                     ? adminMatchRows.filter((row) =>
-                        row.type === "challenge" &&
-                        ["pending", "accepted", "result_pending", "disputed"].includes(row.status)
+                        row.attention || row.status === "result_pending" || row.status === "disputed"
                       ).length
-                    : key === "attention"
-                      ? adminMatchRows.filter((row) => row.attention).length
-                      : adminMatchRows.filter((row) => row.status === "completed").length;
+                    : adminMatchRows.filter((row) => row.status === "completed").length;
 
               return (
                 <button
@@ -1130,7 +1158,49 @@ export default function AdminPanel() {
         </div>
       )}
 
-      {activeTab === "discord" && (
+      {activeTab === "content" && (
+        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_.8fr] gap-4">
+          <div className="m8-panel rounded-2xl p-5">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div>
+                <div className="brand-kicker mb-1">Content</div>
+                <h3 className="font-display font-black text-xl">News & Updates</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Keep the public News page focused on season announcements, ranking changes and important platform updates.
+                </p>
+              </div>
+              <Newspaper size={20} className="text-magma" />
+            </div>
+
+            <div className="m8-panel-quiet rounded-xl p-4">
+              <div className="text-sm font-semibold">Public News page</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                The animated News page is active and visible to every player.
+              </div>
+              <Button asChild className="mt-4 bg-magma hover:bg-magma/90 text-white">
+                <Link to="/news">
+                  Open News <ExternalLink size={14} className="ml-2" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          <div className="m8-panel rounded-2xl p-5">
+            <div className="brand-kicker mb-1">Publishing</div>
+            <h3 className="font-display font-black text-lg">Simple content flow</h3>
+            <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+              <div className="m8-panel-quiet rounded-xl px-3 py-2">1. Season / competition announcement</div>
+              <div className="m8-panel-quiet rounded-xl px-3 py-2">2. Ranking / Elo update</div>
+              <div className="m8-panel-quiet rounded-xl px-3 py-2">3. Important platform update</div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-4">
+              News editing is now isolated here instead of mixing content tools with competition controls.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "settings" && (
         <>
       <div className="m8-panel rounded-2xl p-5" data-testid="discord-settings">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -1330,11 +1400,11 @@ export default function AdminPanel() {
         </>
       )}
 
-      {activeTab === "system" && (
+      {activeTab === "settings" && (
         <div className="m8-panel rounded-2xl p-5" data-testid="admin-access-control">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-4">
             <div>
-              <div className="brand-kicker mb-1">Access Security</div>
+              <div className="brand-kicker mb-1">Admin</div>
               <h3 className="font-display font-black text-xl tracking-[-0.02em]">Admin Access</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 Choose which Discord-linked players can open the Admin Console.
@@ -1440,12 +1510,12 @@ export default function AdminPanel() {
         </div>
       )}
 
-      {activeTab === "system" && (
+      {activeTab === "settings" && (
         <>
       <div className="m8-panel rounded-2xl p-5" data-testid="admin-audit-log">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
-            <div className="brand-kicker mb-1">Security & History</div>
+            <div className="brand-kicker mb-1">History</div>
             <h3 className="font-display font-black text-lg tracking-[-0.015em]">Admin Audit Log</h3>
             <p className="text-sm text-muted-foreground mt-1">
               Tracks important Admin changes to players, Mucho8s and Mucho1v1.
@@ -1490,7 +1560,7 @@ export default function AdminPanel() {
       {activeTab === "players" && (
         <>
       <div className="m8-panel rounded-2xl p-5" data-testid="admin-roster">
-        <h3 className="font-display font-bold text-lg mb-4">Manage Roster ({players.length})</h3>
+        <h3 className="font-display font-bold text-lg mb-4">Players ({players.length})</h3>
         <div className="space-y-2">
           {players.map((p) => {
             const isEditing = editing[p.id] !== undefined;
