@@ -96,7 +96,7 @@ Deno.serve(async (req: Request) => {
         .eq("id", "main")
         .maybeSingle();
       if (error) throw error;
-      return Math.max(1, Number(data?.season_number || 1));
+      return Math.max(0, Number(data?.season_number ?? 1));
     };
 
     const signEvidence = async (challenge: any) => {
