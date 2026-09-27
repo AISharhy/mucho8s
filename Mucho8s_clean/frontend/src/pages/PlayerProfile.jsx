@@ -5,6 +5,11 @@ import { winRate, tierOf } from "@/lib/elo";
 import { duoChemistry } from "@/lib/chemistry";
 import { analyzeBountyHistory, buildBountyAchievementCatalog } from "@/lib/bountyAchievements";
 import { buildPlayerRivalries } from "@/lib/rivalries";
+import {
+  TROPHY8S_RULES,
+  MAX_TROPHY_LEVEL,
+  trophyNextTier,
+} from "@/lib/trophyRules";
 import { PlayerAvatar, EloBadge, Last10, MerdaBadge, RankProgress } from "@/components/shared";
 import ModeBadge, { isDirectMucho1v1 } from "@/components/ModeBadge";
 import { Input } from "@/components/ui/input";
@@ -236,6 +241,8 @@ export default function PlayerProfile() {
     let bestWinStreak = 0;
     let runningWins = 0;
     let cleanSweepTrigger = null;
+    let cleanSweepCount = 0;
+    let runItBackCount = 0;
     let wonValue = 0;
     let maxWonPairing = 0;
     let moneyMakerTrigger = null;
@@ -252,8 +259,11 @@ export default function PlayerProfile() {
 
       runningWins = won ? runningWins + 1 : 0;
       bestWinStreak = Math.max(bestWinStreak, runningWins);
-      if (!cleanSweepTrigger && runningWins === 4) {
-        cleanSweepTrigger = { match };
+      if (runningWins > 0 && runningWins % 4 === 0) {
+        cleanSweepCount += 1;
+        if (!cleanSweepTrigger) {
+          cleanSweepTrigger = { match };
+        }
       }
 
       const amount = Math.max(0, Number(pairing?.amount) || 0);
@@ -291,12 +301,15 @@ export default function PlayerProfile() {
         }
 
         const previous = lastByOpponent.get(key);
-        if (!runItBackTrigger && won && previous?.result === "L") {
-          runItBackTrigger = {
-            match,
-            opponentId,
-            previousDate: previous.date,
-          };
+        if (won && previous?.result === "L") {
+          runItBackCount += 1;
+          if (!runItBackTrigger) {
+            runItBackTrigger = {
+              match,
+              opponentId,
+              previousDate: previous.date,
+            };
+          }
         }
         lastByOpponent.set(key, {
           result: won ? "W" : "L",
@@ -321,6 +334,8 @@ export default function PlayerProfile() {
         0
       ),
       runItBack: Boolean(runItBackTrigger),
+      runItBackCount,
+      cleanSweepCount,
       triggers: {
         moneyMaker: moneyMakerTrigger,
         highRoller: highRollerTrigger,
@@ -493,120 +508,45 @@ export default function PlayerProfile() {
   const trophyChallenges = useMemo(() => {
     if (!player) return [];
 
-    const clamp = (value, goal) =>
-      Math.min(100, Math.max(0, Math.round((Number(value || 0) / goal) * 100)));
-    const challenge = ({
-      id: trophyId,
-      title,
-      description,
-      emoji,
-      value,
-      goal,
-      unit = "",
-      unlocked = null,
-    }) => ({
-      id: trophyId,
-      title,
-      description,
-      emoji,
-      value: Number(value || 0),
-      goal,
-      unit,
-      source: "Trophy8s",
-      unlocked: unlocked === null ? Number(value || 0) >= goal : Boolean(unlocked),
-      progress: unlocked === true ? 100 : clamp(value, goal),
-    });
+    const values = {
+      "on-fire": mucho8sInsights.bestWinStreak,
+      unstoppable: mucho8sInsights.bestWinStreak,
+      "money-maker": mucho8sInsights.wonValue,
+      "high-roller": mucho8sInsights.maxWonPairing,
+      rivalry: mucho8sInsights.maxH2HPlayed,
+      nemesis: mucho8sInsights.maxH2HWins,
+      "clean-sweep": mucho8sInsights.cleanSweepCount,
+      veteran: Number(player.totalMatches || 0),
+      "run-it-back": mucho8sInsights.runItBackCount,
+    };
 
-    return [
-      challenge({
-        id: "on-fire",
-        title: "On Fire",
-        description: "Reach a 4-win streak in Mucho8s",
-        emoji: "🔥",
-        value: mucho8sInsights.bestWinStreak,
-        goal: 4,
-        unit: " wins",
-      }),
-      challenge({
-        id: "unstoppable",
-        title: "Unstoppable",
-        description: "Reach an 8-win streak in Mucho8s",
-        emoji: "☢️",
-        value: mucho8sInsights.bestWinStreak,
-        goal: 8,
-        unit: " wins",
-      }),
-      challenge({
-        id: "money-maker",
-        title: "Money Maker",
-        description: "Win €50 through Mucho8s money pairings",
-        emoji: "💰",
-        value: mucho8sInsights.wonValue,
-        goal: 50,
-        unit: " €",
-      }),
-      challenge({
-        id: "high-roller",
-        title: "High Roller",
-        description: "Win a Mucho8s pairing worth at least €20",
-        emoji: "💎",
-        value: mucho8sInsights.maxWonPairing,
-        goal: 20,
-        unit: " €",
-      }),
-      challenge({
-        id: "rivalry",
-        title: "Rivalry",
-        description: "Meet the same player 8 times in Mucho8s",
-        emoji: "⚔️",
-        value: mucho8sInsights.maxH2HPlayed,
-        goal: 8,
-        unit: " meetings",
-      }),
-      challenge({
-        id: "nemesis",
-        title: "Nemesis",
-        description: "Beat the same player 4 times in Mucho8s",
-        emoji: "👑",
-        value: mucho8sInsights.maxH2HWins,
-        goal: 4,
-        unit: " wins",
-      }),
-      challenge({
-        id: "clean-sweep",
-        title: "Clean Sweep",
-        description: "Win 4 Mucho8s matches in a row",
-        emoji: "🧹",
-        value: mucho8sInsights.bestWinStreak,
-        goal: 4,
-        unit: " wins",
-      }),
-      challenge({
-        id: "veteran",
-        title: "Veteran",
-        description: "Play 40 Mucho8s matches",
-        emoji: "🧱",
-        value: Number(player.totalMatches || 0),
-        goal: 40,
-        unit: " matches",
-      }),
-      challenge({
-        id: "run-it-back",
-        title: "Run It Back",
-        description: "Lose to a player in Mucho8s, then beat them in the next meeting",
-        emoji: "🔄",
-        value: mucho8sInsights.runItBack ? 1 : 0,
-        goal: 1,
-        unit: "",
-        unlocked: mucho8sInsights.runItBack,
-      }),
-    ];
+    return Object.values(TROPHY8S_RULES).map((rule) => {
+      const value = Number(values[rule.id] || 0);
+      const tier = trophyNextTier(rule, value);
+
+      return {
+        ...rule,
+        source: "Trophy8s",
+        value,
+        level: tier.level,
+        nextLevel: tier.nextLevel,
+        goal: tier.goal,
+        reward: tier.reward,
+        complete: tier.complete,
+        progress: tier.progress,
+        unlocked: tier.level > 0,
+        unit: rule.unit || "",
+        description: tier.complete
+          ? `${rule.description} · Level X complete`
+          : `${rule.description} · Level ${tier.nextLevel}/${MAX_TROPHY_LEVEL}`,
+      };
+    });
   }, [player, mucho8sInsights]);
 
   const nextTrophyChallenges = useMemo(
     () =>
       trophyChallenges
-        .filter((item) => !item.unlocked)
+        .filter((item) => !item.complete)
         .sort((a, b) => b.progress - a.progress || a.goal - b.goal)
         .slice(0, 3),
     [trophyChallenges]
@@ -643,14 +583,16 @@ export default function PlayerProfile() {
     }
 
     trophyChallenges
-      .filter((item) => item.unlocked)
+      .filter((item) => item.level > 0)
       .forEach((item) => {
         awards.push({
           id: item.id,
           type: "achievement",
-          title: item.title,
-          detail: item.description,
-          count: null,
+          title: `${item.title} ${item.level >= MAX_TROPHY_LEVEL ? "X" : item.level}`,
+          detail: item.complete
+            ? `Level X complete · ${item.description}`
+            : `Level ${item.level}/${MAX_TROPHY_LEVEL} · next at ${item.goal}${item.unit}`,
+          count: item.level,
           emoji: item.emoji,
           source: item.source || "Trophy8s",
         });
@@ -1411,7 +1353,7 @@ export default function PlayerProfile() {
                 Next Trophies
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Your closest Mucho8s objectives. Each new unlock gives +3 Elo.
+                The same challenges level up to X. Requirements grow every level and rewards scale from +3 to +15 Elo.
               </p>
             </div>
             <ModeBadge mode="mucho8s" compact />
@@ -1430,7 +1372,7 @@ export default function PlayerProfile() {
                     <span aria-hidden="true">{item.emoji}</span>
                   </div>
                   <span className="font-mono text-[10px] font-black text-magma">
-                    {item.value}/{item.goal}
+                    Lv {item.nextLevel}/{MAX_TROPHY_LEVEL} · {item.value}/{item.goal}
                   </span>
                 </div>
 
@@ -1453,7 +1395,7 @@ export default function PlayerProfile() {
                 </div>
 
                 <div className="mt-3 text-[10px] font-black text-magma">
-                  +3 Elo on unlock
+                  +{item.reward} Elo on unlock
                 </div>
               </div>
             ))}
