@@ -61,8 +61,8 @@ const TITLES = {
   "/rank-guide": "Guide",
   "/ranks": "Guide",
   "/admin": "Admin Panel",
-  "/challenges": "Challenge Inbox",
-  "/challenge-ranking": "Chall Ranking",
+  "/challenges": "Mucho1v1",
+  "/challenge-ranking": "Mucho1v1 Ranking",
 };
 
 export const Layout = () => {
@@ -135,10 +135,10 @@ export const Layout = () => {
         let tone = "neutral";
 
         if (challenge.status === "pending" && isChallenged) {
-          title = `New chall from ${opponent?.name || "player"}`;
+          title = `New Mucho1v1 from ${opponent?.name || "player"}`;
           tone = "magma";
         } else if (event === "accepted" && isChallenger) {
-          title = `${opponent?.name || "Player"} accepted your chall`;
+          title = `${opponent?.name || "Player"} accepted your Mucho1v1`;
           tone = "green";
         } else if (
           challenge.status === "result_pending" &&
@@ -147,28 +147,28 @@ export const Layout = () => {
           title = "Result needs verification";
           tone = "gold";
         } else if (challenge.status === "disputed" || event === "payout_disputed") {
-          title = "Challenge dispute opened";
+          title = "Mucho1v1 dispute opened";
           tone = "orange";
         } else if (event === "payout_sent") {
           title = "Payment marked as sent";
           tone = "gold";
         } else if (event === "rechallenge_created") {
-          title = `ReChall vs ${opponent?.name || "player"}`;
+          title = `Mucho1v1 rematch vs ${opponent?.name || "player"}`;
           tone = "magma";
         } else if (event === "series_ended") {
-          title = "Chall Series closed";
+          title = "Mucho1v1 Series closed";
           tone = "neutral";
         } else if (event === "series_payout_sent") {
           title = "Series payment sent";
           tone = "gold";
         } else if (challenge.status === "completed" && event === "completed") {
-          title = iWon ? "Challenge won" : "Challenge lost";
+          title = iWon ? "Mucho1v1 won" : "Mucho1v1 lost";
           tone = iWon ? "green" : "red";
         } else if (["declined", "series_declined"].includes(event)) {
-          title = "Challenge declined";
+          title = "Mucho1v1 declined";
           tone = "red";
         } else if (["cancelled", "series_cancelled"].includes(event)) {
-          title = "Challenge cancelled";
+          title = "Mucho1v1 cancelled";
           tone = "red";
         }
 
@@ -247,7 +247,7 @@ export const Layout = () => {
         : loc.pathname.startsWith("/players/")
           ? "Player Profile"
           : loc.pathname.startsWith("/challenges/")
-            ? "Challenge Match"
+            ? "Mucho1v1"
             : "MuchoMoney8s");
 
   useEffect(() => {
@@ -315,8 +315,8 @@ export const Layout = () => {
                   setNotificationsOpen((open) => !open);
                   setOnlineOpen(false);
                 }}
-                aria-label={challengeNotificationCount > 0 ? `${challengeNotificationCount} challenge notifications` : "Challenge notifications"}
-                title="Challenge notifications"
+                aria-label={challengeNotificationCount > 0 ? `${challengeNotificationCount} Mucho1v1 notifications` : "Mucho1v1 notifications"}
+                title="Mucho1v1 notifications"
                 aria-expanded={notificationsOpen}
                 aria-controls="challenge-notifications-panel"
                 data-testid="header-challenge-bell"
@@ -420,10 +420,10 @@ export const Layout = () => {
             )}
 
             {discordPlayer && notificationsOpen && (
-                  <div id="challenge-notifications-panel" role="dialog" aria-label="Challenge notifications" className="absolute right-0 top-12 w-[min(92vw,380px)] m8-panel rounded-2xl shadow-2xl overflow-hidden z-50">
+                  <div id="challenge-notifications-panel" role="dialog" aria-label="Mucho1v1 notifications" className="absolute right-0 top-12 w-[min(92vw,380px)] m8-panel rounded-2xl shadow-2xl overflow-hidden z-50">
                     <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#1D222C]">
                       <div>
-                        <div className="brand-kicker mb-0.5">Notifications</div>
+                        <div className="brand-kicker mb-0.5 text-emerald-400">Mucho1v1</div>
                         <div className="font-display font-bold">Important updates</div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -492,7 +492,7 @@ export const Layout = () => {
                       onClick={() => setNotificationsOpen(false)}
                       className="h-11 border-t border-[#1D222C] flex items-center justify-center text-sm font-semibold text-[#AAB1BE] hover:text-white hover:bg-white/[0.03]"
                     >
-                      Open Challenge Inbox
+                      Open Mucho1v1 Inbox
                     </Link>
                   </div>
             )}
