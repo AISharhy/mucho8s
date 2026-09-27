@@ -6,6 +6,7 @@ import {
   Search,
   Swords,
   WalletCards,
+  Link2Off,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar, EloBadge } from "@/components/shared";
@@ -27,6 +28,46 @@ const StepRow = ({ number, title, text, children }) => (
     </div>
   </div>
 );
+
+const PaymentLinks = ({ profile, compact = false }) => {
+  const hasPayPal = Boolean(String(profile?.paypalUrl || "").trim());
+  const hasRevolut = Boolean(String(profile?.revolutUrl || "").trim());
+
+  if (!hasPayPal && !hasRevolut) {
+    return (
+      <span
+        title="No payment method linked"
+        aria-label="No payment method linked"
+        className={`${compact ? "w-6 h-6" : "h-7 px-2"} rounded-lg border border-red-500/15 bg-red-500/[0.04] text-red-400/80 inline-flex items-center justify-center`}
+      >
+        <Link2Off size={compact ? 11 : 12} />
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1">
+      {hasPayPal && (
+        <span
+          title="PayPal linked"
+          aria-label="PayPal linked"
+          className={`${compact ? "w-6 h-6" : "h-7 px-2"} rounded-lg border border-[#61A8FF]/20 bg-[#61A8FF]/[0.06] text-[#61A8FF] inline-flex items-center justify-center font-mono text-[9px] font-black`}
+        >
+          P
+        </span>
+      )}
+      {hasRevolut && (
+        <span
+          title="Revolut linked"
+          aria-label="Revolut linked"
+          className={`${compact ? "w-6 h-6" : "h-7 px-2"} rounded-lg border border-white/15 bg-white/[0.04] text-white inline-flex items-center justify-center font-mono text-[9px] font-black`}
+        >
+          R
+        </span>
+      )}
+    </span>
+  );
+};
 
 const ModeHeader = ({ kicker, title, description, icon: Icon, accent }) => (
   <div className="flex items-start justify-between gap-4">
@@ -59,6 +100,7 @@ export default function Play() {
   const {
     players,
     playerAvatars,
+    playerProfiles,
     discordPlayer,
     discordSession,
     signInWithDiscord,
@@ -89,10 +131,30 @@ export default function Play() {
   }, [players, discordPlayer, query]);
 
   const target = players.find((player) => player.id === targetId) || null;
+  const targetProfile = target ? playerProfiles?.[target.id] || null : null;
+  const targetHasPayPal = Boolean(String(targetProfile?.paypalUrl || "").trim());
+  const targetHasRevolut = Boolean(String(targetProfile?.revolutUrl || "").trim());
+  const selectedPaymentAvailable =
+    platform === "paypal" ? targetHasPayPal : targetHasRevolut;
   const numericAmount = Number(String(amount).replace(",", "."));
+
+  const chooseTarget = (playerId) => {
+    setTargetId(playerId);
+
+    const profile = playerProfiles?.[playerId] || null;
+    const hasPayPal = Boolean(String(profile?.paypalUrl || "").trim());
+    const hasRevolut = Boolean(String(profile?.revolutUrl || "").trim());
+
+    if (platform === "paypal" && !hasPayPal && hasRevolut) {
+      setPlatform("revolut");
+    } else if (platform === "revolut" && !hasRevolut && hasPayPal) {
+      setPlatform("paypal");
+    }
+  };
 
   const canSend = Boolean(
     target &&
+    selectedPaymentAvailable &&
     Number.isFinite(numericAmount) &&
     numericAmount > 0 &&
     ["paypal", "revolut"].includes(platform)
@@ -110,7 +172,11 @@ export default function Play() {
     }
 
     if (!canSend || !target) {
-      toast.error("Choose an opponent and a valid amount");
+      toast.error(
+        target && !selectedPaymentAvailable
+          ? "This player has not linked the selected payment method"
+          : "Choose an opponent and a valid amount"
+      );
       return;
     }
 
@@ -231,6 +297,7 @@ export default function Play() {
 
               {target && (
                 <div className="flex items-center gap-2">
+                  <PaymentLinks profile={targetProfile} />
                   <PlayerAvatar
                     name={target.name}
                     elo={target.currentElo}
@@ -264,7 +331,7 @@ export default function Play() {
                   <button
                     type="button"
                     key={player.id}
-                    onClick={() => setTargetId(player.id)}
+                    onClick={() => chooseTarget(player.id)}
                     className={`group h-11 flex items-center gap-2.5 rounded-xl border px-2.5 text-left transition-all ${
                       selected
                         ? "border-[#D5A33A]/60 bg-[#D5A33A]/[0.08]"
@@ -281,6 +348,10 @@ export default function Play() {
                     <span className="font-semibold text-xs truncate flex-1">
                       {player.name}
                     </span>
+                    <PaymentLinks
+                      profile={playerProfiles?.[player.id] || null}
+                      compact
+                    />
                     <span className={`font-mono text-[11px] font-bold ${
                       selected ? "text-[#D5A33A]" : "text-[#9AA2AF]"
                     }`}>
@@ -345,26 +416,45 @@ export default function Play() {
 
                 <div className="grid grid-cols-2 gap-1.5">
                   {[
-                    ["paypal", "PayPal"],
-                    ["revolut", "Revolut"],
-                  ].map(([key, label]) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setPlatform(key)}
-                      className={`h-9 rounded-lg border text-[11px] font-black transition-all ${
-                        platform === key
-                          ? "bg-[#D5A33A] text-black border-[#D5A33A]"
-                          : "bg-[#151923] border-[#2A303B] text-[#B8C0CD] hover:border-[#3A424F]"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
+                    ["paypal", "PayPal", targetHasPayPal],
+                    ["revolut", "Revolut", targetHasRevolut],
+                  ].map(([key, label, available]) => {
+                    const unavailable = Boolean(target) && !available;
+
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        disabled={unavailable}
+                        onClick={() => setPlatform(key)}
+                        title={
+                          unavailable
+                            ? `${target?.name || "Player"} has not linked ${label}`
+                            : label
+                        }
+                        className={`h-9 rounded-lg border text-[11px] font-black transition-all ${
+                          unavailable
+                            ? "bg-[#11151C] border-[#202631] text-[#555E6B] cursor-not-allowed"
+                            : platform === key
+                              ? "bg-[#D5A33A] text-black border-[#D5A33A]"
+                              : "bg-[#151923] border-[#2A303B] text-[#B8C0CD] hover:border-[#3A424F]"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
           </div>
+
+          {target && !targetHasPayPal && !targetHasRevolut && (
+            <div className="relative z-10 mt-2.5 rounded-xl border border-red-500/15 bg-red-500/[0.04] px-3 py-2 text-[10px] text-red-300/80 flex items-center gap-2">
+              <Link2Off size={12} />
+              {target.name} has not linked PayPal or Revolut yet.
+            </div>
+          )}
 
           <div className="relative z-10 mt-auto pt-4">
             <Button
