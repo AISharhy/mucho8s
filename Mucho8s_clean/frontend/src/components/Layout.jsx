@@ -238,7 +238,15 @@ export const Layout = () => {
     return ids;
   }, [challenges]);
 
-  const title = TITLES[loc.pathname] || (loc.pathname.startsWith("/players/") ? "Player Profile" : loc.pathname.startsWith("/challenges/") ? "Challenge Match" : "MuchoMoney8s");
+  const title =
+    TITLES[loc.pathname] ||
+    (loc.pathname.startsWith("/matches/live/")
+      ? "Match Room"
+      : loc.pathname.startsWith("/players/")
+        ? "Player Profile"
+        : loc.pathname.startsWith("/challenges/")
+          ? "Challenge Match"
+          : "MuchoMoney8s");
 
   useEffect(() => {
     document.title = title === "MuchoMoney8s" ? "MuchoMoney8s" : `${title} · MuchoMoney8s`;
