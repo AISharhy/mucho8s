@@ -9,7 +9,7 @@ import ModeBadge from "@/components/ModeBadge";
 import { GAMES } from "@/lib/demoData";
 
 const MATCH_MODES = ["Hardpoint", "Search & Destroy"];
-import { ArrowRightLeft, Crown, RotateCcw, Search, WalletCards } from "lucide-react";
+import { ArrowRightLeft, Crown, RotateCcw, Search, WalletCards, Trophy } from "lucide-react";
 import { toast } from "sonner";
 
 export const RecordMatchDialog = ({
