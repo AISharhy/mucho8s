@@ -29,8 +29,12 @@ BASE_ELO = 1000
 MIN_ELO = 500
 WIN_DELTA = 25
 LOSS_DELTA = 25
-MVP_BONUS = 10
-UPSET_BONUS = 15
+MVP_BONUS = 3
+UPSET_BONUS = 0
+ELO_K = 50
+ELO_SCALE = 400
+MIN_RESULT_DELTA = 5
+MAX_RESULT_DELTA = 45
 GAMES = ["MW4", "BO7", "BO6", "MW3", "VG", "CW", "WW2", "BO2"]
 MODES = ["Hardpoint", "Search & Destroy"]
 NAMES = ["Reaper", "Ghxst", "Vortex", "N0Scope", "Havoc", "Blaze", "Cyclone", "Venom",
@@ -50,6 +54,13 @@ def next_streak(streak, won):
     if won:
         return streak + 1 if streak > 0 else 1
     return streak - 1 if streak < 0 else -1
+
+
+def elo_result_delta(elo, opponent_elo, won):
+    expected = 1 / (1 + 10 ** ((opponent_elo - elo) / ELO_SCALE))
+    raw = ELO_K * ((1 if won else 0) - expected)
+    magnitude = max(MIN_RESULT_DELTA, min(MAX_RESULT_DELTA, round(abs(raw))))
+    return magnitude if won else -magnitude
 
 
 def new_player(name, start_elo=1000):
@@ -72,21 +83,25 @@ def new_player(name, start_elo=1000):
 
 def apply_effects(by_id, team_a, team_b, winner, mvp_id):
     winners = team_a if winner == "A" else team_b
-    losers = team_b if winner == "A" else team_a
-    s_win = sum(player_rating(by_id[i]) for i in winners if i in by_id)
-    s_los = sum(player_rating(by_id[i]) for i in losers if i in by_id)
-    upset = s_win < s_los
+
+    def average_elo(ids):
+        values = [float(by_id[i].get("currentElo", BASE_ELO)) for i in ids if i in by_id]
+        return sum(values) / len(values) if values else BASE_ELO
+
+    avg_a = average_elo(team_a)
+    avg_b = average_elo(team_b)
+    delta_a = elo_result_delta(avg_a, avg_b, winner == "A")
+    delta_b = elo_result_delta(avg_b, avg_a, winner == "B")
+
     changes = {}
     for pid in team_a + team_b:
         p = by_id.get(pid)
         if not p:
             continue
         won = pid in winners
-        delta = WIN_DELTA if won else -LOSS_DELTA
+        delta = delta_a if pid in team_a else delta_b
         if pid == mvp_id:
             delta += MVP_BONUS
-        if won and upset:
-            delta += UPSET_BONUS
         new_elo = max(MIN_ELO, p["currentElo"] + delta)
         p["currentElo"] = new_elo
         p["peakElo"] = max(p["peakElo"], new_elo)
