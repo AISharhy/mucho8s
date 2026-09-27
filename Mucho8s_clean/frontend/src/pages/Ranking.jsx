@@ -21,7 +21,7 @@ export default function Ranking({ initialTab = "leaderboard" }) {
           <div className="brand-kicker mb-1">Competition</div>
           <h2 className="font-display text-3xl font-black tracking-[-0.03em]">Leaderboard</h2>
           <p className="text-sm text-[#7F8795] mt-1">
-            One ranking for matches and Money Challs, with season history in one place.
+            One global Elo ranking. Mucho8s and Mucho1v1 activity stay separated inside the stats.
           </p>
         </div>
 
@@ -67,7 +67,7 @@ export default function Ranking({ initialTab = "leaderboard" }) {
               <div className="brand-kicker mb-1">Performance</div>
               <h3 className="font-display text-xl font-bold">Statistics</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Match activity, progression and competitive performance.
+                Mucho8s performance, Mucho1v1 activity and money split by mode.
               </p>
             </div>
             <Statistics />
