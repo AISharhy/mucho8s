@@ -287,7 +287,7 @@ export const buildCrossTeamPairings = (teamA, teamB) => {
     .filter((pair) => pair.playerB);
 };
 
-export const draftTeamsBalanced = (players, matches = []) => {
+export const draftTeamsByPriority = (players, matches = [], priority = "elo") => {
   if (!Array.isArray(players) || players.length < 4 || players.length % 2 !== 0) return null;
 
   const teamSize = players.length / 2;
@@ -305,12 +305,32 @@ export const draftTeamsBalanced = (players, matches = []) => {
     if (!analysis) return;
 
     const score =
-      analysis.balanceScore * 0.7 +
-      analysis.roleBalanceScore * 0.2 +
-      analysis.freshnessScore * 0.1;
+      priority === "chemistry"
+        ? (
+            analysis.chemistryScore * 0.65 +
+            analysis.balanceScore * 0.2 +
+            analysis.freshnessScore * 0.1 +
+            analysis.roleBalanceScore * 0.05
+          )
+        : priority === "mixed"
+          ? (
+              analysis.balanceScore * 0.45 +
+              analysis.chemistryScore * 0.35 +
+              analysis.freshnessScore * 0.1 +
+              analysis.roleBalanceScore * 0.1
+            )
+          : (
+              analysis.balanceScore * 0.75 +
+              analysis.roleBalanceScore * 0.15 +
+              analysis.freshnessScore * 0.1
+            );
 
     if (!best || score > bestScore) {
-      best = analysis;
+      best = {
+        ...analysis,
+        balancePriority: priority,
+        priorityScore: Math.round(score),
+      };
       bestScore = score;
     }
   });
@@ -318,24 +338,8 @@ export const draftTeamsBalanced = (players, matches = []) => {
   return best;
 };
 
-export const draftTeamsByChemistry = (players, matches = []) => {
-  if (!Array.isArray(players) || players.length < 4 || players.length % 2 !== 0) return null;
+export const draftTeamsBalanced = (players, matches = []) =>
+  draftTeamsByPriority(players, matches, "elo");
 
-  const teamSize = players.length / 2;
-  const anchor = players[0];
-  const rest = players.slice(1);
-  const candidates = combinations(rest, teamSize - 1);
-  let best = null;
-
-  candidates.forEach((combo) => {
-    const teamA = [anchor, ...combo];
-    const aIds = new Set(teamA.map((player) => player.id));
-    const teamB = players.filter((player) => !aIds.has(player.id));
-    const analysis = analyzeManualTeams(teamA, teamB, matches);
-
-    if (!analysis) return;
-    if (!best || analysis.draftScore > best.draftScore) best = analysis;
-  });
-
-  return best;
-};
+export const draftTeamsByChemistry = (players, matches = []) =>
+  draftTeamsByPriority(players, matches, "chemistry");
