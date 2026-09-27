@@ -21,8 +21,6 @@ const euro = (value) =>
     currency: "EUR",
   }).format(Number(value || 0));
 
-const challengeAmount = (challenge) => Number(challenge?.amount_cents || 0) / 100;
-
 const liveDuration = (createdAt, now = Date.now()) => {
   const started = new Date(createdAt || 0).getTime();
   if (!Number.isFinite(started) || started <= 0) return "just started";
@@ -40,12 +38,16 @@ const liveDuration = (createdAt, now = Date.now()) => {
   return `${days}d ${remainingHours}h`;
 };
 
-const CompactMetric = ({ label, value, sub, icon: Icon, tone = "" }) => (
-  <div className="m8-stat-card min-w-0">
+const CompactMetric = ({ label, value, sub, icon: Icon, tone = "", to = "" }) => {
+  const content = (
     <div className="relative z-10 flex items-start justify-between gap-3">
       <div className="min-w-0">
-        <div className="text-[10px] uppercase tracking-[0.16em] text-[#737D8D] font-bold">{label}</div>
-        <div className={"font-display text-[1.35rem] font-black mt-1 truncate " + tone}>{value}</div>
+        <div className="text-[10px] uppercase tracking-[0.16em] text-[#737D8D] font-bold">
+          {label}
+        </div>
+        <div className={"font-display text-[1.35rem] font-black mt-1 truncate " + tone}>
+          {value}
+        </div>
         {sub && <div className="text-[10px] text-[#697181] mt-1 truncate">{sub}</div>}
       </div>
       {Icon && (
@@ -54,8 +56,21 @@ const CompactMetric = ({ label, value, sub, icon: Icon, tone = "" }) => (
         </div>
       )}
     </div>
-  </div>
-);
+  );
+
+  if (!to) {
+    return <div className="m8-stat-card min-w-0">{content}</div>;
+  }
+
+  return (
+    <Link
+      to={to}
+      className="m8-stat-card min-w-0 transition-all hover:border-[#3A4350] hover:-translate-y-0.5"
+    >
+      {content}
+    </Link>
+  );
+};
 
 const CompetitionOverview = ({
   players,
@@ -290,10 +305,8 @@ const GuestDashboard = ({
       <CompetitionOverview
         players={players}
         matches={matches}
-        playerMap={playerMap}
-        playerAvatars={playerAvatars}
-        liveMatches={liveMatches}
-      />
+          playerAvatars={playerAvatars}
+        />
     </div>
   );
 };
@@ -302,52 +315,49 @@ const PersonalDashboard = ({
   discordPlayer,
   playerAvatars,
   matches,
-  playerMap,
-  challenges,
   season,
   isAdmin,
   adminChallengeAlertCount,
   players,
-  liveMatches,
 }) => {
-  const personalMatches = useMemo(
+  const allPersonalMatches = useMemo(
     () =>
       [...matches]
-        .filter((match) =>
-          match.teamA?.includes(discordPlayer.id) ||
-          match.teamB?.includes(discordPlayer.id)
+        .filter(
+          (match) =>
+            match.teamA?.includes(discordPlayer.id) ||
+            match.teamB?.includes(discordPlayer.id)
         )
-        .sort((a, b) => new Date(b?.date || 0) - new Date(a?.date || 0))
-        .slice(0, 5),
+        .sort((a, b) => new Date(b?.date || 0) - new Date(a?.date || 0)),
     [matches, discordPlayer.id]
   );
 
-  const verifiedChallenges = useMemo(
-    () =>
-      (challenges || []).filter((challenge) =>
-        challenge.status === "completed" &&
-        challenge.reported_winner_player_id &&
-        (
-          challenge.challenger_player_id === discordPlayer.id ||
-          challenge.challenged_player_id === discordPlayer.id
-        ) &&
-        !(challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at)
-      ),
-    [challenges, discordPlayer.id]
+  const recentMatches = useMemo(
+    () => allPersonalMatches.slice(0, 3),
+    [allPersonalMatches]
   );
 
   const moneyWon = useMemo(
     () =>
-      verifiedChallenges
-        .filter((challenge) => challenge.reported_winner_player_id === discordPlayer.id)
-        .reduce((sum, challenge) => sum + challengeAmount(challenge), 0),
-    [verifiedChallenges, discordPlayer.id]
-  );
+      allPersonalMatches.reduce((sum, match) => {
+        const inA = (match.teamA || []).includes(discordPlayer.id);
+        const winnerSide = match.winner === "B" ? "B" : "A";
+        const won =
+          (inA && winnerSide === "A") ||
+          (!inA && winnerSide === "B");
 
-  const challengeWins = verifiedChallenges.filter(
-    (challenge) => challenge.reported_winner_player_id === discordPlayer.id
-  ).length;
-  const challengeLosses = Math.max(0, verifiedChallenges.length - challengeWins);
+        if (!won) return sum;
+
+        const pairing = (Array.isArray(match.pairings) ? match.pairings : []).find(
+          (pair) =>
+            pair?.playerAId === discordPlayer.id ||
+            pair?.playerBId === discordPlayer.id
+        );
+
+        return sum + Math.max(0, Number(pairing?.amount) || 0);
+      }, 0),
+    [allPersonalMatches, discordPlayer.id]
+  );
 
   const rankPosition = useMemo(() => {
     const sorted = [...(players || [])].sort(
@@ -357,98 +367,88 @@ const PersonalDashboard = ({
     return index >= 0 ? index + 1 : null;
   }, [players, discordPlayer.id]);
 
-  const activity = useMemo(() => {
-    const matchItems = personalMatches.map((match) => {
-      const winners = match.winner === "A" ? match.teamA : match.teamB;
-      const won = winners.includes(discordPlayer.id);
-      return {
-        id: `match:${match.id}`,
-        type: "match",
-        date: match.date,
-        title: won ? "Match won" : "Match lost",
-        detail:
-          `${match.game || "Match"}${match.mode ? ` · ${match.mode}` : ""}` +
-          ((Number(match.scoreA || 0) > 0 || Number(match.scoreB || 0) > 0)
-            ? ` · ${Number(match.scoreA || 0)}-${Number(match.scoreB || 0)}`
-            : ""),
-        won,
-        to: "/matches",
-      };
-    });
+  const activity = useMemo(
+    () =>
+      recentMatches.map((match) => {
+        const winners = match.winner === "A" ? match.teamA : match.teamB;
+        const won = winners.includes(discordPlayer.id);
 
-    return matchItems
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 3);
-  }, [personalMatches, discordPlayer.id]);
+        return {
+          id: match.id,
+          date: match.date,
+          won,
+          title: won ? "Match won" : "Match lost",
+          detail:
+            `${match.game || "Mucho8s"}${match.mode ? ` · ${match.mode}` : ""}` +
+            ((Number(match.scoreA || 0) > 0 || Number(match.scoreB || 0) > 0)
+              ? ` · ${Number(match.scoreA || 0)}-${Number(match.scoreB || 0)}`
+              : ""),
+        };
+      }),
+    [recentMatches, discordPlayer.id]
+  );
 
   const record = `${discordPlayer.wins || 0}W - ${discordPlayer.losses || 0}L`;
   const streak = Number(discordPlayer.currentStreak || 0);
 
   return (
     <div className="m8-page-stack">
-      <section className="m8-hero rounded-[22px] p-5 sm:p-7 lg:p-8">
+      <section className="m8-hero rounded-[22px] p-5 sm:p-7">
         <span className="m8-hero-accent" />
+
         <div className="relative z-10">
-          <div className="flex flex-col justify-between min-w-0">
-            <div>
-              <div className="flex flex-wrap items-center gap-2 mb-4">
-                <span className="m8-pill">{season.season_name || "Season " + season.season_number}</span>
-                {rankPosition && <span className="m8-pill">Global rank #{rankPosition}</span>}
-              </div>
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <span className="m8-pill">
+              {season.season_name || "Season " + season.season_number}
+            </span>
+            {rankPosition && (
+              <span className="m8-pill">Global rank #{rankPosition}</span>
+            )}
+          </div>
 
-              <div className="flex items-center gap-4 sm:gap-5 min-w-0">
-                <div className="relative shrink-0">
-                  <div className="absolute -inset-2 rounded-2xl bg-magma/[0.07] blur-xl" />
-                  <div className="relative">
-                    <PlayerAvatar
-                      name={discordPlayer.name}
-                      elo={discordPlayer.currentElo}
-                      size={88}
-                      avatarUrl={playerAvatars[discordPlayer.id]}
-                    />
-                  </div>
-                </div>
-
-                <div className="min-w-0">
-                  <div className="brand-kicker mb-1">Your competitive profile</div>
-                  <h2 className="font-display text-3xl sm:text-4xl font-black tracking-[-0.035em] truncate">
-                    {discordPlayer.name}
-                  </h2>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-3">
-                    <RankBadge elo={discordPlayer.currentElo} />
-                    <span className="text-sm text-[#8F98A8]">{record}</span>
-                    {streak !== 0 && (
-                      <span className={"inline-flex items-center gap-1 text-sm font-bold " + (streak > 0 ? "text-orange-400" : "text-red-400")}>
-                        <Flame size={14} /> {Math.abs(streak)} {streak > 0 ? "win" : "loss"} streak
-                      </span>
-                    )}
-                  </div>
-                </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
+            <div className="relative shrink-0 self-start">
+              <div className="absolute -inset-2 rounded-2xl bg-magma/[0.07] blur-xl" />
+              <div className="relative">
+                <PlayerAvatar
+                  name={discordPlayer.name}
+                  elo={discordPlayer.currentElo}
+                  size={82}
+                  avatarUrl={playerAvatars[discordPlayer.id]}
+                />
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 mt-6">
-              <Link
-                to="/play"
-                className="m8-action m8-action-primary inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-bold"
-              >
-                <Gamepad2 size={16} /> Play
-              </Link>
-              <Link
-                to="/challenges"
-                className="m8-action inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-[#0D1118]/85 border border-[#2A303B] text-[#D7DBE2] hover:border-[#3A4350] hover:text-white"
-              >
-                <WalletCards size={16} /> My Challenges
-              </Link>
-              <Link
-                to={"/players/" + discordPlayer.id}
-                className="m8-action inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl bg-[#0D1118]/85 border border-[#2A303B] text-[#D7DBE2] hover:border-[#3A4350] hover:text-white"
-              >
-                <UserCircle size={16} /> Profile
-              </Link>
+            <div className="min-w-0 flex-1">
+              <div className="brand-kicker mb-1">Your competitive profile</div>
+              <h2 className="font-display text-3xl sm:text-4xl font-black tracking-[-0.035em] truncate">
+                {discordPlayer.name}
+              </h2>
+
+              <div className="flex flex-wrap items-center gap-2.5 mt-3">
+                <RankBadge elo={discordPlayer.currentElo} />
+                <span className="font-mono text-xs font-black text-white">
+                  {discordPlayer.currentElo} Elo
+                </span>
+              </div>
             </div>
           </div>
 
+          <div className="flex flex-wrap gap-2 mt-6">
+            <Link
+              to="/play"
+              className="m8-action m8-action-primary inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-bold"
+            >
+              <Gamepad2 size={16} /> Play
+            </Link>
+
+            <Link
+              to={"/players/" + discordPlayer.id}
+              className="m8-action inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-[#0D1118]/85 border border-[#2A303B] text-[#D7DBE2] hover:border-[#3A4350] hover:text-white"
+            >
+              <UserCircle size={16} /> Profile
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -460,20 +460,31 @@ const PersonalDashboard = ({
           <ShieldAlert size={18} className="text-orange-400 shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="text-sm font-semibold text-orange-300">
-              {adminChallengeAlertCount} {adminChallengeAlertCount === 1 ? "item needs Admin attention" : "items need Admin attention"}
+              {adminChallengeAlertCount}{" "}
+              {adminChallengeAlertCount === 1
+                ? "item needs Admin attention"
+                : "items need Admin attention"}
             </div>
           </div>
           <ArrowUpRight size={15} className="text-orange-400" />
         </Link>
       )}
 
-      <section className="m8-panel rounded-2xl p-5">
-        <div className="m8-section-head">
+      <section className="m8-panel rounded-[22px] p-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
           <div>
-            <div className="brand-kicker mb-1">Snapshot</div>
-            <h3 className="m8-section-title">Your competition status</h3>
+            <div className="brand-kicker mb-1">Competitive Snapshot</div>
+            <h3 className="font-display font-black text-xl tracking-[-0.02em]">
+              Your current form
+            </h3>
           </div>
-          <span className="m8-pill">Live profile</span>
+
+          <Link
+            to={"/players/" + discordPlayer.id}
+            className="text-[10px] uppercase tracking-[0.16em] text-[#697181] hover:text-white inline-flex items-center gap-1"
+          >
+            Open full profile <ArrowUpRight size={12} />
+          </Link>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
@@ -482,80 +493,109 @@ const PersonalDashboard = ({
             value={discordPlayer.currentElo}
             sub={rankPosition ? "Global #" + rankPosition : "Current rating"}
             icon={Trophy}
+            to="/ranking"
           />
           <CompactMetric
-            label="Match Record"
+            label="Mucho8s Record"
             value={record}
             sub={(discordPlayer.totalMatches || 0) + " total matches"}
             icon={Gamepad2}
+            to={"/players/" + discordPlayer.id}
           />
           <CompactMetric
             label="Streak"
             value={streak === 0 ? "—" : (streak > 0 ? "+" : "-") + Math.abs(streak)}
-            sub={streak > 0 ? "Win streak" : streak < 0 ? "Loss streak" : "No active streak"}
+            sub={
+              streak > 0
+                ? "Win streak"
+                : streak < 0
+                  ? "Loss streak"
+                  : "No active streak"
+            }
             icon={Flame}
-            tone={streak > 0 ? "text-orange-400" : streak < 0 ? "text-red-400" : ""}
+            tone={
+              streak > 0
+                ? "text-orange-400"
+                : streak < 0
+                  ? "text-red-400"
+                  : ""
+            }
+            to={"/players/" + discordPlayer.id}
           />
           <CompactMetric
-            label="Money Won"
+            label="Mucho8s Winnings"
             value={euro(moneyWon)}
-            sub={challengeWins + " verified chall wins"}
+            sub="Verified money pairings"
             icon={WalletCards}
             tone="text-emerald-400"
+            to="/matches"
           />
         </div>
-      </section>
 
-      <section className="m8-panel rounded-2xl p-5">
-        <div className="m8-section-head">
-          <div>
-            <div className="brand-kicker mb-1">Latest Matches</div>
-            <h3 className="m8-section-title">Your recent match results</h3>
+        <div className="mt-5 pt-4 border-t border-[#1D222C]">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div>
+              <div className="text-[9px] uppercase tracking-[0.16em] text-[#697181]">
+                Recent activity
+              </div>
+              <div className="font-display font-bold text-base mt-0.5">
+                Latest Mucho8s
+              </div>
+            </div>
+
+            <Link
+              to="/matches"
+              className="text-xs font-semibold text-magma inline-flex items-center gap-1"
+            >
+              View all <ArrowUpRight size={13} />
+            </Link>
           </div>
-          <Link to="/matches" className="text-xs font-semibold text-magma inline-flex items-center gap-1">
-            View all <ArrowUpRight size={13} />
-          </Link>
+
+          {activity.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-[#2A303B] bg-[#0F1218] py-8 text-center text-sm text-muted-foreground">
+              No Mucho8s activity yet.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5">
+              {activity.map((item) => (
+                <Link
+                  key={item.id}
+                  to="/matches"
+                  className="group rounded-xl border border-[#222834] bg-[#0F1218] p-3.5 flex items-center gap-3 transition-all hover:border-[#3A4350] hover:bg-[#131820]"
+                >
+                  <div
+                    className={
+                      "w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 " +
+                      (item.won
+                        ? "bg-emerald-500/[0.07] border-emerald-500/20 text-emerald-400"
+                        : "bg-red-500/[0.06] border-red-500/20 text-red-400")
+                    }
+                  >
+                    <Trophy size={16} />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm flex items-center gap-1.5">
+                      <span>{item.title}</span>
+                      <ArrowUpRight
+                        size={11}
+                        className="text-[#596170] opacity-0 group-hover:opacity-100 transition-opacity"
+                      />
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate mt-0.5">
+                      {item.detail}
+                    </div>
+                  </div>
+
+                  <div className="text-[10px] text-[#697181] shrink-0">
+                    {item.date ? new Date(item.date).toLocaleDateString() : ""}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
-
-        {activity.length === 0 ? (
-          <div className="m8-panel-quiet rounded-xl py-10 text-center text-sm text-muted-foreground">
-            No activity yet.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5">
-            {activity.map((item) => (
-              <Link
-                key={item.id}
-                to={item.to}
-                className="interactive-row rounded-xl p-3.5 flex items-center gap-3"
-              >
-                <div className={"w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 " + (
-                  item.won
-                    ? "bg-emerald-500/[0.07] border-emerald-500/20 text-emerald-400"
-                    : "bg-red-500/[0.06] border-red-500/20 text-red-400"
-                )}>
-                  {item.type === "chall" ? <WalletCards size={16} /> : <Trophy size={16} />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm">{item.title}</div>
-                  <div className="text-xs text-muted-foreground truncate mt-0.5">{item.detail}</div>
-                </div>
-                <div className="text-[10px] text-[#697181] shrink-0">
-                  {item.date ? new Date(item.date).toLocaleDateString() : ""}
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
       </section>
-
-      <CompetitionOverview
-        players={players}
-        matches={matches}
-        playerMap={playerMap}
-        playerAvatars={playerAvatars}
-        liveMatches={liveMatches}
-      />
     </div>
   );
 };
@@ -570,7 +610,6 @@ export default function Dashboard() {
     discordSession,
     discordPlayer,
     discordLoading,
-    challenges,
     signInWithDiscord,
     isAdmin,
     adminChallengeAlertCount,
@@ -601,7 +640,6 @@ export default function Dashboard() {
       playerAvatars={playerAvatars}
       matches={matches}
       playerMap={playerMap}
-      challenges={challenges}
       season={season}
       isAdmin={isAdmin}
       adminChallengeAlertCount={adminChallengeAlertCount}
