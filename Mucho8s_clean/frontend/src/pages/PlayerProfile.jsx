@@ -5,7 +5,7 @@ import { winRate, tierOf } from "@/lib/elo";
 import { duoChemistry } from "@/lib/chemistry";
 import { analyzeBountyHistory, buildBountyAchievementCatalog } from "@/lib/bountyAchievements";
 import { buildPlayerRivalries } from "@/lib/rivalries";
-import { PlayerAvatar, EloBadge, Last10, MerdaBadge } from "@/components/shared";
+import { PlayerAvatar, EloBadge, Last10, MerdaBadge, RankProgress } from "@/components/shared";
 import ModeBadge, { isDirectMucho1v1 } from "@/components/ModeBadge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -71,7 +71,7 @@ const TROPHY_FAMILY_STYLES = {
     hex: "#4F8CFF",
   },
   TrophyTourney: {
-    text: "text-magma",
+    text: "text-[#D5A33A]",
     border: "border-[#D5A33A]/25",
     bg: "bg-[#D5A33A]/[0.06]",
     hover: "hover:border-[#D5A33A]/45",
@@ -108,13 +108,13 @@ export default function PlayerProfile() {
   const isOwnProfile = Boolean(discordSession && discordPlayer?.id === id);
   const requestedTab = searchParams.get("tab");
   const profileTab =
-    isOwnProfile && ["edit", "challenges"].includes(requestedTab)
+    isOwnProfile && ["mucho8s", "edit", "challenges"].includes(requestedTab)
       ? requestedTab
       : "overview";
 
   const setProfileTab = (tab) => {
     if (!isOwnProfile) return;
-    if (["edit", "challenges"].includes(tab)) {
+    if (["mucho8s", "edit", "challenges"].includes(tab)) {
       setSearchParams({ tab }, { replace: true });
     } else {
       setSearchParams({}, { replace: true });
@@ -1088,6 +1088,10 @@ export default function PlayerProfile() {
               <div className="mt-3 text-xs text-[#8A94A4]">
                 <span className="text-[#C8CED8]">{player.totalMatches || 0} matches</span>
               </div>
+
+              <div className="mt-4 max-w-xl">
+                <RankProgress elo={player.currentElo} />
+              </div>
             </div>
 
             {!isOwnProfile && (
@@ -1104,6 +1108,11 @@ export default function PlayerProfile() {
           <div className="m8-profile-stat-strip mt-6">
             {[
               {
+                label: "Mucho8s Matches",
+                value: Number(player.totalMatches || 0),
+                tone: "text-white",
+              },
+              {
                 label: "Peak Elo",
                 value: player.peakElo,
                 tone: "text-[#D5A33A]",
@@ -1114,14 +1123,21 @@ export default function PlayerProfile() {
                 tone: "text-white",
               },
               {
-                label: "Mucho8s Win Rate",
+                label: "Win Rate",
                 value: `${winRate(player)}%`,
                 tone: "text-white",
               },
               {
-                label: "Mucho8s Winnings",
+                label: "Winnings",
                 value: `€${Number(mucho8sInsights.wonValue || 0).toFixed(0)}`,
                 tone: "text-emerald-400",
+              },
+              {
+                label: "Best Win Streak",
+                value: mucho8sInsights.bestWinStreak
+                  ? `${mucho8sInsights.bestWinStreak}W`
+                  : "—",
+                tone: "text-magma",
               },
             ].map((item) => (
               <div key={item.label} className="m8-profile-stat">
@@ -1176,7 +1192,7 @@ export default function PlayerProfile() {
 
       {isOwnProfile && (
         <div
-          className="order-2 grid grid-cols-1 sm:inline-grid sm:grid-cols-3 gap-1 p-1 rounded-2xl bg-[#0F1218] border border-[#242A35] w-full sm:w-fit"
+          className="order-2 grid grid-cols-2 sm:inline-grid sm:grid-cols-4 gap-1 p-1 rounded-2xl bg-[#0F1218] border border-[#242A35] w-full sm:w-fit"
           role="tablist"
           aria-label="My Profile sections"
         >
@@ -1194,6 +1210,22 @@ export default function PlayerProfile() {
           >
             <UserCircle size={16} />
             Profile
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={profileTab === "mucho8s"}
+            onClick={() => setProfileTab("mucho8s")}
+            className={`h-11 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold transition-all ${
+              profileTab === "mucho8s"
+                ? "bg-magma text-white shadow-sm"
+                : "text-[#9DA5B4] hover:text-white hover:bg-white/[0.04]"
+            }`}
+            data-testid="profile-tab-mucho8s"
+          >
+            <Gamepad2 size={16} />
+            Mucho8s
           </button>
 
           <button
@@ -1607,6 +1639,122 @@ export default function PlayerProfile() {
           )}
         </DialogContent>
       </Dialog>
+
+      {isOwnProfile && profileTab === "mucho8s" && (
+        <div className="m8-panel rounded-[22px] p-4 sm:p-5 order-3" data-testid="my-mucho8s-history">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
+            <div>
+              <div className="brand-kicker mb-1 text-magma">Mucho8s</div>
+              <h3 className="font-display font-black text-xl">Mucho8s History</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Complete verified team history, Elo change, pairing and result.
+              </p>
+            </div>
+            <Link
+              to="/matches"
+              className="text-[10px] uppercase tracking-widest text-magma hover:text-white inline-flex items-center gap-1"
+            >
+              Match Center <ChevronRight size={12} />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-4">
+            <div className="m8-stat-card">
+              <div className="brand-kicker">Matches</div>
+              <div className="font-display text-xl font-black mt-1">{player.totalMatches || 0}</div>
+            </div>
+            <div className="m8-stat-card">
+              <div className="brand-kicker">Record</div>
+              <div className="font-display text-xl font-black mt-1">
+                {player.wins || 0}W - {player.losses || 0}L
+              </div>
+            </div>
+            <div className="m8-stat-card">
+              <div className="brand-kicker">Win Rate</div>
+              <div className="font-display text-xl font-black mt-1">{winRate(player)}%</div>
+            </div>
+            <div className="m8-stat-card">
+              <div className="brand-kicker">Winnings</div>
+              <div className="font-display text-xl font-black mt-1 text-emerald-400">
+                €{Number(mucho8sInsights.wonValue || 0).toFixed(0)}
+              </div>
+            </div>
+          </div>
+
+          {playerMatches.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-[#2A303B] bg-[#0F1218] py-8 text-center text-sm text-muted-foreground">
+              No Mucho8s history yet.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {playerMatches.slice(0, 30).map((m) => {
+                const teamA = (m.teamA || []).map(String);
+                const teamB = (m.teamB || []).map(String);
+                const inA = teamA.includes(String(player.id));
+                const myTeam = inA ? teamA : teamB;
+                const opponents = inA ? teamB : teamA;
+                const winnerSide = m.winner === "B" ? "B" : "A";
+                const won = (inA && winnerSide === "A") || (!inA && winnerSide === "B");
+                const eloDelta = Number(m.eloChanges?.[player.id] || 0);
+                const pairing = (Array.isArray(m.pairings) ? m.pairings : []).find(
+                  (pair) =>
+                    String(pair?.playerAId || "") === String(player.id) ||
+                    String(pair?.playerBId || "") === String(player.id)
+                );
+
+                return (
+                  <Link
+                    key={m.id}
+                    to="/matches"
+                    className="group rounded-xl border border-[#222834] bg-[#0F1218] p-3.5 flex flex-col lg:flex-row lg:items-center gap-3 transition-all hover:border-[#3A4350]"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <ModeBadge mode="mucho8s" compact />
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`font-black text-xs uppercase ${
+                            won ? "text-emerald-400" : "text-red-400"
+                          }`}>
+                            {won ? "WIN" : "LOSS"}
+                          </span>
+                          <span className="text-[10px] text-[#697181]">
+                            {m.game || "Game"}{m.mode ? ` · ${m.mode}` : ""}
+                          </span>
+                        </div>
+                        <div className="text-sm font-semibold truncate mt-1">
+                          vs {opponents.map((pid) => playerMap[pid]?.name).filter(Boolean).join(" · ") || "Opponent team"}
+                        </div>
+                        <div className="text-[10px] text-[#697181] mt-1">
+                          {m.date ? new Date(m.date).toLocaleDateString() : "—"}
+                          {myTeam.length > 1 ? ` · ${myTeam.length}v${opponents.length}` : ""}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                      {pairing && Number(pairing.amount || 0) > 0 && (
+                        <span className="m8-pill text-magma">
+                          €{Number(pairing.amount).toFixed(2)}
+                        </span>
+                      )}
+                      <span className={`m8-pill font-mono ${
+                        eloDelta > 0
+                          ? "text-emerald-400"
+                          : eloDelta < 0
+                            ? "text-red-400"
+                            : "text-[#8D95A4]"
+                      }`}>
+                        {eloDelta > 0 ? "+" : ""}{eloDelta} Elo
+                      </span>
+                      <ChevronRight size={13} className="text-[#596170] group-hover:text-white" />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {isOwnProfile && profileTab === "edit" && (
         <div className="m8-panel rounded-2xl p-4 sm:p-5 order-4" data-testid="edit-profile-panel">
