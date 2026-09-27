@@ -15,6 +15,7 @@ import {
   Flame,
   BookOpen,
   Landmark,
+  Newspaper,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { tierOf } from "@/lib/elo";
@@ -27,6 +28,13 @@ const MAIN_NAV = [
     end: true,
     testid: "nav-dashboard-link",
     activeIcon: "text-white",
+  },
+  {
+    to: "/news",
+    label: "News",
+    icon: Newspaper,
+    testid: "nav-news-link",
+    activeIcon: "text-[#D5A33A]",
   },
   {
     to: "/play",
