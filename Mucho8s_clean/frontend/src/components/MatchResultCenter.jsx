@@ -204,7 +204,7 @@ export default function MatchResultCenter({ teamPlayerIds = null, reportId = "",
                           <span className="font-semibold truncate">
                             {safePlayerMap[pair.playerBId]?.name || "Bravo"}
                           </span>
-                          <span className="font-mono font-black text-[#D5A33A] shrink-0">
+                          <span className="font-mono font-black text-emerald-400 shrink-0">
                             €{Number(pair.amount || 0).toFixed(2)}
                           </span>
                           <span className="text-[9px] uppercase text-muted-foreground shrink-0">
