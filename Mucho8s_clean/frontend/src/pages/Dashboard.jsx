@@ -3,6 +3,12 @@ import { Link } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar, EloBadge, RankBadge, RankProgress } from "@/components/shared";
 import ModeBadge, { isDirectMucho1v1 } from "@/components/ModeBadge";
+import {
+  TROPHY8S_RULES,
+  MAX_TROPHY_LEVEL,
+  trophyGoalForLevel,
+  trophyRewardForLevel,
+} from "@/lib/trophyRules";
 import { Button } from "@/components/ui/button";
 import {
   ArrowUpRight,
@@ -381,35 +387,59 @@ const PersonalDashboard = ({
       bestWinStreak = Math.max(bestWinStreak, runningWins);
     });
 
+    const levels = discordPlayer?.trophy8sLevels || {};
+    const candidate = (id, value, detail) => {
+      const rule = TROPHY8S_RULES[id];
+      const level = Math.max(0, Number(levels?.[id] || 0));
+      if (!rule || level >= MAX_TROPHY_LEVEL) return null;
+
+      const nextLevel = level + 1;
+      const previousGoal = level > 0 ? trophyGoalForLevel(rule, level) : 0;
+      const goal = trophyGoalForLevel(rule, nextLevel);
+      const progress = Math.min(
+        100,
+        Math.max(
+          0,
+          Math.round(
+            ((Number(value || 0) - previousGoal) /
+              Math.max(1, goal - previousGoal)) *
+              100
+          )
+        )
+      );
+
+      return {
+        id,
+        title: rule.title,
+        value: Number(value || 0),
+        level,
+        nextLevel,
+        goal,
+        detail,
+        reward: trophyRewardForLevel(rule, nextLevel),
+        progress,
+      };
+    };
+
     const candidates = [
-      {
-        id: "veteran",
-        title: "Veteran",
-        value: Number(discordPlayer.totalMatches || 0),
-        goal: 40,
-        detail: "Play 40 Mucho8s",
-      },
-      {
-        id: "on-fire",
-        title: "On Fire",
-        value: bestWinStreak,
-        goal: 4,
-        detail: "Reach a 4-win streak",
-      },
-      {
-        id: "money-maker",
-        title: "Money Maker",
-        value: Number(moneyWon || 0),
-        goal: 50,
-        detail: "Win €50 in Mucho8s pairings",
-      },
+      candidate(
+        "veteran",
+        Number(discordPlayer.totalMatches || 0),
+        "Play Mucho8s matches"
+      ),
+      candidate(
+        "on-fire",
+        bestWinStreak,
+        "Build a longer Mucho8s win streak"
+      ),
+      candidate(
+        "money-maker",
+        Number(moneyWon || 0),
+        "Win value through Mucho8s pairings"
+      ),
     ]
-      .filter((item) => item.value < item.goal)
-      .map((item) => ({
-        ...item,
-        progress: Math.min(100, Math.round((item.value / item.goal) * 100)),
-      }))
-      .sort((a, b) => b.progress - a.progress);
+      .filter(Boolean)
+      .sort((a, b) => b.progress - a.progress || a.goal - b.goal);
 
     return {
       bestWinStreak,
@@ -715,7 +745,7 @@ const PersonalDashboard = ({
                   <div>
                     <div className="brand-kicker text-magma mb-1">Next Trophy8s</div>
                     <div className="font-display font-black text-lg">
-                      {dashboardProgress.nextTrophy.title}
+                      {dashboardProgress.nextTrophy.title} · Lv {dashboardProgress.nextTrophy.nextLevel}/{MAX_TROPHY_LEVEL}
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
                       {dashboardProgress.nextTrophy.detail}
@@ -738,7 +768,7 @@ const PersonalDashboard = ({
                     {dashboardProgress.nextTrophy.progress}% complete
                   </span>
                   <span className="font-black text-magma inline-flex items-center gap-1">
-                    +3 Elo on unlock <ArrowUpRight size={11} />
+                    +{dashboardProgress.nextTrophy.reward} Elo on unlock <ArrowUpRight size={11} />
                   </span>
                 </div>
               </Link>
