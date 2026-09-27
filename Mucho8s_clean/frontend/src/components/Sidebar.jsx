@@ -14,6 +14,7 @@ import {
   Swords,
   Flame,
   BookOpen,
+  Landmark,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { tierOf } from "@/lib/elo";
@@ -76,9 +77,10 @@ const COMPETITION_NAV = [
 
 const CHALLENGES_NAV = {
   to: "/challenges",
-  label: "My Challenges",
-  icon: Bell,
+  label: "Mucho1v1",
+  icon: Landmark,
   testid: "nav-challenges-link",
+  activeIcon: "text-emerald-400",
 };
 
 const ALL_NAV = [
@@ -161,7 +163,7 @@ const Brand = () => (
       <div className="font-display font-extrabold text-[14px] tracking-tight whitespace-nowrap">
         MUCHO<span className="text-magma">MONEY</span><span className="text-white">8s</span>
       </div>
-      <div className="text-[9px] uppercase tracking-[0.2em] text-[#697181] mt-1">Competitive COD 8s</div>
+      <div className="text-[9px] uppercase tracking-[0.2em] text-[#697181] mt-1">Competitive Match Platform</div>
     </div>
   </div>
 );
