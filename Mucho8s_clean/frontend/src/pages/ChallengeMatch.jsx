@@ -4,6 +4,7 @@ import { useData } from "@/context/DataContext";
 import { PlayerAvatar, EloBadge } from "@/components/shared";
 import ChallengeSeriesCard from "@/components/ChallengeSeriesCard";
 import ChallengeChat from "@/components/ChallengeChat";
+import ModeBadge from "@/components/ModeBadge";
 import { CHALL_LOSS_AUDIO_SRC } from "@/assets/challLossAudio";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,7 +32,7 @@ const money = (challenge) =>
 const statusLabel = {
   pending: "Waiting for acceptance",
   accepted: "Match live",
-  declined: "Challenge declined",
+  declined: "Mucho1v1 declined",
   result_pending: "Result verification",
   completed: "Result verified",
   disputed: "Disputed",
@@ -207,7 +208,7 @@ export default function ChallengeMatch() {
     return (
       <div className="m8-panel rounded-2xl p-10 text-center max-w-xl mx-auto">
         <Clock3 size={32} className="text-[#697181] mx-auto mb-3" />
-        <h2 className="font-display text-xl font-bold">Loading challenge...</h2>
+        <h2 className="font-display text-xl font-bold">Loading Mucho1v1...</h2>
         <Button onClick={() => refreshChallenges()} className="mt-4 bg-[#181B26] border border-[#2A303B]">
           Refresh
         </Button>
@@ -219,7 +220,7 @@ export default function ChallengeMatch() {
     return (
       <div className="m8-panel rounded-2xl p-10 text-center max-w-xl mx-auto">
         <AlertTriangle size={32} className="text-orange-400 mx-auto mb-3" />
-        <h2 className="font-display text-xl font-bold">Private challenge</h2>
+        <h2 className="font-display text-xl font-bold">Private Mucho1v1</h2>
         <p className="text-sm text-muted-foreground mt-2">Only the two players involved can open this page.</p>
       </div>
     );
@@ -240,12 +241,12 @@ export default function ChallengeMatch() {
     setBusy("");
     if (!updated) return;
 
-    if (decision === "accept") toast.success("Challenge accepted — match started");
-    else toast("Challenge declined");
+    if (decision === "accept") toast.success("Mucho1v1 accepted — match started");
+    else toast("Mucho1v1 declined");
   };
 
   const cancelPendingChallenge = async () => {
-    const confirmed = window.confirm("Cancel this challenge?");
+    const confirmed = window.confirm("Cancel this Mucho1v1?");
     if (!confirmed) return;
 
     setBusy("cancel");
@@ -253,7 +254,7 @@ export default function ChallengeMatch() {
     setBusy("");
 
     if (!updated) return;
-    toast.success("Challenge cancelled");
+    toast.success("Mucho1v1 cancelled");
   };
 
   const reportWinner = async (reportedWinnerId) => {
@@ -318,7 +319,7 @@ export default function ChallengeMatch() {
     const created = await createRechallenge(challenge.id, amount);
     setBusy("");
     if (!created) return;
-    toast.success("Rematch created");
+    toast.success("Mucho1v1 rematch created");
     navigate("/challenges/" + created.id);
   };
 
@@ -371,7 +372,7 @@ export default function ChallengeMatch() {
           onClick={() => navigate("/challenges")}
           className="m8-pill hover:text-white"
         >
-          <ArrowLeft size={16} /> Challenge Inbox
+          <ArrowLeft size={16} /> Mucho1v1 Inbox
         </button>
         <div className="text-xs uppercase tracking-[0.18em] text-[#697181]">
           #{challenge.id.slice(0, 8)}
@@ -402,7 +403,7 @@ export default function ChallengeMatch() {
 
           <div className="text-center">
             <Swords size={22} className="text-magma mx-auto" />
-            <div className="font-display text-3xl font-black mt-1">{money(challenge)}</div>
+            <div className="font-display text-3xl font-black mt-1 text-emerald-400">{money(challenge)}</div>
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">{platformLabel}</div>
           </div>
 
@@ -451,17 +452,17 @@ export default function ChallengeMatch() {
                 data-testid="cancel-pending-challenge"
               >
                 <X size={16} className="mr-2" />
-                {busy === "cancel" ? "Cancelling..." : "Cancel Challenge"}
+                {busy === "cancel" ? "Cancelling..." : "Cancel Mucho1v1"}
               </Button>
 
               <div className="text-[10px] text-muted-foreground mt-2">
-                Available only while the challenge is still waiting for acceptance.
+                Available only while this Mucho1v1 is waiting for acceptance.
               </div>
             </div>
           ) : (
             <div>
-              <div className="brand-kicker mb-1">Incoming Chall</div>
-              <h3 className="font-display text-xl font-bold">Accept this match?</h3>
+              <div className="brand-kicker mb-1">Incoming Mucho1v1</div>
+              <h3 className="font-display text-xl font-bold">Accept this Mucho1v1?</h3>
               <p className="text-sm text-muted-foreground mt-1 mb-4">
                 {challenger?.name || "Player"} challenged you for {money(challenge)} via {platformLabel}.
               </p>
@@ -476,9 +477,9 @@ export default function ChallengeMatch() {
                 <Button
                   disabled={Boolean(busy)}
                   onClick={() => respond("accept")}
-                  className="h-12 bg-magma hover:bg-[#ff3c4c] text-white font-bold"
+                  className="h-12 bg-emerald-400 hover:bg-emerald-300 text-black font-bold"
                 >
-                  <Check size={16} className="mr-2" /> Accept & Start Match
+                  <Check size={16} className="mr-2" /> Accept & Start
                 </Button>
               </div>
             </div>
@@ -490,10 +491,10 @@ export default function ChallengeMatch() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4 items-start">
           <div className="m8-panel rounded-2xl p-5 border-magma/20">
             <div className="text-center py-2">
-              <div className="brand-kicker mb-1">Match Live</div>
-              <h3 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.03em]">PLAY THE CHALLENGE</h3>
+              <div className="brand-kicker mb-1">Mucho1v1 Live</div>
+              <h3 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.03em]">PLAY MUCHO1V1</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Arrange the match in chat, then report the result.
+                Arrange the Mucho1v1 in chat, then report the result.
               </p>
             </div>
 
@@ -521,7 +522,7 @@ export default function ChallengeMatch() {
 
       {challenge.status === "result_pending" && (
         <div className="m8-panel rounded-2xl p-5">
-          <div className="brand-kicker mb-1">Result Verification</div>
+          <div className="brand-kicker mb-1">Mucho1v1 Result</div>
           <h3 className="font-display text-xl font-bold">Reported winner: {winner?.name || "Unknown"}</h3>
           <p className="text-sm text-muted-foreground mt-1">
             {iReported
@@ -625,7 +626,7 @@ export default function ChallengeMatch() {
 
             {challenge.payment_received_at ? (
               <div className="mt-4 rounded-xl bg-emerald-500/10 border border-emerald-500/25 p-4 text-emerald-400 font-semibold flex items-center gap-2">
-                <ShieldCheck size={18} /> Payment received · chall closed.
+                <ShieldCheck size={18} /> Payment received · Mucho1v1 closed.
               </div>
             ) : challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at ? (
               <div className="mt-4 rounded-xl bg-orange-500/10 border border-orange-500/25 p-4">
@@ -701,7 +702,7 @@ export default function ChallengeMatch() {
                     href={payoutUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="m8-action m8-action-primary w-full h-12 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-extrabold inline-flex items-center justify-center gap-2"
+                    className="m8-action m8-action-primary w-full h-12 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-extrabold inline-flex items-center justify-center gap-2"
                   >
                     PAY {money(challenge)} · {platformLabel}
                     <ExternalLink size={15} />
@@ -760,7 +761,7 @@ export default function ChallengeMatch() {
           <AlertTriangle size={34} className="text-orange-400 mx-auto mb-3" />
           <h3 className="font-display text-2xl font-black tracking-[-0.02em]">Result disputed</h3>
           <p className="text-sm text-muted-foreground mt-2">
-            {challenge.dispute_note || "The challenge is waiting for Admin review."}
+            {challenge.dispute_note || "The Mucho1v1 is waiting for Admin review."}
           </p>
         </div>
       )}
@@ -769,14 +770,14 @@ export default function ChallengeMatch() {
         <div className="m8-panel rounded-2xl p-6 text-center border-red-500/20">
           <X size={32} className="text-red-400 mx-auto mb-3" />
           <h3 className="font-display text-xl font-bold">
-            {challenge.status === "declined" ? "Challenge declined" : "Challenge cancelled"}
+            {challenge.status === "declined" ? "Mucho1v1 declined" : "Mucho1v1 cancelled"}
           </h3>
         </div>
       )}
 
       <div className="text-center">
         <Link to="/challenges" className="text-sm text-muted-foreground hover:text-white">
-          Back to Challenge Inbox
+          Back to Mucho1v1 Inbox
         </Link>
       </div>
     </div>
