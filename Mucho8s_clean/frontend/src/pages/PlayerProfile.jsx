@@ -111,6 +111,8 @@ export default function PlayerProfile() {
         const belongsToPlayer =
           challenge.challenger_player_id === id ||
           challenge.challenged_player_id === id;
+        const source = String(challenge.source || "").toLowerCase();
+        const isDirectMucho1v1 = !["match_pairing", "balancer_pairing"].includes(source);
         const verified = Boolean(
           challenge.status === "completed" &&
           challenge.verified_at &&
@@ -120,7 +122,7 @@ export default function PlayerProfile() {
           challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at
         );
 
-        return belongsToPlayer && verified && !openDispute;
+        return belongsToPlayer && isDirectMucho1v1 && verified && !openDispute;
       })
       .sort((a, b) => new Date(b.verified_at || b.created_at) - new Date(a.verified_at || a.created_at));
 
@@ -157,6 +159,135 @@ export default function PlayerProfile() {
       matchPairings: completed.filter((challenge) => challenge.source === "match_pairing").length,
     };
   }, [publicChallenges, id]);
+
+  const mucho8sInsights = useMemo(() => {
+    const ordered = [...playerMatches].sort(
+      (a, b) => new Date(a.date || 0) - new Date(b.date || 0)
+    );
+
+    const resultFor = (match) => {
+      const inA = (match.teamA || []).includes(id);
+      const winnerSide = match.winner === "B" ? "B" : "A";
+      return {
+        inA,
+        won: (inA && winnerSide === "A") || (!inA && winnerSide === "B"),
+        opponents: (inA ? match.teamB : match.teamA) || [],
+        pairing: (Array.isArray(match.pairings) ? match.pairings : []).find(
+          (pair) => pair?.playerAId === id || pair?.playerBId === id
+        ) || null,
+      };
+    };
+
+    let currentStreak = 0;
+    let currentType = "";
+    if (ordered.length) {
+      const latest = resultFor(ordered[ordered.length - 1]).won ? "W" : "L";
+      currentType = latest;
+      for (let index = ordered.length - 1; index >= 0; index -= 1) {
+        const result = resultFor(ordered[index]).won ? "W" : "L";
+        if (result !== latest) break;
+        currentStreak += 1;
+      }
+    }
+
+    let bestWinStreak = 0;
+    let runningWins = 0;
+    let cleanSweepTrigger = null;
+    let wonValue = 0;
+    let maxWonPairing = 0;
+    let moneyMakerTrigger = null;
+    let highRollerTrigger = null;
+    let rivalryTrigger = null;
+    let nemesisTrigger = null;
+    let runItBackTrigger = null;
+
+    const h2h = new Map();
+    const lastByOpponent = new Map();
+
+    ordered.forEach((match) => {
+      const { won, opponents, pairing } = resultFor(match);
+
+      runningWins = won ? runningWins + 1 : 0;
+      bestWinStreak = Math.max(bestWinStreak, runningWins);
+      if (!cleanSweepTrigger && runningWins === 4) {
+        cleanSweepTrigger = { match };
+      }
+
+      const amount = Math.max(0, Number(pairing?.amount) || 0);
+      if (won && amount > 0) {
+        wonValue += amount;
+        maxWonPairing = Math.max(maxWonPairing, amount);
+
+        if (!moneyMakerTrigger && wonValue >= 50) {
+          moneyMakerTrigger = { match, cumulativeWonValue: wonValue };
+        }
+        if (!highRollerTrigger && amount >= 20) {
+          highRollerTrigger = { match, amount };
+        }
+      }
+
+      opponents.forEach((opponentId) => {
+        const key = String(opponentId);
+        const row = h2h.get(key) || {
+          opponentId,
+          played: 0,
+          wins: 0,
+          losses: 0,
+        };
+
+        row.played += 1;
+        if (won) row.wins += 1;
+        else row.losses += 1;
+        h2h.set(key, row);
+
+        if (!rivalryTrigger && row.played === 8) {
+          rivalryTrigger = { match, opponentId };
+        }
+        if (!nemesisTrigger && row.wins === 4) {
+          nemesisTrigger = { match, opponentId };
+        }
+
+        const previous = lastByOpponent.get(key);
+        if (!runItBackTrigger && won && previous?.result === "L") {
+          runItBackTrigger = {
+            match,
+            opponentId,
+            previousDate: previous.date,
+          };
+        }
+        lastByOpponent.set(key, {
+          result: won ? "W" : "L",
+          date: match.date || null,
+        });
+      });
+    });
+
+    const headToHead = [...h2h.values()];
+    return {
+      currentStreak,
+      currentType,
+      bestWinStreak,
+      wonValue,
+      maxWonPairing,
+      maxH2HPlayed: headToHead.reduce(
+        (best, row) => Math.max(best, Number(row.played || 0)),
+        0
+      ),
+      maxH2HWins: headToHead.reduce(
+        (best, row) => Math.max(best, Number(row.wins || 0)),
+        0
+      ),
+      runItBack: Boolean(runItBackTrigger),
+      triggers: {
+        moneyMaker: moneyMakerTrigger,
+        highRoller: highRollerTrigger,
+        rivalry: rivalryTrigger,
+        nemesis: nemesisTrigger,
+        cleanSweep: cleanSweepTrigger,
+        runItBack: runItBackTrigger,
+      },
+    };
+  }, [playerMatches, id]);
 
   const rivalries = useMemo(
     () => buildPlayerRivalries(id, matches, publicChallenges),
@@ -319,8 +450,18 @@ export default function PlayerProfile() {
   const trophyChallenges = useMemo(() => {
     if (!player) return [];
 
-    const clamp = (value, goal) => Math.min(100, Math.max(0, Math.round((Number(value || 0) / goal) * 100)));
-    const challenge = ({ id: trophyId, title, description, emoji, value, goal, unit = "", unlocked = null }) => ({
+    const clamp = (value, goal) =>
+      Math.min(100, Math.max(0, Math.round((Number(value || 0) / goal) * 100)));
+    const challenge = ({
+      id: trophyId,
+      title,
+      description,
+      emoji,
+      value,
+      goal,
+      unit = "",
+      unlocked = null,
+    }) => ({
       id: trophyId,
       title,
       description,
@@ -328,6 +469,7 @@ export default function PlayerProfile() {
       value: Number(value || 0),
       goal,
       unit,
+      source: "Mucho8s",
       unlocked: unlocked === null ? Number(value || 0) >= goal : Boolean(unlocked),
       progress: unlocked === true ? 100 : clamp(value, goal),
     });
@@ -336,70 +478,70 @@ export default function PlayerProfile() {
       challenge({
         id: "on-fire",
         title: "On Fire",
-        description: "Vinci 4 matches consecutive",
+        description: "Reach a 4-win streak in Mucho8s",
         emoji: "🔥",
-        value: Math.max(0, Number(player.currentStreak || 0)),
+        value: mucho8sInsights.bestWinStreak,
         goal: 4,
         unit: " wins",
       }),
       challenge({
         id: "unstoppable",
         title: "Unstoppable",
-        description: "Win 8 matches consecutive",
+        description: "Reach an 8-win streak in Mucho8s",
         emoji: "☢️",
-        value: Math.max(0, Number(player.currentStreak || 0)),
+        value: mucho8sInsights.bestWinStreak,
         goal: 8,
         unit: " wins",
       }),
       challenge({
         id: "money-maker",
         title: "Money Maker",
-        description: "Win 50 value in verified challenges",
+        description: "Win €50 through Mucho8s money pairings",
         emoji: "💰",
-        value: challengeStats.wonValue,
+        value: mucho8sInsights.wonValue,
         goal: 50,
-        unit: " value",
+        unit: " €",
       }),
       challenge({
         id: "high-roller",
         title: "High Roller",
-        description: "Win a single challenge worth at least 20",
+        description: "Win a Mucho8s pairing worth at least €20",
         emoji: "💎",
-        value: challengeInsights.maxWonChallenge,
+        value: mucho8sInsights.maxWonPairing,
         goal: 20,
-        unit: " value",
+        unit: " €",
       }),
       challenge({
         id: "rivalry",
         title: "Rivalry",
-        description: "Play 8 challenges against the same player",
+        description: "Meet the same player 8 times in Mucho8s",
         emoji: "⚔️",
-        value: challengeInsights.maxH2HPlayed,
+        value: mucho8sInsights.maxH2HPlayed,
         goal: 8,
-        unit: " challenges",
+        unit: " meetings",
       }),
       challenge({
         id: "nemesis",
         title: "Nemesis",
-        description: "Beat the same player 4 times",
+        description: "Beat the same player 4 times in Mucho8s",
         emoji: "👑",
-        value: challengeInsights.maxH2HWins,
+        value: mucho8sInsights.maxH2HWins,
         goal: 4,
         unit: " wins",
       }),
       challenge({
         id: "clean-sweep",
         title: "Clean Sweep",
-        description: "Win 4 challenges consecutive",
+        description: "Win 4 Mucho8s matches in a row",
         emoji: "🧹",
-        value: challengeInsights.currentType === "W" ? challengeInsights.currentStreak : 0,
+        value: mucho8sInsights.bestWinStreak,
         goal: 4,
         unit: " wins",
       }),
       challenge({
         id: "veteran",
         title: "Veteran",
-        description: "Play 40 matches",
+        description: "Play 40 Mucho8s matches",
         emoji: "🧱",
         value: Number(player.totalMatches || 0),
         goal: 40,
@@ -408,15 +550,15 @@ export default function PlayerProfile() {
       challenge({
         id: "run-it-back",
         title: "Run It Back",
-        description: "Lose to a player, then beat them in the next challenge",
+        description: "Lose to a player in Mucho8s, then beat them in the next meeting",
         emoji: "🔄",
-        value: challengeInsights.runItBack ? 1 : 0,
+        value: mucho8sInsights.runItBack ? 1 : 0,
         goal: 1,
         unit: "",
-        unlocked: challengeInsights.runItBack,
+        unlocked: mucho8sInsights.runItBack,
       }),
     ];
-  }, [player, challengeStats.wonValue, challengeInsights]);
+  }, [player, mucho8sInsights]);
 
   const nextTrophyChallenges = useMemo(
     () =>
@@ -440,6 +582,7 @@ export default function PlayerProfile() {
         detail: `Automatic every 3 wins in a row · ${player.mvpCount} ${player.mvpCount === 1 ? "MVP" : "MVP"}`,
         count: Number(player.mvpCount || 0),
         emoji: "🏆",
+        source: "Mucho8s",
       });
     }
 
@@ -451,6 +594,7 @@ export default function PlayerProfile() {
         detail: `Active x${player.merdaCount} · ogni 3 wins in a row ne elimini 1`,
         count: Number(player.merdaCount || 0),
         emoji: "💩",
+        source: "Mucho8s",
       });
     }
 
@@ -464,6 +608,7 @@ export default function PlayerProfile() {
           detail: item.description,
           count: null,
           emoji: item.emoji,
+          source: item.source || "Mucho8s",
         });
       });
 
@@ -476,11 +621,6 @@ export default function PlayerProfile() {
     const byId = {};
     const chronologicalMatches = [...playerMatches].sort(
       (a, b) => new Date(a.date || 0) - new Date(b.date || 0)
-    );
-    const chronologicalChallenges = [...challengeStats.completed].sort(
-      (a, b) =>
-        new Date(a.verified_at || a.created_at || 0) -
-        new Date(b.verified_at || b.created_at || 0)
     );
 
     const opponentName = (opponentId) =>
@@ -496,30 +636,13 @@ export default function PlayerProfile() {
       );
 
       return {
-        id: String(match.id || `match-${match.date || Math.random()}`),
+        id: String(match.id || `match-${match.date || "unknown"}`),
         date: match.date || null,
         opponent: opponents.map(opponentName).join(" · ") || "Opponent team",
         result: won ? "Win" : "Loss",
-        context: [match.game, match.mode].filter(Boolean).join(" · "),
+        context: ["Mucho8s", match.game, match.mode].filter(Boolean).join(" · "),
         stake: Math.max(0, Number(pairing?.amount) || 0),
-        ...extra,
-      };
-    };
-
-    const challengeEvent = (challenge, extra = {}) => {
-      const opponentId =
-        challenge.challenger_player_id === id
-          ? challenge.challenged_player_id
-          : challenge.challenger_player_id;
-      const won = challenge.reported_winner_player_id === id;
-      return {
-        id: String(challenge.id || `chall-${challenge.verified_at || challenge.created_at || Math.random()}`),
-        date: challenge.verified_at || challenge.result_reported_at || challenge.created_at || null,
-        opponent: opponentName(opponentId),
-        result: won ? "Win" : "Loss",
-        context: "1v1 Chall",
-        stake: Math.max(0, Number(challenge.amount_cents || 0) / 100),
-        platform: String(challenge.platform || "").toLowerCase(),
+        platform: String(pairing?.platform || "").toLowerCase(),
         ...extra,
       };
     };
@@ -532,7 +655,7 @@ export default function PlayerProfile() {
       )
       .map((match, index) =>
         matchEvent(match, {
-          note: `MVP #${index + 1} · awarded on the 3-win streak trigger`,
+          note: `MVP #${index + 1} · Mucho8s 3-win streak reward`,
         })
       );
 
@@ -544,11 +667,11 @@ export default function PlayerProfile() {
       )
       .map((match, index) =>
         matchEvent(match, {
-          note: `MERDA #${index + 1} · awarded on the 3-loss streak trigger`,
+          note: `MERDA #${index + 1} · Mucho8s 3-loss streak penalty`,
         })
       );
 
-    const findMatchStreakTrigger = (goal) => {
+    const findMatchStreakTrigger = (goal, note) => {
       let streak = 0;
       for (const match of chronologicalMatches) {
         const inA = (match.teamA || []).includes(id);
@@ -556,112 +679,96 @@ export default function PlayerProfile() {
         const won = (inA && winnerSide === "A") || (!inA && winnerSide === "B");
         streak = won ? streak + 1 : 0;
         if (streak === goal) {
-          return [matchEvent(match, { note: `Unlocked after ${goal} consecutive match wins` })];
+          return [matchEvent(match, { note })];
         }
       }
       return [];
     };
 
-    byId["on-fire"] = findMatchStreakTrigger(4);
-    byId.unstoppable = findMatchStreakTrigger(8);
+    byId["on-fire"] = findMatchStreakTrigger(
+      4,
+      "Unlocked after a 4-win Mucho8s streak"
+    );
+    byId.unstoppable = findMatchStreakTrigger(
+      8,
+      "Unlocked after an 8-win Mucho8s streak"
+    );
+    byId["clean-sweep"] = findMatchStreakTrigger(
+      4,
+      "Unlocked after 4 consecutive Mucho8s wins"
+    );
 
     if (chronologicalMatches.length >= 40) {
       byId.veteran = [
         matchEvent(chronologicalMatches[39], {
-          note: "This was the 40th recorded match",
+          note: "This was the 40th recorded Mucho8s match",
         }),
       ];
     } else {
       byId.veteran = [];
     }
 
-    const moneyMakerEvents = [];
-    let cumulativeWonValue = 0;
-    for (const challenge of chronologicalChallenges) {
-      if (challenge.reported_winner_player_id !== id) continue;
-      cumulativeWonValue += Math.max(0, Number(challenge.amount_cents || 0) / 100);
-      if (cumulativeWonValue >= 50) {
-        moneyMakerEvents.push(
-          challengeEvent(challenge, {
-            note: `This win pushed verified winnings to €${cumulativeWonValue.toFixed(2)}`,
-          })
-        );
-        break;
-      }
-    }
-    byId["money-maker"] = moneyMakerEvents;
-
-    const highRoller = chronologicalChallenges.find(
-      (challenge) =>
-        challenge.reported_winner_player_id === id &&
-        Number(challenge.amount_cents || 0) / 100 >= 20
-    );
-    byId["high-roller"] = highRoller
-      ? [challengeEvent(highRoller, { note: "Won a single chall worth at least €20" })]
+    const moneyMakerTrigger = mucho8sInsights.triggers.moneyMaker;
+    byId["money-maker"] = moneyMakerTrigger
+      ? [
+          matchEvent(moneyMakerTrigger.match, {
+            note: `This win pushed Mucho8s pairing winnings to €${Number(
+              moneyMakerTrigger.cumulativeWonValue || 0
+            ).toFixed(2)}`,
+          }),
+        ]
       : [];
 
-    const playedByOpponent = new Map();
-    const winsByOpponent = new Map();
-    let rivalryTrigger = null;
-    let nemesisTrigger = null;
-    let challengeWinStreak = 0;
-    let cleanSweepTrigger = null;
-    const lastByOpponent = new Map();
-    let runItBackTrigger = null;
+    const highRollerTrigger = mucho8sInsights.triggers.highRoller;
+    byId["high-roller"] = highRollerTrigger
+      ? [
+          matchEvent(highRollerTrigger.match, {
+            note: `Won a Mucho8s pairing worth €${Number(
+              highRollerTrigger.amount || 0
+            ).toFixed(2)}`,
+          }),
+        ]
+      : [];
 
-    for (const challenge of chronologicalChallenges) {
-      const opponentId =
-        challenge.challenger_player_id === id
-          ? challenge.challenged_player_id
-          : challenge.challenger_player_id;
-      if (!opponentId) continue;
+    const rivalryTrigger = mucho8sInsights.triggers.rivalry;
+    byId.rivalry = rivalryTrigger
+      ? [
+          matchEvent(rivalryTrigger.match, {
+            opponent: opponentName(rivalryTrigger.opponentId),
+            note: `8th Mucho8s meeting against ${opponentName(
+              rivalryTrigger.opponentId
+            )}`,
+          }),
+        ]
+      : [];
 
-      const won = challenge.reported_winner_player_id === id;
-      const played = Number(playedByOpponent.get(opponentId) || 0) + 1;
-      playedByOpponent.set(opponentId, played);
-      if (!rivalryTrigger && played === 8) {
-        rivalryTrigger = challengeEvent(challenge, {
-          note: `8th verified chall against ${opponentName(opponentId)}`,
-        });
-      }
+    const nemesisTrigger = mucho8sInsights.triggers.nemesis;
+    byId.nemesis = nemesisTrigger
+      ? [
+          matchEvent(nemesisTrigger.match, {
+            opponent: opponentName(nemesisTrigger.opponentId),
+            note: `4th Mucho8s win against ${opponentName(
+              nemesisTrigger.opponentId
+            )}`,
+          }),
+        ]
+      : [];
 
-      if (won) {
-        const wins = Number(winsByOpponent.get(opponentId) || 0) + 1;
-        winsByOpponent.set(opponentId, wins);
-        if (!nemesisTrigger && wins === 4) {
-          nemesisTrigger = challengeEvent(challenge, {
-            note: `4th win against ${opponentName(opponentId)}`,
-          });
-        }
-      }
-
-      challengeWinStreak = won ? challengeWinStreak + 1 : 0;
-      if (!cleanSweepTrigger && challengeWinStreak === 4) {
-        cleanSweepTrigger = challengeEvent(challenge, {
-          note: "4th consecutive verified challenge win",
-        });
-      }
-
-      const previous = lastByOpponent.get(opponentId);
-      if (!runItBackTrigger && won && previous?.result === "L") {
-        runItBackTrigger = challengeEvent(challenge, {
-          note: `Beat ${opponentName(opponentId)} immediately after losing the previous chall to them`,
-          previousDate: previous.date,
-        });
-      }
-      lastByOpponent.set(opponentId, {
-        result: won ? "W" : "L",
-        date: challenge.verified_at || challenge.created_at || null,
-      });
-    }
-
-    byId.rivalry = rivalryTrigger ? [rivalryTrigger] : [];
-    byId.nemesis = nemesisTrigger ? [nemesisTrigger] : [];
-    byId["clean-sweep"] = cleanSweepTrigger ? [cleanSweepTrigger] : [];
-    byId["run-it-back"] = runItBackTrigger ? [runItBackTrigger] : [];
+    const runItBackTrigger = mucho8sInsights.triggers.runItBack;
+    byId["run-it-back"] = runItBackTrigger
+      ? [
+          matchEvent(runItBackTrigger.match, {
+            opponent: opponentName(runItBackTrigger.opponentId),
+            note: `Beat ${opponentName(
+              runItBackTrigger.opponentId
+            )} in the next Mucho8s meeting after losing to them`,
+            previousDate: runItBackTrigger.previousDate,
+          }),
+        ]
+      : [];
 
     return byId;
-  }, [player, playerMatches, challengeStats.completed, playerMap, id]);
+  }, [player, playerMatches, playerMap, id, mucho8sInsights]);
 
   const selectedTrophy = trophyCabinet.find(
     (trophy) => trophy.id === selectedTrophyId
@@ -849,7 +956,7 @@ export default function PlayerProfile() {
                 <span><strong className="text-white font-mono">{player.currentElo}</strong> Elo</span>
                 {player.role && <span className="font-bold text-white">{player.role}</span>}
                 <span>{player.totalMatches || 0} matches</span>
-                <span>{challengeStats.wins + challengeStats.losses} challenges</span>
+                <span>{challengeStats.wins + challengeStats.losses} Mucho1v1</span>
                 <span>{player.mvpCount || 0} MVP</span>
                 <span>{player.merdaCount || 0} 💩</span>
               </div>
@@ -872,8 +979,8 @@ export default function PlayerProfile() {
               { label: "Picco Elo", value: player.peakElo, tone: "text-[#D5A33A]" },
               { label: "Record matches", value: `${player.wins || 0}W - ${player.losses || 0}L`, tone: "text-white" },
               { label: "Win Rate", value: `${winRate(player)}%`, tone: "text-white" },
-              { label: "Value Won", value: `${challengeStats.wonValue.toFixed(0)}`, tone: "text-emerald-400" },
-              { label: "Record challenges", value: `${challengeStats.wins}W - ${challengeStats.losses}L`, tone: "text-white" },
+              { label: "Mucho1v1 Won", value: `${challengeStats.wonValue.toFixed(0)}`, tone: "text-emerald-400" },
+              { label: "Mucho1v1 Record", value: `${challengeStats.wins}W - ${challengeStats.losses}L`, tone: "text-white" },
             ].map((item) => (
               <div key={item.label} className="m8-profile-stat">
                 <div className="text-[9px] uppercase tracking-[0.16em] text-[#697181] font-bold">{item.label}</div>
@@ -1231,7 +1338,7 @@ export default function PlayerProfile() {
             <div className="brand-kicker mb-1">Awards</div>
             <h3 className="font-display font-black text-xl tracking-[-0.02em]">Trophy Cabinet</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              MVP 🏆, active MERDA 💩, and unlocked achievements.
+              Mucho8s awards, MVP 🏆, active MERDA 💩, and unlocked achievements.
             </p>
           </div>
           <Trophy size={20} className="text-[#D5A33A]" />
@@ -1279,7 +1386,12 @@ export default function PlayerProfile() {
                     />
                   </div>
                 </div>
-                <div className="font-display font-bold mt-3">{trophy.title}</div>
+                <div className="flex items-center gap-2 mt-3">
+                  <div className="font-display font-bold">{trophy.title}</div>
+                  <span className="h-5 px-1.5 rounded-md border border-magma/20 bg-magma/[0.05] text-magma inline-flex items-center text-[8px] font-black uppercase tracking-[0.12em]">
+                    {trophy.source || "Mucho8s"}
+                  </span>
+                </div>
                 <div className="text-xs text-muted-foreground mt-1">{trophy.detail}</div>
                 <div className="text-[9px] uppercase tracking-widest text-[#697181] mt-3 group-hover:text-[#D5A33A] transition-colors">
                   View unlock history
@@ -1319,7 +1431,7 @@ export default function PlayerProfile() {
               <div className="mt-2">
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <div>
-                    <div className="brand-kicker mb-1">Unlock history</div>
+                    <div className="brand-kicker mb-1">{selectedTrophy.source || "Mucho8s"} · Unlock history</div>
                     <div className="text-sm font-bold">
                       {selectedTrophyEvents.length > 0
                         ? selectedTrophy.id === "mvp" || selectedTrophy.id === "merda"
