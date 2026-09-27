@@ -1836,6 +1836,14 @@ export default function PlayerProfile() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                      {Number(m?.eloContext?.resultDelta) > 0 && (
+                        <span
+                          className="m8-pill text-[#C8CED8]"
+                          title={`Alpha avg ${m.eloContext.teamAElo} · Bravo avg ${m.eloContext.teamBElo}`}
+                        >
+                          Base ±{m.eloContext.resultDelta}
+                        </span>
+                      )}
                       {pairing && Number(pairing.amount || 0) > 0 && (
                         <span className="m8-pill text-emerald-400">
                           €{Number(pairing.amount).toFixed(2)}
