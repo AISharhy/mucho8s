@@ -15,7 +15,7 @@ const HAS_BACKEND = Boolean(BACKEND_URL);
 const STORAGE_MODE = HAS_SUPABASE ? "supabase" : HAS_BACKEND ? "backend" : "local";
 const POLL_MS = 3500;
 
-const makePlayer = (name, startElo = BASE_ELO) => {
+const makePlayer = (name, startElo = MIN_ELO) => {
   const elo = Math.max(MIN_ELO, Math.round(Number(startElo) || BASE_ELO));
   return {
     id: uid(),
@@ -1723,7 +1723,7 @@ export const DataProvider = ({ children }) => {
     }
   }, [admin, fetchState, fetchCompetitionData, fetchDashboardData, fetchPublicChallenges]);
 
-  const addPlayer = useCallback(async (name, startElo = BASE_ELO) => {
+  const addPlayer = useCallback(async (name, startElo = MIN_ELO) => {
     if (STORAGE_MODE === "backend") return backendWrite("/players", { body: { name, startElo } });
     const player = makePlayer(name, startElo);
     const ok = await persistWholeState([...players, player], matches);
@@ -1795,8 +1795,8 @@ export const DataProvider = ({ children }) => {
     if (STORAGE_MODE === "backend") return backendWrite("/reset-stats");
     const resetPlayers = players.map((p) => ({
       ...p,
-      currentElo: BASE_ELO,
-      peakElo: BASE_ELO,
+      currentElo: MIN_ELO,
+      peakElo: MIN_ELO,
       totalMatches: 0,
       wins: 0,
       losses: 0,
@@ -1805,7 +1805,7 @@ export const DataProvider = ({ children }) => {
       currentStreak: 0,
       mvpCount: 0,
       merdaCount: 0,
-      eloHistory: [{ match: 0, elo: BASE_ELO }],
+      eloHistory: [{ match: 0, elo: MIN_ELO }],
     }));
     const ok = await persistWholeState(resetPlayers, []);
     if (ok) void logAdminAction("stats.reset", "database", "main", {});
