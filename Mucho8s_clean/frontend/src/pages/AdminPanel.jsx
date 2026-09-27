@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RecordMatchDialog } from "@/components/RecordMatchDialog";
+import ModeBadge, { isDirectMucho1v1 } from "@/components/ModeBadge";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -211,22 +212,29 @@ export default function AdminPanel() {
   }, [discordAccounts]);
 
   const challengeStats = useMemo(() => {
-    const active = adminChallenges.filter((challenge) =>
+    const direct = adminChallenges.filter(isDirectMucho1v1);
+    const active = direct.filter((challenge) =>
       ["pending", "accepted", "result_pending"].includes(challenge.status)
     ).length;
-    const disputed = adminChallenges.filter((challenge) =>
+    const disputed = direct.filter((challenge) =>
       challenge.status === "disputed" ||
       (challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at)
     ).length;
-    const completed = adminChallenges.filter((challenge) => challenge.status === "completed").length;
-    const totalStake = adminChallenges.reduce((sum, challenge) => sum + Number(challenge.amount_cents || 0), 0) / 100;
+    const completed = direct.filter((challenge) => challenge.status === "completed").length;
+    const totalStake = direct.reduce(
+      (sum, challenge) => sum + Number(challenge.amount_cents || 0),
+      0
+    ) / 100;
     return { active, disputed, completed, totalStake };
   }, [adminChallenges]);
 
   const disputedChallenges = useMemo(
     () => sortedAdminChallenges.filter((challenge) =>
-      challenge.status === "disputed" ||
-      (challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at)
+      isDirectMucho1v1(challenge) &&
+      (
+        challenge.status === "disputed" ||
+        (challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at)
+      )
     ),
     [sortedAdminChallenges],
   );
@@ -389,7 +397,7 @@ export default function AdminPanel() {
     toast.success(enabled ? "Admin access granted" : "Admin access removed");
   };
 
-  const updateAdminChallenge = async (id, updates, successMessage = "Challenge updated") => {
+  const updateAdminChallenge = async (id, updates, successMessage = "Mucho1v1 updated") => {
     setChallengeBusyId(id);
     const updated = await adminUpdateChallenge(id, updates);
     setChallengeBusyId("");
@@ -410,7 +418,7 @@ export default function AdminPanel() {
     const raw = challengeDrafts[challenge.id]?.amount ?? "0";
     const amount = Number(String(raw).replace(",", "."));
     if (!Number.isFinite(amount) || amount < 0) return toast.error("Invalid amount");
-    await updateAdminChallenge(challenge.id, { amount }, "Challenge amount updated");
+    await updateAdminChallenge(challenge.id, { amount }, "Mucho1v1 amount updated");
   };
 
   const setChallengeWinner = async (challenge, complete = false) => {
@@ -422,7 +430,7 @@ export default function AdminPanel() {
         winnerPlayerId,
         ...(complete ? { status: "completed" } : {}),
       },
-      complete ? "Challenge completed by Admin" : "Challenge winner updated"
+      complete ? "Mucho1v1 completed by Admin" : "Mucho1v1 winner updated"
     );
   };
 
@@ -432,7 +440,7 @@ export default function AdminPanel() {
     setChallengeBusyId("");
     if (!ok) return;
     setAdminChallenges((prev) => prev.filter((item) => item.id !== id));
-    toast.success("Challenge deleted");
+    toast.success("Mucho1v1 deleted");
   };
 
   const beginNewSeason = async () => {
@@ -548,9 +556,9 @@ export default function AdminPanel() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" data-testid="admin-overview">
         {[
           { label: "Players", value: players.length, icon: Users, sub: `${discordAccounts.filter((a) => a.player_id).length} Discord linked` },
-          { label: "Matches", value: matches.length, icon: Gamepad2, sub: "Recorded results" },
-          { label: "Active Chall", value: challengeStats.active, icon: Swords, sub: `${challengeStats.disputed} disputed` },
-          { label: "Challenge Volume", value: `€${challengeStats.totalStake.toFixed(2)}`, icon: WalletCards, sub: `${challengeStats.completed} completed` },
+          { label: "Mucho8s", value: matches.length, icon: Gamepad2, sub: "Recorded team results" },
+          { label: "Active Mucho1v1", value: challengeStats.active, icon: Swords, sub: `${challengeStats.disputed} disputed` },
+          { label: "Mucho1v1 Volume", value: `€${challengeStats.totalStake.toFixed(2)}`, icon: WalletCards, sub: `${challengeStats.completed} completed` },
         ].map((item) => {
           const Icon = item.icon;
           return (
@@ -587,7 +595,7 @@ export default function AdminPanel() {
                 <div className="text-xs text-muted-foreground mt-1">{pendingMatchReports.length} pending or disputed results</div>
               </button>
               <button onClick={() => setActiveTab("matches")} className="w-full text-left m8-panel-quiet rounded-xl p-3 hover:border-[#353E4C] transition-colors">
-                <div className="text-sm font-semibold">Money Chall disputes</div>
+                <div className="text-sm font-semibold">Mucho1v1 disputes</div>
                 <div className="text-xs text-muted-foreground mt-1">{disputedChallenges.length} disputes to review</div>
               </button>
             </div>
@@ -660,7 +668,7 @@ export default function AdminPanel() {
             />
 
             <Button onClick={() => setHistOpen(true)} data-testid="admin-add-historical-btn" className="m8-action justify-start bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150] h-14 rounded-xl">
-              <History size={18} className="mr-2 text-magma" /> Add Historical Match
+              <History size={18} className="mr-2 text-magma" /> Add Historical Mucho8s
             </Button>
           </div>
         </div>
@@ -674,10 +682,10 @@ export default function AdminPanel() {
             <div className="min-w-0">
               <div className="brand-kicker mb-1">Match Control</div>
               <h3 className="font-display font-black text-xl tracking-[-0.025em]">
-                Manage Matches
+                Manage Match Modes
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
-                One place for every competitive match, result, stake and dispute.
+                One control center. Mucho8s and Mucho1v1 stay clearly separated.
               </p>
 
               <div className="flex flex-wrap items-center gap-2 mt-3">
@@ -704,7 +712,7 @@ export default function AdminPanel() {
                 onClick={() => setHistOpen(true)}
                 className="bg-magma hover:bg-[#ff3c4c] text-white rounded-xl"
               >
-                <History size={15} className="mr-1.5" /> New Match
+                <History size={15} className="mr-1.5" /> New Mucho8s
               </Button>
             </div>
           </div>
@@ -767,9 +775,7 @@ export default function AdminPanel() {
                     className="rounded-2xl bg-[#0F1218] border border-[#1D222C] p-4 flex flex-col lg:flex-row lg:items-center gap-4"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-magma/10 border border-magma/20 flex items-center justify-center shrink-0">
-                        <Gamepad2 size={17} className="text-magma" />
-                      </div>
+                      <ModeBadge mode="mucho8s" compact className="shrink-0" />
 
                       <div className="min-w-0 flex-1">
                         <div className="font-display font-bold truncate">
@@ -817,11 +823,11 @@ export default function AdminPanel() {
                         label="Delete"
                         icon={<Trash2 size={14} className="mr-1.5" />}
                         compact
-                        title="Delete this match?"
-                        desc="The match will be removed and player Elo/statistics will be recalculated."
+                        title="Delete this Mucho8s?"
+                        desc="The Mucho8s will be removed and player Elo/statistics will be recalculated."
                         onConfirm={async () => {
                           const ok = await deleteMatch(match.id);
-                          if (ok) toast.success("Match deleted");
+                          if (ok) toast.success("Mucho8s deleted");
                         }}
                       />
                     </div>
@@ -863,9 +869,7 @@ export default function AdminPanel() {
                 >
                   <div className="p-4 flex flex-col lg:flex-row lg:items-center gap-4">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-magma/10 border border-magma/20 flex items-center justify-center shrink-0">
-                        <Gamepad2 size={17} className="text-magma" />
-                      </div>
+                      <ModeBadge mode="mucho1v1" compact className="shrink-0" />
 
                       <div className="min-w-0 flex-1">
                         <div className="font-display font-bold truncate">
@@ -874,11 +878,11 @@ export default function AdminPanel() {
                           {challenged?.name || "Unknown"}
                         </div>
                         <div className="flex flex-wrap items-center gap-2 mt-1 text-[11px] text-muted-foreground">
-                          <span>1v1</span>
+                          <span className="text-emerald-400">Direct money match</span>
                           <span>·</span>
                           <span>{new Date(challenge.created_at).toLocaleString()}</span>
                           <span>·</span>
-                          <span className="text-[#D5A33A]">{amount}</span>
+                          <span className="text-emerald-400">{amount}</span>
                         </div>
                       </div>
                     </div>
@@ -1058,7 +1062,7 @@ export default function AdminPanel() {
 
                         <Button
                           disabled={busy}
-                          onClick={() => updateAdminChallenge(challenge.id, { status: "disputed" }, "Match marked disputed")}
+                          onClick={() => updateAdminChallenge(challenge.id, { status: "disputed" }, "Mucho1v1 marked disputed")}
                           variant="ghost"
                           className="h-10 rounded-xl bg-orange-500/5 border border-orange-500/20 text-orange-400 hover:bg-orange-500/10"
                         >
@@ -1077,7 +1081,7 @@ export default function AdminPanel() {
                             iconOnly
                             testid={`admin-delete-challenge-${challenge.id}`}
                             icon={<Trash2 size={14} />}
-                            title="Delete this match?"
+                            title="Delete this Mucho8s?"
                             desc="This permanently removes the match and its verification history."
                             onConfirm={() => removeAdminChallenge(challenge.id)}
                           />
@@ -1416,7 +1420,7 @@ export default function AdminPanel() {
             <div className="brand-kicker mb-1">Security & History</div>
             <h3 className="font-display font-black text-lg tracking-[-0.015em]">Admin Audit Log</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Tracks important Admin changes to players, matches and challenges.
+              Tracks important Admin changes to players, Mucho8s and Mucho1v1.
             </p>
           </div>
           <Button
@@ -1538,12 +1542,12 @@ export default function AdminPanel() {
         </>
       )}
 
-      <RecordMatchDialog open={histOpen} onOpenChange={setHistOpen} title="Add Historical Match" />
+      <RecordMatchDialog open={histOpen} onOpenChange={setHistOpen} title="Add Historical Mucho8s" />
       <RecordMatchDialog
         open={!!editMatchData}
         onOpenChange={(open) => !open && setEditMatchData(null)}
         editData={editMatchData}
-        title="Edit Match"
+        title="Edit Mucho8s"
       />
       <RecordMatchDialog
         open={!!reportMatchData}
