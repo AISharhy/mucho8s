@@ -1799,12 +1799,18 @@ export default function PlayerProfile() {
                 const opponents = inA ? teamB : teamA;
                 const winnerSide = m.winner === "B" ? "B" : "A";
                 const won = (inA && winnerSide === "A") || (!inA && winnerSide === "B");
-                const eloDelta = Number(m.eloChanges?.[player.id] || 0);
+                const coreEloDelta = Number(m.eloChanges?.[player.id] || 0);
                 const pairing = (Array.isArray(m.pairings) ? m.pairings : []).find(
                   (pair) =>
                     String(pair?.playerAId || "") === String(player.id) ||
                     String(pair?.playerBId || "") === String(player.id)
                 );
+                const stakeElo = Math.max(
+                  0,
+                  Math.round(Number(pairing?.amount || 0))
+                );
+                const stakeDelta = won ? stakeElo : -stakeElo;
+                const eloDelta = coreEloDelta + stakeDelta;
 
                 return (
                   <Link
@@ -1845,8 +1851,11 @@ export default function PlayerProfile() {
                         </span>
                       )}
                       {pairing && Number(pairing.amount || 0) > 0 && (
-                        <span className="m8-pill text-emerald-400">
-                          €{Number(pairing.amount).toFixed(2)}
+                        <span
+                          className="m8-pill text-emerald-400"
+                          title="Stake: 1€ = 1 Elo"
+                        >
+                          Stake {stakeDelta >= 0 ? "+" : ""}{stakeDelta}
                         </span>
                       )}
                       <span className={`m8-pill font-mono ${
@@ -1856,7 +1865,7 @@ export default function PlayerProfile() {
                             ? "text-red-400"
                             : "text-[#8D95A4]"
                       }`}>
-                        {eloDelta > 0 ? "+" : ""}{eloDelta} Elo
+                        Total {eloDelta > 0 ? "+" : ""}{eloDelta} Elo
                       </span>
                       <ChevronRight size={13} className="text-[#596170] group-hover:text-white" />
                     </div>
