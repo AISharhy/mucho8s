@@ -63,7 +63,7 @@ def elo_result_delta(elo, opponent_elo, won):
     return magnitude if won else -magnitude
 
 
-def new_player(name, start_elo=1000):
+def new_player(name, start_elo=500):
     return {
         "id": str(uuid.uuid4()),
         "name": name.strip(),
@@ -452,7 +452,7 @@ async def reset_stats(x_admin_password: Optional[str] = Header(None)):
     require_admin(x_admin_password)
     players = await load_players()
     for p in players:
-        p.update({"currentElo": 1000, "peakElo": 1000, "totalMatches": 0, "wins": 0, "losses": 0,
+        p.update({"currentElo": 500, "peakElo": 500, "totalMatches": 0, "wins": 0, "losses": 0,
                   "avgPlacement": 0, "last10": [], "currentStreak": 0, "mvpCount": 0,
                   "eloHistory": [{"match": 0, "elo": 1000}]})
     await save_players(players)
