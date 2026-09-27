@@ -12,9 +12,9 @@ const euro = (value) =>
 
 export default function ChallengeLeaderboard() {
   const { players, playerMap, playerAvatars, publicChallenges, competitionData } = useData();
-  const currentSeason = Number(competitionData?.current?.season_number || 1);
+  const currentSeason = Number(competitionData?.current?.season_number ?? 1);
   const seasonChallenges = publicChallenges.filter(
-    (challenge) => Number(challenge.season_number || 1) === currentSeason
+    (challenge) => Number(challenge.season_number ?? 1) === currentSeason
   );
 
   const rows = useMemo(() => {
