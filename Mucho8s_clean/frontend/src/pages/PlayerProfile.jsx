@@ -51,6 +51,14 @@ import { LineChart, Line, ResponsiveContainer, Tooltip, YAxis, XAxis, CartesianG
 import { toast } from "sonner";
 
 const TROPHY_FAMILY_STYLES = {
+  General: {
+    text: "text-[#C8CED8]",
+    border: "border-[#343B48]",
+    bg: "bg-[#11151C]",
+    hover: "hover:border-[#505A69]",
+    focus: "focus:ring-[#596170]/30",
+    hex: "#8D95A4",
+  },
   Trophy8s: {
     text: "text-magma",
     border: "border-magma/25",
@@ -86,7 +94,19 @@ const TROPHY_FAMILY_STYLES = {
 };
 
 const trophyFamilyStyle = (source) =>
-  TROPHY_FAMILY_STYLES[source] || TROPHY_FAMILY_STYLES.Trophy8s;
+  TROPHY_FAMILY_STYLES[source] || TROPHY_FAMILY_STYLES.General;
+
+const trophySourceLabel = (trophy) => {
+  if (trophy?.type === "mvp") {
+    if (trophy?.source === "Trophy1v1") return "Mucho1v1 MVP";
+    if (trophy?.source === "TrophyRanked") return "MuchoRanked MVP";
+    if (trophy?.source === "TrophyTourney") return "MuchoTourney MVP";
+    return "Mucho8s MVP";
+  }
+
+  if (trophy?.type === "merda") return "MERDA";
+  return "General Trophy";
+};
 
 export default function PlayerProfile() {
   const { id } = useParams();
@@ -526,7 +546,7 @@ export default function PlayerProfile() {
 
       return {
         ...rule,
-        source: "Trophy8s",
+        source: "General",
         value,
         level: tier.level,
         nextLevel: tier.nextLevel,
@@ -570,6 +590,19 @@ export default function PlayerProfile() {
       });
     }
 
+    if (Number(challengeStats.mvpCount || 0) > 0) {
+      awards.push({
+        id: "mvp-mucho1v1",
+        type: "mvp",
+        title: "MVP",
+        detail: `Mucho1v1 MVP milestones · ${challengeStats.mvpCount} MVP`,
+        count: Number(challengeStats.mvpCount || 0),
+        emoji: null,
+        iconType: "trophy",
+        source: "Trophy1v1",
+      });
+    }
+
     if (Number(player.merdaCount || 0) > 0) {
       awards.push({
         id: "merda",
@@ -578,7 +611,7 @@ export default function PlayerProfile() {
         detail: `Active x${player.merdaCount} · ogni 3 wins in a row ne elimini 1`,
         count: Number(player.merdaCount || 0),
         emoji: "💩",
-        source: "Trophy8s",
+        source: "General",
       });
     }
 
@@ -594,37 +627,36 @@ export default function PlayerProfile() {
             : `Level ${item.level}/${MAX_TROPHY_LEVEL} · next at ${item.goal}${item.unit}`,
           count: item.level,
           emoji: item.emoji,
-          source: item.source || "Trophy8s",
+          source: "General",
         });
       });
 
     return awards;
   }, [player, trophyChallenges]);
 
-  const trophyFamilyCounts = useMemo(() => {
-    const counts = {
-      Trophy8s: 0,
-      Trophy1v1: 0,
-      TrophyRanked: 0,
-      TrophyTourney: 0,
-    };
+  const generalTrophyCount = useMemo(
+    () =>
+      trophyChallenges.reduce(
+        (sum, trophy) => sum + Math.max(0, Number(trophy.level || 0)),
+        0
+      ),
+    [trophyChallenges]
+  );
 
-    trophyCabinet.forEach((trophy) => {
-      const family = trophy.source || "Trophy8s";
-      if (!(family in counts)) return;
-
-      const occurrenceCount =
-        trophy.count !== null && trophy.count !== undefined
-          ? Math.max(0, Number(trophy.count) || 0)
-          : 1;
-
-      counts[family] += occurrenceCount;
-    });
-
-    counts.Trophy1v1 += Math.max(0, Number(challengeStats.mvpCount || 0));
-
-    return counts;
-  }, [trophyCabinet, challengeStats.mvpCount]);
+  const mvpModeCounts = useMemo(
+    () => ({
+      Trophy8s: Math.max(0, Number(player?.mvpCount || 0)),
+      Trophy1v1: Math.max(0, Number(challengeStats.mvpCount || 0)),
+      TrophyRanked: Math.max(0, Number(player?.mvpRankedCount || 0)),
+      TrophyTourney: Math.max(0, Number(player?.mvpTourneyCount || 0)),
+    }),
+    [
+      player?.mvpCount,
+      player?.mvpRankedCount,
+      player?.mvpTourneyCount,
+      challengeStats.mvpCount,
+    ]
+  );
 
   const trophyEvidence = useMemo(() => {
     if (!player) return {};
@@ -669,6 +701,32 @@ export default function PlayerProfile() {
           note: `MVP #${index + 1} · Mucho8s 3-win streak reward`,
         })
       );
+
+    byId["mvp-mucho1v1"] = myChallenges
+      .filter(
+        (challenge) =>
+          challenge.status === "completed" &&
+          challenge.verified_at &&
+          challenge.mvp_awarded === true
+      )
+      .map((challenge, index) => {
+        const opponentId =
+          challenge.challenger_player_id === id
+            ? challenge.challenged_player_id
+            : challenge.challenger_player_id;
+
+        return {
+          id: String(challenge.id || `mucho1v1-mvp-${index}`),
+          date: challenge.verified_at || challenge.updated_at || challenge.created_at,
+          opponent: opponentName(opponentId),
+          result:
+            challenge.reported_winner_player_id === id ? "Win" : "Loss",
+          context: "Mucho1v1",
+          stake: Math.max(0, Number(challenge.amount_cents || 0) / 100),
+          platform: String(challenge.platform || "").toLowerCase(),
+          note: `MVP #${index + 1} · Mucho1v1 3-win streak reward`,
+        };
+      });
 
     byId.merda = chronologicalMatches
       .filter(
@@ -807,7 +865,7 @@ export default function PlayerProfile() {
     });
 
     return byId;
-  }, [player, playerMatches, playerMap, id, mucho8sInsights]);
+  }, [player, playerMatches, playerMap, id, mucho8sInsights, myChallenges]);
 
   const selectedTrophy = trophyCabinet.find(
     (trophy) => trophy.id === selectedTrophyId
@@ -1133,18 +1191,32 @@ export default function PlayerProfile() {
 
             <span className="hidden sm:inline text-[#2F3743]">·</span>
 
-            <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-3">
+              <span
+                title="General Trophies"
+                className="inline-flex items-center gap-1.5 text-[#C8CED8]"
+              >
+                <Trophy size={13} />
+                <strong className="font-mono text-xs font-black">
+                  {generalTrophyCount}
+                </strong>
+              </span>
+
+              <span className="text-[9px] uppercase tracking-widest text-[#596170]">
+                MVP
+              </span>
+
               {[
-                ["Trophy8s", "bg-magma", "text-magma"],
-                ["Trophy1v1", "bg-emerald-400", "text-emerald-400"],
-                ["TrophyRanked", "bg-[#4F8CFF]", "text-[#4F8CFF]"],
-                ["TrophyTourney", "bg-[#D5A33A]", "text-[#D5A33A]"],
-              ].map(([family, dotClass, textClass], index) => (
+                ["Trophy8s", "bg-magma", "text-magma", "Mucho8s MVP"],
+                ["Trophy1v1", "bg-emerald-400", "text-emerald-400", "Mucho1v1 MVP"],
+                ["TrophyRanked", "bg-[#4F8CFF]", "text-[#4F8CFF]", "MuchoRanked MVP"],
+                ["TrophyTourney", "bg-[#D5A33A]", "text-[#D5A33A]", "MuchoTourney MVP"],
+              ].map(([family, dotClass, textClass, label], index) => (
                 <React.Fragment key={family}>
                   {index > 0 && <span className="text-[#3D4654]">·</span>}
                   <span
-                    title={family}
-                    aria-label={`${family}: ${trophyFamilyCounts[family] || 0}`}
+                    title={label}
+                    aria-label={`${label}: ${mvpModeCounts[family] || 0}`}
                     className="inline-flex items-center gap-1.5"
                   >
                     <span
@@ -1152,7 +1224,7 @@ export default function PlayerProfile() {
                       aria-hidden="true"
                     />
                     <strong className={`font-mono text-xs font-black ${textClass}`}>
-                      {trophyFamilyCounts[family] || 0}
+                      {mvpModeCounts[family] || 0}
                     </strong>
                   </span>
                 </React.Fragment>
@@ -1338,7 +1410,7 @@ export default function PlayerProfile() {
                   <h3 className="font-display font-bold text-lg">Mucho8s Points</h3>
                 </div>
                 <div className="text-right">
-                  <div className="font-mono font-black text-magma">
+                  <div className="font-mono font-black text-[#C8CED8]">
                     {unlockedBountyAchievements.length}/{bountyAchievements.length}
                   </div>
                   <div className="text-[9px] uppercase tracking-widest text-muted-foreground">
@@ -1362,7 +1434,7 @@ export default function PlayerProfile() {
                         <div className="font-semibold text-sm truncate">{event.title}</div>
                         <div className="text-[10px] text-muted-foreground truncate">{event.detail}</div>
                       </div>
-                      <div className="font-mono text-xs font-black text-magma">+{event.points}</div>
+                      <div className="font-mono text-xs font-black text-[#C8CED8]">+{event.points}</div>
                     </div>
                   ))}
                 </div>
@@ -1379,30 +1451,30 @@ export default function PlayerProfile() {
         >
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
             <div>
-              <div className="brand-kicker mb-1 text-magma">Trophy8s Progress</div>
+              <div className="brand-kicker mb-1 text-magma">Trophy Progress</div>
               <h3 className="font-display font-black text-xl tracking-[-0.02em]">
                 Next Trophies
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
-                The same challenges level up to X. Requirements grow every level and rewards scale from +3 to +15 Elo.
+                General challenges level up to X. Requirements grow every level and rewards scale from +3 to +15 Elo.
               </p>
             </div>
-            <ModeBadge mode="mucho8s" compact />
+            <span className="m8-pill text-[#C8CED8] border-[#343B48]">General</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {nextTrophyChallenges.map((item) => (
               <div
                 key={item.id}
-                className="rounded-2xl border border-magma/15 bg-[#0F1218] p-4 relative overflow-hidden"
+                className="rounded-2xl border border-[#2C333E] bg-[#0F1218] p-4 relative overflow-hidden"
               >
-                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-magma to-transparent" />
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#8D95A4] to-transparent" />
 
                 <div className="flex items-start justify-between gap-3">
-                  <div className="w-10 h-10 rounded-xl border border-magma/20 bg-magma/[0.06] flex items-center justify-center text-xl">
+                  <div className="w-10 h-10 rounded-xl border border-[#343B48] bg-[#11151C] flex items-center justify-center text-xl">
                     <span aria-hidden="true">{item.emoji}</span>
                   </div>
-                  <span className="font-mono text-[10px] font-black text-magma">
+                  <span className="font-mono text-[10px] font-black text-[#C8CED8]">
                     Lv {item.nextLevel}/{MAX_TROPHY_LEVEL} · {item.value}/{item.goal}
                   </span>
                 </div>
@@ -1415,17 +1487,17 @@ export default function PlayerProfile() {
                 <div className="mt-4">
                   <div className="flex items-center justify-between text-[9px] uppercase tracking-wider mb-1.5">
                     <span className="text-[#697181]">Progress</span>
-                    <span className="font-black text-magma">{item.progress}%</span>
+                    <span className="font-black text-[#C8CED8]">{item.progress}%</span>
                   </div>
                   <div className="h-2 rounded-full border border-[#242A35] bg-[#090C11] overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-magma transition-all duration-500"
+                      className="h-full rounded-full bg-[#8D95A4] transition-all duration-500"
                       style={{ width: `${item.progress}%` }}
                     />
                   </div>
                 </div>
 
-                <div className="mt-3 text-[10px] font-black text-magma">
+                <div className="mt-3 text-[10px] font-black text-[#C8CED8]">
                   +{item.reward} Elo on unlock
                 </div>
               </div>
@@ -1441,10 +1513,10 @@ export default function PlayerProfile() {
             <div className="brand-kicker mb-1">Awards</div>
             <h3 className="font-display font-black text-xl tracking-[-0.02em]">Trophy Cabinet</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Trophy8s awards, MVP, active MERDA 💩 and verified unlock history.
+              General Trophies, mode MVPs, active MERDA 💩 and verified unlock history.
             </p>
           </div>
-          <Trophy size={20} className="text-magma" />
+          <Trophy size={20} className="text-[#C8CED8]" />
         </div>
 
         {trophyCabinet.length === 0 ? (
@@ -1458,13 +1530,13 @@ export default function PlayerProfile() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
             {trophyCabinet.map((trophy) => {
-              const family = trophyFamilyStyle(trophy.source || "Trophy8s");
-              const semanticIconText =
-                trophy.id === "mvp" ? "text-[#D5A33A]" : family.text;
-              const semanticIconBorder =
-                trophy.id === "mvp" ? "border-[#D5A33A]/25" : family.border;
-              const semanticIconBg =
-                trophy.id === "mvp" ? "bg-[#D5A33A]/[0.06]" : family.bg;
+              const family =
+                trophy.type === "mvp"
+                  ? trophyFamilyStyle(trophy.source)
+                  : trophyFamilyStyle("General");
+              const semanticIconText = family.text;
+              const semanticIconBorder = family.border;
+              const semanticIconBg = family.bg;
               return (
               <button
                 type="button"
@@ -1502,7 +1574,7 @@ export default function PlayerProfile() {
                 <div className="flex items-center gap-2 mt-3">
                   <div className="font-display font-bold">{trophy.title}</div>
                   <span className={`h-5 px-1.5 rounded-md border inline-flex items-center text-[8px] font-black uppercase tracking-[0.12em] ${family.border} ${family.bg} ${family.text}`}>
-                    {trophy.source || "Trophy8s"}
+                    {trophySourceLabel(trophy)}
                   </span>
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">{trophy.detail}</div>
@@ -1528,15 +1600,23 @@ export default function PlayerProfile() {
             <>
               <DialogHeader>
                 <div className="flex items-start gap-3">
-                  <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${trophyFamilyStyle(selectedTrophy.source || "Trophy8s").border} ${trophyFamilyStyle(selectedTrophy.source || "Trophy8s").bg}`}>
+                  <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-2xl shrink-0 ${
+                    selectedTrophy.type === "mvp"
+                      ? trophyFamilyStyle(selectedTrophy.source).border
+                      : trophyFamilyStyle("General").border
+                  } ${
+                    selectedTrophy.type === "mvp"
+                      ? trophyFamilyStyle(selectedTrophy.source).bg
+                      : trophyFamilyStyle("General").bg
+                  }`}>
                     {selectedTrophy.iconType === "trophy" ? (
                       <Trophy
                         size={24}
                         strokeWidth={2.2}
                         className={
-                          selectedTrophy.id === "mvp"
-                            ? "text-[#D5A33A]"
-                            : trophyFamilyStyle(selectedTrophy.source || "Trophy8s").text
+                          selectedTrophy.type === "mvp"
+                            ? trophyFamilyStyle(selectedTrophy.source).text
+                            : trophyFamilyStyle("General").text
                         }
                       />
                     ) : (
@@ -1557,7 +1637,7 @@ export default function PlayerProfile() {
               <div className="mt-2">
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <div>
-                    <div className="brand-kicker mb-1">{selectedTrophy.source || "Trophy8s"} · Unlock history</div>
+                    <div className="brand-kicker mb-1">{trophySourceLabel(selectedTrophy)} · Unlock history</div>
                     <div className="text-sm font-bold">
                       {selectedTrophyEvents.length > 0
                         ? selectedTrophy.id === "mvp" || selectedTrophy.id === "merda"
@@ -1567,7 +1647,15 @@ export default function PlayerProfile() {
                     </div>
                   </div>
                   {selectedTrophy.count !== null && selectedTrophy.count !== undefined && (
-                    <span className={`m8-pill ${trophyFamilyStyle(selectedTrophy.source || "Trophy8s").text} ${trophyFamilyStyle(selectedTrophy.source || "Trophy8s").border}`}>
+                    <span className={`m8-pill ${
+                      selectedTrophy.type === "mvp"
+                        ? trophyFamilyStyle(selectedTrophy.source).text
+                        : trophyFamilyStyle("General").text
+                    } ${
+                      selectedTrophy.type === "mvp"
+                        ? trophyFamilyStyle(selectedTrophy.source).border
+                        : trophyFamilyStyle("General").border
+                    }`}>
                       {selectedTrophy.type === "achievement"
                         ? `Level ${selectedTrophy.count}/10`
                         : `Total ×${selectedTrophy.count}`}
@@ -1596,7 +1684,11 @@ export default function PlayerProfile() {
                           <div className="w-9 h-9 rounded-lg border border-[#2A303B] bg-[#151923] flex items-center justify-center shrink-0">
                             <Trophy
                               size={14}
-                              className={trophyFamilyStyle(selectedTrophy.source || "Trophy8s").text}
+                              className={
+                                selectedTrophy.type === "mvp"
+                                  ? trophyFamilyStyle(selectedTrophy.source).text
+                                  : trophyFamilyStyle("General").text
+                              }
                             />
                           </div>
 
