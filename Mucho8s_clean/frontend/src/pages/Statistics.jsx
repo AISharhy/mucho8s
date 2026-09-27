@@ -346,8 +346,8 @@ export default function Statistics() {
           <div className="m8-panel rounded-2xl overflow-hidden">
             <div className="grid grid-cols-[1fr_110px_110px] gap-3 px-4 py-3 bg-[#0F1218] border-b border-[#1D222C] text-[10px] uppercase tracking-widest text-muted-foreground">
               <div>Player</div>
-              <div className="text-right text-magma">Mucho8s</div>
-              <div className="text-right text-emerald-400">Mucho1v1</div>
+              <div className="text-right text-[#8D95A4]">Mucho8s</div>
+              <div className="text-right text-[#8D95A4]">Mucho1v1</div>
             </div>
 
             <div className="divide-y divide-[#1D222C]">
@@ -358,28 +358,12 @@ export default function Statistics() {
                 >
                   <div className="font-semibold truncate">{row.name}</div>
 
-                  <div
-                    className={`font-mono font-black text-right ${
-                      row.mucho8sNet > 0
-                        ? "text-emerald-400"
-                        : row.mucho8sNet < 0
-                          ? "text-red-400"
-                          : "text-[#697181]"
-                    }`}
-                  >
+                  <div className="font-mono font-black text-right text-emerald-400">
                     {row.mucho8sNet > 0 ? "+" : row.mucho8sNet < 0 ? "-" : ""}
                     €{Math.abs(row.mucho8sNet).toFixed(2)}
                   </div>
 
-                  <div
-                    className={`font-mono font-black text-right ${
-                      row.mucho1v1Net > 0
-                        ? "text-emerald-400"
-                        : row.mucho1v1Net < 0
-                          ? "text-red-400"
-                          : "text-[#697181]"
-                    }`}
-                  >
+                  <div className="font-mono font-black text-right text-emerald-400">
                     {row.mucho1v1Net > 0 ? "+" : row.mucho1v1Net < 0 ? "-" : ""}
                     €{Math.abs(row.mucho1v1Net).toFixed(2)}
                   </div>
