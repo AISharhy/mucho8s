@@ -1192,7 +1192,7 @@ export default function PlayerProfile() {
 
       {isOwnProfile && (
         <div
-          className="order-2 grid grid-cols-2 sm:inline-grid sm:grid-cols-4 gap-1 p-1 rounded-2xl bg-[#0F1218] border border-[#242A35] w-full sm:w-fit"
+          className="order-2 grid grid-cols-2 sm:grid-cols-3 xl:inline-grid xl:grid-cols-6 gap-1 p-1 rounded-2xl bg-[#0F1218] border border-[#242A35] w-full xl:w-fit"
           role="tablist"
           aria-label="My Profile sections"
         >
@@ -1215,22 +1215,6 @@ export default function PlayerProfile() {
           <button
             type="button"
             role="tab"
-            aria-selected={profileTab === "mucho8s"}
-            onClick={() => setProfileTab("mucho8s")}
-            className={`h-11 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold transition-all ${
-              profileTab === "mucho8s"
-                ? "bg-magma text-white shadow-sm"
-                : "text-[#9DA5B4] hover:text-white hover:bg-white/[0.04]"
-            }`}
-            data-testid="profile-tab-mucho8s"
-          >
-            <Gamepad2 size={16} />
-            Mucho8s
-          </button>
-
-          <button
-            type="button"
-            role="tab"
             aria-selected={profileTab === "edit"}
             onClick={() => setProfileTab("edit")}
             className={`h-11 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold transition-all ${
@@ -1247,11 +1231,27 @@ export default function PlayerProfile() {
           <button
             type="button"
             role="tab"
+            aria-selected={profileTab === "mucho8s"}
+            onClick={() => setProfileTab("mucho8s")}
+            className={`h-11 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold transition-all ${
+              profileTab === "mucho8s"
+                ? "bg-magma text-white shadow-sm"
+                : "text-[#9DA5B4] hover:text-white hover:bg-white/[0.04]"
+            }`}
+            data-testid="profile-tab-mucho8s"
+          >
+            <Gamepad2 size={16} />
+            Mucho8s
+          </button>
+
+          <button
+            type="button"
+            role="tab"
             aria-selected={profileTab === "challenges"}
             onClick={() => setProfileTab("challenges")}
             className={`h-11 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold transition-all relative ${
               profileTab === "challenges"
-                ? "bg-white text-black shadow-sm"
+                ? "bg-emerald-400 text-black shadow-sm"
                 : "text-[#9DA5B4] hover:text-white hover:bg-white/[0.04]"
             }`}
             data-testid="profile-tab-challenges"
@@ -1263,6 +1263,32 @@ export default function PlayerProfile() {
             ) && (
               <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.55)]" />
             )}
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            disabled
+            title="MuchoRanked · Coming Soon"
+            className="h-11 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold text-[#4F8CFF]/65 border border-[#4F8CFF]/10 bg-[#4F8CFF]/[0.025] cursor-not-allowed"
+            data-testid="profile-tab-ranked"
+          >
+            <Medal size={16} />
+            <span>MuchoRanked</span>
+            <span className="text-[7px] uppercase tracking-wider opacity-70">Soon</span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            disabled
+            title="MuchoTourney · Coming Soon"
+            className="h-11 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold text-[#D5A33A]/65 border border-[#D5A33A]/10 bg-[#D5A33A]/[0.025] cursor-not-allowed"
+            data-testid="profile-tab-tourney"
+          >
+            <Trophy size={16} />
+            <span>MuchoTourney</span>
+            <span className="text-[7px] uppercase tracking-wider opacity-70">Soon</span>
           </button>
         </div>
       )}
