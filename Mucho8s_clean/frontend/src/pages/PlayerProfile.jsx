@@ -1490,7 +1490,7 @@ export default function PlayerProfile() {
                   <div className="flex items-center gap-2">
                     {trophy.count !== null && trophy.count !== undefined && (
                       <div className="px-2 py-1 rounded-lg border border-[#343B48] bg-[#101319] text-xs font-mono font-black">
-                        ×{trophy.count}
+                        {trophy.type === "achievement" ? `Lv ${trophy.count}/10` : `×${trophy.count}`}
                       </div>
                     )}
                     <ChevronRight
@@ -1562,13 +1562,15 @@ export default function PlayerProfile() {
                       {selectedTrophyEvents.length > 0
                         ? selectedTrophy.id === "mvp" || selectedTrophy.id === "merda"
                           ? `${selectedTrophyEvents.length} recorded occurrence${selectedTrophyEvents.length === 1 ? "" : "s"}`
-                          : "Trigger event"
+                          : `${selectedTrophyEvents.length} level unlock${selectedTrophyEvents.length === 1 ? "" : "s"}`
                         : "Historical trigger unavailable"}
                     </div>
                   </div>
                   {selectedTrophy.count !== null && selectedTrophy.count !== undefined && (
                     <span className={`m8-pill ${trophyFamilyStyle(selectedTrophy.source || "Trophy8s").text} ${trophyFamilyStyle(selectedTrophy.source || "Trophy8s").border}`}>
-                      Total ×{selectedTrophy.count}
+                      {selectedTrophy.type === "achievement"
+                        ? `Level ${selectedTrophy.count}/10`
+                        : `Total ×${selectedTrophy.count}`}
                     </span>
                   )}
                 </div>
@@ -1630,7 +1632,7 @@ export default function PlayerProfile() {
                                 </span>
                               )}
                               {Number(event.stake || 0) > 0 && (
-                                <span className="font-mono font-black text-magma">
+                                <span className="font-mono font-black text-emerald-400">
                                   €{Number(event.stake).toFixed(2)}
                                 </span>
                               )}
