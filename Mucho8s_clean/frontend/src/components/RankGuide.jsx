@@ -10,6 +10,10 @@ import {
   Flame,
   Scale,
   CheckCircle2,
+  UsersRound,
+  Landmark,
+  Medal,
+  Clock3,
 } from "lucide-react";
 
 const iconFor = (index) => {
@@ -103,7 +107,7 @@ export default function RankGuide() {
               Competitive rules
             </h1>
             <p className="text-sm text-[#7F8795] mt-2 max-w-2xl">
-              Elo, streak awards, team balance and divisions. Everything you need in one place.
+              Mucho modes, Elo, Trophy families, streak rules, team balance and divisions.
             </p>
           </div>
 
@@ -115,7 +119,141 @@ export default function RankGuide() {
       </section>
 
       <section>
-        <div className="brand-kicker mb-2">Core rules</div>
+        <div className="flex items-end justify-between gap-3 mb-2">
+          <div>
+            <div className="brand-kicker mb-1">Play ecosystem</div>
+            <h2 className="font-display text-xl font-black">Mucho modes</h2>
+          </div>
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+            One platform · four identities
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+          {[
+            {
+              title: "Mucho8s",
+              status: "Live",
+              text: "Team money matches with Auto Balance, Captain Draft or Manual teams.",
+              icon: UsersRound,
+              color: "#FF2A3B",
+            },
+            {
+              title: "Mucho1v1",
+              status: "Live",
+              text: "Direct money challenge against one player using linked PayPal or Revolut.",
+              icon: Landmark,
+              color: "#34D399",
+            },
+            {
+              title: "MuchoRanked",
+              status: "Coming Soon",
+              text: "Automatic ranked queue, BO1 matchmaking and map/mode voting.",
+              icon: Medal,
+              color: "#4F8CFF",
+            },
+            {
+              title: "MuchoTourney",
+              status: "Coming Soon",
+              text: "Tournament brackets, team registration, progression and event history.",
+              icon: Trophy,
+              color: "#D5A33A",
+            },
+          ].map((mode) => {
+            const Icon = mode.icon;
+            const coming = mode.status !== "Live";
+            return (
+              <div
+                key={mode.title}
+                className="rounded-2xl border bg-[#0F1218] p-4 relative overflow-hidden"
+                style={{ borderColor: mode.color + "35" }}
+              >
+                <div
+                  className="absolute inset-x-0 top-0 h-px"
+                  style={{
+                    background: `linear-gradient(90deg, transparent, ${mode.color}, transparent)`,
+                  }}
+                />
+                <div className="flex items-start justify-between gap-3">
+                  <div
+                    className="w-10 h-10 rounded-xl border flex items-center justify-center"
+                    style={{
+                      color: mode.color,
+                      borderColor: mode.color + "45",
+                      background: mode.color + "0D",
+                    }}
+                  >
+                    <Icon size={18} />
+                  </div>
+                  <span
+                    className="h-6 px-2 rounded-lg border inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider"
+                    style={{
+                      color: mode.color,
+                      borderColor: mode.color + "35",
+                      background: mode.color + "0D",
+                    }}
+                  >
+                    {coming && <Clock3 size={10} />}
+                    {mode.status}
+                  </span>
+                </div>
+
+                <div className="font-display font-black text-lg mt-3">
+                  {mode.title}
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-1.5 leading-5">
+                  {mode.text}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="m8-panel rounded-[22px] p-5 sm:p-6">
+        <div className="brand-kicker mb-1">Awards system</div>
+        <h2 className="font-display text-xl font-black">Trophy families</h2>
+        <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
+          Every mode has its own Trophy identity. Awards never mix between modes.
+        </p>
+
+        <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3 mt-4">
+          {[
+            ["Trophy8s", "#FF2A3B", "Mucho8s awards: MVP, MERDA and Mucho8s achievements."],
+            ["Trophy1v1", "#34D399", "Reserved for achievements earned only in Mucho1v1."],
+            ["TrophyRanked", "#4F8CFF", "Reserved for MuchoRanked milestones and competitive progression."],
+            ["TrophyTourney", "#D5A33A", "Reserved for tournament achievements and event results."],
+          ].map(([name, color, text]) => (
+            <div
+              key={name}
+              className="rounded-xl border bg-[#0F1218] p-4"
+              style={{ borderColor: color + "35" }}
+            >
+              <div className="flex items-center gap-2">
+                <Trophy size={16} style={{ color }} />
+                <div className="font-display font-black" style={{ color }}>
+                  {name}
+                </div>
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-2 leading-5">
+                {text}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-3 rounded-xl border border-[#222834] bg-[#0F1218] px-4 py-3 text-[11px] text-muted-foreground">
+          The profile header shows the four Trophy-family counters in the same order:
+          <span className="text-magma font-black"> red</span> ·
+          <span className="text-emerald-400 font-black"> green</span> ·
+          <span className="text-[#4F8CFF] font-black"> blue</span> ·
+          <span className="text-[#D5A33A] font-black"> yellow</span>.
+          MERDA remains a separate Mucho8s penalty indicator.
+        </div>
+      </section>
+
+      <section>
+        <div className="brand-kicker mb-2">Core rules · Mucho8s</div>
         <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
           <Rule
             icon={Swords}
@@ -137,15 +275,15 @@ export default function RankGuide() {
             icon={Trophy}
             title="MVP"
             value="3 W = 🏆 +3"
-            text="Every 3 consecutive wins awards 1 MVP and +3 Elo. At 6 wins you earn another one."
-            accent="text-[#D5A33A]"
+            text="Every 3 consecutive Mucho8s wins awards 1 MVP, adds it to Trophy8s and gives +3 Elo. At 6 wins you earn another one."
+            accent="text-magma"
           />
 
           <Rule
             icon={Flame}
             title="MERDA"
             value="3 L = 💩"
-            text="Every 3 consecutive losses adds 1 MERDA. Every 3-win milestone removes 1 active MERDA."
+            text="Every 3 consecutive Mucho8s losses adds 1 MERDA. Every 3-win milestone removes 1 active MERDA. MERDA keeps its own 💩 identity."
             accent="text-[#C79A6B]"
           />
         </div>
@@ -155,6 +293,30 @@ export default function RankGuide() {
           <span>No upset bonus</span>
           <span>No manual MVP selection</span>
           <span>Admin verification locks the result</span>
+        </div>
+      </section>
+
+      <section className="m8-panel rounded-[22px] p-5 sm:p-6">
+        <div className="brand-kicker mb-1">Trophy8s</div>
+        <h2 className="font-display text-xl font-black">Mucho8s achievements</h2>
+        <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
+          These trophies are calculated only from verified Mucho8s history and money pairings.
+        </p>
+
+        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-2.5 mt-4">
+          {[
+            ["Run It Back", "Lose to a player, then beat them in the next Mucho8s meeting."],
+            ["Rivalry", "Meet the same player 8 times in Mucho8s."],
+            ["Nemesis", "Beat the same player 4 times in Mucho8s."],
+            ["Money Maker", "Win €50 through Mucho8s money pairings."],
+            ["High Roller", "Win a Mucho8s pairing worth at least €20."],
+            ["Clean Sweep", "Win 4 Mucho8s matches in a row."],
+          ].map(([name, text]) => (
+            <div key={name} className="rounded-xl border border-magma/15 bg-magma/[0.025] p-3">
+              <div className="font-display font-bold text-sm text-magma">{name}</div>
+              <div className="text-[11px] text-muted-foreground mt-1 leading-5">{text}</div>
+            </div>
+          ))}
         </div>
       </section>
 
