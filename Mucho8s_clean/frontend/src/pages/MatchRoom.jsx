@@ -504,14 +504,14 @@ export default function MatchRoom() {
       )}
 
       {trophyOpportunities.length > 0 && (
-        <section className="rounded-2xl border border-magma/20 bg-magma/[0.035] px-4 py-4">
+        <section className="rounded-2xl border border-[#343B48] bg-[#11151C] px-4 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="w-10 h-10 rounded-xl border border-magma/25 bg-magma/[0.07] flex items-center justify-center shrink-0">
-                <Trophy size={17} className="text-magma" />
+              <div className="w-10 h-10 rounded-xl border border-[#343B48] bg-[#151923] flex items-center justify-center shrink-0">
+                <Trophy size={17} className="text-[#C8CED8]" />
               </div>
               <div>
-                <div className="brand-kicker text-magma">Trophy8s Opportunity</div>
+                <div className="brand-kicker text-[#AEB6C3]">Trophy Opportunity</div>
                 <div className="text-sm font-bold mt-0.5">
                   This Mucho8s can level up{" "}
                   {trophyOpportunities.length === 1
@@ -521,7 +521,7 @@ export default function MatchRoom() {
               </div>
             </div>
 
-            <div className="font-mono font-black text-magma text-sm shrink-0">
+            <div className="font-mono font-black text-[#C8CED8] text-sm shrink-0">
               +{trophyOpportunities.reduce((sum, item) => sum + item.reward, 0)} Elo potential
             </div>
           </div>
@@ -530,13 +530,13 @@ export default function MatchRoom() {
             {trophyOpportunities.map((item) => (
               <div
                 key={item.id}
-                className="rounded-xl border border-magma/15 bg-[#0F1218] px-3 py-2"
+                className="rounded-xl border border-[#2C333E] bg-[#0F1218] px-3 py-2"
               >
                 <div className="flex items-center gap-2">
                   <span className="font-display font-bold text-sm">
                     {item.title} · Lv {item.level}/{MAX_TROPHY_LEVEL}
                   </span>
-                  <span className="font-mono text-[9px] font-black text-magma">
+                  <span className="font-mono text-[9px] font-black text-[#C8CED8]">
                     +{item.reward}
                   </span>
                 </div>
