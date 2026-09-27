@@ -1682,6 +1682,58 @@ export const DataProvider = ({ children }) => {
     return true;
   }, [adminAuthRequest]);
 
+  const updateCompetitionConfig = useCallback(async ({
+    seasonName = "",
+    startingElo = 500,
+    rolloverMode = "monthly",
+    rolloverDay = 1,
+    leaderboardMinMatches = 1,
+  } = {}) => {
+    if (!HAS_SUPABASE || !admin?.sessionToken) {
+      toast.error("Admin access required");
+      return false;
+    }
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/mucho8s-competition`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_ANON_KEY,
+          "X-Admin-Session": admin.sessionToken,
+        },
+        body: JSON.stringify({
+          action: "update-config",
+          seasonName,
+          startingElo,
+          rolloverMode,
+          rolloverDay,
+          leaderboardMinMatches,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data?.error || "Could not update competition rules");
+        return false;
+      }
+
+      if (data?.current) {
+        setCompetitionData((prev) => ({
+          ...prev,
+          current: data.current,
+        }));
+      } else {
+        await fetchCompetitionData();
+      }
+
+      return data;
+    } catch {
+      toast.error("Competition service unavailable");
+      return false;
+    }
+  }, [admin, fetchCompetitionData]);
+
   const startNewSeason = useCallback(async ({ seasonName = "", resetStats = true } = {}) => {
     if (!HAS_SUPABASE || !admin?.sessionToken) {
       toast.error("Admin access required");
@@ -2051,6 +2103,7 @@ export const DataProvider = ({ children }) => {
     refreshCompetitionData: fetchCompetitionData,
     refreshAdminChallengeAlerts,
     startNewSeason,
+    updateCompetitionConfig,
     repairElo,
     refreshPlayerAvatars: fetchPlayerAvatars,
     saveMyChallengeLinks,
