@@ -16,6 +16,7 @@ const MAIN_NAV = [
 
 const COMPETITION_NAV = [
   { to: "/ranking", label: "Ranking", icon: Trophy, testid: "nav-ranking-link" },
+  { to: "/rivalries", label: "Rivalries", icon: Swords, testid: "nav-rivalries-link" },
   { to: "/rank-guide", label: "Guide", icon: Medal, testid: "nav-rank-guide-link" },
 ];
 
