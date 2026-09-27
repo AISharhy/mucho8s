@@ -291,7 +291,7 @@ const getCurrentSeason = async (supabase: any) => {
     .select("season_number")
     .eq("id", "main")
     .maybeSingle();
-  return Math.max(1, Number(data?.season_number) || 1);
+  return Math.max(0, Number(data?.season_number ?? 1));
 };
 
 const PLATFORM_COLUMNS: Record<string, string> = {
@@ -511,7 +511,7 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       mode: report.mode || "",
       game: report.game || "",
       pairings: Array.isArray(report.pairings) ? report.pairings : [],
-      season: Math.max(1, Number(report.season_number) || 1),
+      season: Math.max(0, Number(report.season_number ?? 1)),
       eloChanges,
       resultStatus: "locked",
       locked: true,
