@@ -47,8 +47,8 @@ export default function Leaderboard() {
     const ensure = (id) => {
       if (!stats.has(id)) {
         stats.set(id, {
-          mucho8sNet: 0,
-          mucho1v1Net: 0,
+          mucho8sWon: 0,
+          mucho1v1Won: 0,
           mucho1v1Wins: 0,
           mucho1v1Losses: 0,
         });
@@ -85,14 +85,16 @@ export default function Leaderboard() {
         if (!id) return;
         const row = ensure(id);
         const won = challenge.reported_winner_player_id === id;
-        const delta = won ? amount : -amount;
 
         if (direct1v1) {
-          row.mucho1v1Net += delta;
-          if (won) row.mucho1v1Wins += 1;
-          else row.mucho1v1Losses += 1;
-        } else if (source === "match_pairing") {
-          row.mucho8sNet += delta;
+          if (won) {
+            row.mucho1v1Won += amount;
+            row.mucho1v1Wins += 1;
+          } else {
+            row.mucho1v1Losses += 1;
+          }
+        } else if (source === "match_pairing" && won) {
+          row.mucho8sWon += amount;
         }
       });
     });
@@ -104,8 +106,8 @@ export default function Leaderboard() {
     () =>
       (players || []).map((player) => {
         const moneyByMode = modeMoneyById.get(player.id) || {
-          mucho8sNet: 0,
-          mucho1v1Net: 0,
+          mucho8sWon: 0,
+          mucho1v1Won: 0,
           mucho1v1Wins: 0,
           mucho1v1Losses: 0,
         };
@@ -114,11 +116,11 @@ export default function Leaderboard() {
           ...player,
           matchWins: Number(player.wins || 0),
           matchLosses: Number(player.losses || 0),
-          mucho8sNet: moneyByMode.mucho8sNet,
-          mucho1v1Net: moneyByMode.mucho1v1Net,
+          mucho8sWon: moneyByMode.mucho8sWon,
+          mucho1v1Won: moneyByMode.mucho1v1Won,
           mucho1v1Wins: moneyByMode.mucho1v1Wins,
           mucho1v1Losses: moneyByMode.mucho1v1Losses,
-          earnings: moneyByMode.mucho8sNet + moneyByMode.mucho1v1Net,
+          earnings: moneyByMode.mucho8sWon + moneyByMode.mucho1v1Won,
           winRate:
             Number(player.totalMatches || 0) > 0
               ? (Number(player.wins || 0) / Number(player.totalMatches || 0)) * 100
@@ -189,7 +191,7 @@ export default function Leaderboard() {
       "Elo",
       "Record",
       "Win %",
-      "Money Net",
+      "Money Won",
       "Streak",
       "MVP",
     ];
@@ -242,7 +244,7 @@ export default function Leaderboard() {
             </h3>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Global Elo, record, streak and one unified verified money balance.
+            Global Elo, record, streak and total verified money won. Losses do not reduce this value.
           </p>
         </div>
 
@@ -298,8 +300,8 @@ export default function Leaderboard() {
                 </div>
                 <div className="m8-panel-quiet rounded-lg px-2.5 py-2">
                   <div className="text-[9px] uppercase tracking-wider text-[#697181]">Money</div>
-                  <div className="mt-1 font-mono text-sm font-black text-emerald-400" title="Verified money net">
-                    {p.earnings >= 0 ? "+" : "-"}{euro(Math.abs(p.earnings))}
+                  <div className="mt-1 font-mono text-sm font-black text-emerald-400" title="Total verified money won">
+                    +{euro(p.earnings)}
                   </div>
                 </div>
               </div>
@@ -400,7 +402,7 @@ export default function Leaderboard() {
                     </td>
 
                     <td className="px-4 py-3 font-mono text-[11px] font-black text-emerald-400">
-                      {p.earnings >= 0 ? "+" : "-"}{euro(Math.abs(p.earnings))}
+                      +{euro(p.earnings)}
                     </td>
 
                     <td className="px-4 py-3">
