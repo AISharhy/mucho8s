@@ -6,6 +6,7 @@ import { duoChemistry } from "@/lib/chemistry";
 import { analyzeBountyHistory, buildBountyAchievementCatalog } from "@/lib/bountyAchievements";
 import { buildPlayerRivalries } from "@/lib/rivalries";
 import { PlayerAvatar, EloBadge, Last10, MerdaBadge } from "@/components/shared";
+import ModeBadge, { isDirectMucho1v1 } from "@/components/ModeBadge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -70,7 +71,7 @@ const TROPHY_FAMILY_STYLES = {
     hex: "#4F8CFF",
   },
   TrophyTourney: {
-    text: "text-[#D5A33A]",
+    text: "text-magma",
     border: "border-[#D5A33A]/25",
     bg: "bg-[#D5A33A]/[0.06]",
     hover: "hover:border-[#D5A33A]/45",
@@ -101,6 +102,9 @@ export default function PlayerProfile() {
 
   const player = players.find((p) => p.id === id);
   const publicProfile = playerProfiles?.[id] || {};
+  const targetHasPayPal = Boolean(String(publicProfile.paypalUrl || "").trim());
+  const targetHasRevolut = Boolean(String(publicProfile.revolutUrl || "").trim());
+  const targetHasPayment = targetHasPayPal || targetHasRevolut;
   const isOwnProfile = Boolean(discordSession && discordPlayer?.id === id);
   const requestedTab = searchParams.get("tab");
   const profileTab =
@@ -864,11 +868,18 @@ export default function PlayerProfile() {
       toast.error("Login with Discord and link your player before sending a challenge");
       return;
     }
-    setChallengePlatform("paypal");
+    setChallengePlatform(
+      targetHasPayPal ? "paypal" : targetHasRevolut ? "revolut" : "unavailable"
+    );
     setChallengeAmount("5");
   };
 
   const sendChallenge = async () => {
+    if (!targetHasPayment || !["paypal", "revolut"].includes(challengePlatform)) {
+      toast.error("This player has not linked an available payment method");
+      return;
+    }
+
     const amount = Number(String(challengeAmount).replace(",", "."));
     if (!Number.isFinite(amount) || amount <= 0) {
       toast.error("Enter a valid amount");
@@ -881,15 +892,18 @@ export default function PlayerProfile() {
 
     if (created) {
       setChallengePlatform("");
-      toast.success(`€${amount.toFixed(2)} challenge sent to ${player.name}`);
+      toast.success(`Mucho1v1 sent to ${player.name} · €${amount.toFixed(2)}`);
     }
   };
 
   const myChallenges = isOwnProfile
     ? challenges.filter(
         (challenge) =>
-          challenge.challenger_player_id === player.id ||
-          challenge.challenged_player_id === player.id
+          isDirectMucho1v1(challenge) &&
+          (
+            challenge.challenger_player_id === player.id ||
+            challenge.challenged_player_id === player.id
+          )
       )
     : [];
 
@@ -905,9 +919,12 @@ export default function PlayerProfile() {
           data-testid="challenge-amount-dialog"
         >
           <DialogHeader>
-            <DialogTitle className="font-display text-xl">CHALL {player.name}</DialogTitle>
+            <div className="flex items-center gap-2 mb-1">
+              <ModeBadge mode="mucho1v1" compact />
+            </div>
+            <DialogTitle className="font-display text-xl">Mucho1v1 · {player.name}</DialogTitle>
             <DialogDescription>
-              Choose how much you want to challenge for. The other player will see the amount before accepting.
+              Choose the stake and one of the payment methods linked by this player.
             </DialogDescription>
           </DialogHeader>
 
@@ -915,22 +932,38 @@ export default function PlayerProfile() {
             <Label className="text-xs text-muted-foreground">Payment method</Label>
             <div className="grid grid-cols-2 gap-2 mt-1 mb-4">
               {[
-                ["paypal", "PayPal"],
-                ["revolut", "Revolut"],
-              ].map(([key, label]) => (
+                ["paypal", "PayPal", targetHasPayPal],
+                ["revolut", "Revolut", targetHasRevolut],
+              ].map(([key, label, available]) => (
                 <button
                   key={key}
                   type="button"
+                  disabled={!available}
                   onClick={() => setChallengePlatform(key)}
-                  className={`h-10 rounded-lg border text-xs font-bold ${
-                    challengePlatform === key
-                      ? "bg-[#D5A33A] text-black border-[#D5A33A]"
-                      : "bg-[#151923] border-[#2A303B] text-[#C8CED8]"
+                  title={available ? `${label} linked` : `${label} not linked`}
+                  className={`h-10 rounded-lg border text-xs font-bold transition-all ${
+                    !available
+                      ? "bg-[#11151C] border-[#202631] text-[#555E6B] cursor-not-allowed"
+                      : challengePlatform === key
+                        ? "bg-emerald-400 text-black border-emerald-400"
+                        : "bg-[#151923] border-[#2A303B] text-[#C8CED8] hover:border-emerald-500/30"
                   }`}
                 >
                   {label}
                 </button>
               ))}
+            </div>
+
+            <div className={`text-[10px] mb-4 ${
+              targetHasPayment ? "text-emerald-400" : "text-red-400"
+            }`}>
+              {targetHasPayPal && targetHasRevolut
+                ? "Available: PayPal · Revolut"
+                : targetHasPayPal
+                  ? "Available: PayPal only"
+                  : targetHasRevolut
+                    ? "Available: Revolut only"
+                    : "No payment method linked by this player"}
             </div>
 
             <Label className="text-xs text-muted-foreground">Amount (€)</Label>
@@ -971,12 +1004,16 @@ export default function PlayerProfile() {
             </Button>
             <Button
               onClick={sendChallenge}
-              disabled={Boolean(sendingChallenge)}
-              className="w-full sm:w-auto bg-magma hover:bg-[#ff3c4c] text-white rounded-xl font-bold"
+              disabled={
+                Boolean(sendingChallenge) ||
+                !targetHasPayment ||
+                !["paypal", "revolut"].includes(challengePlatform)
+              }
+              className="w-full sm:w-auto bg-emerald-400 hover:bg-emerald-300 disabled:bg-emerald-900/60 disabled:text-emerald-200/40 text-black rounded-xl font-black"
               data-testid="send-challenge-confirm"
             >
               <Swords size={16} className="mr-2" />
-              {sendingChallenge ? "Sending..." : "Send Challenge"}
+              {sendingChallenge ? "Sending..." : "Send Mucho1v1"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1021,7 +1058,7 @@ export default function PlayerProfile() {
                   <div className="text-[9px] uppercase tracking-[0.18em] text-[#697181] font-bold">
                     Rank
                   </div>
-                  <div className="font-display text-sm sm:text-base font-black uppercase text-[#D5A33A] mt-1">
+                  <div className="font-display text-sm sm:text-base font-black uppercase text-magma mt-1">
                     {tier.name}
                   </div>
                 </div>
@@ -1056,7 +1093,7 @@ export default function PlayerProfile() {
                 className="m8-action m8-action-primary h-11 px-6 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-extrabold tracking-wide"
                 data-testid="challenge-me-btn"
               >
-                <Swords size={17} className="mr-2" /> CHALL ME
+                <Swords size={17} className="mr-2" /> MUCHO1V1
               </Button>
             )}
           </div>
@@ -1066,7 +1103,7 @@ export default function PlayerProfile() {
               {
                 label: "Peak Elo",
                 value: player.peakElo,
-                tone: "text-[#D5A33A]",
+                tone: "text-magma",
               },
               {
                 label: "Mucho8s Record",
@@ -1106,7 +1143,7 @@ export default function PlayerProfile() {
                 ["Trophy8s", "bg-magma", "text-magma"],
                 ["Trophy1v1", "bg-emerald-400", "text-emerald-400"],
                 ["TrophyRanked", "bg-[#4F8CFF]", "text-[#4F8CFF]"],
-                ["TrophyTourney", "bg-[#D5A33A]", "text-[#D5A33A]"],
+                ["TrophyTourney", "bg-[#D5A33A]", "text-magma"],
               ].map(([family, dotClass, textClass], index) => (
                 <React.Fragment key={family}>
                   {index > 0 && <span className="text-[#3D4654]">·</span>}
@@ -1197,98 +1234,6 @@ export default function PlayerProfile() {
 
       {(!isOwnProfile || profileTab === "overview") && (
         <>
-          <div className="m8-panel rounded-2xl p-4 sm:p-5 order-4" data-testid="competitive-overview">
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <div>
-                <div className="brand-kicker mb-1">Competitivo</div>
-                <h3 className="font-display font-black text-xl tracking-[-0.02em]">Overview</h3>
-              </div>
-              <span className="m8-pill">{challengeStats.wins}W · {challengeStats.losses}L</span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2">
-              <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Win Rate</div>
-                <div className="font-mono font-black text-lg mt-1">{challengeStats.winRate}%</div>
-              </div>
-
-              <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Saldo value</div>
-                <div className={`font-mono font-black text-lg mt-1 ${
-                  challengeStats.wonValue - challengeStats.lostValue >= 0
-                    ? "text-emerald-400"
-                    : "text-red-400"
-                }`}>
-                  {challengeStats.wonValue - challengeStats.lostValue >= 0 ? "+" : ""}
-                  {(challengeStats.wonValue - challengeStats.lostValue).toFixed(0)}
-                </div>
-              </div>
-
-              <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Streak</div>
-                <div className={`font-mono font-black text-lg mt-1 ${
-                  challengeInsights.currentType === "W"
-                    ? "text-emerald-400"
-                    : challengeInsights.currentType === "L"
-                      ? "text-red-400"
-                      : ""
-                }`}>
-                  {challengeInsights.currentStreak
-                    ? `${challengeInsights.currentStreak}${challengeInsights.currentType}`
-                    : "—"}
-                </div>
-              </div>
-
-              <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Reputation</div>
-                <div className="font-mono font-black text-lg mt-1">{challengeInsights.reputation}%</div>
-              </div>
-
-              <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">MVP</div>
-                <div className="font-mono font-black text-lg mt-1 text-[#D5A33A]">🏆 {player.mvpCount || 0}</div>
-              </div>
-
-              <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">MERDA</div>
-                <div className="font-mono font-black text-lg mt-1 text-[#C79A6B]">💩 {player.merdaCount || 0}</div>
-                <div className="text-[9px] text-muted-foreground mt-1">Ogni 3 wins → -1 💩</div>
-              </div>
-
-              <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Bounties</div>
-                <div className="font-mono font-black text-lg mt-1">{unlockedBountyAchievements.length}/{bountyAchievements.length}</div>
-              </div>
-
-              <div className="m8-stat-card">
-                <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Points</div>
-                <div className="font-mono font-black text-lg mt-1 text-[#D5A33A]">{bountyHistory.points}</div>
-              </div>
-            </div>
-
-            {challengeStats.completed.length > 0 && (
-              <div className="flex items-center gap-1.5 mt-4 pt-3 border-t border-[#1D222C]">
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground mr-1">Last 5</span>
-                {challengeStats.completed.slice(0, 5).map((challenge) => {
-                  const won = challenge.reported_winner_player_id === id;
-                  return (
-                    <span
-                      key={challenge.id}
-                      title={won ? "Win" : "Loss"}
-                      className={`w-7 h-7 rounded-lg border flex items-center justify-center text-[10px] font-black ${
-                        won
-                          ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
-                          : "bg-red-500/10 border-red-500/25 text-red-400"
-                      }`}
-                    >
-                      {won ? "W" : "L"}
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 order-6">
             <div className="m8-panel rounded-2xl p-4 sm:p-5">
               <div className="flex items-center justify-between gap-3 mb-3">
@@ -1327,7 +1272,7 @@ export default function PlayerProfile() {
                         <div className="min-w-0 flex-1">
                           <div className="font-semibold text-sm truncate">{opponent?.name || "Player"}</div>
                           <div className="text-[10px] text-muted-foreground">
-                            {row.meetings} meetings · {row.teamMeetings} team · {row.directMeetings} 1v1
+                            {row.meetings} meetings · ${row.teamMeetings} Mucho8s · ${row.directMeetings} Mucho1v1
                           </div>
                         </div>
                         <div className="text-right shrink-0">
@@ -1354,35 +1299,35 @@ export default function PlayerProfile() {
             <div className="m8-panel rounded-2xl p-4 sm:p-5">
               <div className="flex items-center justify-between gap-3 mb-3">
                 <div>
-                  <div className="brand-kicker mb-1">Achievements</div>
-                  <h3 className="font-display font-bold text-lg">Bounties</h3>
+                  <div className="brand-kicker mb-1 text-magma">Mucho8s</div>
+                  <h3 className="font-display font-bold text-lg">Mucho8s Points</h3>
                 </div>
                 <div className="text-right">
-                  <div className="font-mono font-black text-[#D5A33A]">
+                  <div className="font-mono font-black text-magma">
                     {unlockedBountyAchievements.length}/{bountyAchievements.length}
                   </div>
                   <div className="text-[9px] uppercase tracking-widest text-muted-foreground">
-                    {bountyHistory.points} pts
+                    {bountyHistory.points} points
                   </div>
                 </div>
               </div>
 
               {bountyHistory.events.length === 0 ? (
                 <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-6 text-center text-xs text-muted-foreground">
-                  No completed bounties yet.
+                  No Mucho8s point events yet.
                 </div>
               ) : (
                 <div className="space-y-2">
                   {bountyHistory.events.slice(0, 3).map((event) => (
                     <div key={event.id} className="rounded-xl bg-[#0F1218] border border-[#1D222C] px-3 py-2.5 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-[#D5A33A]/10 border border-[#D5A33A]/15 flex items-center justify-center text-[#D5A33A]">
+                      <div className="w-8 h-8 rounded-lg bg-magma/[0.07] border border-magma/15 flex items-center justify-center text-magma">
                         <Target size={14} />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="font-semibold text-sm truncate">{event.title}</div>
                         <div className="text-[10px] text-muted-foreground truncate">{event.detail}</div>
                       </div>
-                      <div className="font-mono text-xs font-black text-[#D5A33A]">+{event.points}</div>
+                      <div className="font-mono text-xs font-black text-magma">+{event.points}</div>
                     </div>
                   ))}
                 </div>
@@ -1392,78 +1337,6 @@ export default function PlayerProfile() {
         </>
       )}
 
-      {isOwnProfile && profileTab === "overview" && (
-        <div className="m8-panel rounded-[22px] p-4 sm:p-5 order-4" data-testid="next-trophy-challenges">
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <div>
-              <div className="brand-kicker mb-1">Challenges</div>
-              <h3 className="font-display font-black text-xl tracking-[-0.02em]">Next Trophies</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                The closest trophies to unlock based on your current progress.
-              </p>
-            </div>
-            <Target size={20} className="text-[#D5A33A] shrink-0 mt-1" />
-          </div>
-
-          {nextTrophyChallenges.length === 0 ? (
-            <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-7 px-4 text-center">
-              <div className="text-2xl mb-2">🏆</div>
-              <div className="font-semibold">All trophy challenges completed</div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-              {nextTrophyChallenges.map((item) => {
-                const remaining = Math.max(0, item.goal - item.value);
-                const displayValue =
-                  item.unit === " €"
-                    ? `€${item.value.toFixed(0)} / €${item.goal}`
-                    : `${Math.floor(item.value)} / ${item.goal}`;
-
-                return (
-                  <div
-                    key={item.id}
-                    className="rounded-2xl bg-[#0F1218] border border-[#222834] p-4 relative overflow-hidden"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="w-11 h-11 rounded-xl bg-[#151923] border border-[#2A303B] flex items-center justify-center text-xl shrink-0">
-                        {item.emoji}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-display font-bold">{item.title}</div>
-                        <div className="text-[11px] text-muted-foreground mt-0.5 leading-4">
-                          {item.description}
-                        </div>
-                      </div>
-                      <div className="font-mono text-xs font-black text-[#D5A33A]">
-                        {item.progress}%
-                      </div>
-                    </div>
-
-                    <div className="h-1.5 rounded-full bg-[#1A2029] overflow-hidden mt-4">
-                      <div
-                        className="h-full rounded-full bg-[#D5A33A] transition-all"
-                        style={{ width: `${item.progress}%` }}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between gap-3 mt-2">
-                      <span className="font-mono text-[10px] text-[#AAB1BE]">{displayValue}</span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {item.id === "run-it-back"
-                          ? "Lose → rematch → win"
-                          : item.unit === " €"
-                            ? `€${remaining.toFixed(0)} to go`
-                            : `${Math.ceil(remaining)} to go`}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
       {(!isOwnProfile || profileTab === "overview") && (
       <div className="m8-showcase rounded-[22px] p-4 sm:p-6 order-4" data-testid="trophy-cabinet">
         <div className="flex items-center justify-between gap-3 mb-4">
@@ -1471,10 +1344,10 @@ export default function PlayerProfile() {
             <div className="brand-kicker mb-1">Awards</div>
             <h3 className="font-display font-black text-xl tracking-[-0.02em]">Trophy Cabinet</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Mucho8s awards, MVP 🏆, active MERDA 💩, and unlocked achievements.
+              Trophy8s awards, MVP, active MERDA 💩 and verified unlock history.
             </p>
           </div>
-          <Trophy size={20} className="text-[#D5A33A]" />
+          <Trophy size={20} className="text-magma" />
         </div>
 
         {trophyCabinet.length === 0 ? (
@@ -1612,7 +1485,10 @@ export default function PlayerProfile() {
                       >
                         <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                           <div className="w-9 h-9 rounded-lg border border-[#2A303B] bg-[#151923] flex items-center justify-center shrink-0">
-                            <Trophy size={14} className="text-[#D5A33A]" />
+                            <Trophy
+                              size={14}
+                              className={trophyFamilyStyle(selectedTrophy.source || "Trophy8s").text}
+                            />
                           </div>
 
                           <div className="min-w-0 flex-1">
@@ -1647,7 +1523,7 @@ export default function PlayerProfile() {
                                 </span>
                               )}
                               {Number(event.stake || 0) > 0 && (
-                                <span className="font-mono font-black text-[#D5A33A]">
+                                <span className="font-mono font-black text-magma">
                                   €{Number(event.stake).toFixed(2)}
                                 </span>
                               )}
@@ -1674,7 +1550,7 @@ export default function PlayerProfile() {
               <div className="brand-kicker mb-1">Edit Profile</div>
               <h3 className="font-display font-bold text-lg">Profile settings</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Choose your role and connect PayPal or Revolut for Money Challs.
+                Choose your role and connect PayPal or Revolut for Mucho1v1.
               </p>
             </div>
             <Link2 size={18} className="text-[#697181] shrink-0 mt-1" />
@@ -1747,16 +1623,16 @@ export default function PlayerProfile() {
       {isOwnProfile && profileTab === "challenges" && (
         <div className="m8-panel rounded-2xl p-4 sm:p-5 order-3" data-testid="my-challenges-panel">
           <div className="mb-4">
-            <div className="brand-kicker mb-1">Centro challenges</div>
-            <h3 className="font-display font-bold text-lg">Le mie challenges</h3>
+            <div className="brand-kicker mb-1 text-emerald-400">Mucho1v1</div>
+            <h3 className="font-display font-bold text-lg">My Mucho1v1</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Results become official only after the other player verifies them.
+              Direct 1v1 history only. Mucho8s pairings never appear here.
             </p>
           </div>
 
           {myChallenges.length === 0 ? (
             <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-8 px-4 text-center text-sm text-muted-foreground">
-              No challenges yet.
+              No Mucho1v1 yet.
             </div>
           ) : (
             <div className="space-y-2">
@@ -1813,7 +1689,7 @@ export default function PlayerProfile() {
                           </span>
                         )}
                         {!completed && challenge.status === "pending" && (
-                          <span className="text-xs font-bold uppercase tracking-wider text-[#D5A33A]">Pending</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Pending</span>
                         )}
                         {!completed && challenge.status === "accepted" && (
                           <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Accepted</span>
@@ -1839,11 +1715,11 @@ export default function PlayerProfile() {
                                 ? "bg-emerald-500 text-black border-emerald-400"
                                 : lost
                                   ? "bg-red-500 text-white border-red-400"
-                                  : "bg-magma text-white border-magma hover:bg-[#ff3c4c]"
+                                  : "bg-emerald-400 text-black border-emerald-400 hover:bg-emerald-300"
                             }`}
                             data-testid={`open-challenge-${challenge.id}`}
                           >
-                            OPEN MATCH
+                            OPEN MUCHO1V1
                           </Link>
                         )}
                       </div>
