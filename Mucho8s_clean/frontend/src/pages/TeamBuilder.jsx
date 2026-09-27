@@ -8,13 +8,14 @@ import { computeContextStats, playerForContext } from "@/lib/elo";
 import { GAMES } from "@/lib/demoData";
 import {
   analyzeManualTeams,
-  draftTeamsBalanced,
+  draftTeamsByPriority,
 } from "@/lib/chemistry";
 import {
   Check,
   Crown,
   Gamepad2,
   RotateCcw,
+  Scale,
   Search,
   Swords,
   UsersRound,
@@ -23,6 +24,7 @@ import { toast } from "sonner";
 
 const MATCH_MODES = ["Hardpoint", "Search & Destroy"];
 const VALID_LOBBY_SIZES = [4, 6, 8];
+const SNAKE_DRAFT_ORDER = ["A", "B", "B", "A"];
 
 const formatForCount = (count) => {
   if (count === 4) return "2v2";
@@ -37,6 +39,14 @@ const nextLobbySize = (count) => {
   if (count === 7) return 8;
   return null;
 };
+
+const averageElo = (team = []) =>
+  team.length
+    ? Math.round(
+        team.reduce((sum, player) => sum + Number(player?.currentElo || 0), 0) /
+          team.length
+      )
+    : 0;
 
 const Metric = ({ label, value, tone = "" }) => (
   <div className="rounded-xl bg-[#0F1218] border border-[#222834] px-3 py-2.5">
@@ -60,6 +70,14 @@ export default function TeamBuilder() {
   const [game, setGame] = useState("");
   const [matchMode, setMatchMode] = useState("");
   const [teamMethod, setTeamMethod] = useState("auto");
+  const [autoPriority, setAutoPriority] = useState("elo");
+  const [draftCaptainMode, setDraftCaptainMode] = useState("auto");
+  const [draftCaptainA, setDraftCaptainA] = useState("");
+  const [draftCaptainB, setDraftCaptainB] = useState("");
+  const [draftTeamA, setDraftTeamA] = useState([]);
+  const [draftTeamB, setDraftTeamB] = useState([]);
+  const [draftPickIndex, setDraftPickIndex] = useState(0);
+  const [draftStarted, setDraftStarted] = useState(false);
   const [selected, setSelected] = useState([]);
   const [manualA, setManualA] = useState([]);
   const [manualB, setManualB] = useState([]);
@@ -121,6 +139,50 @@ export default function TeamBuilder() {
       ),
     [players, query]
   );
+
+  const autoDraftCaptains = useMemo(
+    () =>
+      [...selectedPlayers]
+        .sort(
+          (left, right) =>
+            Number(right?.currentElo || 0) - Number(left?.currentElo || 0)
+        )
+        .slice(0, 2),
+    [selectedPlayers]
+  );
+
+  const resolvedDraftCaptainA =
+    draftCaptainMode === "auto" ? autoDraftCaptains[0]?.id || "" : draftCaptainA;
+  const resolvedDraftCaptainB =
+    draftCaptainMode === "auto" ? autoDraftCaptains[1]?.id || "" : draftCaptainB;
+
+  const draftTeamAPlayers = useMemo(
+    () => draftTeamA.map((id) => contextualPlayerMap[id]).filter(Boolean),
+    [draftTeamA, contextualPlayerMap]
+  );
+
+  const draftTeamBPlayers = useMemo(
+    () => draftTeamB.map((id) => contextualPlayerMap[id]).filter(Boolean),
+    [draftTeamB, contextualPlayerMap]
+  );
+
+  const draftAvailable = useMemo(
+    () =>
+      selected.filter(
+        (id) => !draftTeamA.includes(id) && !draftTeamB.includes(id)
+      ),
+    [selected, draftTeamA, draftTeamB]
+  );
+
+  const draftComplete =
+    Boolean(validLobby) &&
+    draftTeamA.length === perTeam &&
+    draftTeamB.length === perTeam;
+
+  const currentDraftSide =
+    draftStarted && !draftComplete
+      ? SNAKE_DRAFT_ORDER[draftPickIndex % SNAKE_DRAFT_ORDER.length]
+      : "";
 
   const matchCaptainId = result && discordPlayer?.id &&
     [...result.teamA, ...result.teamB].some((player) => player.id === discordPlayer.id)
