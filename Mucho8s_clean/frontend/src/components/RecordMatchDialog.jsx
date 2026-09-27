@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar, EloBadge } from "@/components/shared";
+import ModeBadge from "@/components/ModeBadge";
 import { GAMES } from "@/lib/demoData";
 
 const MATCH_MODES = ["Hardpoint", "Search & Destroy"];
@@ -18,7 +19,7 @@ export const RecordMatchDialog = ({
   editData,
   defaultGame,
   defaultMode,
-  title = "Record Match",
+  title = "Record Mucho8s",
   reportOnly = false,
   lockTeams = false,
   lockContext = false,
@@ -208,7 +209,7 @@ export const RecordMatchDialog = ({
       toast.error(
         teamA.length !== teamB.length || teamA.length < 2 || teamA.length > 4
           ? "Both teams must be equal (2, 3 or 4 players each)"
-          : "Every matchup needs a valid money amount"
+          : "Every Mucho8s pairing needs a valid money amount"
       );
       return;
     }
@@ -247,7 +248,7 @@ export const RecordMatchDialog = ({
       toast.success(
         reportOnly
           ? "Result reported — Elo & stats recalculated"
-          : "Match updated — Elo & stats recalculated"
+          : "Mucho8s updated — Elo & stats recalculated"
       );
     } else {
       const report = await createMatchReport({
@@ -283,10 +284,10 @@ export const RecordMatchDialog = ({
 
       toast.success(
         rechallLiveMatch
-          ? "Result submitted — ReChall is now live"
+          ? "Result submitted — Mucho8s rematch is now live"
           : withRechall
-            ? "Result submitted — ReChall could not be created"
-            : "Result submitted — waiting for Admin verification"
+            ? "Result submitted — Mucho8s rematch could not be created"
+            : "Mucho8s submitted — waiting for Admin verification"
       );
       onReported?.(report, rechallLiveMatch);
     }
@@ -302,6 +303,7 @@ export const RecordMatchDialog = ({
         data-testid="record-match-dialog"
       >
         <DialogHeader>
+          <div className="mb-1"><ModeBadge mode="mucho8s" compact /></div>
           <DialogTitle className="font-display text-2xl">{title}</DialogTitle>
         </DialogHeader>
 
@@ -433,9 +435,9 @@ export const RecordMatchDialog = ({
 
           <div className="rounded-2xl bg-[#0F1218] border border-[#222834] p-4" data-testid="match-money-settings">
             <div className="flex items-center gap-2 mb-3">
-              <WalletCards size={16} className="text-[#D5A33A]" />
+              <WalletCards size={16} className="text-magma" />
               <div>
-                <div className="text-sm font-bold">Money Match Pairings</div>
+                <div className="text-sm font-bold">Mucho8s Pairings</div>
                 <div className="text-[11px] text-muted-foreground">
                   Set player pairings and amount.
                 </div>
@@ -490,7 +492,7 @@ export const RecordMatchDialog = ({
 
             {moneyPairings.length === 0 && (
               <div className="text-xs text-muted-foreground text-center py-2">
-                Select both teams to configure the money match.
+                Select both teams to configure Mucho8s pairings.
               </div>
             )}
           </div>
@@ -501,7 +503,7 @@ export const RecordMatchDialog = ({
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] leading-5">
               <div>
-                <span className="font-semibold text-[#D5A33A]">MVP 🏆</span>
+                <span className="font-semibold text-magma inline-flex items-center gap-1"><Trophy size={11} /> MVP</span>
                 <span className="text-muted-foreground"> · Every 3 consecutive wins = +1 MVP and +3 Elo.</span>
               </div>
               <div>
@@ -562,7 +564,7 @@ export const RecordMatchDialog = ({
               data-testid="record-rechall-btn"
             >
               <RotateCcw size={16} className="mr-1.5" />
-              {submitting ? "Submitting..." : "Submit + ReChall"}
+              {submitting ? "Submitting..." : "Submit + Rematch"}
             </Button>
           )}
 
@@ -579,8 +581,8 @@ export const RecordMatchDialog = ({
               : reportOnly
                 ? "Update Result"
                 : editData
-                  ? "Update Match"
-                  : "Submit for Verification"}
+                  ? "Update Mucho8s"
+                  : "Submit Mucho8s"}
           </Button>
         </DialogFooter>
       </DialogContent>
