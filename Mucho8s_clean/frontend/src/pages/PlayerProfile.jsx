@@ -654,6 +654,29 @@ export default function PlayerProfile() {
     return awards;
   }, [player, trophyChallenges]);
 
+  const trophyFamilyCounts = useMemo(() => {
+    const counts = {
+      Trophy8s: 0,
+      Trophy1v1: 0,
+      TrophyRanked: 0,
+      TrophyTourney: 0,
+    };
+
+    trophyCabinet.forEach((trophy) => {
+      const family = trophy.source || "Trophy8s";
+      if (!(family in counts)) return;
+
+      const occurrenceCount =
+        trophy.count !== null && trophy.count !== undefined
+          ? Math.max(0, Number(trophy.count) || 0)
+          : 1;
+
+      counts[family] += occurrenceCount;
+    });
+
+    return counts;
+  }, [trophyCabinet]);
+
   const trophyEvidence = useMemo(() => {
     if (!player) return {};
 
@@ -991,13 +1014,36 @@ export default function PlayerProfile() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-xs text-[#8A94A4]">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-3 text-xs text-[#8A94A4]">
                 <span><strong className="text-white font-mono">{player.currentElo}</strong> Elo</span>
                 {player.role && <span className="font-bold text-white">{player.role}</span>}
-                <span>{player.totalMatches || 0} matches</span>
-                <span>{challengeStats.wins + challengeStats.losses} Mucho1v1</span>
-                <span>{player.mvpCount || 0} MVP</span>
-                <span>{player.merdaCount || 0} 💩</span>
+                <span className="text-[#C8CED8]">{player.totalMatches || 0} matches</span>
+
+                <span className="text-[#3D4654]">·</span>
+
+                {[
+                  ["Trophy8s", "bg-magma", "text-magma"],
+                  ["Trophy1v1", "bg-emerald-400", "text-emerald-400"],
+                  ["TrophyRanked", "bg-[#4F8CFF]", "text-[#4F8CFF]"],
+                  ["TrophyTourney", "bg-[#D5A33A]", "text-[#D5A33A]"],
+                ].map(([family, dotClass, textClass], index) => (
+                  <React.Fragment key={family}>
+                    {index > 0 && <span className="text-[#3D4654]">·</span>}
+                    <span
+                      title={family}
+                      aria-label={`${family}: ${trophyFamilyCounts[family] || 0}`}
+                      className="inline-flex items-center gap-1.5"
+                    >
+                      <span
+                        className={`w-2.5 h-2.5 rounded-full ${dotClass} shadow-[0_0_8px_currentColor]`}
+                        aria-hidden="true"
+                      />
+                      <strong className={`font-mono font-black ${textClass}`}>
+                        {trophyFamilyCounts[family] || 0}
+                      </strong>
+                    </span>
+                  </React.Fragment>
+                ))}
               </div>
             </div>
 
