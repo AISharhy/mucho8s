@@ -20,18 +20,18 @@ const euro = (value) =>
     maximumFractionDigits: 2,
   }).format(Number(value || 0));
 
-const ResultDot = ({ item, playerAId, playerAName, playerBName }) => {
-  const aWon = String(item.winnerId) === String(playerAId);
+const ResultDot = ({ item, focusPlayerId, focusPlayerName }) => {
+  const won = String(item.winnerId) === String(focusPlayerId);
   return (
     <span
-      title={`${aWon ? playerAName : playerBName} won`}
+      title={`${focusPlayerName} ${won ? "won" : "lost"}`}
       className={`w-8 h-8 rounded-lg border inline-flex items-center justify-center text-[10px] font-black ${
-        aWon
-          ? "border-magma/25 bg-magma/[0.08] text-magma"
-          : "border-[#65D5D3]/25 bg-[#65D5D3]/[0.06] text-[#65D5D3]"
+        won
+          ? "border-emerald-500/25 bg-emerald-500/[0.08] text-emerald-400"
+          : "border-red-500/20 bg-red-500/[0.06] text-red-400"
       }`}
     >
-      {aWon ? "A" : "B"}
+      {won ? "W" : "L"}
     </span>
   );
 };
@@ -72,19 +72,28 @@ export default function RivalryDetail() {
     );
   }
 
-  const playerA = playerMap[rivalry.playerAId];
-  const playerB = playerMap[rivalry.playerBId];
-  const playerAName = playerA?.name || "Player";
-  const playerBName = playerB?.name || "Player";
-  const netA = Number(rivalry.playerANet || 0);
+  const swapSides =
+    Number(rivalry.playerBWins || 0) > Number(rivalry.playerAWins || 0);
+  const leftId = swapSides ? rivalry.playerBId : rivalry.playerAId;
+  const rightId = swapSides ? rivalry.playerAId : rivalry.playerBId;
+  const leftPlayer = playerMap[leftId];
+  const rightPlayer = playerMap[rightId];
+  const leftName = leftPlayer?.name || "Player";
+  const rightName = rightPlayer?.name || "Player";
+  const leftWins = swapSides ? rivalry.playerBWins : rivalry.playerAWins;
+  const rightWins = swapSides ? rivalry.playerAWins : rivalry.playerBWins;
+  const leadBy = Math.max(0, Number(leftWins || 0) - Number(rightWins || 0));
+  const leftNet = swapSides
+    ? -Number(rivalry.playerANet || 0)
+    : Number(rivalry.playerANet || 0);
   const moneyLeader =
-    netA > 0 ? playerAName : netA < 0 ? playerBName : "Even";
-  const moneyEdge = Math.abs(netA);
+    leftNet > 0 ? leftName : leftNet < 0 ? rightName : "Even";
+  const moneyEdge = Math.abs(leftNet);
   const streakName =
-    rivalry.streakWinnerId === rivalry.playerAId
-      ? playerAName
-      : rivalry.streakWinnerId === rivalry.playerBId
-        ? playerBName
+    rivalry.streakWinnerId === leftId
+      ? leftName
+      : rivalry.streakWinnerId === rightId
+        ? rightName
         : "";
 
   return (
@@ -99,21 +108,23 @@ export default function RivalryDetail() {
 
         <div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-6">
           <Link
-            to={`/players/${rivalry.playerAId}`}
+            to={`/players/${leftId}`}
             className="min-w-0 flex flex-col sm:flex-row items-center gap-3"
           >
-            <PlayerAvatar
-              name={playerAName}
-              elo={playerA?.currentElo || 1000}
-              size={60}
-              avatarUrl={playerAvatars[rivalry.playerAId]}
-            />
+            <div className={`rounded-2xl ${leadBy > 0 ? "ring-1 ring-emerald-500/25" : ""}`}>
+              <PlayerAvatar
+                name={leftName}
+                elo={leftPlayer?.currentElo || 1000}
+                size={60}
+                avatarUrl={playerAvatars[leftId]}
+              />
+            </div>
             <div className="min-w-0 text-center sm:text-left">
               <div className="font-display font-black text-lg sm:text-2xl truncate">
-                {playerAName}
+                {leftName}
               </div>
               <div className="font-mono text-xs text-[#697181] mt-1">
-                {Number(playerA?.currentElo || 1000)} Elo
+                {Number(leftPlayer?.currentElo || 1000)} Elo
               </div>
             </div>
           </Link>
@@ -123,32 +134,41 @@ export default function RivalryDetail() {
               Head to Head
             </div>
             <div className="font-display font-black text-4xl sm:text-5xl tracking-[-0.05em] mt-1">
-              {rivalry.playerAWins}
+              <span className={leadBy > 0 ? "text-emerald-400 drop-shadow-[0_0_14px_rgba(52,211,153,.2)]" : "text-white"}>
+                {leftWins}
+              </span>
               <span className="text-[#596170] mx-2 sm:mx-3">-</span>
-              {rivalry.playerBWins}
+              <span className={leadBy > 0 ? "text-[#7D8795]" : "text-white"}>
+                {rightWins}
+              </span>
             </div>
-            <div className="text-[10px] text-[#697181] mt-1">
+            <div className={`text-[10px] mt-1 font-semibold ${
+              leadBy > 0 ? "text-emerald-400/80" : "text-[#697181]"
+            }`}>
+              {leadBy > 0 ? `${leftName} leads by ${leadBy}` : "Tied rivalry"}
+            </div>
+            <div className="text-[10px] text-[#596170] mt-0.5">
               {rivalry.meetings} meetings
             </div>
           </div>
 
           <Link
-            to={`/players/${rivalry.playerBId}`}
+            to={`/players/${rightId}`}
             className="min-w-0 flex flex-col-reverse sm:flex-row items-center sm:justify-end gap-3"
           >
             <div className="min-w-0 text-center sm:text-right">
-              <div className="font-display font-black text-lg sm:text-2xl truncate">
-                {playerBName}
+              <div className="font-display font-black text-lg sm:text-2xl truncate text-[#C5CBD4]">
+                {rightName}
               </div>
               <div className="font-mono text-xs text-[#697181] mt-1">
-                {Number(playerB?.currentElo || 1000)} Elo
+                {Number(rightPlayer?.currentElo || 1000)} Elo
               </div>
             </div>
             <PlayerAvatar
-              name={playerBName}
-              elo={playerB?.currentElo || 1000}
+              name={rightName}
+              elo={rightPlayer?.currentElo || 1000}
               size={60}
-              avatarUrl={playerAvatars[rivalry.playerBId]}
+              avatarUrl={playerAvatars[rightId]}
             />
           </Link>
         </div>
@@ -203,15 +223,14 @@ export default function RivalryDetail() {
               <ResultDot
                 key={`${item.id}-${index}`}
                 item={item}
-                playerAId={rivalry.playerAId}
-                playerAName={playerAName}
-                playerBName={playerBName}
+                focusPlayerId={leftId}
+                focusPlayerName={leftName}
               />
             ))}
           </div>
 
           <div className="text-[10px] text-[#697181] mt-3">
-            A = {playerAName} · B = {playerBName}
+            W/L shown from {leftName}'s perspective
           </div>
         </div>
 
@@ -247,9 +266,9 @@ export default function RivalryDetail() {
         <div className="space-y-2">
           {rivalry.history.map((item, index) => {
             const winnerName =
-              String(item.winnerId) === String(rivalry.playerAId)
-                ? playerAName
-                : playerBName;
+              String(item.winnerId) === String(leftId)
+                ? leftName
+                : rightName;
 
             return (
               <div
