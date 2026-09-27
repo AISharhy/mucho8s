@@ -2,22 +2,76 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { NavLink, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Users, Gamepad2, Trophy, Menu, X, MessageCircle, LogOut, Bell, Medal, Swords,
+  LayoutGrid,
+  Users,
+  Gamepad2,
+  Trophy,
+  Menu,
+  X,
+  MessageCircle,
+  LogOut,
+  Bell,
+  Swords,
+  Flame,
+  BookOpen,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { tierOf } from "@/lib/elo";
 
 const MAIN_NAV = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, testid: "nav-dashboard-link" },
-  { to: "/play", label: "Play", icon: Swords, testid: "nav-play-link" },
-  { to: "/players", label: "Players", icon: Users, testid: "nav-players-link" },
-  { to: "/matches", label: "Matches", icon: Gamepad2, testid: "nav-matches-link" },
+  {
+    to: "/",
+    label: "Dashboard",
+    icon: LayoutGrid,
+    end: true,
+    testid: "nav-dashboard-link",
+    activeIcon: "text-white",
+  },
+  {
+    to: "/play",
+    label: "Play",
+    icon: Gamepad2,
+    testid: "nav-play-link",
+    activeIcon: "text-magma",
+  },
+  {
+    to: "/matches",
+    label: "Matches",
+    icon: Swords,
+    testid: "nav-matches-link",
+    activeIcon: "text-[#8E98FF]",
+  },
+  {
+    to: "/players",
+    label: "Players",
+    icon: Users,
+    testid: "nav-players-link",
+    activeIcon: "text-[#65D5D3]",
+  },
 ];
 
 const COMPETITION_NAV = [
-  { to: "/ranking", label: "Ranking", icon: Trophy, testid: "nav-ranking-link" },
-  { to: "/rivalries", label: "Rivalries", icon: Swords, testid: "nav-rivalries-link" },
-  { to: "/rank-guide", label: "Guide", icon: Medal, testid: "nav-rank-guide-link" },
+  {
+    to: "/ranking",
+    label: "Ranking",
+    icon: Trophy,
+    testid: "nav-ranking-link",
+    activeIcon: "text-[#D5A33A]",
+  },
+  {
+    to: "/rivalries",
+    label: "Rivalries",
+    icon: Flame,
+    testid: "nav-rivalries-link",
+    activeIcon: "text-orange-400",
+  },
+  {
+    to: "/rank-guide",
+    label: "Guide",
+    icon: BookOpen,
+    testid: "nav-rank-guide-link",
+    activeIcon: "text-[#C7CFDA]",
+  },
 ];
 
 const CHALLENGES_NAV = {
@@ -35,6 +89,7 @@ const ALL_NAV = [
 
 const NavItem = ({ item, onNavigate, badge = 0 }) => {
   const Icon = item.icon;
+
   return (
     <NavLink
       to={item.to}
@@ -44,17 +99,37 @@ const NavItem = ({ item, onNavigate, badge = 0 }) => {
       className={({ isActive }) =>
         `group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all border ${
           isActive
-            ? "bg-magma/[0.075] text-white border-magma/25 shadow-[inset_3px_0_0_#FF2A3B]"
+            ? "bg-white/[0.045] text-white border-[#343B48] shadow-[inset_3px_0_0_#FF2A3B]"
             : "text-[#8D95A4] hover:text-white hover:bg-white/[0.03] border-transparent hover:border-white/[0.05]"
         }`
       }
     >
-      <Icon size={17} className="shrink-0" />
-      <span className="flex-1">{item.label}</span>
-      {badge > 0 && (
-        <span className="min-w-5 h-5 px-1.5 rounded-full bg-magma text-white text-[10px] font-extrabold flex items-center justify-center">
-          {badge > 9 ? "9+" : badge}
-        </span>
+      {({ isActive }) => (
+        <>
+          <span
+            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+              isActive
+                ? "bg-white/[0.055]"
+                : "bg-transparent group-hover:bg-white/[0.035]"
+            }`}
+          >
+            <Icon
+              size={17}
+              strokeWidth={isActive ? 2.2 : 1.8}
+              className={`shrink-0 transition-colors ${
+                isActive ? item.activeIcon || "text-white" : "text-[#7E8796] group-hover:text-white"
+              }`}
+            />
+          </span>
+
+          <span className="flex-1">{item.label}</span>
+
+          {badge > 0 && (
+            <span className="min-w-5 h-5 px-1.5 rounded-full bg-magma text-white text-[10px] font-extrabold flex items-center justify-center">
+              {badge > 9 ? "9+" : badge}
+            </span>
+          )}
+        </>
       )}
     </NavLink>
   );
