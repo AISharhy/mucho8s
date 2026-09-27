@@ -716,7 +716,7 @@ const PersonalDashboard = ({
               <div className="brand-kicker mb-1">Progress Center</div>
               <h3 className="font-display font-black text-xl">Your next milestones</h3>
             </div>
-            <Trophy size={18} className="text-magma" />
+            <Trophy size={18} className="text-[#C8CED8]" />
           </div>
 
           <div className="mt-5">
@@ -739,11 +739,11 @@ const PersonalDashboard = ({
             {dashboardProgress.nextTrophy ? (
               <Link
                 to={"/players/" + discordPlayer.id}
-                className="group block rounded-2xl border border-magma/20 bg-magma/[0.035] p-4 hover:border-magma/40 transition-all"
+                className="group block rounded-2xl border border-[#343B48] bg-[#11151C] p-4 hover:border-[#505A69] transition-all"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="brand-kicker text-magma mb-1">Next Trophy8s</div>
+                    <div className="brand-kicker text-[#AEB6C3] mb-1">Next Trophy</div>
                     <div className="font-display font-black text-lg">
                       {dashboardProgress.nextTrophy.title} · Lv {dashboardProgress.nextTrophy.nextLevel}/{MAX_TROPHY_LEVEL}
                     </div>
@@ -751,14 +751,14 @@ const PersonalDashboard = ({
                       {dashboardProgress.nextTrophy.detail}
                     </div>
                   </div>
-                  <div className="font-mono text-sm font-black text-magma">
+                  <div className="font-mono text-sm font-black text-[#C8CED8]">
                     {dashboardProgress.nextTrophy.value}/{dashboardProgress.nextTrophy.goal}
                   </div>
                 </div>
 
                 <div className="mt-4 h-2 rounded-full border border-[#242A35] bg-[#090C11] overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-magma"
+                    className="h-full rounded-full bg-[#8D95A4]"
                     style={{ width: `${dashboardProgress.nextTrophy.progress}%` }}
                   />
                 </div>
@@ -767,14 +767,14 @@ const PersonalDashboard = ({
                   <span className="text-[#697181]">
                     {dashboardProgress.nextTrophy.progress}% complete
                   </span>
-                  <span className="font-black text-magma inline-flex items-center gap-1">
+                  <span className="font-black text-[#C8CED8] inline-flex items-center gap-1">
                     +{dashboardProgress.nextTrophy.reward} Elo on unlock <ArrowUpRight size={11} />
                   </span>
                 </div>
               </Link>
             ) : (
               <div className="rounded-xl border border-[#222834] bg-[#0F1218] p-4 text-sm text-muted-foreground">
-                Core Trophy8s milestones completed.
+                Core General Trophy milestones completed.
               </div>
             )}
           </div>
