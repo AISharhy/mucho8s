@@ -301,7 +301,7 @@ export default function Leaderboard() {
                 <div className="m8-panel-quiet rounded-lg px-2.5 py-2">
                   <div className="text-[9px] uppercase tracking-wider text-[#697181]">Money</div>
                   <div className="mt-1 space-y-0.5 font-mono text-[10px] font-black">
-                    <div className="text-magma" title="Mucho8s net">
+                    <div className="text-emerald-400" title="Mucho8s net">
                       ● {p.mucho8sNet >= 0 ? "+" : "-"}{euro(Math.abs(p.mucho8sNet))}
                     </div>
                     <div className="text-emerald-400" title="Mucho1v1 net">
@@ -408,7 +408,7 @@ export default function Leaderboard() {
 
                     <td className="px-4 py-3">
                       <div className="space-y-0.5 font-mono text-[11px] font-black">
-                        <div className="text-magma" title="Mucho8s net">
+                        <div className="text-emerald-400" title="Mucho8s net">
                           ● {p.mucho8sNet >= 0 ? "+" : "-"}{euro(Math.abs(p.mucho8sNet))}
                         </div>
                         <div className="text-emerald-400" title="Mucho1v1 net">
