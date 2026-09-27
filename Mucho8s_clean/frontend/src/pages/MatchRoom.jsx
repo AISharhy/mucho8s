@@ -72,7 +72,7 @@ const TeamPanel = ({
           <Link
             key={id}
             to={`/players/${id}`}
-            className="h-13 rounded-xl border border-[#202631] bg-[#12161D] px-3 py-2.5 flex items-center gap-3 hover:border-[#353D49] transition-all"
+            className="min-h-[52px] rounded-xl border border-[#202631] bg-[#12161D] px-3 py-2.5 flex items-center gap-3 hover:border-[#353D49] transition-all"
           >
             <PlayerAvatar
               name={player?.name || "Player"}
