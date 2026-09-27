@@ -1145,15 +1145,22 @@ textarea:focus-visible {
 }
 
 .m8-news-ticker-track {
+    display: flex;
     width: max-content;
     height: 100%;
-    display: flex;
     align-items: center;
-    animation: m8NewsTicker 24s linear infinite;
+    will-change: transform;
+    animation: m8NewsTickerLoop 22s linear infinite;
 }
 
 .m8-news-ticker:hover .m8-news-ticker-track {
     animation-play-state: paused;
+}
+
+.m8-news-ticker-group {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
 }
 
 .m8-news-ticker-item {
@@ -1176,7 +1183,7 @@ textarea:focus-visible {
     margin-left: .5rem;
 }
 
-@keyframes m8NewsTicker {
+@keyframes m8NewsTickerLoop {
     from { transform: translateX(0); }
     to { transform: translateX(-50%); }
 }
@@ -1553,6 +1560,7 @@ textarea:focus-visible {
 
 @media (prefers-reduced-motion: reduce) {
     .m8-news-ticker-track,
+    .m8-news-ticker-group,
     .m8-news-orb,
     .m8-news-scanline,
     .m8-news-title-icon,
