@@ -1,6 +1,14 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Swords, UsersRound, WalletCards } from "lucide-react";
+import {
+  ArrowRight,
+  Flame,
+  Search,
+  Swords,
+  Trophy,
+  UsersRound,
+  WalletCards,
+} from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar } from "@/components/shared";
 import { Input } from "@/components/ui/input";
@@ -13,6 +21,50 @@ const euro = (value) =>
     maximumFractionDigits: 2,
   }).format(Number(value || 0));
 
+const RivalryBadge = ({ children, tone = "neutral", icon: Icon = null }) => {
+  const classes =
+    tone === "hot"
+      ? "border-orange-500/20 bg-orange-500/[0.06] text-orange-400"
+      : tone === "money"
+        ? "border-[#D5A33A]/25 bg-[#D5A33A]/[0.06] text-[#D5A33A]"
+        : "border-[#2A303B] bg-[#151923] text-[#AAB1BE]";
+
+  return (
+    <span
+      className={`h-7 px-2.5 rounded-lg border inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.14em] ${classes}`}
+    >
+      {Icon && <Icon size={11} />}
+      {children}
+    </span>
+  );
+};
+
+const FormStrip = ({ items, playerAId, playerAName, playerBName }) => (
+  <div className="flex items-center gap-1.5">
+    {items.length === 0 ? (
+      <span className="text-[10px] text-[#697181]">No form yet</span>
+    ) : (
+      items.map((item, index) => {
+        const aWon = String(item.winnerId) === String(playerAId);
+        return (
+          <span
+            key={`${item.id}-${index}`}
+            title={`${aWon ? playerAName : playerBName} won`}
+            aria-label={`${aWon ? playerAName : playerBName} won`}
+            className={`w-7 h-7 rounded-lg border inline-flex items-center justify-center text-[9px] font-black ${
+              aWon
+                ? "border-magma/25 bg-magma/[0.08] text-magma"
+                : "border-[#65D5D3]/25 bg-[#65D5D3]/[0.06] text-[#65D5D3]"
+            }`}
+          >
+            {aWon ? "A" : "B"}
+          </span>
+        );
+      })
+    )}
+  </div>
+);
+
 export default function Rivalries() {
   const { matches, publicChallenges, playerMap, playerAvatars } = useData();
   const [query, setQuery] = useState("");
@@ -23,6 +75,11 @@ export default function Rivalries() {
         (row) => Number(row.meetings || 0) >= 2
       ),
     [matches, publicChallenges]
+  );
+
+  const maxMeetings = useMemo(
+    () => Math.max(0, ...rivalries.map((row) => Number(row.meetings || 0))),
+    [rivalries]
   );
 
   const visible = useMemo(() => {
@@ -46,7 +103,7 @@ export default function Rivalries() {
               Rivalries
             </h1>
             <p className="text-sm text-[#7F8795] mt-2 max-w-2xl">
-              Head-to-head history built from verified team matches and direct 1v1 challs.
+              The most played head-to-head matchups, form, streaks and money history.
             </p>
           </div>
 
@@ -78,7 +135,21 @@ export default function Rivalries() {
           {visible.map((row) => {
             const playerA = playerMap[row.playerAId];
             const playerB = playerMap[row.playerBId];
+            const playerAName = playerA?.name || "Player";
+            const playerBName = playerB?.name || "Player";
             const netA = Number(row.playerANet || 0);
+            const moneyLeader =
+              netA > 0 ? playerAName : netA < 0 ? playerBName : "Even";
+            const moneyEdge = Math.abs(netA);
+            const streakName =
+              row.streakWinnerId === row.playerAId
+                ? playerAName
+                : row.streakWinnerId === row.playerBId
+                  ? playerBName
+                  : "";
+            const isMostPlayed = row.meetings === maxMeetings && maxMeetings > 0;
+            const isHot = row.meetings >= 8 && row.scoreDiff <= 2;
+            const isMoneyRivalry = row.moneyVolume >= 20;
 
             return (
               <article
@@ -86,10 +157,19 @@ export default function Rivalries() {
                 className="m8-panel rounded-2xl p-4 sm:p-5"
                 data-testid={`rivalry-${row.key}`}
               >
-                <div className="flex items-center justify-between gap-3 mb-4">
-                  <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-[#697181]">
-                    <Swords size={14} className="text-[#D5A33A]" />
-                    {row.meetings} meetings
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {isMostPlayed && (
+                      <RivalryBadge icon={Trophy}>Most Played</RivalryBadge>
+                    )}
+                    {isHot && (
+                      <RivalryBadge tone="hot" icon={Flame}>Hot Rivalry</RivalryBadge>
+                    )}
+                    {isMoneyRivalry && (
+                      <RivalryBadge tone="money" icon={WalletCards}>
+                        Money Rivalry
+                      </RivalryBadge>
+                    )}
                   </div>
 
                   {row.lastMeetingAt && (
@@ -99,105 +179,112 @@ export default function Rivalries() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
                   <Link
                     to={`/players/${row.playerAId}`}
-                    className="min-w-0 rounded-xl border border-[#222834] bg-[#0F1218] p-3 hover:border-[#353D49] transition-all"
+                    className="min-w-0 flex items-center gap-2.5 hover:opacity-90"
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <PlayerAvatar
-                        name={playerA?.name || "Player"}
-                        elo={playerA?.currentElo || 1000}
-                        size={36}
-                        avatarUrl={playerAvatars[row.playerAId]}
-                      />
-                      <div className="min-w-0">
-                        <div className="font-semibold truncate">
-                          {playerA?.name || "Player"}
-                        </div>
-                        <div className="font-mono text-xs text-emerald-400 mt-0.5">
-                          {row.playerAWins}W
-                        </div>
+                    <PlayerAvatar
+                      name={playerAName}
+                      elo={playerA?.currentElo || 1000}
+                      size={42}
+                      avatarUrl={playerAvatars[row.playerAId]}
+                    />
+                    <div className="min-w-0">
+                      <div className="font-display font-black text-base sm:text-lg truncate">
+                        {playerAName}
+                      </div>
+                      <div className="font-mono text-[10px] text-[#697181] mt-0.5">
+                        {Number(playerA?.currentElo || 1000)} Elo
                       </div>
                     </div>
                   </Link>
 
-                  <div className="text-center">
-                    <div className="font-display font-black text-lg">
+                  <div className="text-center px-1">
+                    <div className="font-display font-black text-2xl sm:text-3xl tracking-[-0.04em]">
                       {row.playerAWins}
-                      <span className="text-[#596170] mx-1.5">-</span>
+                      <span className="text-[#596170] mx-2">-</span>
                       {row.playerBWins}
                     </div>
-                    <div className="text-[9px] uppercase tracking-widest text-[#697181] mt-1">
-                      H2H
+                    <div className="text-[9px] uppercase tracking-[0.18em] text-[#697181] mt-1">
+                      {row.meetings} meetings
                     </div>
                   </div>
 
                   <Link
                     to={`/players/${row.playerBId}`}
-                    className="min-w-0 rounded-xl border border-[#222834] bg-[#0F1218] p-3 hover:border-[#353D49] transition-all"
+                    className="min-w-0 flex items-center justify-end gap-2.5 hover:opacity-90"
                   >
-                    <div className="flex items-center justify-end gap-2.5 min-w-0">
-                      <div className="min-w-0 text-right">
-                        <div className="font-semibold truncate">
-                          {playerB?.name || "Player"}
-                        </div>
-                        <div className="font-mono text-xs text-emerald-400 mt-0.5">
-                          {row.playerBWins}W
-                        </div>
+                    <div className="min-w-0 text-right">
+                      <div className="font-display font-black text-base sm:text-lg truncate">
+                        {playerBName}
                       </div>
-                      <PlayerAvatar
-                        name={playerB?.name || "Player"}
-                        elo={playerB?.currentElo || 1000}
-                        size={36}
-                        avatarUrl={playerAvatars[row.playerBId]}
-                      />
+                      <div className="font-mono text-[10px] text-[#697181] mt-0.5">
+                        {Number(playerB?.currentElo || 1000)} Elo
+                      </div>
                     </div>
+                    <PlayerAvatar
+                      name={playerBName}
+                      elo={playerB?.currentElo || 1000}
+                      size={42}
+                      avatarUrl={playerAvatars[row.playerBId]}
+                    />
                   </Link>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 mt-3">
-                  <div className="rounded-xl border border-[#222834] bg-[#0F1218] px-3 py-2.5">
-                    <div className="text-[9px] uppercase tracking-widest text-[#697181]">
-                      Team
+                <div className="mt-4 pt-4 border-t border-[#202631] grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4">
+                  <div>
+                    <div className="text-[9px] uppercase tracking-[0.16em] text-[#697181] mb-2">
+                      Last 5
                     </div>
-                    <div className="font-mono font-black text-sm mt-1">
-                      {row.teamMeetings}
-                    </div>
+                    <FormStrip
+                      items={row.recentFive}
+                      playerAId={row.playerAId}
+                      playerAName={playerAName}
+                      playerBName={playerBName}
+                    />
                   </div>
 
-                  <div className="rounded-xl border border-[#222834] bg-[#0F1218] px-3 py-2.5">
-                    <div className="text-[9px] uppercase tracking-widest text-[#697181]">
-                      1v1
+                  <div className="sm:text-right">
+                    <div className="text-[9px] uppercase tracking-[0.16em] text-[#697181]">
+                      Current streak
                     </div>
                     <div className="font-mono font-black text-sm mt-1">
-                      {row.directMeetings}
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl border border-[#222834] bg-[#0F1218] px-3 py-2.5">
-                    <div className="flex items-center gap-1 text-[9px] uppercase tracking-widest text-[#697181]">
-                      <WalletCards size={11} /> Stake
-                    </div>
-                    <div className="font-mono font-black text-sm mt-1 text-[#D5A33A]">
-                      {euro(row.moneyVolume)}
+                      {streakName ? `${streakName} W${row.currentStreak}` : "—"}
                     </div>
                   </div>
                 </div>
 
-                {row.moneyVolume > 0 && (
-                  <div className="mt-3 text-[10px] text-[#697181] text-center">
-                    Money H2H · {playerA?.name || "Player"}{" "}
-                    <span className={netA >= 0 ? "text-emerald-400" : "text-red-400"}>
-                      {netA >= 0 ? "+" : "-"}{euro(Math.abs(netA))}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 text-[11px] text-[#8A93A1]">
+                  <span>
+                    Team <strong className="text-white">{row.teamMeetings}</strong>
+                  </span>
+                  <span>
+                    1v1 <strong className="text-white">{row.directMeetings}</strong>
+                  </span>
+                  <span>
+                    Played <strong className="text-[#D5A33A]">{euro(row.moneyVolume)}</strong>
+                  </span>
+                  {row.moneyVolume > 0 && (
+                    <span>
+                      Money edge{" "}
+                      <strong className={moneyEdge > 0 ? "text-emerald-400" : "text-white"}>
+                        {moneyLeader === "Even"
+                          ? "Even"
+                          : `${moneyLeader} +${euro(moneyEdge)}`}
+                      </strong>
                     </span>
-                    {" · "}
-                    {playerB?.name || "Player"}{" "}
-                    <span className={netA <= 0 ? "text-emerald-400" : "text-red-400"}>
-                      {netA <= 0 ? "+" : "-"}{euro(Math.abs(netA))}
-                    </span>
-                  </div>
-                )}
+                  )}
+                </div>
+
+                <Link
+                  to={`/rivalries/${row.playerAId}/${row.playerBId}`}
+                  className="mt-4 h-10 rounded-xl border border-[#2A303B] bg-[#0F1218] hover:bg-[#151A22] hover:border-[#394150] flex items-center justify-center gap-2 text-xs font-bold transition-all"
+                >
+                  <Swords size={14} className="text-[#D5A33A]" />
+                  View Rivalry
+                  <ArrowRight size={14} />
+                </Link>
               </article>
             );
           })}
