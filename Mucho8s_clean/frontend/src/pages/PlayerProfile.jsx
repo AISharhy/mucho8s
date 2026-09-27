@@ -1343,9 +1343,7 @@ export default function PlayerProfile() {
                             <span className="text-red-400">{row.losses}L</span>
                           </div>
                           {row.moneyVolume > 0 && (
-                            <div className={`font-mono text-[10px] mt-1 ${
-                              row.moneyNet >= 0 ? "text-emerald-400" : "text-red-400"
-                            }`}>
+                            <div className="font-mono text-[10px] mt-1 text-emerald-400">
                               {row.moneyNet >= 0 ? "+" : "-"}€{Math.abs(row.moneyNet).toFixed(0)}
                             </div>
                           )}
