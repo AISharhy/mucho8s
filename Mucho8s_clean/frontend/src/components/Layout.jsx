@@ -55,6 +55,7 @@ const TITLES = {
   "/draft": "Team Builder",
   "/matches": "Matches",
   "/ranking": "Ranking",
+  "/rivalries": "Rivalries",
   "/leaderboard": "Ranking",
   "/statistics": "Ranking",
   "/rank-guide": "Guide",
