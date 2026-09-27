@@ -34,13 +34,11 @@ export default function Leaderboard() {
     playerAvatars,
     discordPlayer,
     publicChallenges,
-    competitionData,
   } = useData();
 
   const [sortKey, setSortKey] = useState("totalPoints");
   const [dir, setDir] = useState("desc");
 
-  const currentSeason = Number(competitionData?.current?.season_number || 1);
 
   const modeMoneyById = useMemo(() => {
     const stats = new Map();
