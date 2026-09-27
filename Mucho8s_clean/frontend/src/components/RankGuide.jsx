@@ -294,6 +294,19 @@ export default function RankGuide() {
           <span>No manual MVP selection</span>
           <span>Admin verification locks the result</span>
         </div>
+
+        <div className="mt-3 rounded-xl border border-magma/20 bg-magma/[0.035] px-4 py-3">
+          <div className="flex items-start gap-3">
+            <Trophy size={15} className="text-magma mt-0.5 shrink-0" />
+            <div>
+              <div className="text-sm font-bold">Trophy unlock Elo</div>
+              <div className="text-[11px] text-muted-foreground mt-1 leading-5">
+                Every newly unlocked Trophy gives +3 Elo. Multiple Trophy unlocks in the same verified match stack with no cap:
+                2 unlocks = +6 Elo, 3 unlocks = +9 Elo, and so on. Each Trophy can award its unlock bonus only once.
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="m8-panel rounded-[22px] p-5 sm:p-6">
