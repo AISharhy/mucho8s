@@ -171,7 +171,7 @@ export default function Play() {
     }
 
     if (!discordPlayer) {
-      toast.error("Link your player account before sending a challenge");
+      toast.error("Link your player account before sending a Mucho1v1");
       return;
     }
 
@@ -190,7 +190,7 @@ export default function Play() {
 
     if (!created) return;
 
-    toast.success(`Challenge sent to ${target.name}`);
+    toast.success(`Mucho1v1 sent to ${target.name}`);
     navigate(`/challenges/${created.id}`);
   };
 
@@ -228,7 +228,7 @@ export default function Play() {
             <ModeHeader
               kicker="Money Team Play"
               title="Mucho8s"
-              description="Create the lobby, build the teams and play the money matchup."
+              description="Build the teams, set the money pairings and send a Mucho8s live."
               icon={UsersRound}
               accent="#FF2A3B"
             />
@@ -276,12 +276,12 @@ export default function Play() {
 
           <div className="relative z-10 flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <div className="brand-kicker mb-1">Direct Challenge</div>
+              <div className="brand-kicker mb-1 text-emerald-400">Direct Money 1v1</div>
               <h2 className="font-display text-2xl sm:text-[28px] font-black tracking-[-0.035em]">
                 Mucho1v1
               </h2>
               <p className="text-xs sm:text-sm text-[#7F8795] mt-1.5">
-                Pick one opponent, choose the stake and send a direct chall.
+                Pick one opponent, choose the stake and send a Mucho1v1.
               </p>
             </div>
 
@@ -475,7 +475,7 @@ export default function Play() {
                 : sending
                   ? "SENDING..."
                   : target
-                    ? `SEND CHALL · €${Number.isFinite(numericAmount) ? numericAmount.toFixed(2) : "0.00"}`
+                    ? `SEND MUCHO1V1 · €${Number.isFinite(numericAmount) ? numericAmount.toFixed(2) : "0.00"}`
                     : "CHOOSE AN OPPONENT"}
             </Button>
 
