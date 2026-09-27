@@ -7,6 +7,9 @@ import {
   Swords,
   WalletCards,
   Link2Off,
+  Trophy,
+  Crown,
+  Clock3,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar, EloBadge } from "@/components/shared";
@@ -200,13 +203,15 @@ export default function Play() {
               Choose your mode
             </h1>
             <p className="text-sm text-[#7F8795] mt-2">
-              Money8s team lobby or a direct 1v1 Chall. Two clear competitive paths.
+              Money8s and 1v1 Chall are live now. Ranked and Tournaments are already in development.
             </p>
           </div>
 
           <div className="hidden sm:flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-[#697181]">
             <span className="m8-pill">Money8s</span>
             <span className="m8-pill">1v1 Chall</span>
+            <span className="m8-pill text-[#697181]">Ranked · Soon</span>
+            <span className="m8-pill text-[#697181]">Tournaments · Soon</span>
           </div>
         </div>
       </section>
@@ -478,6 +483,90 @@ export default function Play() {
                 vs {target.name} · {platform === "paypal" ? "PayPal" : "Revolut"}
               </div>
             )}
+          </div>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <div
+          className="relative overflow-hidden rounded-[22px] border border-[#2A313D] bg-[#10151D] p-5 sm:p-6 min-h-[220px]"
+          data-testid="play-ranked-coming-soon"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-[#8E98FF]/[0.055] via-transparent to-transparent pointer-events-none" />
+          <div className="relative z-10 h-full flex flex-col">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="brand-kicker">Competitive Queue</div>
+                  <span className="h-6 px-2 rounded-lg border border-[#8E98FF]/20 bg-[#8E98FF]/[0.06] text-[#A9B0FF] inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-[0.14em]">
+                    <Clock3 size={10} />
+                    Coming Soon
+                  </span>
+                </div>
+                <h2 className="font-display text-2xl sm:text-[28px] font-black tracking-[-0.035em]">
+                  Ranked
+                </h2>
+                <p className="text-sm text-[#7F8795] mt-2 max-w-md">
+                  Enter the queue, find a balanced lobby and play BO1 ranked matches with map and mode voting.
+                </p>
+              </div>
+
+              <div className="w-11 h-11 rounded-xl border border-[#8E98FF]/25 bg-[#8E98FF]/[0.06] flex items-center justify-center shrink-0">
+                <Trophy size={19} className="text-[#8E98FF]" />
+              </div>
+            </div>
+
+            <div className="mt-auto pt-5 flex flex-wrap items-center gap-2">
+              <span className="m8-pill">Queue Matchmaking</span>
+              <span className="m8-pill">BO1</span>
+              <span className="m8-pill">Map Vote</span>
+              <span className="m8-pill">Mode Vote</span>
+            </div>
+
+            <div className="mt-4 h-10 rounded-xl border border-[#2A303B] bg-[#0F1218] text-[#697181] flex items-center justify-center text-[10px] font-black uppercase tracking-[0.16em]">
+              In Development
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="relative overflow-hidden rounded-[22px] border border-[#2A313D] bg-[#10151D] p-5 sm:p-6 min-h-[220px]"
+          data-testid="play-tournaments-coming-soon"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-[#D5A33A]/[0.05] via-transparent to-transparent pointer-events-none" />
+          <div className="relative z-10 h-full flex flex-col">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="brand-kicker">Competition Events</div>
+                  <span className="h-6 px-2 rounded-lg border border-[#D5A33A]/20 bg-[#D5A33A]/[0.06] text-[#D5A33A] inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-[0.14em]">
+                    <Clock3 size={10} />
+                    Coming Soon
+                  </span>
+                </div>
+                <h2 className="font-display text-2xl sm:text-[28px] font-black tracking-[-0.035em]">
+                  Tournaments
+                </h2>
+                <p className="text-sm text-[#7F8795] mt-2 max-w-md">
+                  Join organized events with team registration, brackets, match progression and tournament history.
+                </p>
+              </div>
+
+              <div className="w-11 h-11 rounded-xl border border-[#D5A33A]/25 bg-[#D5A33A]/[0.06] flex items-center justify-center shrink-0">
+                <Crown size={19} className="text-[#D5A33A]" />
+              </div>
+            </div>
+
+            <div className="mt-auto pt-5 flex flex-wrap items-center gap-2">
+              <span className="m8-pill">Brackets</span>
+              <span className="m8-pill">Teams</span>
+              <span className="m8-pill">Live Progression</span>
+              <span className="m8-pill">History</span>
+            </div>
+
+            <div className="mt-4 h-10 rounded-xl border border-[#2A303B] bg-[#0F1218] text-[#697181] flex items-center justify-center text-[10px] font-black uppercase tracking-[0.16em]">
+              Coming Soon
+            </div>
           </div>
         </div>
       </section>
