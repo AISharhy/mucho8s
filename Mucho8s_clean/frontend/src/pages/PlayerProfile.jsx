@@ -1018,32 +1018,6 @@ export default function PlayerProfile() {
                 <span><strong className="text-white font-mono">{player.currentElo}</strong> Elo</span>
                 {player.role && <span className="font-bold text-white">{player.role}</span>}
                 <span className="text-[#C8CED8]">{player.totalMatches || 0} matches</span>
-
-                <span className="text-[#3D4654]">·</span>
-
-                {[
-                  ["Trophy8s", "bg-magma", "text-magma"],
-                  ["Trophy1v1", "bg-emerald-400", "text-emerald-400"],
-                  ["TrophyRanked", "bg-[#4F8CFF]", "text-[#4F8CFF]"],
-                  ["TrophyTourney", "bg-[#D5A33A]", "text-[#D5A33A]"],
-                ].map(([family, dotClass, textClass], index) => (
-                  <React.Fragment key={family}>
-                    {index > 0 && <span className="text-[#3D4654]">·</span>}
-                    <span
-                      title={family}
-                      aria-label={`${family}: ${trophyFamilyCounts[family] || 0}`}
-                      className="inline-flex items-center gap-1.5"
-                    >
-                      <span
-                        className={`w-2.5 h-2.5 rounded-full ${dotClass} shadow-[0_0_8px_currentColor]`}
-                        aria-hidden="true"
-                      />
-                      <strong className={`font-mono font-black ${textClass}`}>
-                        {trophyFamilyCounts[family] || 0}
-                      </strong>
-                    </span>
-                  </React.Fragment>
-                ))}
               </div>
             </div>
 
@@ -1077,11 +1051,38 @@ export default function PlayerProfile() {
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <span className="text-[10px] uppercase tracking-widest text-[#697181]">Forma recente</span>
             <Last10 record={player.last10} />
-            <MvpBadge count={player.mvpCount} />
-            <MerdaBadge count={player.merdaCount} />
-            <span className="ml-auto hidden sm:inline-flex m8-pill">
-              {tier.name} · {player.currentElo} Elo
-            </span>
+
+            <span className="hidden sm:inline text-[#2F3743]">·</span>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              {[
+                ["Trophy8s", "bg-magma", "text-magma"],
+                ["Trophy1v1", "bg-emerald-400", "text-emerald-400"],
+                ["TrophyRanked", "bg-[#4F8CFF]", "text-[#4F8CFF]"],
+                ["TrophyTourney", "bg-[#D5A33A]", "text-[#D5A33A]"],
+              ].map(([family, dotClass, textClass], index) => (
+                <React.Fragment key={family}>
+                  {index > 0 && <span className="text-[#3D4654]">·</span>}
+                  <span
+                    title={family}
+                    aria-label={`${family}: ${trophyFamilyCounts[family] || 0}`}
+                    className="inline-flex items-center gap-1.5"
+                  >
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full ${dotClass} shadow-[0_0_8px_currentColor]`}
+                      aria-hidden="true"
+                    />
+                    <strong className={`font-mono text-xs font-black ${textClass}`}>
+                      {trophyFamilyCounts[family] || 0}
+                    </strong>
+                  </span>
+                </React.Fragment>
+              ))}
+            </div>
+
+            <div className="ml-auto pl-2 border-l border-[#242A35]">
+              <MerdaBadge count={player.merdaCount} />
+            </div>
           </div>
         </div>
       </section>
