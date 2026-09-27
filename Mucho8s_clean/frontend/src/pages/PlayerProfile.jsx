@@ -4,6 +4,7 @@ import { useData } from "@/context/DataContext";
 import { winRate, tierOf } from "@/lib/elo";
 import { duoChemistry } from "@/lib/chemistry";
 import { analyzeBountyHistory, buildBountyAchievementCatalog } from "@/lib/bountyAchievements";
+import { buildPlayerRivalries } from "@/lib/rivalries";
 import { PlayerAvatar, EloBadge, Last10, StreakBadge, MvpBadge, MerdaBadge, RankBadge } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -154,6 +155,11 @@ export default function PlayerProfile() {
       matchPairings: completed.filter((challenge) => challenge.source === "match_pairing").length,
     };
   }, [publicChallenges, id]);
+
+  const rivalries = useMemo(
+    () => buildPlayerRivalries(id, matches, publicChallenges),
+    [id, matches, publicChallenges]
+  );
 
   const bountyHistory = useMemo(
     () => analyzeBountyHistory(id, players, matches),
@@ -845,19 +851,24 @@ export default function PlayerProfile() {
             <div className="m8-panel rounded-2xl p-4 sm:p-5">
               <div className="flex items-center justify-between gap-3 mb-3">
                 <div>
-                  <div className="brand-kicker mb-1">Rivals</div>
+                  <div className="brand-kicker mb-1">Rivalries</div>
                   <h3 className="font-display font-bold text-lg">Head-to-Head</h3>
                 </div>
-                <UsersRound size={18} className="text-[#697181]" />
+                <Link
+                  to="/rivalries"
+                  className="text-[10px] uppercase tracking-widest text-[#697181] hover:text-white"
+                >
+                  View all
+                </Link>
               </div>
 
-              {challengeInsights.headToHead.length === 0 ? (
+              {rivalries.length === 0 ? (
                 <div className="rounded-xl bg-[#0F1218] border border-[#1D222C] py-6 text-center text-xs text-muted-foreground">
                   No verified rivals yet.
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {challengeInsights.headToHead.slice(0, 3).map((row) => {
+                  {rivalries.slice(0, 3).map((row) => {
                     const opponent = playerMap[row.opponentId];
                     return (
                       <Link
@@ -873,12 +884,23 @@ export default function PlayerProfile() {
                         />
                         <div className="min-w-0 flex-1">
                           <div className="font-semibold text-sm truncate">{opponent?.name || "Player"}</div>
-                          <div className="text-[10px] text-muted-foreground">{row.played} matches</div>
+                          <div className="text-[10px] text-muted-foreground">
+                            {row.meetings} meetings · {row.teamMeetings} team · {row.directMeetings} 1v1
+                          </div>
                         </div>
-                        <div className="font-mono text-sm font-black">
-                          <span className="text-emerald-400">{row.wins}W</span>
-                          <span className="text-muted-foreground mx-1">-</span>
-                          <span className="text-red-400">{row.losses}L</span>
+                        <div className="text-right shrink-0">
+                          <div className="font-mono text-sm font-black">
+                            <span className="text-emerald-400">{row.wins}W</span>
+                            <span className="text-muted-foreground mx-1">-</span>
+                            <span className="text-red-400">{row.losses}L</span>
+                          </div>
+                          {row.moneyVolume > 0 && (
+                            <div className={`font-mono text-[10px] mt-1 ${
+                              row.moneyNet >= 0 ? "text-emerald-400" : "text-red-400"
+                            }`}>
+                              {row.moneyNet >= 0 ? "+" : "-"}€{Math.abs(row.moneyNet).toFixed(0)}
+                            </div>
+                          )}
                         </div>
                       </Link>
                     );
