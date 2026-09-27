@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar } from "@/components/shared";
+import ModeBadge from "@/components/ModeBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { computeContextStats, playerForContext } from "@/lib/elo";
@@ -402,7 +403,7 @@ export default function TeamBuilder() {
 
     if (!created) return;
 
-    toast.success("Match confirmed — now visible in Live Matches");
+    toast.success("Mucho8s confirmed — now live in Match Center");
     navigate("/matches");
   };
 
@@ -445,9 +446,12 @@ export default function TeamBuilder() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="brand-kicker mb-1">Play</div>
-            <h2 className="font-display text-3xl font-black tracking-[-0.03em]">Team Builder</h2>
+            <div className="flex items-center gap-2 mb-2">
+              <ModeBadge mode="mucho8s" compact />
+            </div>
+            <h2 className="font-display text-3xl font-black tracking-[-0.03em]">Mucho8s Builder</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Game first. Build the teams, confirm the match and manage it from Live Matches.
+              Choose game and mode, build the teams, then send the Mucho8s live.
             </p>
           </div>
 
@@ -1097,7 +1101,7 @@ export default function TeamBuilder() {
               <div className="brand-kicker mb-1">Ready</div>
               <h3 className="font-display text-2xl font-black">Alpha vs Bravo</h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Teams ready. Review balance, Elo and chemistry before confirming the Live Match.
+                Teams ready. Review balance, Elo and chemistry before confirming the Mucho8s.
               </p>
             </div>
 
@@ -1189,16 +1193,16 @@ export default function TeamBuilder() {
               onClick={() => void confirmMatch()}
               disabled={!canConfirm || confirmBusy}
               className="w-full h-11 bg-magma hover:bg-[#ff3c4c] text-white font-semibold"
-              title={canConfirm ? "" : "Only the match creator or Admin can confirm the match"}
+              title={canConfirm ? "" : "Only the Mucho8s creator or Admin can confirm"}
             >
               <Check size={16} className="mr-2" />
-              {confirmBusy ? "Confirming..." : "Confirm Match"}
+              {confirmBusy ? "Confirming..." : "Confirm Mucho8s"}
             </Button>
           </div>
 
           {!canConfirm && (
             <div className="text-[11px] text-muted-foreground text-center mt-2">
-              Match confirmation is limited to the match creator or Admin.
+              Mucho8s confirmation is limited to the creator or Admin.
             </div>
           )}
         </section>
