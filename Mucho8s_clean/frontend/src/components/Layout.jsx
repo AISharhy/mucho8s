@@ -5,7 +5,8 @@ import ChallengeCenter from "@/components/ChallengeCenter";
 import CompetitiveEventFX from "@/components/CompetitiveEventFX";
 import { PageSkeleton } from "@/components/ProductState";
 import { PlayerAvatar, EloBadge } from "@/components/shared";
-import { AlertTriangle, Bell, CheckCheck, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, UserCircle } from "lucide-react";
+import ModeBadge from "@/components/ModeBadge";
+import { AlertTriangle, Bell, CheckCheck, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, UserCircle, Gamepad2 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 
 class PageErrorBoundary extends Component {
@@ -75,6 +76,9 @@ export const Layout = () => {
     adminChallengeAlertCount,
     isAdmin,
     challenges,
+    liveMatches,
+    matchReports,
+    matches,
     playerMap,
     playerAvatars,
     dashboardData,
@@ -83,8 +87,24 @@ export const Layout = () => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [onlineOpen, setOnlineOpen] = useState(false);
   const [markingAllRead, setMarkingAllRead] = useState(false);
+  const [seenModeNotificationKeys, setSeenModeNotificationKeys] = useState(() => new Set());
 
-  const notifications = useMemo(() => {
+  useEffect(() => {
+    if (!discordPlayer?.id) {
+      setSeenModeNotificationKeys(new Set());
+      return;
+    }
+
+    try {
+      const raw = localStorage.getItem(`mucho_notifications_seen_${discordPlayer.id}`);
+      const list = raw ? JSON.parse(raw) : [];
+      setSeenModeNotificationKeys(new Set(Array.isArray(list) ? list : []));
+    } catch {
+      setSeenModeNotificationKeys(new Set());
+    }
+  }, [discordPlayer?.id]);
+
+  const mucho1v1Notifications = useMemo(() => {
     if (!discordAccount?.id) return [];
 
     const seriesSeen = new Set();
@@ -174,11 +194,128 @@ export const Layout = () => {
 
         if (!title) return rows;
 
-        rows.push({ challenge, title, opponent, tone });
+        rows.push({
+          key: `mucho1v1:${challenge.id}:${event}`,
+          mode: "mucho1v1",
+          challenge,
+          title,
+          detail: `vs ${opponent?.name || "Player"} · €${(Number(challenge.amount_cents || 0) / 100).toFixed(2)}`,
+          tone,
+          to: `/challenges/${challenge.id}`,
+          timestamp: challenge.updated_at || challenge.created_at,
+        });
         return rows;
       }, [])
       .slice(0, 6);
   }, [challenges, discordAccount, discordPlayer, playerMap]);
+
+  const mucho8sNotifications = useMemo(() => {
+    const playerId = String(discordPlayer?.id || "");
+    if (!playerId) return [];
+
+    const rows = [];
+
+    (Array.isArray(liveMatches) ? liveMatches : []).forEach((match) => {
+      const teamA = (Array.isArray(match?.team_a) ? match.team_a : []).map(String);
+      const teamB = (Array.isArray(match?.team_b) ? match.team_b : []).map(String);
+      if (![...teamA, ...teamB].includes(playerId)) return;
+      if (String(match?.status || "live") !== "live") return;
+
+      rows.push({
+        key: `mucho8s:live:${match.id}`,
+        mode: "mucho8s",
+        title: "Mucho8s is live",
+        detail: [match.format, match.game, match.mode].filter(Boolean).join(" · ") || "Live team match",
+        tone: "magma",
+        to: `/matches/live/${match.id}`,
+        timestamp: match.created_at,
+      });
+    });
+
+    (Array.isArray(matchReports) ? matchReports : []).forEach((report) => {
+      const teamA = (Array.isArray(report?.team_a) ? report.team_a : []).map(String);
+      const teamB = (Array.isArray(report?.team_b) ? report.team_b : []).map(String);
+      if (![...teamA, ...teamB].includes(playerId)) return;
+      if (!["pending", "disputed"].includes(String(report?.status || ""))) return;
+
+      rows.push({
+        key: `mucho8s:report:${report.id}:${report.status}`,
+        mode: "mucho8s",
+        title:
+          report.status === "disputed"
+            ? "Mucho8s result disputed"
+            : "Mucho8s result needs verification",
+        detail: [report.game, report.mode].filter(Boolean).join(" · ") || "Match result",
+        tone: report.status === "disputed" ? "orange" : "gold",
+        to: "/matches",
+        timestamp: report.updated_at || report.created_at,
+      });
+    });
+
+    (Array.isArray(matches) ? matches : []).forEach((match) => {
+      if (match?.trophyBonusEligible !== true) return;
+
+      const unlocks = Array.isArray(match?.trophyUnlocks?.[playerId])
+        ? match.trophyUnlocks[playerId]
+        : [];
+      if (!unlocks.length) return;
+
+      rows.push({
+        key: `mucho8s:trophy:${match.id}`,
+        mode: "mucho8s",
+        title: `${unlocks.length} Trophy8s unlocked`,
+        detail: unlocks
+          .map((item) => String(item || "").replaceAll("-", " "))
+          .join(" · "),
+        tone: "magma",
+        to: `/players/${playerId}`,
+        timestamp: match.date,
+      });
+    });
+
+    return rows
+      .filter((item) => item.key && item.timestamp)
+      .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
+      .slice(0, 8);
+  }, [discordPlayer?.id, liveMatches, matchReports, matches]);
+
+  const notifications = useMemo(
+    () =>
+      [...mucho8sNotifications, ...mucho1v1Notifications]
+        .sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0))
+        .slice(0, 10),
+    [mucho8sNotifications, mucho1v1Notifications]
+  );
+
+  const unseenMucho8sCount = useMemo(
+    () =>
+      mucho8sNotifications.filter(
+        (item) => !seenModeNotificationKeys.has(item.key)
+      ).length,
+    [mucho8sNotifications, seenModeNotificationKeys]
+  );
+
+  const globalNotificationCount =
+    Number(challengeNotificationCount || 0) + unseenMucho8sCount;
+
+  const persistSeenModeNotifications = (keys) => {
+    if (!discordPlayer?.id) return;
+
+    const next = new Set(seenModeNotificationKeys);
+    (keys || []).forEach((key) => {
+      if (key) next.add(key);
+    });
+
+    setSeenModeNotificationKeys(next);
+    try {
+      localStorage.setItem(
+        `mucho_notifications_seen_${discordPlayer.id}`,
+        JSON.stringify([...next].slice(-200))
+      );
+    } catch {
+      // Ignore local storage failures.
+    }
+  };
 
   const handleMarkAllRead = async () => {
     if (!discordAccount?.id || markingAllRead) return;
@@ -199,11 +336,16 @@ export const Layout = () => {
       return seenStatus !== challenge.status || seenEvent !== currentEvent;
     });
 
-    if (!unread.length) return;
+    const unreadMucho8sKeys = mucho8sNotifications
+      .filter((item) => !seenModeNotificationKeys.has(item.key))
+      .map((item) => item.key);
+
+    if (!unread.length && !unreadMucho8sKeys.length) return;
 
     setMarkingAllRead(true);
     try {
       await Promise.all(unread.map((challenge) => markChallengeSeen(challenge.id)));
+      persistSeenModeNotifications(unreadMucho8sKeys);
     } finally {
       setMarkingAllRead(false);
     }
@@ -315,20 +457,20 @@ export const Layout = () => {
                   setNotificationsOpen((open) => !open);
                   setOnlineOpen(false);
                 }}
-                aria-label={challengeNotificationCount > 0 ? `${challengeNotificationCount} Mucho1v1 notifications` : "Mucho1v1 notifications"}
-                title="Mucho1v1 notifications"
+                aria-label={globalNotificationCount > 0 ? `${globalNotificationCount} notifications` : "Notifications"}
+                title="Notifications"
                 aria-expanded={notificationsOpen}
                 aria-controls="challenge-notifications-panel"
                 data-testid="header-challenge-bell"
                 className="m8-action relative w-10 h-10 rounded-xl border border-[#242A35] bg-[#11161E] hover:bg-white/[0.05] hover:border-[#343B48] transition-all flex items-center justify-center text-[#AAB1BE] hover:text-white"
               >
                 <Bell size={19} />
-                {challengeNotificationCount > 0 && (
+                {globalNotificationCount > 0 && (
                   <span
                     data-testid="header-challenge-badge"
                     className="absolute -top-1.5 -right-1.5 min-w-[19px] h-[19px] px-1 rounded-full bg-magma border-2 border-[#0D1016] text-white text-[9px] font-extrabold leading-none flex items-center justify-center shadow-[0_0_14px_rgba(255,42,59,0.45)]"
                   >
-                    {challengeNotificationCount > 99 ? "99+" : challengeNotificationCount}
+                    {globalNotificationCount > 99 ? "99+" : globalNotificationCount}
                   </span>
                 )}
               </button>
@@ -420,17 +562,23 @@ export const Layout = () => {
             )}
 
             {discordPlayer && notificationsOpen && (
-                  <div id="challenge-notifications-panel" role="dialog" aria-label="Mucho1v1 notifications" className="absolute right-0 top-12 w-[min(92vw,380px)] m8-panel rounded-2xl shadow-2xl overflow-hidden z-50">
+                  <div id="challenge-notifications-panel" role="dialog" aria-label="Notifications" className="absolute right-0 top-12 w-[min(92vw,410px)] m8-panel rounded-2xl shadow-2xl overflow-hidden z-50">
                     <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#1D222C]">
                       <div>
-                        <div className="brand-kicker mb-0.5 text-emerald-400">Mucho1v1</div>
-                        <div className="font-display font-bold">Important updates</div>
+                        <div className="brand-kicker mb-0.5">Notifications</div>
+                        <div className="font-display font-bold">Mucho updates</div>
+                        <div className="flex items-center gap-2 mt-1.5" aria-label="Notification modes">
+                          <span className="w-2 h-2 rounded-full bg-magma" title="Mucho8s" />
+                          <span className="w-2 h-2 rounded-full bg-emerald-400" title="Mucho1v1" />
+                          <span className="w-2 h-2 rounded-full bg-[#4F8CFF]" title="MuchoRanked" />
+                          <span className="w-2 h-2 rounded-full bg-[#D5A33A]" title="MuchoTourney" />
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={handleMarkAllRead}
-                          disabled={markingAllRead || challengeNotificationCount === 0}
+                          disabled={markingAllRead || globalNotificationCount === 0}
                           className="h-8 px-2.5 rounded-lg bg-[#171B23] border border-[#2A303B] inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#B8C0CC] hover:text-white hover:bg-white/[0.04] disabled:opacity-40 disabled:cursor-default"
                           aria-label="Mark all notifications as read"
                         >
@@ -451,36 +599,59 @@ export const Layout = () => {
                     <div className="max-h-[420px] overflow-y-auto p-2">
                       {notifications.length === 0 ? (
                         <div className="py-8 text-center text-sm text-muted-foreground">No important notifications.</div>
-                      ) : notifications.map(({ challenge, title, opponent, tone }) => {
+                      ) : notifications.map((item) => {
+                        const tone = item.tone || "neutral";
                         const Icon =
-                          tone === "green" ? Trophy :
-                          tone === "orange" ? ShieldAlert :
-                          tone === "gold" ? WalletCards :
-                          Swords;
+                          item.mode === "mucho8s"
+                            ? Gamepad2
+                            : tone === "green"
+                              ? Trophy
+                              : tone === "orange"
+                                ? ShieldAlert
+                                : tone === "gold"
+                                  ? WalletCards
+                                  : Swords;
                         const toneClass =
                           tone === "green" ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" :
                           tone === "red" ? "text-red-400 bg-red-500/10 border-red-500/20" :
                           tone === "orange" ? "text-orange-400 bg-orange-500/10 border-orange-500/20" :
                           tone === "gold" ? "text-[#D5A33A] bg-[#D5A33A]/10 border-[#D5A33A]/20" :
-                          "text-magma bg-magma/10 border-magma/20";
+                          item.mode === "mucho1v1"
+                            ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                            : "text-magma bg-magma/10 border-magma/20";
+
                         return (
                           <Link
-                            key={challenge.id}
-                            to={`/challenges/${challenge.id}`}
-                            onClick={() => setNotificationsOpen(false)}
+                            key={item.key}
+                            to={item.to}
+                            onClick={() => {
+                              setNotificationsOpen(false);
+                              if (item.mode === "mucho8s") {
+                                persistSeenModeNotifications([item.key]);
+                              } else if (item.challenge?.id) {
+                                void markChallengeSeen(item.challenge.id);
+                              }
+                            }}
                             className="flex items-start gap-3 rounded-xl p-3 hover:bg-white/[0.035] transition-colors"
                           >
                             <div className={`w-9 h-9 rounded-lg border shrink-0 flex items-center justify-center ${toneClass}`}>
                               <Icon size={15} />
                             </div>
+
                             <div className="flex-1 min-w-0">
-                              <div className="text-sm font-semibold truncate">{title}</div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <ModeBadge mode={item.mode} compact />
+                              </div>
+                              <div className="text-sm font-semibold truncate">{item.title}</div>
                               <div className="text-xs text-muted-foreground mt-0.5 truncate">
-                                vs {opponent?.name || "Player"} · €{(Number(challenge.amount_cents || 0) / 100).toFixed(2)}
+                                {item.detail}
                               </div>
                             </div>
+
                             <span className="text-[10px] text-[#697181] shrink-0">
-                              {new Date(challenge.created_at).toLocaleDateString()}
+                              {item.timestamp
+                                ? new Date(item.timestamp).toLocaleDateString()
+                                : ""}
                             </span>
                           </Link>
                         );
@@ -488,11 +659,11 @@ export const Layout = () => {
                     </div>
 
                     <Link
-                      to="/challenges"
+                      to="/play"
                       onClick={() => setNotificationsOpen(false)}
                       className="h-11 border-t border-[#1D222C] flex items-center justify-center text-sm font-semibold text-[#AAB1BE] hover:text-white hover:bg-white/[0.03]"
                     >
-                      Open Mucho1v1 Inbox
+                      Open Play Center
                     </Link>
                   </div>
             )}
