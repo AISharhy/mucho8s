@@ -302,7 +302,7 @@ export default function Statistics() {
           <div className="m8-panel rounded-2xl p-5 border-magma/20">
             <div className="flex items-center justify-between gap-3">
               <ModeBadge mode="mucho8s" />
-              <WalletCards size={18} className="text-magma" />
+              <WalletCards size={18} className="text-emerald-400" />
             </div>
             <div className="grid grid-cols-2 gap-2 mt-4">
               <div className="m8-panel-quiet rounded-xl p-3">
@@ -313,7 +313,7 @@ export default function Statistics() {
               </div>
               <div className="m8-panel-quiet rounded-xl p-3">
                 <div className="brand-kicker">Stake Volume</div>
-                <div className="font-display text-2xl font-black mt-1 text-magma">
+                <div className="font-display text-2xl font-black mt-1 text-emerald-400">
                   €{modeMoneyStats.mucho8s.stake.toFixed(2)}
                 </div>
               </div>
@@ -361,7 +361,7 @@ export default function Statistics() {
                   <div
                     className={`font-mono font-black text-right ${
                       row.mucho8sNet > 0
-                        ? "text-magma"
+                        ? "text-emerald-400"
                         : row.mucho8sNet < 0
                           ? "text-red-400"
                           : "text-[#697181]"
