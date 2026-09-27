@@ -57,9 +57,10 @@ export default function AdminPanel() {
     adminChallengeAlertCount,
     competitionData,
     startNewSeason,
+    repairElo,
   } = useData();
   const [newName, setNewName] = useState("");
-  const [newElo, setNewElo] = useState(1000);
+  const [newElo, setNewElo] = useState(500);
   const [editing, setEditing] = useState({}); // id -> { name, elo }
   const [histOpen, setHistOpen] = useState(false);
   const [discordWebhook, setDiscordWebhook] = useState("");
@@ -80,6 +81,7 @@ export default function AdminPanel() {
   const [matchControlFilter, setMatchControlFilter] = useState("all");
   const [seasonName, setSeasonName] = useState("");
   const [seasonBusy, setSeasonBusy] = useState(false);
+  const [eloRepairBusy, setEloRepairBusy] = useState(false);
   const fileRef = useRef(null);
 
   const loadDiscordAccounts = useCallback(async () => {
@@ -267,7 +269,7 @@ export default function AdminPanel() {
 
   const handleAdd = () => {
     if (!newName.trim()) return toast.error("Enter a player name");
-    addPlayer(newName.trim(), Number(newElo) || 1000);
+    addPlayer(newName.trim(), Number(newElo) || 500);
     toast.success(`${newName.trim()} added to the roster`);
     setNewName("");
     setNewElo(1000);
@@ -453,6 +455,23 @@ export default function AdminPanel() {
     if (!ok) return;
     setSeasonName("");
     toast.success("New season started and previous season archived");
+  };
+
+  const runEloRepair = async () => {
+    if (eloRepairBusy) return;
+    setEloRepairBusy(true);
+    const result = await repairElo();
+    setEloRepairBusy(false);
+    if (!result) return;
+
+    const changed = Array.isArray(result.changed) ? result.changed : [];
+    if (!changed.length) {
+      toast.success(`Elo checked: ${Number(result.checked || 0)} players, no errors found`);
+      return;
+    }
+
+    toast.success(`Repair Elo completed: ${changed.length} player${changed.length === 1 ? "" : "s"} corrected`);
+    void loadAuditLogs();
   };
 
   return (
@@ -665,6 +684,15 @@ export default function AdminPanel() {
               title="Reset all statistics?"
               desc="Every player's Elo, matches, wins, losses and MVP counts will be wiped and match history cleared. This cannot be undone."
               onConfirm={() => { resetStats(); toast.success("Statistics reset"); }}
+            />
+
+            <ConfirmButton
+              testid="admin-repair-elo-btn"
+              label={eloRepairBusy ? "Repairing Elo..." : "Repair Elo"}
+              icon={<RotateCcw size={18} className="mr-2 text-emerald-400" />}
+              title="Repair all player Elo?"
+              desc="Rebuilds each player's current Elo from the latest trusted season/admin checkpoint, verified match Elo changes and verified challenge Elo changes. Match records and statistics are not deleted."
+              onConfirm={runEloRepair}
             />
 
             <Button onClick={() => setHistOpen(true)} data-testid="admin-add-historical-btn" className="m8-action justify-start bg-[#0F1218] border border-[#222834] hover:bg-white/[0.04] hover:border-[#394150] h-14 rounded-xl">
