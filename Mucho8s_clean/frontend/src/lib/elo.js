@@ -6,6 +6,29 @@ export const MVP_BONUS = 3;
 export const MERDA_PENALTY = 0;
 export const UPSET_BONUS = 0;
 
+export const ELO_K = 50;
+export const ELO_SCALE = 400;
+export const MIN_RESULT_DELTA = 5;
+export const MAX_RESULT_DELTA = 45;
+
+export const expectedEloScore = (elo, opponentElo) => {
+  const mine = Number(elo) || BASE_ELO;
+  const theirs = Number(opponentElo) || BASE_ELO;
+  return 1 / (1 + Math.pow(10, (theirs - mine) / ELO_SCALE));
+};
+
+// Dynamic result component. Equal Elo remains ±25.
+// Upsets are worth more, expected wins are worth less.
+export const eloResultDelta = (elo, opponentElo, won) => {
+  const expected = expectedEloScore(elo, opponentElo);
+  const raw = ELO_K * ((won ? 1 : 0) - expected);
+  const magnitude = Math.max(
+    MIN_RESULT_DELTA,
+    Math.min(MAX_RESULT_DELTA, Math.round(Math.abs(raw)))
+  );
+  return won ? magnitude : -magnitude;
+};
+
 // Balancing formula weights
 export const WEIGHTS = { peak: 0.6, current: 0.25, winRate: 0.15 };
 
