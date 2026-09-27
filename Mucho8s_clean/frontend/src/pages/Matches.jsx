@@ -34,7 +34,6 @@ import {
   ArrowRightLeft,
   Lock,
   Gamepad2,
-  RotateCcw,
   Swords,
 } from "lucide-react";
 import { GAMES } from "@/lib/demoData";
@@ -150,60 +149,11 @@ export default function Matches() {
   const [query, setQuery] = useState("");
   const [winnerFilter, setWinnerFilter] = useState("all");
   const [gameFilter, setGameFilter] = useState("ALL");
-  const [rematchBusyId, setRematchBusyId] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => setLiveNow(Date.now()), 30000);
     return () => clearInterval(timer);
   }, []);
-
-  const createRematch = async (match) => {
-    if (!isAdmin || !match) return;
-
-    const teamA = Array.isArray(match.teamA) ? match.teamA : [];
-    const teamB = Array.isArray(match.teamB) ? match.teamB : [];
-    const pairings = (Array.isArray(match.pairings) ? match.pairings : [])
-      .filter(
-        (pair) =>
-          pair?.playerAId &&
-          pair?.playerBId &&
-          Number(pair?.amount || 0) > 0
-      )
-      .map((pair) => ({
-        playerAId: pair.playerAId,
-        playerBId: pair.playerBId,
-        amount: Number(pair.amount || 0),
-        platform: ["paypal", "revolut"].includes(
-          String(pair.platform || "").toLowerCase()
-        )
-          ? String(pair.platform).toLowerCase()
-          : "paypal",
-      }));
-
-    if (
-      teamA.length < 2 ||
-      teamA.length !== teamB.length ||
-      pairings.length !== teamA.length
-    ) {
-      toast.error("This match does not have a complete rematch setup");
-      return;
-    }
-
-    setRematchBusyId(match.id);
-    const created = await createLiveMatch({
-      teamA,
-      teamB,
-      game: match.game || "",
-      mode: match.mode || "",
-      format: `${teamA.length}v${teamB.length}`,
-      pairings,
-    });
-    setRematchBusyId(null);
-
-    if (!created) return;
-    setView("live");
-    toast.success("Rematch created — now live");
-  };
 
   const liveChallenges = useMemo(
     () =>
@@ -718,39 +668,7 @@ export default function Matches() {
                 {match.pairings.length} pairings
               </span>
 
-              {isAdmin && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      size="sm"
-                      disabled={rematchBusyId === match.id}
-                      className="h-8 px-3 rounded-lg bg-magma hover:bg-[#ff3c4c] text-white font-bold"
-                    >
-                      <RotateCcw size={13} className="mr-1.5" />
-                      {rematchBusyId === match.id ? "Creating..." : "Rematch"}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="bg-[#101319] border-[#242A35]">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Create rematch?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This creates a new Live Match with the same teams, pairings and amounts.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel className="bg-[#181B26] border-[#2A303B]">
-                        Cancel
-                      </AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => createRematch(match)}
-                        className="bg-magma hover:bg-[#ff3c4c] text-white"
-                      >
-                        Go Live
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
+
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
