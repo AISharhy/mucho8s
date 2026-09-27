@@ -201,11 +201,16 @@ export default function Statistics() {
         count: direct1v1.length,
         stake: mucho1v1Stake,
       },
-      rows: [...rows.values()].sort(
-        (a, b) =>
-          Math.abs(b.mucho8sNet) + Math.abs(b.mucho1v1Net) -
-          (Math.abs(a.mucho8sNet) + Math.abs(a.mucho1v1Net))
-      ),
+      total: {
+        count: mucho8sPairings + direct1v1.length,
+        stake: mucho8sStake + mucho1v1Stake,
+      },
+      rows: [...rows.values()]
+        .map((row) => ({
+          ...row,
+          moneyNet: Number(row.mucho8sNet || 0) + Number(row.mucho1v1Net || 0),
+        }))
+        .sort((a, b) => Math.abs(b.moneyNet) - Math.abs(a.moneyNet)),
     };
   }, [matches, publicChallenges, competitionData, playerMap]);
 
@@ -289,54 +294,37 @@ export default function Statistics() {
         </ChartCard>
       </div>
 
-      <section className="space-y-4" data-testid="mode-money-statistics">
+      <section className="space-y-4" data-testid="money-statistics">
         <div>
-          <div className="brand-kicker mb-1">Money by mode · {modeMoneyStats.seasonName}</div>
-          <h3 className="font-display text-xl font-bold">Mucho Money Split</h3>
+          <div className="brand-kicker mb-1">Money · {modeMoneyStats.seasonName}</div>
+          <h3 className="font-display text-xl font-bold">Verified Money</h3>
           <p className="text-sm text-muted-foreground mt-1">
-            Mucho8s uses verified match pairings. Mucho1v1 uses direct verified challenges only.
+            One combined money statistic across every active Mucho mode.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          <div className="m8-panel rounded-2xl p-5 border-magma/20">
-            <div className="flex items-center justify-between gap-3">
-              <ModeBadge mode="mucho8s" />
-              <WalletCards size={18} className="text-emerald-400" />
-            </div>
-            <div className="grid grid-cols-2 gap-2 mt-4">
-              <div className="m8-panel-quiet rounded-xl p-3">
-                <div className="brand-kicker">Pairings</div>
-                <div className="font-display text-2xl font-black mt-1">
-                  {modeMoneyStats.mucho8s.count}
-                </div>
-              </div>
-              <div className="m8-panel-quiet rounded-xl p-3">
-                <div className="brand-kicker">Stake Volume</div>
-                <div className="font-display text-2xl font-black mt-1 text-emerald-400">
-                  €{modeMoneyStats.mucho8s.stake.toFixed(2)}
-                </div>
+        <div className="m8-panel rounded-2xl p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="brand-kicker">All verified modes</div>
+              <div className="font-display text-2xl font-black mt-1 text-emerald-400">
+                €{modeMoneyStats.total.stake.toFixed(2)}
               </div>
             </div>
+            <WalletCards size={20} className="text-emerald-400" />
           </div>
 
-          <div className="m8-panel rounded-2xl p-5 border-emerald-500/20">
-            <div className="flex items-center justify-between gap-3">
-              <ModeBadge mode="mucho1v1" />
-              <Swords size={18} className="text-emerald-400" />
-            </div>
-            <div className="grid grid-cols-2 gap-2 mt-4">
-              <div className="m8-panel-quiet rounded-xl p-3">
-                <div className="brand-kicker">Verified 1v1</div>
-                <div className="font-display text-2xl font-black mt-1">
-                  {modeMoneyStats.mucho1v1.count}
-                </div>
+          <div className="grid grid-cols-2 gap-2 mt-4">
+            <div className="m8-panel-quiet rounded-xl p-3">
+              <div className="brand-kicker">Transactions</div>
+              <div className="font-display text-2xl font-black mt-1">
+                {modeMoneyStats.total.count}
               </div>
-              <div className="m8-panel-quiet rounded-xl p-3">
-                <div className="brand-kicker">Stake Volume</div>
-                <div className="font-display text-2xl font-black mt-1 text-emerald-400">
-                  €{modeMoneyStats.mucho1v1.stake.toFixed(2)}
-                </div>
+            </div>
+            <div className="m8-panel-quiet rounded-xl p-3">
+              <div className="brand-kicker">Stake Volume</div>
+              <div className="font-display text-2xl font-black mt-1 text-emerald-400">
+                €{modeMoneyStats.total.stake.toFixed(2)}
               </div>
             </div>
           </div>
@@ -344,28 +332,21 @@ export default function Statistics() {
 
         {modeMoneyStats.rows.length > 0 && (
           <div className="m8-panel rounded-2xl overflow-hidden">
-            <div className="grid grid-cols-[1fr_110px_110px] gap-3 px-4 py-3 bg-[#0F1218] border-b border-[#1D222C] text-[10px] uppercase tracking-widest text-muted-foreground">
+            <div className="grid grid-cols-[1fr_130px] gap-3 px-4 py-3 bg-[#0F1218] border-b border-[#1D222C] text-[10px] uppercase tracking-widest text-muted-foreground">
               <div>Player</div>
-              <div className="text-right text-[#8D95A4]">Mucho8s</div>
-              <div className="text-right text-[#8D95A4]">Mucho1v1</div>
+              <div className="text-right">Money Net</div>
             </div>
 
             <div className="divide-y divide-[#1D222C]">
               {modeMoneyStats.rows.slice(0, 12).map((row) => (
                 <div
                   key={row.id}
-                  className="grid grid-cols-[1fr_110px_110px] gap-3 items-center px-4 py-3"
+                  className="grid grid-cols-[1fr_130px] gap-3 items-center px-4 py-3"
                 >
                   <div className="font-semibold truncate">{row.name}</div>
-
                   <div className="font-mono font-black text-right text-emerald-400">
-                    {row.mucho8sNet > 0 ? "+" : row.mucho8sNet < 0 ? "-" : ""}
-                    €{Math.abs(row.mucho8sNet).toFixed(2)}
-                  </div>
-
-                  <div className="font-mono font-black text-right text-emerald-400">
-                    {row.mucho1v1Net > 0 ? "+" : row.mucho1v1Net < 0 ? "-" : ""}
-                    €{Math.abs(row.mucho1v1Net).toFixed(2)}
+                    {row.moneyNet > 0 ? "+" : row.moneyNet < 0 ? "-" : ""}
+                    €{Math.abs(row.moneyNet).toFixed(2)}
                   </div>
                 </div>
               ))}
