@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { RecordMatchDialog } from "@/components/RecordMatchDialog";
 import MatchResultCenter from "@/components/MatchResultCenter";
 import { EmptyState } from "@/components/ProductState";
+import ModeBadge, { isDirectMucho1v1 } from "@/components/ModeBadge";
 import {
   Dialog,
   DialogContent,
@@ -67,8 +68,8 @@ const TeamList = ({ ids, playerMap, playerAvatars, eloChanges, pairings = [], mv
             <div className="text-sm font-semibold truncate flex items-center gap-1.5">
               <span className="truncate">{p.name}</span>
               {isMvp && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#D5A33A]/10 border border-[#D5A33A]/20 text-[#D5A33A] text-[8px] font-black uppercase tracking-wider shrink-0">
-                  <span aria-hidden="true">🏆</span> MVP
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-magma/[0.07] border border-magma/20 text-magma text-[8px] font-black uppercase tracking-wider shrink-0">
+                  <Trophy size={9} /> MVP
                 </span>
               )}
               {isMerda && (
@@ -148,6 +149,7 @@ export default function Matches() {
   const [query, setQuery] = useState("");
   const [winnerFilter, setWinnerFilter] = useState("all");
   const [gameFilter, setGameFilter] = useState("ALL");
+  const [modeFilter, setModeFilter] = useState("all");
 
   useEffect(() => {
     const timer = setInterval(() => setLiveNow(Date.now()), 30000);
@@ -157,10 +159,12 @@ export default function Matches() {
   const liveChallenges = useMemo(
     () =>
       (Array.isArray(publicChallenges) ? publicChallenges : [])
-        .filter((challenge) =>
-          ["pending", "accepted", "result_pending", "disputed"].includes(
-            String(challenge?.status || "")
-          )
+        .filter(
+          (challenge) =>
+            isDirectMucho1v1(challenge) &&
+            ["pending", "accepted", "result_pending", "disputed"].includes(
+              String(challenge?.status || "")
+            )
         )
         .sort(
           (a, b) =>
@@ -216,6 +220,8 @@ export default function Matches() {
         );
         if (!verified) return false;
 
+        if (!isDirectMucho1v1(challenge)) return false;
+
         const alreadyInsideTeamMatch =
           String(challenge?.source || "") === "match_pairing" &&
           challenge?.match_id &&
@@ -238,6 +244,9 @@ export default function Matches() {
     const q = query.trim().toLowerCase();
 
     return history.filter((row) => {
+      if (modeFilter === "mucho8s" && row.type !== "match") return false;
+      if (modeFilter === "mucho1v1" && row.type !== "chall") return false;
+
       if (row.type === "match") {
         const match = row.item;
 
@@ -273,7 +282,7 @@ export default function Matches() {
         String(challenge.platform || "").toLowerCase().includes(q)
       );
     });
-  }, [history, query, winnerFilter, gameFilter, safePlayerMap]);
+  }, [history, query, winnerFilter, gameFilter, modeFilter, safePlayerMap]);
 
   const renderLiveTeamMatch = (match) => {
     const teamA = Array.isArray(match.team_a) ? match.team_a : [];
@@ -294,7 +303,7 @@ export default function Matches() {
         className="m8-panel rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:border-[#394150] transition-all"
       >
         <div className="flex items-center gap-4 min-w-0 flex-1">
-          <Gamepad2 size={18} className="text-emerald-400 shrink-0" />
+          <ModeBadge mode="mucho8s" compact />
           <div className="min-w-0 flex-1">
             <div className="font-display font-bold truncate">
               {names(teamA)} <span className="text-[#596170]">vs</span> {names(teamB)}
@@ -342,7 +351,7 @@ export default function Matches() {
         to={`/challenges/${challenge.id}`}
         className="m8-panel rounded-2xl p-4 flex items-center gap-4 hover:border-[#394150] transition-all"
       >
-        <Swords size={18} className="text-[#D5A33A] shrink-0" />
+        <ModeBadge mode="mucho1v1" compact />
         <div className="min-w-0 flex-1">
           <div className="font-display font-bold truncate">
             {challenger?.name || "Player"} <span className="text-[#596170]">vs</span> {challenged?.name || "Player"}
@@ -372,7 +381,7 @@ export default function Matches() {
         onClick={() => setVerificationReportId(String(report.id))}
         className="m8-panel w-full rounded-2xl p-4 flex items-center gap-4 hover:border-[#394150] transition-all text-left"
       >
-        <Gamepad2 size={18} className="text-magma shrink-0" />
+        <ModeBadge mode="mucho8s" compact />
         <div className="min-w-0 flex-1">
           <div className="font-display font-bold truncate">
             {names(teamA)} <span className="text-[#596170]">vs</span> {names(teamB)}
@@ -405,14 +414,12 @@ export default function Matches() {
         className="m8-panel rounded-[22px] p-5 animate-fade-up overflow-hidden relative"
         data-testid={`match-history-chall-${challenge.id}`}
       >
-        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#D5A33A] to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-400 to-transparent" />
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#D5A33A]/10 border border-[#D5A33A]/20 text-[#D5A33A] text-[10px] font-black uppercase tracking-wider">
-                <Swords size={12} /> Money Match
-              </span>
+              <ModeBadge mode="mucho1v1" compact />
               <span className="font-mono text-xs text-muted-foreground">
                 {new Date(
                   challenge.verified_at || challenge.created_at
@@ -431,7 +438,7 @@ export default function Matches() {
           </div>
 
           <div className="sm:text-right">
-            <div className="font-display text-2xl font-black text-[#D5A33A]">
+            <div className="font-display text-2xl font-black text-emerald-400">
               {money(amount)}
             </div>
             <div className="text-xs font-bold text-emerald-400 mt-1">
@@ -491,7 +498,8 @@ export default function Matches() {
       />
 
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-2 text-sm flex-wrap">
+          <ModeBadge mode="mucho8s" compact />
           <span className="font-mono text-muted-foreground">
             {new Date(match.date).toLocaleString()}
           </span>
@@ -662,7 +670,7 @@ export default function Matches() {
           >
             <div className="flex items-center gap-2 mb-3">
               <WalletCards size={15} className="text-[#D5A33A]" />
-              <span className="brand-kicker">Money Matchups</span>
+              <span className="brand-kicker text-magma">Mucho8s Pairings</span>
               <span className="ml-auto text-[10px] text-muted-foreground">
                 {match.pairings.length} pairings
               </span>
@@ -727,10 +735,13 @@ export default function Matches() {
       <section className="m8-panel rounded-2xl p-5 sm:p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <div className="brand-kicker mb-1">Matches</div>
+            <div className="brand-kicker mb-1">Match Center</div>
             <h2 className="font-display text-3xl font-black tracking-[-0.03em]">
-              Matches
+              Match History
             </h2>
+            <p className="text-sm text-[#7F8795] mt-1">
+              Mucho8s and Mucho1v1 stay visually separated in one verified timeline.
+            </p>
           </div>
 
           <div className="inline-flex self-start lg:self-auto rounded-xl border border-[#222834] bg-[#0F1218] p-1">
@@ -760,7 +771,33 @@ export default function Matches() {
         </div>
 
         {view === "history" && (
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-5 pt-4 border-t border-[#1D222C]">
+          <div className="flex flex-col gap-3 mt-5 pt-4 border-t border-[#1D222C]">
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                ["all", "All"],
+                ["mucho8s", "Mucho8s"],
+                ["mucho1v1", "Mucho1v1"],
+              ].map(([key, label]) => (
+                <button
+                  type="button"
+                  key={key}
+                  onClick={() => setModeFilter(key)}
+                  className={`h-8 px-3 rounded-lg border text-[10px] font-black uppercase tracking-wider transition-all ${
+                    modeFilter === key
+                      ? key === "mucho8s"
+                        ? "bg-magma text-white border-magma"
+                        : key === "mucho1v1"
+                          ? "bg-emerald-400 text-black border-emerald-400"
+                          : "bg-white text-black border-white"
+                      : "bg-[#0F1218] text-[#8D95A4] border-[#222834] hover:text-white"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="relative flex-1 max-w-md">
               <Search
                 size={18}
@@ -807,6 +844,7 @@ export default function Matches() {
                 </button>
               ))}
             </div>
+            </div>
           </div>
         )}
       </section>
@@ -835,7 +873,7 @@ export default function Matches() {
               title={history.length === 0 ? "No match history yet" : "No matches found"}
               description={
                 history.length === 0
-                  ? "Verified team matches and Money Challs will appear here."
+                  ? "Verified Mucho8s and Mucho1v1 results will appear here."
                   : "Try changing the search or filters."
               }
             />
@@ -855,7 +893,7 @@ export default function Matches() {
       >
         <DialogContent className="bg-[#101319] border-[#242A35] max-w-3xl rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="font-display text-2xl">Match Verification</DialogTitle>
+            <DialogTitle className="font-display text-2xl">Mucho8s Verification</DialogTitle>
           </DialogHeader>
           <MatchResultCenter
             reportId={verificationReportId}
