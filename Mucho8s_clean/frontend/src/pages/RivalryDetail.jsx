@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar } from "@/components/shared";
+import ModeBadge from "@/components/ModeBadge";
 import { buildRivalries } from "@/lib/rivalries";
 
 const euro = (value) =>
@@ -25,7 +26,9 @@ const ResultDot = ({ item, focusPlayerId, focusPlayerName }) => {
   return (
     <span
       title={`${focusPlayerName} ${won ? "won" : "lost"}`}
-      className={`w-8 h-8 rounded-lg border inline-flex items-center justify-center text-[10px] font-black ${
+      className={`w-8 h-8 rounded-lg border inline-flex items-center justify-center text-[10px] font-black ring-1 ring-inset ${
+        item.type === "1v1" ? "ring-emerald-500/35" : "ring-magma/35"
+      } ${
         won
           ? "border-emerald-500/25 bg-emerald-500/[0.08] text-emerald-400"
           : "border-red-500/20 bg-red-500/[0.06] text-red-400"
@@ -174,16 +177,16 @@ export default function RivalryDetail() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-6">
-          <div className="rounded-xl border border-[#222834] bg-[#0F1218] px-3 py-3">
-            <div className="text-[9px] uppercase tracking-widest text-[#697181]">
-              Team H2H
+          <div className="rounded-xl border border-magma/20 bg-magma/[0.025] px-3 py-3">
+            <div className="text-[9px] uppercase tracking-widest text-magma">
+              Mucho8s H2H
             </div>
             <div className="font-mono font-black text-lg mt-1">{rivalry.teamMeetings}</div>
           </div>
 
-          <div className="rounded-xl border border-[#222834] bg-[#0F1218] px-3 py-3">
-            <div className="text-[9px] uppercase tracking-widest text-[#697181]">
-              1v1 H2H
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.025] px-3 py-3">
+            <div className="text-[9px] uppercase tracking-widest text-emerald-400">
+              Mucho1v1 H2H
             </div>
             <div className="font-mono font-black text-lg mt-1">{rivalry.directMeetings}</div>
           </div>
@@ -275,21 +278,18 @@ export default function RivalryDetail() {
                 key={`${item.id}-${index}`}
                 className="rounded-xl border border-[#202631] bg-[#0F1218] px-3 py-3 flex flex-col sm:flex-row sm:items-center gap-3"
               >
-                <div className="w-9 h-9 rounded-lg border border-[#2A303B] bg-[#151923] flex items-center justify-center shrink-0">
-                  {item.type === "1v1" ? (
-                    <Swords size={15} className="text-[#D5A33A]" />
-                  ) : (
-                    <Gamepad2 size={15} className="text-[#8E98FF]" />
-                  )}
-                </div>
+                <ModeBadge
+                  mode={item.type === "1v1" ? "mucho1v1" : "mucho8s"}
+                  compact
+                  className="shrink-0"
+                />
 
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold text-sm">
                     <span className="text-emerald-400">{winnerName}</span> won
                   </div>
                   <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[10px] text-muted-foreground">
-                    <span>{item.type === "1v1" ? "1v1 Chall" : "Team Match"}</span>
-                    {item.format && <><span>·</span><span>{item.format}</span></>}
+                    {item.format && <span>{item.format}</span>}
                     {item.game && <><span>·</span><span>{item.game}</span></>}
                     {item.mode && <><span>·</span><span>{item.mode}</span></>}
                   </div>
@@ -297,7 +297,9 @@ export default function RivalryDetail() {
 
                 <div className="flex items-center gap-4 sm:justify-end">
                   {Number(item.amount || 0) > 0 && (
-                    <div className="inline-flex items-center gap-1.5 font-mono font-black text-sm text-[#D5A33A]">
+                    <div className={`inline-flex items-center gap-1.5 font-mono font-black text-sm ${
+                      item.type === "1v1" ? "text-emerald-400" : "text-magma"
+                    }`}>
                       <WalletCards size={13} />
                       {euro(item.amount)}
                     </div>
