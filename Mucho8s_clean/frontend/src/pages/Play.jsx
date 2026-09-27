@@ -5,6 +5,7 @@ import {
   Gamepad2,
   Search,
   Swords,
+  Landmark,
   WalletCards,
   Link2Off,
   Trophy,
@@ -284,8 +285,8 @@ export default function Play() {
               </p>
             </div>
 
-            <div className="w-10 h-10 rounded-xl border border-[#D5A33A]/25 bg-[#D5A33A]/[0.06] flex items-center justify-center shrink-0">
-              <Swords size={18} className="text-[#D5A33A]" />
+            <div className="w-10 h-10 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] flex items-center justify-center shrink-0">
+              <Landmark size={18} className="text-emerald-400" />
             </div>
           </div>
 
