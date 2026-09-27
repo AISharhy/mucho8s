@@ -503,7 +503,7 @@ export default function AdminPanel() {
               {competitionData?.current?.season_name || `Season ${competitionData?.current?.season_number || 1}`}
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Starting a new season archives the current ranking and resets Elo/statistics to 1000.
+              Starting a new season archives the current ranking and resets Elo/statistics to 500 (Iron).
             </p>
           </div>
 
@@ -527,7 +527,7 @@ export default function AdminPanel() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Start a new season?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    The current season will be archived. Player Elo and seasonal statistics will reset to 1000, and current match history will move into the season archive.
+                    The current season will be archived. Player Elo and seasonal statistics will reset to 500 (Iron), and current match history will move into the season archive.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
