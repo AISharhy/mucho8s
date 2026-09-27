@@ -1063,15 +1063,34 @@ export default function PlayerProfile() {
 
           <div className="m8-profile-stat-strip mt-6">
             {[
-              { label: "Picco Elo", value: player.peakElo, tone: "text-[#D5A33A]" },
-              { label: "Record matches", value: `${player.wins || 0}W - ${player.losses || 0}L`, tone: "text-white" },
-              { label: "Win Rate", value: `${winRate(player)}%`, tone: "text-white" },
-              { label: "Mucho1v1 Won", value: `${challengeStats.wonValue.toFixed(0)}`, tone: "text-emerald-400" },
-              { label: "Mucho1v1 Record", value: `${challengeStats.wins}W - ${challengeStats.losses}L`, tone: "text-white" },
+              {
+                label: "Peak Elo",
+                value: player.peakElo,
+                tone: "text-[#D5A33A]",
+              },
+              {
+                label: "Mucho8s Record",
+                value: `${player.wins || 0}W - ${player.losses || 0}L`,
+                tone: "text-white",
+              },
+              {
+                label: "Mucho8s Win Rate",
+                value: `${winRate(player)}%`,
+                tone: "text-white",
+              },
+              {
+                label: "Mucho8s Winnings",
+                value: `€${Number(mucho8sInsights.wonValue || 0).toFixed(0)}`,
+                tone: "text-emerald-400",
+              },
             ].map((item) => (
               <div key={item.label} className="m8-profile-stat">
-                <div className="text-[9px] uppercase tracking-[0.16em] text-[#697181] font-bold">{item.label}</div>
-                <div className={`font-mono font-black text-base sm:text-lg mt-1 ${item.tone}`}>{item.value}</div>
+                <div className="text-[9px] uppercase tracking-[0.16em] text-[#697181] font-bold">
+                  {item.label}
+                </div>
+                <div className={`font-mono font-black text-base sm:text-lg mt-1 ${item.tone}`}>
+                  {item.value}
+                </div>
               </div>
             ))}
           </div>
@@ -1166,7 +1185,7 @@ export default function PlayerProfile() {
             data-testid="profile-tab-challenges"
           >
             <Swords size={16} />
-            Le mie challenges
+            Mucho1v1
             {myChallenges.some((challenge) =>
               ["pending", "accepted", "result_pending", "disputed"].includes(challenge.status)
             ) && (
