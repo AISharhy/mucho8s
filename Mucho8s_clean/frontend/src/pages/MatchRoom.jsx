@@ -107,6 +107,7 @@ export default function MatchRoom() {
   const navigate = useNavigate();
   const {
     liveMatches,
+    matches,
     discordPlayer,
     playerMap,
     playerAvatars,
@@ -131,6 +132,150 @@ export default function MatchRoom() {
       ) || null,
     [liveMatches, id]
   );
+
+  const trophyOpportunities = useMemo(() => {
+    const playerId = String(discordPlayer?.id || "");
+    if (!match || !playerId) return [];
+
+    const liveA = Array.isArray(match.team_a) ? match.team_a.map(String) : [];
+    const liveB = Array.isArray(match.team_b) ? match.team_b.map(String) : [];
+    if (![...liveA, ...liveB].includes(playerId)) return [];
+
+    const history = (Array.isArray(matches) ? matches : [])
+      .filter(
+        (item) =>
+          (item.teamA || []).map(String).includes(playerId) ||
+          (item.teamB || []).map(String).includes(playerId)
+      )
+      .sort(
+        (a, b) =>
+          new Date(a?.date || 0).getTime() - new Date(b?.date || 0).getTime()
+      );
+
+    const unlocked = new Set();
+    const h2h = new Map();
+    const lastByOpponent = new Map();
+    let streak = 0;
+    let wonValue = 0;
+
+    history.forEach((item, index) => {
+      const teamA = (item.teamA || []).map(String);
+      const teamB = (item.teamB || []).map(String);
+      const inA = teamA.includes(playerId);
+      const opponents = inA ? teamB : teamA;
+      const winnerSide = item.winner === "B" ? "B" : "A";
+      const won = (inA && winnerSide === "A") || (!inA && winnerSide === "B");
+
+      streak = won
+        ? (streak > 0 ? streak + 1 : 1)
+        : (streak < 0 ? streak - 1 : -1);
+
+      if (won && streak >= 4) {
+        unlocked.add("on-fire");
+        unlocked.add("clean-sweep");
+      }
+      if (won && streak >= 8) unlocked.add("unstoppable");
+      if (index + 1 >= 40) unlocked.add("veteran");
+
+      const pairing = (Array.isArray(item.pairings) ? item.pairings : []).find(
+        (pair) =>
+          String(pair?.playerAId || "") === playerId ||
+          String(pair?.playerBId || "") === playerId
+      );
+      const amount = Math.max(0, Number(pairing?.amount) || 0);
+
+      if (won && amount > 0) {
+        wonValue += amount;
+        if (wonValue >= 50) unlocked.add("money-maker");
+        if (amount >= 20) unlocked.add("high-roller");
+      }
+
+      opponents.forEach((opponentId) => {
+        const key = String(opponentId);
+        const row = h2h.get(key) || { played: 0, wins: 0 };
+        const previous = lastByOpponent.get(key);
+
+        row.played += 1;
+        if (won) row.wins += 1;
+        h2h.set(key, row);
+
+        if (row.played >= 8) unlocked.add("rivalry");
+        if (row.wins >= 4) unlocked.add("nemesis");
+        if (won && previous === "L") unlocked.add("run-it-back");
+
+        lastByOpponent.set(key, won ? "W" : "L");
+      });
+    });
+
+    const opportunities = [];
+    const add = (opportunityId, title, detail) => {
+      if (
+        unlocked.has(opportunityId) ||
+        opportunities.some((item) => item.id === opportunityId)
+      ) {
+        return;
+      }
+      opportunities.push({ id: opportunityId, title, detail, reward: 3 });
+    };
+
+    if (streak === 3) {
+      add("on-fire", "On Fire", "Win this Mucho8s · reach 4W");
+      add("clean-sweep", "Clean Sweep", "Win this Mucho8s · 4 straight wins");
+    }
+    if (streak === 7) {
+      add("unstoppable", "Unstoppable", "Win this Mucho8s · reach 8W");
+    }
+    if (history.length === 39) {
+      add("veteran", "Veteran", "Complete this Mucho8s · match #40");
+    }
+
+    const livePairing = (Array.isArray(match.pairings) ? match.pairings : []).find(
+      (pair) =>
+        String(pair?.playerAId || "") === playerId ||
+        String(pair?.playerBId || "") === playerId
+    );
+    const liveAmount = Math.max(0, Number(livePairing?.amount) || 0);
+
+    if (liveAmount >= 20) {
+      add(
+        "high-roller",
+        "High Roller",
+        "Win your €" + liveAmount.toFixed(0) + " pairing"
+      );
+    }
+    if (wonValue < 50 && liveAmount > 0 && wonValue + liveAmount >= 50) {
+      add(
+        "money-maker",
+        "Money Maker",
+        "Win this pairing · €" +
+          wonValue.toFixed(0) +
+          " → €" +
+          (wonValue + liveAmount).toFixed(0)
+      );
+    }
+
+    const liveOpponents = liveA.includes(playerId) ? liveB : liveA;
+    liveOpponents.forEach((opponentId) => {
+      const opponent = playerMap[opponentId]?.name || "opponent";
+      const row = h2h.get(String(opponentId)) || { played: 0, wins: 0 };
+
+      if (row.played === 7) {
+        add("rivalry", "Rivalry", "Play vs " + opponent + " · meeting #8");
+      }
+      if (row.wins === 3) {
+        add("nemesis", "Nemesis", "Beat " + opponent + " · win #4");
+      }
+      if (lastByOpponent.get(String(opponentId)) === "L") {
+        add(
+          "run-it-back",
+          "Run It Back",
+          "Beat " + opponent + " after the last loss"
+        );
+      }
+    });
+
+    return opportunities;
+  }, [match, matches, discordPlayer?.id, playerMap]);
 
   if (!match) {
     return (
@@ -317,6 +462,50 @@ export default function MatchRoom() {
             <div className="text-xs text-orange-200/60 mt-1">
               The Mucho8s stays live until an Admin approves the cancellation or a result is reported.
             </div>
+          </div>
+        </section>
+      )}
+
+      {trophyOpportunities.length > 0 && (
+        <section className="rounded-2xl border border-magma/20 bg-magma/[0.035] px-4 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 rounded-xl border border-magma/25 bg-magma/[0.07] flex items-center justify-center shrink-0">
+                <Trophy size={17} className="text-magma" />
+              </div>
+              <div>
+                <div className="brand-kicker text-magma">Trophy8s Opportunity</div>
+                <div className="text-sm font-bold mt-0.5">
+                  This Mucho8s can unlock{" "}
+                  {trophyOpportunities.length === 1
+                    ? "a Trophy"
+                    : trophyOpportunities.length + " Trophies"}
+                </div>
+              </div>
+            </div>
+
+            <div className="font-mono font-black text-magma text-sm shrink-0">
+              +{trophyOpportunities.reduce((sum, item) => sum + item.reward, 0)} Elo potential
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 mt-3">
+            {trophyOpportunities.map((item) => (
+              <div
+                key={item.id}
+                className="rounded-xl border border-magma/15 bg-[#0F1218] px-3 py-2"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="font-display font-bold text-sm">{item.title}</span>
+                  <span className="font-mono text-[9px] font-black text-magma">
+                    +{item.reward}
+                  </span>
+                </div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">
+                  {item.detail}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
       )}
