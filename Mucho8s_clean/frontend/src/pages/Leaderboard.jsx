@@ -118,30 +118,32 @@ export default function Leaderboard() {
 
   const rows = useMemo(
     () =>
-      (players || []).map((player) => {
-        const moneyByMode = modeMoneyById.get(player.id) || {
-          mucho8sWon: 0,
-          mucho1v1Won: 0,
-          mucho1v1Wins: 0,
-          mucho1v1Losses: 0,
-        };
+      (players || [])
+        // A player enters the leaderboard only after playing the first
+        // competitive Mucho8s match of the current season.
+        .filter((player) => Number(player.totalMatches || 0) > 0)
+        .map((player) => {
+          const moneyByMode = modeMoneyById.get(player.id) || {
+            mucho8sWon: 0,
+            mucho1v1Won: 0,
+            mucho1v1Wins: 0,
+            mucho1v1Losses: 0,
+          };
 
-        return {
-          ...player,
-          matchWins: Number(player.wins || 0),
-          matchLosses: Number(player.losses || 0),
-          mucho8sWon: moneyByMode.mucho8sWon,
-          mucho1v1Won: moneyByMode.mucho1v1Won,
-          mucho1v1Wins: moneyByMode.mucho1v1Wins,
-          mucho1v1Losses: moneyByMode.mucho1v1Losses,
-          earnings: moneyByMode.mucho8sWon + moneyByMode.mucho1v1Won,
-          winRate:
-            Number(player.totalMatches || 0) > 0
-              ? (Number(player.wins || 0) / Number(player.totalMatches || 0)) * 100
-              : 0,
-          totalPoints: Number(player.currentElo || 0),
-        };
-      }),
+          return {
+            ...player,
+            matchWins: Number(player.wins || 0),
+            matchLosses: Number(player.losses || 0),
+            mucho8sWon: moneyByMode.mucho8sWon,
+            mucho1v1Won: moneyByMode.mucho1v1Won,
+            mucho1v1Wins: moneyByMode.mucho1v1Wins,
+            mucho1v1Losses: moneyByMode.mucho1v1Losses,
+            earnings: moneyByMode.mucho8sWon + moneyByMode.mucho1v1Won,
+            winRate:
+              (Number(player.wins || 0) / Number(player.totalMatches || 0)) * 100,
+            totalPoints: Number(player.currentElo || 0),
+          };
+        }),
     [players, modeMoneyById]
   );
 
@@ -258,7 +260,7 @@ export default function Leaderboard() {
             </h3>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Global Elo, record, streak and all-time verified earnings. Losses do not reduce this value.
+            Only players with at least one competitive match appear here. Elo, record, streak and all-time verified earnings update from there.
           </p>
         </div>
 
