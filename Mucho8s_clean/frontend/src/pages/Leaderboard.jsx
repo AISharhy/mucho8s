@@ -59,8 +59,6 @@ export default function Leaderboard() {
     (players || []).forEach((player) => ensure(player.id));
 
     (publicChallenges || []).forEach((challenge) => {
-      if (Number(challenge.season_number || 1) !== currentSeason) return;
-
       const verified = Boolean(
         challenge.verified_at &&
         challenge.status === "completed" &&
@@ -100,7 +98,7 @@ export default function Leaderboard() {
     });
 
     return stats;
-  }, [players, publicChallenges, currentSeason]);
+  }, [players, publicChallenges]);
 
   const rows = useMemo(
     () =>
@@ -244,7 +242,7 @@ export default function Leaderboard() {
             </h3>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Global Elo, record, streak and total verified earnings. Losses do not reduce this value.
+            Global Elo, record, streak and all-time verified earnings. Losses do not reduce this value.
           </p>
         </div>
 
