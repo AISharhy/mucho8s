@@ -658,6 +658,17 @@ export default function PlayerProfile() {
     ]
   );
 
+  const myChallenges = isOwnProfile && player
+    ? challenges.filter(
+        (challenge) =>
+          isDirectMucho1v1(challenge) &&
+          (
+            challenge.challenger_player_id === player.id ||
+            challenge.challenged_player_id === player.id
+          )
+      )
+    : [];
+
   const trophyEvidence = useMemo(() => {
     if (!player) return {};
 
@@ -926,17 +937,6 @@ export default function PlayerProfile() {
       toast.success(`Mucho1v1 sent to ${player.name} · €${amount.toFixed(2)}`);
     }
   };
-
-  const myChallenges = isOwnProfile
-    ? challenges.filter(
-        (challenge) =>
-          isDirectMucho1v1(challenge) &&
-          (
-            challenge.challenger_player_id === player.id ||
-            challenge.challenged_player_id === player.id
-          )
-      )
-    : [];
 
   return (
     <div className="m8-page-stack">
