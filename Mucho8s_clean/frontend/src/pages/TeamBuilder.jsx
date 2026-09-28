@@ -11,6 +11,7 @@ import {
   analyzeManualTeams,
   draftTeamsByPriority,
 } from "@/lib/chemistry";
+import { buildRivalries } from "@/lib/rivalries";
 import {
   Check,
   Crown,
@@ -61,6 +62,7 @@ export default function TeamBuilder() {
   const {
     players,
     matches,
+    challenges,
     playerAvatars,
     discordPlayer,
     dashboardData,
@@ -188,6 +190,50 @@ export default function TeamBuilder() {
       ? "B"
       : "";
   const canConfirm = Boolean(result && (isAdmin || matchCaptainId));
+
+  const teamIntel = useMemo(() => {
+    if (!result) return null;
+
+    const teamAIds = new Set(result.teamA.map((player) => String(player.id)));
+    const teamBIds = new Set(result.teamB.map((player) => String(player.id)));
+
+    const exactRecord = (team) => {
+      const ids = team.map((player) => String(player.id)).sort();
+      let wins = 0;
+      let losses = 0;
+
+      (context.matches || []).forEach((match) => {
+        const sideA = (match.teamA || []).map(String).sort();
+        const sideB = (match.teamB || []).map(String).sort();
+        const same = (left, right) =>
+          left.length === right.length && left.every((id, index) => id === right[index]);
+
+        if (same(sideA, ids)) {
+          if (match.winner === "A") wins += 1;
+          else losses += 1;
+        } else if (same(sideB, ids)) {
+          if (match.winner === "B") wins += 1;
+          else losses += 1;
+        }
+      });
+
+      return { wins, losses, played: wins + losses };
+    };
+
+    const rivalries = buildRivalries(context.matches || [], challenges || [])
+      .filter((row) =>
+        (teamAIds.has(String(row.playerAId)) && teamBIds.has(String(row.playerBId))) ||
+        (teamAIds.has(String(row.playerBId)) && teamBIds.has(String(row.playerAId)))
+      )
+      .slice(0, 6);
+
+    return {
+      recordA: exactRecord(result.teamA),
+      recordB: exactRecord(result.teamB),
+      rivalries,
+      avgEloGap: Math.abs(averageElo(result.teamA) - averageElo(result.teamB)),
+    };
+  }, [result, context.matches, challenges]);
 
   const clearDraftProgress = () => {
     setDraftTeamA([]);
@@ -1187,6 +1233,100 @@ export default function TeamBuilder() {
               </div>
             </div>
           </div>
+
+          <details className="mt-4 rounded-2xl border border-[#222834] bg-[#0B0F15] overflow-hidden group">
+            <summary className="list-none cursor-pointer px-4 py-3 flex items-center justify-between gap-3 hover:bg-white/[0.025] transition-colors">
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.16em] text-[#697181]">Advanced</div>
+                <div className="font-display font-black text-sm">Team Intel · Chemistry & Rivalries</div>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#697181]">
+                <span className="hidden sm:inline">Open analysis</span>
+                <span className="w-7 h-7 rounded-lg border border-[#2A303B] bg-[#111720] inline-flex items-center justify-center group-open:rotate-180 transition-transform">⌄</span>
+              </div>
+            </summary>
+
+            <div className="border-t border-[#1D222C] p-4 space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
+                <Metric label="Lobby Quality" value={String(result.lobbyQuality ?? result.balanceScore) + "%"} tone="text-emerald-400" />
+                <Metric label="Balance" value={String(result.balanceScore) + "%"} />
+                <Metric label="Chemistry" value={String(result.chemistryScore) + "%"} />
+                <Metric label="Freshness" value={String(result.freshnessScore) + "%"} />
+                <Metric label="Role Balance" value={String(result.roleBalanceScore) + "%"} />
+                <Metric label="Avg Elo Gap" value={teamIntel?.avgEloGap ?? 0} />
+              </div>
+
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                {[
+                  ["Alpha", result.teamA, result.chemistryA, teamIntel?.recordA, "text-magma"],
+                  ["Bravo", result.teamB, result.chemistryB, teamIntel?.recordB, "text-[#65D5D3]"],
+                ].map(([label, team, chemistry, record, tone]) => (
+                  <div key={label} className="rounded-xl border border-[#222834] bg-[#0F1218] p-3.5">
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <div className={"text-[11px] uppercase tracking-widest font-black " + tone}>{label} chemistry</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        Exact lineup · {record?.played ? String(record.wins) + "W " + String(record.losses) + "L" : "No previous matches"}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      {(chemistry?.pairs || []).slice(0, 4).map((pair) => (
+                        <div key={label + "-" + pair.a.id + "-" + pair.b.id} className="flex items-center gap-2 text-xs">
+                          <span className="min-w-0 flex-1 truncate">{pair.a.name} + {pair.b.name}</span>
+                          <span className="text-[10px] text-muted-foreground">{pair.matchesTogether} together</span>
+                          <span className="font-mono font-black">{pair.score}%</span>
+                        </div>
+                      ))}
+                      {!chemistry?.pairs?.length && (
+                        <div className="text-xs text-muted-foreground">Not enough duo data yet.</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="rounded-xl border border-[#2A2520] bg-[#120F0D] p-3.5">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-[#8E7662]">Rivalry Heat</div>
+                    <div className="font-display font-black text-sm">Cross-team history</div>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">{teamIntel?.rivalries?.length || 0} active rivalries</span>
+                </div>
+
+                {teamIntel?.rivalries?.length ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {teamIntel.rivalries.map((row) => {
+                      const left = contextualPlayerMap[row.playerAId];
+                      const right = contextualPlayerMap[row.playerBId];
+                      return (
+                        <div key={row.key} className="rounded-lg border border-[#2B251F] bg-black/10 px-3 py-2.5">
+                          <div className="flex items-center justify-between gap-2 text-xs">
+                            <span className="font-semibold truncate">{left?.name || "Player"} vs {right?.name || "Player"}</span>
+                            <span className="font-mono font-black text-[#D5A33A]">{row.meetings}x</span>
+                          </div>
+                          <div className="text-[10px] text-muted-foreground mt-1">
+                            H2H {row.playerAWins}-{row.playerBWins}
+                            {row.currentStreak > 1 ? " · streak " + row.currentStreak : ""}
+                            {row.moneyVolume > 0 ? " · €" + Number(row.moneyVolume).toFixed(0) + " volume" : ""}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted-foreground">No meaningful cross-team rivalry history yet.</div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {(result.why || []).map((reason) => (
+                  <div key={reason} className="rounded-lg border border-[#202631] bg-[#0F1218] px-3 py-2 text-[11px] text-muted-foreground">
+                    {reason}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </details>
 
           <div className="mt-5">
             <Button
