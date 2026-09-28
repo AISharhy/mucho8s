@@ -8,6 +8,7 @@ import { RecordMatchDialog } from "@/components/RecordMatchDialog";
 import MatchResultCenter from "@/components/MatchResultCenter";
 import { EmptyState } from "@/components/ProductState";
 import ModeBadge, { isDirectMucho1v1 } from "@/components/ModeBadge";
+import MapPreviewCard from "@/components/MapPreviewCard";
 import {
   Dialog,
   DialogContent,
@@ -636,6 +637,31 @@ export default function Matches() {
           </div>
         </div>
       </div>
+
+      {Array.isArray(match.maps) && match.maps.length === 3 && (
+        <div className="mb-4">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="text-[9px] uppercase tracking-[0.16em] text-[#697181]">
+              Saved BO3 rotation
+            </div>
+            <span className="text-[9px] uppercase tracking-wider text-muted-foreground">
+              Generated at match confirmation
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {match.maps.map((mapName, index) => (
+              <MapPreviewCard
+                key={mapName + "-" + index}
+                mapName={mapName}
+                game={match.game}
+                mode={match.mode}
+                index={index}
+                compact
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 items-stretch gap-3 sm:gap-4">
         <div
