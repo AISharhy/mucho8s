@@ -263,7 +263,10 @@ export default function Matches() {
         return (
           names.some((name) => name.includes(q)) ||
           String(match.game || "").toLowerCase().includes(q) ||
-          String(match.mode || "").toLowerCase().includes(q)
+          String(match.mode || "").toLowerCase().includes(q) ||
+          (Array.isArray(match.maps) ? match.maps : []).some((mapName) =>
+            String(mapName || "").toLowerCase().includes(q)
+          )
         );
       }
 
@@ -290,6 +293,7 @@ export default function Matches() {
     const names = (ids) =>
       ids.map((id) => safePlayerMap[id]?.name || "Player").join(" · ");
     const captain = safePlayerMap[match.captain_player_id];
+    const bo3Maps = Array.isArray(match.maps) ? match.maps.filter(Boolean).slice(0, 3) : [];
     const cancelRequested = Boolean(match.cancel_requested_at);
     const totalStake = (Array.isArray(match.pairings) ? match.pairings : []).reduce(
       (sum, pair) => sum + Math.max(0, Number(pair?.amount) || 0),
@@ -313,6 +317,7 @@ export default function Matches() {
               {match.format ? ` · ${match.format}` : ""}
               {match.game ? ` · ${match.game}` : ""}
               {match.mode ? ` · ${match.mode}` : ""}
+              {bo3Maps.length === 3 ? ` · BO3 · ${bo3Maps.join(" / ")}` : ""}
               {captain?.name ? ` · Captain: ${captain.name}` : ""}
             </div>
           </div>
@@ -514,6 +519,11 @@ export default function Matches() {
           {match.mode && (
             <span className="px-2 py-0.5 rounded-md bg-[#0F1218] text-xs border border-[#222834] text-[#AAB1BE]">
               {match.mode}
+            </span>
+          )}
+          {Array.isArray(match.maps) && match.maps.length === 3 && (
+            <span className="px-2 py-0.5 rounded-md bg-[#11151C] text-[10px] border border-[#2C333E] text-[#C8CED8]">
+              BO3 · {match.maps.join(" · ")}
             </span>
           )}
           {Number(match?.eloContext?.resultDelta) > 0 && (
