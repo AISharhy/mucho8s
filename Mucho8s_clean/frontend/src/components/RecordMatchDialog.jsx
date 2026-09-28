@@ -515,11 +515,11 @@ export const RecordMatchDialog = ({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] leading-5">
               <div>
                 <span className="font-semibold text-[#D5A33A] inline-flex items-center gap-1"><Trophy size={11} /> MVP</span>
-                <span className="text-muted-foreground"> · Every 4 consecutive Mucho8s wins = +1 MVP and +3 Elo.</span>
+                <span className="text-muted-foreground"> · Every 3 consecutive Mucho8s wins = +1 MVP and +3 Elo.</span>
               </div>
               <div>
                 <span className="font-semibold text-[#C79A6B]">MERDA 💩</span>
-                <span className="text-muted-foreground"> · Every 4 consecutive losses = +1 MERDA.</span>
+                <span className="text-muted-foreground"> · Every 3 consecutive losses = +1 MERDA. Win 1 match to clear 1 MERDA.</span>
               </div>
               <div>
                 <span className="font-semibold text-magma">MVP BOUNTY</span>
