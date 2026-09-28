@@ -94,9 +94,15 @@ const competitiveMapPool = (game: string, mode: string, format: string) => {
   return [...new Set(pool)];
 };
 
-const drawBo3Maps = (game: string, mode: string, format: string) => {
+const drawSeriesMaps = (
+  game: string,
+  mode: string,
+  format: string,
+  bestOf: number,
+) => {
+  const seriesLength = bestOf === 5 ? 5 : 3;
   const pool = competitiveMapPool(game, mode, format);
-  if (pool.length < 3) return [];
+  if (pool.length < seriesLength) return [];
 
   const shuffled = [...pool];
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
@@ -105,7 +111,7 @@ const drawBo3Maps = (game: string, mode: string, format: string) => {
     const randomIndex = bytes[0] % (index + 1);
     [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
   }
-  return shuffled.slice(0, 3);
+  return shuffled.slice(0, seriesLength);
 };
 
 const expectedEloScore = (elo: number, opponentElo: number) =>
@@ -732,7 +738,7 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       upsetWinnerBonus: upset.winnerBonus,
       upsetLoserPenalty: upset.loserPenalty,
       map: report.map || (Array.isArray(report.maps) ? report.maps[0] || "" : ""),
-      maps: Array.isArray(report.maps) ? report.maps.map(String).slice(0, 3) : [],
+      maps: Array.isArray(report.maps) ? report.maps.map(String).slice(0, 5) : [],
       mode: report.mode || "",
       game: report.game || "",
       pairings: Array.isArray(report.pairings) ? report.pairings : [],
@@ -874,16 +880,17 @@ Deno.serve(async (req: Request) => {
       const game = String(body?.game || "").trim();
       const mode = String(body?.mode || "").trim();
       const format = String(body?.format || "").trim();
-      const bo3Maps = drawBo3Maps(game, mode, format);
+      const bestOf = Number(body?.bestOf) === 5 ? 5 : 3;
+      const seriesMaps = drawSeriesMaps(game, mode, format, bestOf);
 
       if (teamA.length < 2 || teamA.length > 4 || teamA.length !== teamB.length) {
         return json({ error: "Teams must contain the same number of players (2-4)" }, 400);
       }
-      if (bo3Maps.length !== 3) {
+      if (seriesMaps.length !== bestOf) {
         return json({
           error: game === "MW4"
             ? "MW4 competitive map pool is not configured yet"
-            : "No competitive BO3 map pool is configured for this game/mode/format",
+            : `No competitive BO${bestOf} map pool is configured for this game/mode/format`,
         }, 400);
       }
       if (!isAdmin && !creatorInLobby) {
@@ -915,7 +922,7 @@ Deno.serve(async (req: Request) => {
         game,
         mode,
         format,
-        maps: bo3Maps,
+        maps: seriesMaps,
         pairings,
         captain_player_id: creatorPlayerId || null,
         creator_account_id: user?.id || null,
@@ -1211,7 +1218,7 @@ Deno.serve(async (req: Request) => {
         game: String(body?.game || ""),
         mode: String(body?.mode || ""),
         map: String(body?.map || ""),
-        maps: Array.isArray(liveMatch?.maps) ? liveMatch.maps.map(String).slice(0, 3) : [],
+        maps: Array.isArray(liveMatch?.maps) ? liveMatch.maps.map(String).slice(0, 5) : [],
         pairings,
         season_number: seasonNumber,
         captain_a_player_id: captainA,
