@@ -657,7 +657,13 @@ export const Layout = () => {
             )}
 
             {discordPlayer && notificationsOpen && (
-                  <div id="challenge-notifications-panel" role="dialog" aria-label="Notifications" className="absolute right-0 top-12 w-[min(92vw,410px)] m8-panel rounded-2xl shadow-2xl overflow-hidden z-50">
+                  <div
+                    id="challenge-notifications-panel"
+                    role="dialog"
+                    aria-label="Notifications"
+                    onMouseLeave={() => setNotificationsOpen(false)}
+                    className="absolute right-0 top-12 w-[min(92vw,410px)] m8-panel rounded-2xl shadow-2xl overflow-hidden z-50"
+                  >
                     <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#1D222C]">
                       <div>
                         <div className="brand-kicker mb-0.5">Notifications</div>
