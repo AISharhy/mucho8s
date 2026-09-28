@@ -1,12 +1,12 @@
 import React, { Component, useEffect, useMemo, useState } from "react";
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { Sidebar, MobileNav } from "@/components/Sidebar";
 import ChallengeCenter from "@/components/ChallengeCenter";
 import CompetitiveEventFX from "@/components/CompetitiveEventFX";
 import { PageSkeleton } from "@/components/ProductState";
 import { PlayerAvatar, EloBadge } from "@/components/shared";
 import ModeBadge from "@/components/ModeBadge";
-import { AlertTriangle, Bell, CheckCheck, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, UserCircle, Gamepad2 } from "lucide-react";
+import { AlertTriangle, Bell, CheckCheck, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, Gamepad2, Search, ChevronDown } from "lucide-react";
 import { useData } from "@/context/DataContext";
 
 class PageErrorBoundary extends Component {
@@ -46,6 +46,14 @@ class PageErrorBoundary extends Component {
     return this.props.children;
   }
 }
+
+const TOP_NAV = [
+  { to: "/play", label: "Play" },
+  { to: "/ranking", label: "Leaderboard" },
+  { to: "/rank-guide", label: "Guide" },
+  { to: "/rivalries", label: "Rivalries" },
+  { to: "/news", label: "News" },
+];
 
 const TITLES = {
   "/": "Dashboard",
@@ -400,16 +408,38 @@ export const Layout = () => {
     <div className="min-h-screen bg-[#0B0D12]">
       <ChallengeCenter />
       <CompetitiveEventFX />
-      <Sidebar />
-      <div className="lg:pl-56">
-        <header className="sticky top-0 z-20 h-16 flex items-center px-4 sm:px-6 bg-[#0B0E13]/88 backdrop-blur-2xl border-b border-[#202631] shadow-[0_10px_35px_rgba(0,0,0,.12)]">
-          <MobileNav />
-          <div className="hidden lg:flex items-center gap-3">
-            <span className="w-1.5 h-6 rounded-full bg-magma shadow-[0_0_14px_rgba(255,42,59,.35)]" />
-            <h1 className="font-display text-[18px] font-bold tracking-tight">{title}</h1>
+      <header className="m8-topbar sticky top-0 z-40">
+        <div className="m8-topbar-inner">
+          <div className="lg:hidden">
+            <MobileNav />
           </div>
 
+          <Link to="/" className="m8-topbar-brand" aria-label="Mucho8s home">
+            <span className="m8-topbar-wordmark">MUCHO<span>8S</span></span>
+            <span className="m8-topbar-submark">MATCHUP</span>
+          </Link>
+
+          <nav className="m8-topbar-nav" aria-label="Primary navigation">
+            {TOP_NAV.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) => `m8-topbar-link ${isActive ? "is-active" : ""}`}
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+
           <div className="ml-auto flex items-center gap-2 relative">
+            <Link
+              to="/players"
+              className="m8-topbar-icon"
+              aria-label="Search players"
+              title="Search players"
+            >
+              <Search size={18} />
+            </Link>
             <button
               type="button"
               onClick={() => {
@@ -430,25 +460,6 @@ export const Layout = () => {
               <span className="font-mono text-xs font-black">{onlinePlayers.length}</span>
               <span className="hidden sm:inline text-[10px] uppercase tracking-wider font-bold">Online</span>
             </button>
-
-            {discordPlayer && (
-              <>
-                <Link
-                  to={`/players/${discordPlayer.id}`}
-                  title="My Profile"
-                  aria-label="My Profile"
-                  data-testid="header-my-profile"
-                  className={`m8-action w-10 h-10 rounded-xl border transition-all flex items-center justify-center ${
-                    loc.pathname === `/players/${discordPlayer.id}`
-                      ? "border-white/30 bg-white/[0.08] text-white"
-                      : "border-[#242A35] bg-[#12151C] text-[#AAB1BE] hover:text-white hover:bg-white/[0.05]"
-                  }`}
-                >
-                  <UserCircle size={19} />
-                </Link>
-
-              </>
-            )}
 
             {discordPlayer && (
               <button
@@ -494,6 +505,23 @@ export const Layout = () => {
                     {adminChallengeAlertCount > 99 ? "99+" : adminChallengeAlertCount}
                   </span>
                 )}
+              </Link>
+            )}
+
+            {discordPlayer && (
+              <Link
+                to={`/players/${discordPlayer.id}`}
+                className="m8-topbar-account"
+                data-testid="header-my-profile"
+              >
+                <PlayerAvatar
+                  name={discordPlayer.name}
+                  elo={discordPlayer.currentElo}
+                  size={30}
+                  avatarUrl={playerAvatars?.[discordPlayer.id]}
+                />
+                <span className="m8-topbar-account-name">{discordPlayer.name}</span>
+                <ChevronDown size={13} className="text-[#687281]" />
               </Link>
             )}
             {onlineOpen && (
@@ -667,17 +695,18 @@ export const Layout = () => {
                   </div>
             )}
           </div>
-        </header>
-        <main className="page-shell p-4 sm:p-6 lg:p-8 xl:p-9">
-          {!loaded ? (
-            <PageSkeleton />
-          ) : (
-            <PageErrorBoundary key={loc.pathname}>
-              <Outlet />
-            </PageErrorBoundary>
-          )}
-        </main>
-      </div>
+        </div>
+      </header>
+
+      <main className="page-shell p-4 sm:p-6 lg:p-8 xl:p-9">
+        {!loaded ? (
+          <PageSkeleton />
+        ) : (
+          <PageErrorBoundary key={loc.pathname}>
+            <Outlet />
+          </PageErrorBoundary>
+        )}
+      </main>
     </div>
   );
 };
