@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useData } from "@/context/DataContext";
-import { PlayerAvatar } from "@/components/shared";
+import { PlayerAvatar, MerdaBadge } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RecordMatchDialog } from "@/components/RecordMatchDialog";
@@ -68,6 +68,7 @@ const TeamList = ({ ids, playerMap, playerAvatars, eloChanges, pairings = [], mv
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold truncate flex items-center gap-1.5">
               <span className="truncate">{p.name}</span>
+              <MerdaBadge count={p.merdaCount} compact />
               {isMvp && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#D5A33A]/[0.08] border border-[#D5A33A]/20 text-[#D5A33A] text-[8px] font-black uppercase tracking-wider shrink-0">
                   <Trophy size={9} /> MVP
@@ -75,7 +76,7 @@ const TeamList = ({ ids, playerMap, playerAvatars, eloChanges, pairings = [], mv
               )}
               {isMerda && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#8B5E3C]/10 border border-[#8B5E3C]/25 text-[#C79A6B] text-[8px] font-black uppercase tracking-wider shrink-0">
-                  💩 MERDA
+                  💩 +1
                 </span>
               )}
             </div>
