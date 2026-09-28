@@ -696,18 +696,6 @@ export default function PlayerProfile() {
       });
     }
 
-    if (Number(player.merdaCount || 0) > 0) {
-      awards.push({
-        id: "merda",
-        type: "merda",
-        title: "MERDA",
-        detail: `Active x${player.merdaCount} · every win removes exactly 1`,
-        count: Number(player.merdaCount || 0),
-        emoji: "💩",
-        source: "General",
-      });
-    }
-
     trophyChallenges
       .filter((item) => item.level > 0)
       .forEach((item) => {
