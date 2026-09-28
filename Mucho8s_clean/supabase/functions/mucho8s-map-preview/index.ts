@@ -7,34 +7,41 @@ const corsHeaders = {
 const MAPS_PAGE = "https://callofduty.fandom.com/wiki/Maps";
 const FANDOM_API = "https://callofduty.fandom.com/api.php";
 
-const GAME_META: Record<string, { label: string; aliases: string[] }> = {
+const GAME_META: Record<string, { label: string; aliases: string[]; headingIds: string[] }> = {
   BO7: {
     label: "Call of Duty: Black Ops 7",
     aliases: ["Call of Duty: Black Ops 7"],
+    headingIds: ["Call_of_Duty:_Black_Ops_7"],
   },
   BO6: {
     label: "Call of Duty: Black Ops 6",
     aliases: ["Call of Duty: Black Ops 6"],
+    headingIds: ["Call_of_Duty:_Black_Ops_6"],
   },
   MW3: {
     label: "Call of Duty: Modern Warfare III",
     aliases: ["Call of Duty: Modern Warfare III", "Modern Warfare III"],
+    headingIds: ["Call_of_Duty:_Modern_Warfare_III"],
   },
   VG: {
     label: "Call of Duty: Vanguard",
     aliases: ["Call of Duty: Vanguard"],
+    headingIds: ["Call_of_Duty:_Vanguard"],
   },
   CW: {
     label: "Call of Duty: Black Ops Cold War",
     aliases: ["Call of Duty: Black Ops Cold War", "Black Ops Cold War"],
+    headingIds: ["Call_of_Duty:_Black_Ops_Cold_War"],
   },
   WW2: {
     label: "Call of Duty: WWII",
     aliases: ["Call of Duty: WWII", "Call of Duty: WW2"],
+    headingIds: ["Call_of_Duty:_WWII"],
   },
   BO2: {
     label: "Call of Duty: Black Ops II",
     aliases: ["Call of Duty: Black Ops II", "Black Ops II"],
+    headingIds: ["Call_of_Duty:_Black_Ops_II"],
   },
 };
 
@@ -131,31 +138,40 @@ const findGameSection = (html: string, game: string) => {
   if (!meta || !html) return "";
 
   let headingIndex = -1;
-  for (const alias of meta.aliases) {
-    const candidates = [
-      alias,
-      alias.replace(/ /g, "_"),
-      alias.replace(/:/g, "%3A"),
-      alias.replace(/ /g, "_").replace(/:/g, "%3A"),
+
+  for (const id of meta.headingIds) {
+    const patterns = [
+      `id="${id}"`,
+      `id='${id}'`,
+      `id="${encodeURIComponent(id)}"`,
+      `id='${encodeURIComponent(id)}'`,
     ];
 
-    for (const candidate of candidates) {
-      const index = html.toLowerCase().indexOf(candidate.toLowerCase());
-      if (index >= 0 && (headingIndex < 0 || index < headingIndex)) {
+    for (const pattern of patterns) {
+      const index = html.indexOf(pattern);
+      if (index >= 0) {
         headingIndex = index;
+        break;
       }
     }
+
+    if (headingIndex >= 0) break;
+  }
+
+  if (headingIndex < 0) {
+    const headings = [...html.matchAll(/<h2\b[^>]*>[\s\S]*?<\/h2>/gi)];
+    const match = headings.find((item) => {
+      const text = normalize(item[0]);
+      return meta.aliases.some((alias) => text.includes(normalize(alias)));
+    });
+    if (match?.index !== undefined) headingIndex = match.index;
   }
 
   if (headingIndex < 0) return "";
 
-  const headingStart = Math.max(
-    html.lastIndexOf("<h2", headingIndex),
-    html.lastIndexOf("<h3", headingIndex)
-  );
-  const start = headingStart >= 0 ? headingStart : headingIndex;
-
-  const nextH2 = html.indexOf("<h2", headingIndex + 1);
+  const h2Start = html.lastIndexOf("<h2", headingIndex);
+  const start = h2Start >= 0 ? h2Start : headingIndex;
+  const nextH2 = html.indexOf("<h2", Math.max(start + 3, headingIndex + 1));
   const end = nextH2 >= 0 ? nextH2 : html.length;
 
   return html.slice(start, end);
