@@ -80,6 +80,7 @@ const normalizeMatch = (m) => ({
   merdaId: m?.merdaId || (Array.isArray(m?.merdaIds) ? m.merdaIds[0] : undefined),
   merdaClearedIds: Array.isArray(m?.merdaClearedIds) ? m.merdaClearedIds.filter(Boolean) : [],
   map: m?.map || "",
+  maps: Array.isArray(m?.maps) ? m.maps.filter(Boolean).slice(0, 3) : [],
   mode: m?.mode || "",
   game: m?.game || "",
   eloChanges: m?.eloChanges && typeof m.eloChanges === "object" ? m.eloChanges : {},
