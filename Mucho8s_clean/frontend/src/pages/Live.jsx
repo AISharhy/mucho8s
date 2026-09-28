@@ -1,9 +1,8 @@
 import React from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Radio, Twitch } from "lucide-react";
+import { ArrowLeft, ExternalLink, Twitch } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar } from "@/components/shared";
-import TwitchEmbed from "@/components/TwitchEmbed";
 
 export default function Live() {
   const { id } = useParams();
@@ -108,31 +107,6 @@ export default function Live() {
         )}
       </section>
 
-      {channel ? (
-        <TwitchEmbed
-          channel={channel}
-          playerName={player.name}
-          className="m8-live-page-player"
-        />
-      ) : (
-        <section className="m8-panel rounded-[22px] p-10 min-h-[320px] flex flex-col items-center justify-center text-center">
-          <Radio size={30} className="text-[#6D7685] mb-3" />
-          <h2 className="font-display text-xl font-black">No Twitch channel linked</h2>
-          <p className="text-sm text-muted-foreground mt-2 max-w-md">
-            {isOwn
-              ? "Add your Twitch username in Profile Settings to activate this page and the LIVE badge in the topbar."
-              : "This player has not connected a Twitch channel yet."}
-          </p>
-          {isOwn && (
-            <Link
-              to={`/players/${player.id}`}
-              className="mt-5 h-10 px-4 rounded-xl border border-[#9146FF]/25 bg-[#9146FF]/10 text-[#C5A4FF] hover:text-white inline-flex items-center justify-center text-sm font-bold"
-            >
-              Open Profile Settings
-            </Link>
-          )}
-        </section>
-      )}
     </div>
   );
 }
