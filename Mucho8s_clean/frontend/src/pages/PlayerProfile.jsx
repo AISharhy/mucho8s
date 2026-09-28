@@ -12,7 +12,6 @@ import {
 } from "@/lib/trophyRules";
 import { PlayerAvatar, EloBadge, Last10, MerdaBadge, RankArtwork, RankProgress } from "@/components/shared";
 import ModeBadge, { isDirectMucho1v1 } from "@/components/ModeBadge";
-import TwitchEmbed from "@/components/TwitchEmbed";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -1466,14 +1465,6 @@ export default function PlayerProfile() {
           )}
         </div>
 
-          {profileTab === "overview" && targetTwitchChannel && (
-            <TwitchEmbed
-              channel={targetTwitchChannel}
-              playerName={player.name}
-              className="mt-3"
-            />
-          )}
-
           {profileTab === "overview" && (
             <div className="m8-profile-overview-grid" data-testid="profile-overview-dashboard">
               <div className="m8-profile-overview-column">
@@ -1804,7 +1795,7 @@ export default function PlayerProfile() {
                     data-testid="my-twitch-channel"
                   />
                   <div className="text-[10px] text-muted-foreground mt-2">
-                    Your channel appears directly on your public esports profile.
+                    Your channel has its own Live page. When Twitch is live, a purple LIVE badge appears next to your account in the topbar.
                   </div>
                 </div>
 
