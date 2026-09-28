@@ -6,7 +6,7 @@ import CompetitiveEventFX from "@/components/CompetitiveEventFX";
 import { PageSkeleton } from "@/components/ProductState";
 import { PlayerAvatar, EloBadge } from "@/components/shared";
 import ModeBadge from "@/components/ModeBadge";
-import { AlertTriangle, Bell, CheckCheck, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, Gamepad2, Search, ChevronDown } from "lucide-react";
+import { AlertTriangle, Bell, CheckCheck, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, Gamepad2, Search, ChevronDown, LogOut, MessageCircle, UserCircle } from "lucide-react";
 import { useData } from "@/context/DataContext";
 
 class PageErrorBoundary extends Component {
@@ -79,6 +79,10 @@ export const Layout = () => {
   const {
     discordPlayer,
     discordAccount,
+    discordSession,
+    discordLoading,
+    signInWithDiscord,
+    signOutDiscord,
     challengeNotificationCount,
     markChallengeSeen,
     adminChallengeAlertCount,
@@ -94,8 +98,13 @@ export const Layout = () => {
   } = useData();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [onlineOpen, setOnlineOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [markingAllRead, setMarkingAllRead] = useState(false);
   const [seenModeNotificationKeys, setSeenModeNotificationKeys] = useState(() => new Set());
+
+  useEffect(() => {
+    setAccountOpen(false);
+  }, [loc.pathname]);
 
   useEffect(() => {
     if (!discordPlayer?.id) {
@@ -445,6 +454,7 @@ export const Layout = () => {
               onClick={() => {
                 setOnlineOpen((open) => !open);
                 setNotificationsOpen(false);
+                setAccountOpen(false);
               }}
               aria-label={`${onlinePlayers.length} players online`}
               title="Players online"
@@ -467,6 +477,7 @@ export const Layout = () => {
                 onClick={() => {
                   setNotificationsOpen((open) => !open);
                   setOnlineOpen(false);
+                  setAccountOpen(false);
                 }}
                 aria-label={globalNotificationCount > 0 ? `${globalNotificationCount} notifications` : "Notifications"}
                 title="Notifications"
@@ -508,21 +519,96 @@ export const Layout = () => {
               </Link>
             )}
 
-            {discordPlayer && (
-              <Link
-                to={`/players/${discordPlayer.id}`}
-                className="m8-topbar-account"
-                data-testid="header-my-profile"
+            {discordSession ? (
+              <div className="m8-topbar-account-wrap">
+                <button
+                  type="button"
+                  className={`m8-topbar-account ${accountOpen ? "is-open" : ""}`}
+                  data-testid="header-my-profile"
+                  aria-haspopup="menu"
+                  aria-expanded={accountOpen}
+                  onClick={() => {
+                    setAccountOpen((open) => !open);
+                    setNotificationsOpen(false);
+                    setOnlineOpen(false);
+                  }}
+                >
+                  {discordPlayer ? (
+                    <PlayerAvatar
+                      name={discordPlayer.name}
+                      elo={discordPlayer.currentElo}
+                      size={30}
+                      avatarUrl={playerAvatars?.[discordPlayer.id]}
+                    />
+                  ) : discordAccount?.avatar_url ? (
+                    <img
+                      src={discordAccount.avatar_url}
+                      alt=""
+                      className="w-[30px] h-[30px] rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="m8-topbar-account-fallback">
+                      <MessageCircle size={15} />
+                    </span>
+                  )}
+
+                  <span className="m8-topbar-account-name">
+                    {discordPlayer?.name || discordAccount?.display_name || discordAccount?.discord_username || "Discord"}
+                  </span>
+                  <ChevronDown
+                    size={13}
+                    className={`text-[#687281] transition-transform ${accountOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                {accountOpen && (
+                  <div className="m8-topbar-account-menu" role="menu">
+                    <div className="m8-topbar-account-menu-head">
+                      <span>Discord account</span>
+                      <strong>
+                        {discordPlayer?.name || discordAccount?.display_name || discordAccount?.discord_username || "Connected"}
+                      </strong>
+                    </div>
+
+                    {discordPlayer && (
+                      <Link
+                        to={`/players/${discordPlayer.id}`}
+                        role="menuitem"
+                        className="m8-topbar-account-menu-item"
+                        onClick={() => setAccountOpen(false)}
+                      >
+                        <UserCircle size={15} />
+                        <span>My Profile</span>
+                      </Link>
+                    )}
+
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="m8-topbar-account-menu-item is-danger"
+                      onClick={async () => {
+                        setAccountOpen(false);
+                        await signOutDiscord();
+                      }}
+                      data-testid="discord-logout-btn-topbar"
+                    >
+                      <LogOut size={15} />
+                      <span>Logout Discord</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={signInWithDiscord}
+                disabled={discordLoading}
+                className="m8-topbar-discord-login"
+                data-testid="discord-login-btn-topbar"
               >
-                <PlayerAvatar
-                  name={discordPlayer.name}
-                  elo={discordPlayer.currentElo}
-                  size={30}
-                  avatarUrl={playerAvatars?.[discordPlayer.id]}
-                />
-                <span className="m8-topbar-account-name">{discordPlayer.name}</span>
-                <ChevronDown size={13} className="text-[#687281]" />
-              </Link>
+                <MessageCircle size={15} />
+                <span>{discordLoading ? "Connecting..." : "Login Discord"}</span>
+              </button>
             )}
             {onlineOpen && (
               <div
