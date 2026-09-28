@@ -1275,30 +1275,16 @@ export default function PlayerProfile() {
               </div>
             </div>
 
-            <div className="m8-profile-metric-card">
-              <div className="text-[9px] uppercase tracking-[0.18em] font-black text-[#9AA3B2]">
-                {Number(player.currentStreak || 0) > 0
-                  ? "Win Streak"
-                  : Number(player.currentStreak || 0) < 0
-                    ? "Lose Streak"
-                    : "Streak"}
+            <div className="m8-profile-metric-card m8-profile-mvp-card">
+              <div className="text-[9px] uppercase tracking-[0.18em] font-black text-[#D7B35C]">
+                MVP Trophy
               </div>
-              <div className={`mt-4 flex items-center gap-2 font-display text-3xl font-black ${
-                Number(player.currentStreak || 0) > 0
-                  ? "text-orange-400"
-                  : Number(player.currentStreak || 0) < 0
-                    ? "text-red-400"
-                    : "text-[#697181]"
-              }`}>
-                <Flame size={25} />
-                {Math.abs(Number(player.currentStreak || 0))}
+              <div className="mt-4 flex items-center gap-2 font-display text-3xl font-black text-[#F3C95F]">
+                <Trophy size={26} strokeWidth={2.2} />
+                {Math.max(0, Number(player.mvpCount || 0))}
               </div>
-              <div className="text-[10px] text-[#7E8796] mt-3">
-                {Number(player.currentStreak || 0) > 0
-                  ? "Keep the run alive"
-                  : Number(player.currentStreak || 0) < 0
-                    ? "Break the streak"
-                    : "No active streak"}
+              <div className="text-[10px] text-[#9C8961] mt-3">
+                Earned every 3 consecutive wins
               </div>
             </div>
 
