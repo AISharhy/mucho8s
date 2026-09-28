@@ -1581,3 +1581,157 @@ textarea:focus-visible {
         transform: none;
     }
 }
+
+
+/* MERDA debuff visual system */
+.merda-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    min-height: 1.45rem;
+    padding: .15rem .45rem;
+    border-radius: .48rem;
+    border: 1px solid rgba(139,94,60,.34);
+    background: rgba(139,94,60,.10);
+    color: #D3A879;
+    line-height: 1;
+    white-space: nowrap;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.015);
+}
+
+.merda-badge-compact {
+    min-height: 1.2rem;
+    padding: .1rem .34rem;
+    font-size: .68rem;
+}
+
+.merda-badge-heavy {
+    border-color: rgba(186,111,61,.52);
+    background: rgba(139,94,60,.16);
+    color: #E4AF77;
+    box-shadow: 0 0 12px rgba(139,94,60,.12);
+}
+
+.merda-badge-critical {
+    border-color: rgba(220,109,58,.62);
+    background: linear-gradient(135deg, rgba(139,94,60,.22), rgba(110,54,35,.16));
+    color: #F0B174;
+    box-shadow: 0 0 18px rgba(171,83,43,.18);
+    animation: merdaBadgeThrob 2.8s ease-in-out infinite;
+}
+
+.merda-surface {
+    position: relative;
+    isolation: isolate;
+}
+
+.merda-surface-active {
+    border-color: rgba(139,94,60,.34) !important;
+}
+
+.merda-surface-heavy {
+    border-color: rgba(178,99,54,.52) !important;
+    box-shadow: 0 0 0 1px rgba(139,94,60,.10), 0 14px 36px rgba(84,45,28,.10);
+    animation: merdaSurfacePulse 4.2s ease-in-out infinite;
+}
+
+.merda-surface-critical {
+    border-color: rgba(211,101,51,.68) !important;
+    background-image:
+        radial-gradient(circle at 90% 10%, rgba(139,94,60,.11), transparent 14rem),
+        linear-gradient(180deg, rgba(121,66,39,.07), rgba(255,255,255,0)) !important;
+    box-shadow:
+        0 0 0 1px rgba(139,94,60,.13),
+        0 0 24px rgba(139,70,38,.14),
+        0 16px 42px rgba(0,0,0,.18);
+    animation: merdaSurfaceCritical 3.2s ease-in-out infinite;
+}
+
+.merda-avatar-critical {
+    position: relative;
+    border-radius: .75rem;
+    filter: drop-shadow(0 0 8px rgba(164,86,45,.35));
+}
+
+.merda-avatar-critical::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: .9rem;
+    border: 1px dashed rgba(197,112,65,.45);
+    pointer-events: none;
+    animation: merdaAvatarOrbit 6s linear infinite;
+}
+
+.merda-debuff-panel {
+    border: 1px solid rgba(139,94,60,.38);
+    background:
+        radial-gradient(circle at 95% 10%, rgba(139,94,60,.14), transparent 13rem),
+        linear-gradient(135deg, rgba(139,94,60,.10), rgba(15,18,24,.92));
+    box-shadow: 0 12px 32px rgba(74,41,26,.10);
+}
+
+.merda-debuff-bar {
+    height: .32rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #0B0D12;
+    border: 1px solid #28231F;
+}
+
+.merda-debuff-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #7B4D32, #C77845);
+    box-shadow: 0 0 12px rgba(199,120,69,.28);
+}
+
+.merda-pop {
+    animation: merdaPop .42s cubic-bezier(.2,.85,.25,1) both;
+}
+
+.merda-clear-pop {
+    animation: merdaClearPop .48s cubic-bezier(.2,.85,.25,1) both;
+}
+
+@keyframes merdaBadgeThrob {
+    0%, 100% { transform: translateY(0); box-shadow: 0 0 12px rgba(171,83,43,.10); }
+    50% { transform: translateY(-1px); box-shadow: 0 0 20px rgba(171,83,43,.24); }
+}
+
+@keyframes merdaSurfacePulse {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(139,94,60,.08), 0 14px 36px rgba(84,45,28,.08); }
+    50% { box-shadow: 0 0 0 1px rgba(178,99,54,.16), 0 14px 42px rgba(117,56,31,.14); }
+}
+
+@keyframes merdaSurfaceCritical {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(139,94,60,.12), 0 0 18px rgba(139,70,38,.11), 0 16px 42px rgba(0,0,0,.18); }
+    50% { box-shadow: 0 0 0 1px rgba(211,101,51,.22), 0 0 28px rgba(169,75,36,.21), 0 18px 46px rgba(0,0,0,.22); }
+}
+
+@keyframes merdaAvatarOrbit {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes merdaPop {
+    0% { opacity: 0; transform: translateY(5px) scale(.76); }
+    65% { opacity: 1; transform: translateY(-2px) scale(1.12); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes merdaClearPop {
+    0% { opacity: 0; transform: scale(1.18); filter: blur(2px); }
+    55% { opacity: 1; transform: scale(.94); filter: blur(0); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .merda-badge-critical,
+    .merda-surface-heavy,
+    .merda-surface-critical,
+    .merda-avatar-critical::after,
+    .merda-pop,
+    .merda-clear-pop {
+        animation: none !important;
+    }
+}
