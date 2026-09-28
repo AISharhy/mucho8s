@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Alignment,
   Fit,
@@ -12,17 +12,22 @@ function ActiveRiveStage({
   artboard,
   autoplay,
   ariaLabel,
+  fallback,
 }) {
+  const [failed, setFailed] = useState(false);
   const { RiveComponent } = useRive({
     src,
     stateMachines: stateMachines || undefined,
     artboard: artboard || undefined,
     autoplay,
+    onLoadError: () => setFailed(true),
     layout: new Layout({
       fit: Fit.Contain,
       alignment: Alignment.Center,
     }),
   });
+
+  if (failed) return fallback;
 
   return (
     <RiveComponent
@@ -54,6 +59,7 @@ export default function RiveStage({
         artboard={artboard}
         autoplay={autoplay}
         ariaLabel={ariaLabel}
+        fallback={fallback}
       />
     </div>
   );
