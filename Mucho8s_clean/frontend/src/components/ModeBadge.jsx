@@ -2,7 +2,6 @@ import React from "react";
 import {
   UsersRound,
   Landmark,
-  Medal,
   Trophy,
 } from "lucide-react";
 
@@ -25,15 +24,6 @@ export const MODE_META = {
     bgClass: "bg-emerald-500/[0.06]",
     icon: Landmark,
   },
-  muchoranked: {
-    label: "MuchoRanked",
-    family: "TrophyRanked",
-    color: "#4F8CFF",
-    textClass: "text-[#4F8CFF]",
-    borderClass: "border-[#4F8CFF]/25",
-    bgClass: "bg-[#4F8CFF]/[0.06]",
-    icon: Medal,
-  },
   muchotourney: {
     label: "MuchoTourney",
     family: "TrophyTourney",
@@ -47,7 +37,6 @@ export const MODE_META = {
 
 export const modeKeyFromSource = (source = "") => {
   const normalized = String(source || "").toLowerCase();
-  if (["ranked", "muchoranked"].includes(normalized)) return "muchoranked";
   if (["tourney", "tournament", "muchotourney"].includes(normalized)) return "muchotourney";
   if (["direct", "1v1", "mucho1v1"].includes(normalized)) return "mucho1v1";
   return "mucho8s";
