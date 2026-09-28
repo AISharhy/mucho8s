@@ -1173,10 +1173,6 @@ export default function PlayerProfile() {
 
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#A3ABB8]">
                   <span>{player.totalMatches || 0} verified matches</span>
-                  <span className="text-[#3A424F]">·</span>
-                  <span>Peak {player.peakElo} Elo</span>
-                  <span className="text-[#3A424F]">·</span>
-                  <span style={{ color: tier.color }}>{tier.name}</span>
                 </div>
 
                 <div className="mt-3 flex items-center gap-2">
