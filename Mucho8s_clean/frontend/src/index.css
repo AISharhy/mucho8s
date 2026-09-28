@@ -1104,6 +1104,498 @@ textarea:focus-visible {
 }
 
 
+/* Full-gas esports Play lobby */
+.m8-play-esports-hero {
+    position: relative;
+    overflow: hidden;
+    min-height: 146px;
+    padding: 1.35rem 1.5rem;
+    border: 1px solid #252D39;
+    border-radius: 1.2rem;
+    background:
+        linear-gradient(90deg, rgba(255,42,59,.055), transparent 34%),
+        linear-gradient(180deg, rgba(255,255,255,.018), transparent),
+        #0D1219;
+    box-shadow: 0 20px 52px rgba(0,0,0,.18);
+}
+
+.m8-play-esports-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: .34;
+    background:
+        linear-gradient(118deg, transparent 0 64%, rgba(255,42,59,.05) 64% 65%, transparent 65%),
+        repeating-linear-gradient(90deg, transparent 0 74px, rgba(255,255,255,.018) 74px 75px);
+}
+
+.m8-play-esports-hero::after {
+    content: "";
+    position: absolute;
+    width: 460px;
+    height: 180px;
+    right: 4%;
+    top: -68px;
+    pointer-events: none;
+    transform: skewX(-22deg);
+    background:
+        radial-gradient(circle at 30% 50%, rgba(255,42,59,.13), transparent 38%),
+        linear-gradient(90deg, transparent, rgba(255,255,255,.022), transparent);
+    filter: blur(.2px);
+}
+
+.m8-play-hero-scan {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: .18;
+    background-image:
+        linear-gradient(rgba(255,255,255,.026) 1px, transparent 1px);
+    background-size: 100% 4px;
+    mask-image: linear-gradient(90deg, #000, transparent 72%);
+}
+
+.m8-play-hero-title {
+    position: relative;
+    z-index: 1;
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: clamp(2rem, 4vw, 3.35rem);
+    line-height: .98;
+    font-weight: 950;
+    letter-spacing: -.055em;
+    text-transform: uppercase;
+    color: #F5F7FA;
+}
+
+.m8-play-mode-tabs {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+.m8-play-mode-tab {
+    height: 34px;
+    padding: 0 .8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .42rem;
+    border: 1px solid #2A323E;
+    clip-path: polygon(9px 0, 100% 0, calc(100% - 9px) 100%, 0 100%);
+    background: rgba(8,11,15,.66);
+    color: #7E8796;
+    font-size: .58rem;
+    font-weight: 900;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+}
+
+.m8-play-mode-tab.is-8s {
+    color: #FF6874;
+    border-color: rgba(255,42,59,.36);
+    background: rgba(255,42,59,.055);
+}
+
+.m8-play-mode-tab.is-1v1 {
+    color: #4FE4AF;
+    border-color: rgba(52,211,153,.32);
+    background: rgba(52,211,153,.05);
+}
+
+.m8-play-mode-tab.is-tourney {
+    color: #D9B44F;
+    border-color: rgba(213,163,58,.30);
+    background: rgba(213,163,58,.045);
+}
+
+.m8-play-esports-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: .9rem;
+    align-items: stretch;
+}
+
+.m8-play-mode-card {
+    --mode-accent: #FF2A3B;
+    position: relative;
+    overflow: hidden;
+    min-height: 560px;
+    padding: 1.35rem;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid color-mix(in srgb, var(--mode-accent) 43%, #26303B);
+    clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+    background:
+        radial-gradient(circle at 86% 9%, color-mix(in srgb, var(--mode-accent) 14%, transparent), transparent 17rem),
+        linear-gradient(160deg, color-mix(in srgb, var(--mode-accent) 5%, #11161E), #0B1017 68%);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.025),
+        0 24px 60px rgba(0,0,0,.20);
+    transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+}
+
+.m8-play-mode-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--mode-accent) 66%, #26303B);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.025),
+        0 28px 70px rgba(0,0,0,.24),
+        0 0 34px color-mix(in srgb, var(--mode-accent) 9%, transparent);
+}
+
+.m8-play-mode-card.is-8s {
+    --mode-accent: #FF2A3B;
+}
+
+.m8-play-mode-card.is-1v1 {
+    --mode-accent: #34D399;
+}
+
+.m8-play-mode-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--mode-accent) 16% 72%, transparent);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--mode-accent) 38%, transparent);
+    opacity: .8;
+}
+
+.m8-play-card-grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: .12;
+    background-image:
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size: 34px 34px;
+    mask-image: linear-gradient(135deg, #000, transparent 76%);
+}
+
+.m8-play-card-beam {
+    position: absolute;
+    top: -12%;
+    right: -18%;
+    width: 68%;
+    height: 52%;
+    pointer-events: none;
+    transform: rotate(-10deg) skewX(-12deg);
+    background:
+        linear-gradient(120deg, transparent 0 32%, color-mix(in srgb, var(--mode-accent) 8%, transparent) 32% 56%, transparent 56%),
+        radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--mode-accent) 14%, transparent), transparent 60%);
+    filter: blur(1px);
+}
+
+.m8-play-card-emblem {
+    position: absolute;
+    right: -22px;
+    top: 36px;
+    color: var(--mode-accent);
+    opacity: .035;
+    transform: rotate(-8deg);
+    pointer-events: none;
+}
+
+.m8-play-mode-header {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.m8-play-mode-kicker {
+    margin-bottom: .5rem;
+    font-size: .57rem;
+    font-weight: 950;
+    letter-spacing: .20em;
+    text-transform: uppercase;
+}
+
+.m8-play-mode-title {
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    line-height: .98;
+    font-weight: 950;
+    letter-spacing: -.05em;
+    color: #F5F7FA;
+}
+
+.m8-play-mode-description {
+    max-width: 34rem;
+    margin-top: .55rem;
+    color: #8993A2;
+    font-size: .76rem;
+    line-height: 1.55;
+}
+
+.m8-play-mode-icon {
+    width: 54px;
+    height: 54px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    color: var(--mode-accent, #FF2A3B);
+    border: 1px solid color-mix(in srgb, var(--mode-accent, #FF2A3B) 46%, #27303B);
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    background: color-mix(in srgb, var(--mode-accent, #FF2A3B) 8%, #0E141B);
+    box-shadow: 0 0 26px color-mix(in srgb, var(--mode-accent, #FF2A3B) 10%, transparent);
+}
+
+.m8-play-mode-icon.is-1v1 {
+    --mode-accent: #34D399;
+}
+
+.m8-play-mode-icon.is-tourney {
+    --mode-accent: #D5A33A;
+}
+
+.m8-play-step-stack {
+    position: relative;
+    z-index: 3;
+    margin-top: 1.35rem;
+    display: grid;
+    gap: .55rem;
+}
+
+.m8-play-step {
+    min-height: 74px;
+    padding: .78rem .85rem;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #29323E;
+    clip-path: polygon(9px 0, 100% 0, calc(100% - 9px) 100%, 0 100%);
+    background:
+        linear-gradient(90deg, rgba(255,255,255,.012), transparent),
+        rgba(8,12,17,.76);
+}
+
+.m8-play-step::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 0 auto;
+    width: 38%;
+    pointer-events: none;
+    opacity: .23;
+    background:
+        repeating-linear-gradient(135deg, rgba(255,255,255,.04) 0 1px, transparent 1px 9px),
+        linear-gradient(90deg, transparent, rgba(255,255,255,.025));
+    mask-image: linear-gradient(90deg, transparent, #000);
+}
+
+.m8-play-step > * {
+    position: relative;
+    z-index: 1;
+}
+
+.m8-play-mode-card.is-8s .m8-play-step:hover {
+    border-color: rgba(255,42,59,.34);
+    background: rgba(255,42,59,.035);
+}
+
+.m8-play-control-panel {
+    padding: .8rem;
+    border: 1px solid #29323E;
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+    background: rgba(8,12,17,.78);
+}
+
+.m8-play-mode-card.is-1v1 .m8-play-control-panel {
+    border-color: rgba(52,211,153,.20);
+}
+
+.m8-play-cta {
+    position: relative;
+    width: 100%;
+    min-height: 50px;
+    padding: 0 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    overflow: hidden;
+    border-radius: 0;
+    clip-path: polygon(11px 0, 100% 0, calc(100% - 11px) 100%, 0 100%);
+    font-size: .74rem;
+    font-weight: 950;
+    letter-spacing: .035em;
+    text-transform: uppercase;
+    transition: transform .16s ease, filter .16s ease, box-shadow .16s ease;
+}
+
+.m8-play-cta::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -34%;
+    width: 28%;
+    pointer-events: none;
+    transform: skewX(-18deg);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);
+    transition: left .34s ease;
+}
+
+.m8-play-cta:hover::after {
+    left: 112%;
+}
+
+.m8-play-cta:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.08);
+}
+
+.m8-play-cta.is-8s {
+    color: #FFFFFF;
+    background: linear-gradient(90deg, #FF2538, #E51F32);
+    box-shadow: 0 12px 34px rgba(255,42,59,.18);
+}
+
+.m8-play-cta.is-1v1 {
+    color: #04120D;
+    background: linear-gradient(90deg, #3DE2A7, #28BF89);
+    box-shadow: 0 12px 34px rgba(52,211,153,.16);
+}
+
+.m8-play-cta:disabled {
+    opacity: .30;
+    filter: grayscale(.35);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.m8-play-tourney-wrap {
+    display: grid;
+}
+
+.m8-play-tourney-card {
+    --mode-accent: #D5A33A;
+    position: relative;
+    overflow: hidden;
+    min-height: 246px;
+    padding: 1.35rem;
+    border: 1px solid rgba(213,163,58,.32);
+    clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+    background:
+        radial-gradient(circle at 78% 40%, rgba(213,163,58,.15), transparent 18rem),
+        linear-gradient(90deg, rgba(213,163,58,.045), transparent 42%),
+        #0C1118;
+    box-shadow: 0 22px 58px rgba(0,0,0,.20);
+}
+
+.m8-play-tourney-grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: .12;
+    background:
+        linear-gradient(118deg, transparent 0 56%, rgba(213,163,58,.22) 56% 56.5%, transparent 56.5%),
+        repeating-linear-gradient(90deg, transparent 0 88px, rgba(255,255,255,.026) 88px 89px);
+}
+
+.m8-play-tourney-stage {
+    position: absolute;
+    right: 9%;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #D5A33A;
+    opacity: .11;
+    filter: drop-shadow(0 0 28px rgba(213,163,58,.34));
+}
+
+.m8-play-tourney-card > *:not(.m8-play-tourney-grid):not(.m8-play-tourney-stage) {
+    position: relative;
+    z-index: 2;
+}
+
+.m8-play-tourney-soon {
+    position: relative;
+    overflow: hidden;
+    height: 40px;
+    margin-top: 1rem;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(213,163,58,.20);
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+    background: rgba(8,12,17,.78);
+    color: #9B8243;
+    font-size: .57rem;
+    font-weight: 950;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+}
+
+.m8-play-tourney-soon::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: .18;
+    background: repeating-linear-gradient(135deg, rgba(213,163,58,.14) 0 1px, transparent 1px 12px);
+}
+
+.m8-play-tourney-soon span {
+    position: relative;
+    z-index: 1;
+}
+
+@media (max-width: 980px) {
+    .m8-play-esports-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .m8-play-mode-card {
+        min-height: auto;
+    }
+}
+
+@media (max-width: 640px) {
+    .m8-play-esports-hero,
+    .m8-play-mode-card,
+    .m8-play-tourney-card {
+        padding: 1rem;
+        clip-path: none;
+        border-radius: 1rem;
+    }
+
+    .m8-play-esports-hero {
+        min-height: auto;
+    }
+
+    .m8-play-mode-tabs {
+        margin-top: .8rem;
+    }
+
+    .m8-play-mode-tab {
+        clip-path: none;
+        border-radius: 999px;
+    }
+
+    .m8-play-mode-title {
+        font-size: 1.85rem;
+    }
+
+    .m8-play-card-emblem,
+    .m8-play-tourney-stage {
+        opacity: .025;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .m8-play-mode-card,
+    .m8-play-cta,
+    .m8-play-cta::after {
+        transition: none !important;
+        transform: none !important;
+    }
+}
+
 /* Play hub */
 .m8-play-card {
     --play-accent: #FF2A3B;
