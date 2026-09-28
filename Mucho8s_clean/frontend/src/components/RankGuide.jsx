@@ -1,39 +1,23 @@
 import React from "react";
 import { RANKS, rankProgress } from "@/lib/elo";
-import { Crown, Gem, Shield, Star } from "lucide-react";
-
-const iconFor = (index) => {
-  if (index >= RANKS.length - 1) return Crown;
-  if (index >= 15) return Gem;
-  if (index >= 9) return Star;
-  return Shield;
-};
+import { RankArtwork } from "@/components/shared";
 
 export const RankEmblem = ({ elo = 1000, compact = false }) => {
   const info = rankProgress(elo);
   const rank = info.rank;
-  const rankIndex = RANKS.findIndex((item) => item.id === rank.id);
-  const Icon = iconFor(rankIndex);
 
   return (
     <div
       className={`relative overflow-hidden border bg-[#0D1016] ${compact ? "rounded-xl px-3 py-2" : "rounded-2xl p-4"}`}
-      style={{
-        borderColor:
-          rankIndex >= RANKS.length - 1 ? "#FF2A3B" :
-          rankIndex >= 9 ? "#D5A33A" :
-          "#343B48",
-      }}
+      style={{ borderColor: rank.color + "44" }}
     >
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-magma to-transparent opacity-70" />
+      <div
+        className="absolute inset-x-0 top-0 h-px opacity-80"
+        style={{ background: `linear-gradient(90deg, transparent, ${rank.color}, transparent)` }}
+      />
 
       <div className="flex items-center gap-3">
-        <div
-          className={`${compact ? "w-10 h-10" : "w-12 h-12"} shrink-0 rounded-xl border flex items-center justify-center bg-[#151923]`}
-          style={{ borderColor: rank.color + "55" }}
-        >
-          <Icon size={compact ? 18 : 21} style={{ color: rank.color }} />
-        </div>
+        <RankArtwork rank={rank} size={compact ? 40 : 50} />
 
         <div className="min-w-0 flex-1">
           <div className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
@@ -62,6 +46,7 @@ export const RankEmblem = ({ elo = 1000, compact = false }) => {
             style={{
               width: `${info.progress}%`,
               background: `linear-gradient(90deg, ${rank.accent}, ${rank.color})`,
+              boxShadow: `0 0 10px ${rank.color}55`,
             }}
           />
         </div>
@@ -144,11 +129,6 @@ const RANK_FAMILIES = [
 ];
 
 const PyramidTier = ({ family, index }) => {
-  const Icon = iconFor(
-    family.id === "masters"
-      ? RANKS.length - 1
-      : RANKS.findIndex((rank) => rank.id.startsWith(family.id))
-  );
   const width = 48 + index * 7.5;
 
   return (
@@ -162,8 +142,8 @@ const PyramidTier = ({ family, index }) => {
         }}
       >
         <div className="rank-pyramid-shine" />
-        <div className="rank-pyramid-icon">
-          <Icon size={family.id === "masters" ? 27 : 23} strokeWidth={2.2} />
+        <div className="rank-pyramid-icon rank-pyramid-icon-artwork">
+          <RankArtwork family={family.id} size={family.id === "masters" ? 48 : 44} />
         </div>
 
         <div className="rank-pyramid-copy">
