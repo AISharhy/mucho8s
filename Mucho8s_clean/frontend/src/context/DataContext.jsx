@@ -342,6 +342,8 @@ export const DataProvider = ({ children }) => {
   const [discordLoading, setDiscordLoading] = useState(hasSupabaseAuth);
   const [playerAvatars, setPlayerAvatars] = useState({});
   const [playerProfiles, setPlayerProfiles] = useState({});
+  const [twitchLive, setTwitchLive] = useState(false);
+  const [twitchStatusCheckedAt, setTwitchStatusCheckedAt] = useState("");
   const [challenges, setChallenges] = useState([]);
   const [publicChallenges, setPublicChallenges] = useState([]);
   const [newsPosts, setNewsPosts] = useState([]);
@@ -850,6 +852,39 @@ export const DataProvider = ({ children }) => {
     ]);
     return true;
   }, [accountRequest, discordSession, fetchPlayerAvatars, fetchState]);
+
+  const refreshMyTwitchStatus = useCallback(async () => {
+    const channel = String(discordAccount?.twitch_channel || "").trim();
+    if (!discordSession?.access_token || !channel) {
+      setTwitchLive(false);
+      setTwitchStatusCheckedAt("");
+      return false;
+    }
+
+    const data = await accountRequest(
+      { action: "twitch-status", twitchChannel: channel },
+      { session: discordSession, silent: true },
+    );
+
+    if (!data?.ok) return null;
+    const live = Boolean(data.live);
+    setTwitchLive(live);
+    setTwitchStatusCheckedAt(String(data.checkedAt || ""));
+    return live;
+  }, [accountRequest, discordAccount?.twitch_channel, discordSession]);
+
+  useEffect(() => {
+    const channel = String(discordAccount?.twitch_channel || "").trim();
+    if (!discordSession?.access_token || !channel) {
+      setTwitchLive(false);
+      setTwitchStatusCheckedAt("");
+      return undefined;
+    }
+
+    void refreshMyTwitchStatus();
+    const timer = setInterval(refreshMyTwitchStatus, 60000);
+    return () => clearInterval(timer);
+  }, [discordAccount?.twitch_channel, discordSession?.access_token, refreshMyTwitchStatus]);
 
   const listDiscordAccounts = useCallback(async () => {
     const data = await accountRequest({ action: "admin-list" });
@@ -2210,6 +2245,9 @@ export const DataProvider = ({ children }) => {
     discordLoading,
     playerAvatars,
     playerProfiles,
+    twitchLive,
+    twitchStatusCheckedAt,
+    refreshMyTwitchStatus,
     challenges,
     publicChallenges,
     newsPosts,
