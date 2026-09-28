@@ -75,14 +75,6 @@ const TROPHY_FAMILY_STYLES = {
     focus: "focus:ring-emerald-500/30",
     hex: "#34D399",
   },
-  TrophyRanked: {
-    text: "text-[#4F8CFF]",
-    border: "border-[#4F8CFF]/25",
-    bg: "bg-[#4F8CFF]/[0.06]",
-    hover: "hover:border-[#4F8CFF]/45",
-    focus: "focus:ring-[#4F8CFF]/30",
-    hex: "#4F8CFF",
-  },
   TrophyTourney: {
     text: "text-[#D5A33A]",
     border: "border-[#D5A33A]/25",
@@ -99,7 +91,6 @@ const trophyFamilyStyle = (source) =>
 const trophySourceLabel = (trophy) => {
   if (trophy?.type === "mvp") {
     if (trophy?.source === "Trophy1v1") return "Mucho1v1 MVP";
-    if (trophy?.source === "TrophyRanked") return "MuchoRanked MVP";
     if (trophy?.source === "TrophyTourney") return "MuchoTourney MVP";
     return "Mucho8s MVP";
   }
@@ -1209,7 +1200,6 @@ export default function PlayerProfile() {
               {[
                 ["Trophy8s", "bg-magma", "text-magma", "Mucho8s MVP"],
                 ["Trophy1v1", "bg-emerald-400", "text-emerald-400", "Mucho1v1 MVP"],
-                ["TrophyRanked", "bg-[#4F8CFF]", "text-[#4F8CFF]", "MuchoRanked MVP"],
                 ["TrophyTourney", "bg-[#D5A33A]", "text-[#D5A33A]", "MuchoTourney MVP"],
               ].map(([family, dotClass, textClass, label], index) => (
                 <React.Fragment key={family}>
@@ -1240,7 +1230,7 @@ export default function PlayerProfile() {
 
       {isOwnProfile && (
         <div
-          className="order-2 grid grid-cols-2 sm:grid-cols-3 xl:inline-grid xl:grid-cols-6 gap-1 p-1 rounded-2xl bg-[#0F1218] border border-[#242A35] w-full xl:w-fit"
+          className="order-2 grid grid-cols-2 sm:grid-cols-3 xl:inline-grid xl:grid-cols-5 gap-1 p-1 rounded-2xl bg-[#0F1218] border border-[#242A35] w-full xl:w-fit"
           role="tablist"
           aria-label="My Profile sections"
         >
@@ -1311,19 +1301,6 @@ export default function PlayerProfile() {
             ) && (
               <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.55)]" />
             )}
-          </button>
-
-          <button
-            type="button"
-            role="tab"
-            disabled
-            title="MuchoRanked · Coming Soon"
-            className="h-11 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold text-[#4F8CFF]/65 border border-[#4F8CFF]/10 bg-[#4F8CFF]/[0.025] cursor-not-allowed"
-            data-testid="profile-tab-ranked"
-          >
-            <Medal size={16} />
-            <span>MuchoRanked</span>
-            <span className="text-[7px] uppercase tracking-wider opacity-70">Soon</span>
           </button>
 
           <button
