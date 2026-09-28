@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RecordMatchDialog } from "@/components/RecordMatchDialog";
+import MatchResultCenter from "@/components/MatchResultCenter";
 import ModeBadge, { isDirectMucho1v1 } from "@/components/ModeBadge";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -52,6 +53,10 @@ export default function AdminPanel() {
     adminDeleteChallenge,
     listAdminAudit,
     matchReports,
+    liveMatches,
+    refreshMatchReports,
+    refreshLiveMatches,
+    cancelLiveMatch,
     adminChallengeAlertCount,
     competitionData,
     startNewSeason,
@@ -67,6 +72,7 @@ export default function AdminPanel() {
   const [newElo, setNewElo] = useState(500);
   const [editing, setEditing] = useState({}); // id -> { name, elo }
   const [histOpen, setHistOpen] = useState(false);
+  const [newLiveOpen, setNewLiveOpen] = useState(false);
   const [discordWebhook, setDiscordWebhook] = useState("");
   const [discordConfigured, setDiscordConfigured] = useState(false);
   const [discordBusy, setDiscordBusy] = useState(false);
@@ -174,6 +180,26 @@ export default function AdminPanel() {
   );
 
   const adminMatchRows = useMemo(() => {
+    const liveTeamRows = (Array.isArray(liveMatches) ? liveMatches : []).map((match) => ({
+      type: "live-team",
+      id: `live:${match.id}`,
+      item: match,
+      timestamp: new Date(match?.created_at || 0).getTime() || 0,
+      status: "live",
+      attention: Boolean(match?.cancel_requested_at),
+    }));
+
+    const reportRows = (Array.isArray(matchReports) ? matchReports : [])
+      .filter((report) => ["pending", "disputed"].includes(String(report?.status || "")))
+      .map((report) => ({
+        type: "report",
+        id: `report:${report.id}`,
+        item: report,
+        timestamp: new Date(report?.created_at || 0).getTime() || 0,
+        status: report?.status || "pending",
+        attention: true,
+      }));
+
     const teamRows = (matches || []).map((match) => ({
       type: "team",
       id: `team:${match.id}`,
@@ -205,26 +231,36 @@ export default function AdminPanel() {
         ),
       }));
 
-    return [...teamRows, ...directRows].sort(
+    return [...liveTeamRows, ...reportRows, ...teamRows, ...directRows].sort(
       (a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0)
     );
-  }, [matches, sortedAdminChallenges]);
+  }, [liveMatches, matchReports, matches, sortedAdminChallenges]);
 
   const visibleAdminMatchRows = useMemo(() => {
     if (matchControlFilter === "live") {
       return adminMatchRows.filter((row) =>
-        row.type === "challenge" &&
-        ["pending", "accepted"].includes(row.status)
+        row.type === "live-team" ||
+        (
+          row.type === "challenge" &&
+          ["pending", "accepted"].includes(row.status)
+        )
       );
     }
 
     if (matchControlFilter === "pending") {
       return adminMatchRows.filter((row) =>
-        row.attention || row.status === "result_pending" || row.status === "disputed"
+        row.type === "report" ||
+        (
+          row.type === "challenge" &&
+          (row.attention || row.status === "result_pending" || row.status === "disputed")
+        )
       );
     }
 
-    return adminMatchRows.filter((row) => row.status === "completed");
+    return adminMatchRows.filter((row) =>
+      row.type === "team" ||
+      (row.type === "challenge" && row.status === "completed")
+    );
   }, [adminMatchRows, matchControlFilter]);
 
   const paymentLinkStats = useMemo(() => {
@@ -970,13 +1006,13 @@ export default function AdminPanel() {
             <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 variant="ghost"
-                onClick={loadAdminChallenges}
+                onClick={() => void Promise.all([loadAdminChallenges(), refreshMatchReports(), refreshLiveMatches()])}
                 className="bg-[#0F1218] border border-[#222834]"
               >
                 <RotateCcw size={14} className="mr-1.5" /> Refresh
               </Button>
               <Button
-                onClick={() => setHistOpen(true)}
+                onClick={() => setNewLiveOpen(true)}
                 className="bg-magma hover:bg-[#ff3c4c] text-white rounded-xl"
               >
                 <History size={15} className="mr-1.5" /> New Mucho8s
@@ -994,14 +1030,24 @@ export default function AdminPanel() {
               const count =
                 key === "live"
                   ? adminMatchRows.filter((row) =>
-                      row.type === "challenge" &&
-                      ["pending", "accepted"].includes(row.status)
+                      row.type === "live-team" ||
+                      (
+                        row.type === "challenge" &&
+                        ["pending", "accepted"].includes(row.status)
+                      )
                     ).length
                   : key === "pending"
                     ? adminMatchRows.filter((row) =>
-                        row.attention || row.status === "result_pending" || row.status === "disputed"
+                        row.type === "report" ||
+                        (
+                          row.type === "challenge" &&
+                          (row.attention || row.status === "result_pending" || row.status === "disputed")
+                        )
                       ).length
-                    : adminMatchRows.filter((row) => row.status === "completed").length;
+                    : adminMatchRows.filter((row) =>
+                        row.type === "team" ||
+                        (row.type === "challenge" && row.status === "completed")
+                      ).length;
 
               return (
                 <button
@@ -1025,6 +1071,85 @@ export default function AdminPanel() {
 
           <div className="space-y-2 max-h-[760px] overflow-y-auto pr-1">
             {visibleAdminMatchRows.map((row) => {
+              if (row.type === "report") {
+                return (
+                  <MatchResultCenter
+                    key={row.id}
+                    reportId={row.item.id}
+                    hideHeader
+                    onResolved={() => {
+                      void Promise.all([refreshMatchReports(), refreshLiveMatches()]);
+                    }}
+                  />
+                );
+              }
+
+              if (row.type === "live-team") {
+                const live = row.item;
+                const teamA = Array.isArray(live?.team_a) ? live.team_a : [];
+                const teamB = Array.isArray(live?.team_b) ? live.team_b : [];
+                const pairings = Array.isArray(live?.pairings) ? live.pairings : [];
+                const stake = pairings.reduce(
+                  (sum, pair) => sum + Math.max(0, Number(pair?.amount) || 0),
+                  0
+                );
+
+                return (
+                  <div
+                    key={row.id}
+                    className={`rounded-2xl bg-[#0F1218] border p-4 flex flex-col lg:flex-row lg:items-center gap-4 ${
+                      live.cancel_requested_at ? "border-orange-500/25" : "border-magma/25"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <ModeBadge mode="mucho8s" compact className="shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="font-display font-bold truncate">
+                          {teamA.map((id) => playerMap[id]?.name || "?").join(" · ")}
+                          <span className="text-[#596170] mx-2">vs</span>
+                          {teamB.map((id) => playerMap[id]?.name || "?").join(" · ")}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 mt-1 text-[11px] text-muted-foreground">
+                          <span>{live.game || "Game"}</span>
+                          <span>·</span>
+                          <span>{live.mode || "Mode"}</span>
+                          <span>·</span>
+                          <span>{live.format || `${teamA.length}v${teamB.length}`}</span>
+                          <span>·</span>
+                          <span>{new Date(live.created_at).toLocaleString()}</span>
+                          {stake > 0 && (
+                            <>
+                              <span>·</span>
+                              <span className="text-emerald-400">€{stake.toFixed(2)}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap lg:justify-end">
+                      <span className={`h-9 px-3 rounded-xl border text-[10px] font-bold uppercase tracking-wider inline-flex items-center ${
+                        live.cancel_requested_at
+                          ? "border-orange-500/25 bg-orange-500/[0.05] text-orange-400"
+                          : "border-magma/25 bg-magma/[0.06] text-magma"
+                      }`}>
+                        {live.cancel_requested_at ? "Cancel requested" : "Live"}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        onClick={async () => {
+                          const ok = await cancelLiveMatch(live.id);
+                          if (ok) toast.success("Live Mucho8s cancelled");
+                        }}
+                        className="h-9 px-3 border border-red-500/20 bg-red-500/[0.04] text-red-400 hover:bg-red-500/10"
+                      >
+                        Cancel live
+                      </Button>
+                    </div>
+                  </div>
+                );
+              }
+
               if (row.type === "team") {
                 const match = row.item;
                 const pairings = Array.isArray(match?.pairings) ? match.pairings : [];
@@ -1886,6 +2011,16 @@ export default function AdminPanel() {
         </>
       )}
 
+      <RecordMatchDialog
+        open={newLiveOpen}
+        onOpenChange={setNewLiveOpen}
+        title="New Live Mucho8s"
+        liveOnly
+        onReported={() => {
+          setMatchControlFilter("live");
+          void refreshLiveMatches();
+        }}
+      />
       <RecordMatchDialog open={histOpen} onOpenChange={setHistOpen} title="Add Historical Mucho8s" />
       <RecordMatchDialog
         open={!!editMatchData}
