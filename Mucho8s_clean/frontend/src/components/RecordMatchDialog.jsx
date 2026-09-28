@@ -437,9 +437,9 @@ export const RecordMatchDialog = ({
             <div className="flex items-center gap-2 mb-3">
               <WalletCards size={16} className="text-emerald-400" />
               <div>
-                <div className="text-sm font-bold">Mucho8s Pairings</div>
+                <div className="text-sm font-bold">Money Chall Pairings</div>
                 <div className="text-[11px] text-muted-foreground">
-                  Set player pairings and amount.
+                  Choose who each player was playing against. The stake is already prefilled from the room.
                 </div>
               </div>
             </div>
@@ -501,14 +501,18 @@ export const RecordMatchDialog = ({
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
               Automatic Rules
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] leading-5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] leading-5">
               <div>
                 <span className="font-semibold text-[#D5A33A] inline-flex items-center gap-1"><Trophy size={11} /> MVP</span>
-                <span className="text-muted-foreground"> · Every 3 consecutive Mucho8s wins = +1 MVP and +5 Elo.</span>
+                <span className="text-muted-foreground"> · Every 4 consecutive Mucho8s wins = +1 MVP and +3 Elo.</span>
               </div>
               <div>
                 <span className="font-semibold text-[#C79A6B]">MERDA 💩</span>
-                <span className="text-muted-foreground"> · Every 3 consecutive losses = +1 MERDA.</span>
+                <span className="text-muted-foreground"> · Every 4 consecutive losses = +1 MERDA.</span>
+              </div>
+              <div>
+                <span className="font-semibold text-magma">MVP BOUNTY</span>
+                <span className="text-muted-foreground"> · Beat a team with a player one win from MVP = +3 Elo to each winner.</span>
               </div>
             </div>
           </div>
