@@ -839,17 +839,6 @@ export const Layout = () => {
                       </Link>
                     )}
 
-                    {discordPlayer && discordAccount?.twitch_channel && (
-                      <Link
-                        to={`/live/${discordPlayer.id}`}
-                        role="menuitem"
-                        className="m8-topbar-account-menu-item is-twitch"
-                        onClick={() => setAccountOpen(false)}
-                      >
-                        <Twitch size={15} />
-                        <span>{twitchLive ? "Twitch · Live" : "Twitch"}</span>
-                      </Link>
-                    )}
                     <div className="m8-topbar-account-menu-separator" />
                     <button
                       type="button"
