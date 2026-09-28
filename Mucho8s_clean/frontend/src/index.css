@@ -2373,6 +2373,93 @@ textarea:focus-visible {
     white-space: nowrap;
 }
 
+.m8-topbar-account-wrap {
+    position: relative;
+}
+
+.m8-topbar-account.is-open {
+    background: rgba(255,255,255,.045);
+}
+
+.m8-topbar-account-fallback {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    border: 1px solid #2A313C;
+    background: #11161D;
+    color: #AAB2BF;
+}
+
+.m8-topbar-account-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    z-index: 90;
+    width: 148px;
+    padding: .38rem;
+    border: 1px solid #262E39;
+    border-radius: .72rem;
+    background: rgba(11,15,20,.98);
+    box-shadow: 0 18px 44px rgba(0,0,0,.42);
+    backdrop-filter: blur(18px);
+}
+
+.m8-topbar-account-menu-item {
+    width: 100%;
+    height: 38px;
+    padding: 0 .7rem;
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    border-radius: .5rem;
+    color: #D9DEE6;
+    font-size: .68rem;
+    font-weight: 800;
+    text-align: left;
+    transition: background .15s ease, color .15s ease;
+}
+
+.m8-topbar-account-menu-item:hover {
+    background: rgba(255,255,255,.045);
+}
+
+.m8-topbar-account-menu-item.is-danger {
+    color: #FF6B76;
+}
+
+.m8-topbar-account-menu-item.is-danger:hover {
+    color: #FFFFFF;
+    background: rgba(255,42,59,.12);
+}
+
+.m8-topbar-discord-login {
+    height: 38px;
+    padding: 0 .8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .48rem;
+    border: 1px solid rgba(88,101,242,.34);
+    border-radius: .68rem;
+    background: rgba(88,101,242,.12);
+    color: #C8CEFF;
+    font-size: .67rem;
+    font-weight: 800;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.m8-topbar-discord-login:hover {
+    background: rgba(88,101,242,.20);
+    border-color: rgba(88,101,242,.55);
+    color: #FFFFFF;
+}
+
+.m8-topbar-discord-login:disabled {
+    opacity: .55;
+    cursor: wait;
+}
+
 /* Profile-only side navigation */
 .m8-profile-workspace {
     width: 100%;
@@ -2469,6 +2556,16 @@ textarea:focus-visible {
     .m8-topbar-account-name,
     .m8-topbar-account > svg {
         display: none;
+    }
+
+    .m8-topbar-discord-login span {
+        display: none;
+    }
+
+    .m8-topbar-discord-login {
+        width: 36px;
+        padding: 0;
+        justify-content: center;
     }
 
     .m8-topbar-account {
