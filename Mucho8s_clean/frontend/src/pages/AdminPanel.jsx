@@ -1363,43 +1363,174 @@ export default function AdminPanel() {
       )}
 
       {activeTab === "content" && (
-        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_.8fr] gap-4">
-          <div className="m8-panel rounded-2xl p-5">
+        <div className="grid grid-cols-1 xl:grid-cols-[.95fr_1.05fr] gap-4">
+          <div className="m8-panel rounded-2xl p-4 sm:p-5">
             <div className="flex items-center justify-between gap-3 mb-4">
               <div>
-                <div className="brand-kicker mb-1">Content</div>
-                <h3 className="font-display font-black text-xl">News & Updates</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Keep the public News page focused on season announcements, ranking changes and important platform updates.
+                <div className="brand-kicker mb-1">Content Studio</div>
+                <h3 className="font-display font-black text-xl">Publish to News</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Everything published here appears automatically on the public News page.
                 </p>
               </div>
               <Newspaper size={20} className="text-magma" />
             </div>
 
-            <div className="m8-panel-quiet rounded-xl p-4">
-              <div className="text-sm font-semibold">Public News page</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                The animated News page is active and visible to every player.
+            <div className="space-y-3">
+              <Input
+                value={newsDraft.title}
+                onChange={(event) => setNewsDraft((current) => ({ ...current, title: event.target.value.slice(0, 120) }))}
+                placeholder="Post title"
+                className="bg-[#0F1218] border-[#222834] h-10"
+              />
+
+              <textarea
+                value={newsDraft.summary}
+                onChange={(event) => setNewsDraft((current) => ({ ...current, summary: event.target.value.slice(0, 1200) }))}
+                placeholder="Write the update, announcement or patch note..."
+                rows={5}
+                className="w-full min-h-[122px] resize-y rounded-xl bg-[#0F1218] border border-[#222834] px-3 py-2.5 text-sm outline-none focus:border-magma/50"
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+                <select
+                  value={newsDraft.category}
+                  onChange={(event) => {
+                    const category = event.target.value;
+                    const accents = {
+                      Platform: "#65D5D3",
+                      Competition: "#FF2A3B",
+                      Ranking: "#22C55E",
+                      Season: "#D5A33A",
+                      Update: "#8E98FF",
+                    };
+                    setNewsDraft((current) => ({
+                      ...current,
+                      category,
+                      accent: accents[category] || current.accent,
+                    }));
+                  }}
+                  className="h-10 rounded-xl bg-[#0F1218] border border-[#222834] px-3 text-sm"
+                >
+                  <option value="Platform">Platform</option>
+                  <option value="Competition">Competition</option>
+                  <option value="Ranking">Ranking / Elo</option>
+                  <option value="Season">Season</option>
+                  <option value="Update">Update</option>
+                </select>
+
+                <button
+                  type="button"
+                  onClick={() => setNewsDraft((current) => ({ ...current, featured: !current.featured }))}
+                  className={`h-10 px-3 rounded-xl border text-xs font-black ${
+                    newsDraft.featured
+                      ? "border-[#D5A33A]/30 bg-[#D5A33A]/10 text-[#D5A33A]"
+                      : "border-[#2A303B] bg-[#0F1218] text-muted-foreground"
+                  }`}
+                >
+                  {newsDraft.featured ? "★ Featured" : "☆ Make Featured"}
+                </button>
               </div>
-              <Button asChild className="mt-4 bg-magma hover:bg-magma/90 text-white">
-                <Link to="/news">
-                  Open News <ExternalLink size={14} className="ml-2" />
-                </Link>
-              </Button>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  disabled={newsBusy || !newsDraft.title.trim() || !newsDraft.summary.trim()}
+                  onClick={() => void saveNewsPost()}
+                  className="flex-1 h-11 bg-magma hover:bg-[#ff3c4c] text-white font-black"
+                >
+                  <Send size={15} className="mr-2" />
+                  {editingNewsId ? "Save News Post" : "Publish Now"}
+                </Button>
+                {editingNewsId && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={resetNewsDraft}
+                    className="h-11 border border-[#2A303B] bg-[#0F1218]"
+                  >
+                    Cancel
+                  </Button>
+                )}
+              </div>
+
+              <div className="text-[10px] text-[#697181]">
+                Posts are published immediately and are added to the animated News ticker.
+              </div>
             </div>
           </div>
 
-          <div className="m8-panel rounded-2xl p-5">
-            <div className="brand-kicker mb-1">Publishing</div>
-            <h3 className="font-display font-black text-lg">Simple content flow</h3>
-            <div className="mt-4 space-y-2 text-sm text-muted-foreground">
-              <div className="m8-panel-quiet rounded-xl px-3 py-2">1. Season / competition announcement</div>
-              <div className="m8-panel-quiet rounded-xl px-3 py-2">2. Ranking / Elo update</div>
-              <div className="m8-panel-quiet rounded-xl px-3 py-2">3. Important platform update</div>
+          <div className="m8-panel rounded-2xl p-4 sm:p-5 min-w-0">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div>
+                <div className="brand-kicker mb-1">Published</div>
+                <h3 className="font-display font-black text-lg">News Center</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => void refreshNewsPosts()}
+                  className="h-9 px-3 border border-[#222834] bg-[#0F1218]"
+                >
+                  <RotateCcw size={13} className="mr-1.5" /> Refresh
+                </Button>
+                <Button asChild variant="ghost" className="h-9 px-3 border border-[#222834] bg-[#0F1218]">
+                  <Link to="/news">
+                    News <ExternalLink size={13} className="ml-1.5" />
+                  </Link>
+                </Button>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-4">
-              News editing is now isolated here instead of mixing content tools with competition controls.
-            </p>
+
+            {newsPosts.length === 0 ? (
+              <div className="m8-panel-quiet rounded-xl p-8 text-center text-sm text-muted-foreground">
+                No Admin posts yet. Publish the first update from the editor.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-2 max-h-[430px] overflow-y-auto pr-1">
+                {newsPosts.map((post) => (
+                  <div key={post.id} className="rounded-xl border border-[#202631] bg-[#0F1218] p-3">
+                    <div className="flex items-start gap-3">
+                      <span
+                        className="w-2 h-2 rounded-full mt-1.5 shrink-0"
+                        style={{ background: post.accent || "#FF2A3B" }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[9px] uppercase tracking-widest text-muted-foreground">
+                            {post.category || "Platform"}
+                          </span>
+                          {post.featured && (
+                            <span className="text-[8px] uppercase tracking-widest text-[#D5A33A]">Featured</span>
+                          )}
+                        </div>
+                        <div className="font-display font-black text-sm mt-1 truncate">{post.title}</div>
+                        <div className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{post.summary}</div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => editNewsPost(post)}
+                          className="w-8 h-8 rounded-lg border border-[#2A303B] bg-[#151923] inline-flex items-center justify-center text-muted-foreground hover:text-white"
+                          title="Edit post"
+                        >
+                          <Pencil size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={newsBusy}
+                          onClick={() => void removeNewsPost(post.id)}
+                          className="w-8 h-8 rounded-lg border border-red-500/20 bg-red-500/[0.04] inline-flex items-center justify-center text-red-400 hover:bg-red-500/10"
+                          title="Delete post"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
