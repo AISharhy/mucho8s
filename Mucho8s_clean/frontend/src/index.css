@@ -2905,10 +2905,18 @@ textarea:focus-visible {
     flex: 0 0 auto;
     height: 44px;
     padding: 0 .1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .42rem;
     color: #737D8D;
     font-size: .72rem;
     font-weight: 700;
     white-space: nowrap;
+    transition: color .16s ease;
+}
+
+.m8-profile-content-tab svg {
+    color: #687281;
     transition: color .16s ease;
 }
 
@@ -2931,9 +2939,13 @@ textarea:focus-visible {
     color: #F4F6F8;
 }
 
+.m8-profile-content-tab.is-active svg {
+    color: #FF2A3B;
+}
+
 .m8-profile-content-tab.is-active::after {
-    background: #D5A33A;
-    box-shadow: 0 0 12px rgba(213,163,58,.24);
+    background: #FF2A3B;
+    box-shadow: 0 0 12px rgba(255,42,59,.28);
 }
 
 .m8-profile-overview-grid {
