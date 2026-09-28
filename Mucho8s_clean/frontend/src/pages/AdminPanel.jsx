@@ -80,6 +80,7 @@ export default function AdminPanel() {
   const [discordAccounts, setDiscordAccounts] = useState([]);
   const [accountBusyId, setAccountBusyId] = useState("");
   const [accountLinkDrafts, setAccountLinkDrafts] = useState({});
+  const [playerAdminFilter, setPlayerAdminFilter] = useState("all");
   const [adminChallenges, setAdminChallenges] = useState([]);
   const [challengeBusyId, setChallengeBusyId] = useState("");
   const [challengeDrafts, setChallengeDrafts] = useState({});
@@ -288,6 +289,35 @@ export default function AdminPanel() {
 
     return stats;
   }, [discordAccounts]);
+
+  const playerAccountByPlayerId = useMemo(() => {
+    const map = new Map();
+    discordAccounts.forEach((account) => {
+      const playerId = String(account?.player_id || "").trim();
+      if (playerId) map.set(playerId, account);
+    });
+    return map;
+  }, [discordAccounts]);
+
+  const pendingOrUnlinkedAccounts = useMemo(
+    () =>
+      discordAccounts.filter((account) => !String(account?.player_id || "").trim()),
+    [discordAccounts]
+  );
+
+  const filteredAdminPlayers = useMemo(() => {
+    return players.filter((player) => {
+      const account = playerAccountByPlayerId.get(String(player.id));
+      const hasPayPal = Boolean(String(account?.paypal_url || "").trim());
+      const hasRevolut = Boolean(String(account?.revolut_url || "").trim());
+
+      if (playerAdminFilter === "linked") return Boolean(account);
+      if (playerAdminFilter === "unlinked") return !account;
+      if (playerAdminFilter === "no-payment") return Boolean(account) && !hasPayPal && !hasRevolut;
+      if (playerAdminFilter === "pending") return false;
+      return true;
+    });
+  }, [players, playerAccountByPlayerId, playerAdminFilter]);
 
   const challengeStats = useMemo(() => {
     const direct = adminChallenges.filter(isDirectMucho1v1);
@@ -957,31 +987,8 @@ export default function AdminPanel() {
         </div>
       )}
 
-      {(activeTab === "players" || activeTab === "settings") && (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Add player */}
-        <div className={`${activeTab === "players" ? "lg:col-span-3" : "hidden"} m8-panel rounded-2xl p-5`}>
-          <div className="flex items-center gap-2 mb-4">
-            <UserPlus size={18} className="text-emerald-400" />
-            <h3 className="font-display font-black text-lg tracking-[-0.015em]">Add Player</h3>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_150px_auto] gap-3 sm:items-end">
-            <div>
-              <Label className="text-xs text-muted-foreground">Nickname</Label>
-              <Input data-testid="admin-new-name" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Reaper" className="bg-[#0F1218] border-[#222834] mt-1" />
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Starting Elo</Label>
-              <Input data-testid="admin-new-elo" type="number" value={newElo} onChange={(e) => setNewElo(e.target.value)} className="bg-[#0F1218] border-[#222834] mt-1" />
-            </div>
-            <Button onClick={handleAdd} data-testid="admin-add-player-btn" className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold sm:px-6">
-              <UserPlus size={16} className="mr-1" /> Add Player
-            </Button>
-          </div>
-        </div>
-
-        {/* Data actions */}
-        <div className={`${activeTab === "settings" ? "lg:col-span-3" : "hidden"} m8-panel rounded-2xl p-5`}>
+      {activeTab === "settings" && (
+        <div className="m8-panel rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <Database size={18} className="text-[#D5A33A]" />
             <h3 className="font-display font-black text-lg tracking-[-0.015em]">Database & Maintenance</h3>
@@ -1010,8 +1017,6 @@ export default function AdminPanel() {
             </Button>
           </div>
         </div>
-      </div>
-
       )}
 
       {activeTab === "matches" && (
@@ -1774,214 +1779,7 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      <div className="m8-panel rounded-2xl p-4" data-testid="discord-player-accounts">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-3">
-          <div>
-            <div className="brand-kicker mb-1">Player Accounts</div>
-            <h3 className="font-display font-black text-xl tracking-[-0.02em]">
-              Discord & Payments
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Approve a new player request or link the Discord account to an existing roster profile to preserve old Elo, stats and match history.
-            </p>
-          </div>
 
-          <Button
-            variant="ghost"
-            onClick={loadDiscordAccounts}
-            className="bg-[#0F1218] border border-[#222834] shrink-0"
-            data-testid="discord-accounts-refresh"
-          >
-            <RotateCcw size={14} className="mr-1.5" /> Refresh
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-4 gap-2 mb-3">
-          {[
-            ["PayPal", paymentLinkStats.paypal, "text-[#61A8FF]"],
-            ["Revolut", paymentLinkStats.revolut, "text-white"],
-            ["Both", paymentLinkStats.both, "text-emerald-400"],
-            ["None", paymentLinkStats.none, "text-muted-foreground"],
-          ].map(([label, value, tone]) => (
-            <div
-              key={label}
-              className="rounded-xl border border-[#222834] bg-[#0F1218] px-3 py-2"
-            >
-              <div className="text-[9px] uppercase tracking-widest text-[#697181]">{label}</div>
-              <div className={`font-mono font-black text-lg mt-0.5 ${tone}`}>{value}</div>
-            </div>
-          ))}
-        </div>
-
-        {discordAccounts.length === 0 ? (
-          <div className="m8-panel-quiet rounded-xl px-4 py-8 text-center text-sm text-muted-foreground">
-            No player has logged in with Discord yet.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-2 max-h-[460px] overflow-y-auto pr-1">
-            {discordAccounts.map((account) => {
-              const hasPayPal = Boolean(String(account?.paypal_url || "").trim());
-              const hasRevolut = Boolean(String(account?.revolut_url || "").trim());
-              const linkedPlayer = account.player_id ? playerMap[account.player_id] : null;
-
-              const paymentLabel =
-                hasPayPal && hasRevolut
-                  ? "PayPal + Revolut"
-                  : hasPayPal
-                    ? "PayPal"
-                    : hasRevolut
-                      ? "Revolut"
-                      : "No payment link";
-
-              const paymentClass =
-                hasPayPal && hasRevolut
-                  ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/[0.06]"
-                  : hasPayPal
-                    ? "text-[#61A8FF] border-[#61A8FF]/20 bg-[#61A8FF]/[0.06]"
-                    : hasRevolut
-                      ? "text-white border-white/15 bg-white/[0.04]"
-                      : "text-muted-foreground border-[#2A303B] bg-[#151923]";
-
-              return (
-                <div
-                  key={account.id}
-                  className="rounded-xl border border-[#202631] bg-[#0F1218] p-2.5"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      {account.avatar_url ? (
-                        <img
-                          src={account.avatar_url}
-                          alt=""
-                          className="w-9 h-9 rounded-lg object-cover shrink-0"
-                        />
-                      ) : (
-                        <div className="w-9 h-9 rounded-lg bg-[#5865F2]/15 border border-[#5865F2]/30 flex items-center justify-center shrink-0">
-                          <MessageCircle size={17} className="text-[#8E98FF]" />
-                        </div>
-                      )}
-
-                      <div className="min-w-0 flex-1">
-                        <div className="font-semibold text-sm truncate">
-                          {linkedPlayer?.name || account.display_name || account.discord_username || "Discord User"}
-                        </div>
-                        <div className="text-[11px] text-muted-foreground truncate mt-0.5">
-                          {account.display_name || account.discord_username || "Discord account"}
-                          {linkedPlayer
-                            ? " · linked"
-                            : account.player_request_status === "pending"
-                              ? ` · wants ${account.requested_player_name || "a player name"}`
-                              : " · not linked"}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-                      <span className={`h-8 px-2.5 rounded-lg border inline-flex items-center text-[10px] font-bold uppercase tracking-wider ${paymentClass}`}>
-                        {paymentLabel}
-                      </span>
-
-                      {linkedPlayer && (
-                        <span className="h-8 px-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-400 inline-flex items-center text-[10px] font-black uppercase tracking-wider">
-                          <Check size={13} className="mr-1" />
-                          {linkedPlayer.name}
-                        </span>
-                      )}
-
-                      {!linkedPlayer && account.player_request_status === "pending" && account.requested_player_name && (
-                        <>
-                          <span className="h-8 px-2.5 rounded-lg border border-[#D5A33A]/25 bg-[#D5A33A]/[0.06] text-[#D5A33A] inline-flex items-center text-[10px] font-black">
-                            New: {account.requested_player_name}
-                          </span>
-                          <Button
-                            type="button"
-                            onClick={() => handlePlayerRequest(account.id, "approve")}
-                            disabled={accountBusyId === account.id}
-                            className="h-8 px-3 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black text-[10px] font-black"
-                            data-testid={`discord-request-approve-${account.id}`}
-                          >
-                            <Check size={13} className="mr-1" />
-                            Create New
-                          </Button>
-                          <Button
-                            type="button"
-                            onClick={() => handlePlayerRequest(account.id, "reject")}
-                            disabled={accountBusyId === account.id}
-                            variant="ghost"
-                            className="h-8 px-3 rounded-lg border border-red-500/20 bg-red-500/[0.05] text-red-400 hover:bg-red-500/[0.10] text-[10px] font-black"
-                            data-testid={`discord-request-reject-${account.id}`}
-                          >
-                            Reject
-                          </Button>
-                        </>
-                      )}
-
-                      {!linkedPlayer && account.player_request_status === "rejected" && (
-                        <span className="h-8 px-2.5 rounded-lg border border-red-500/20 bg-red-500/[0.05] text-red-400 inline-flex items-center text-[10px] font-black uppercase tracking-wider">
-                          Rejected
-                        </span>
-                      )}
-
-                      <div className="flex items-center gap-1.5">
-                        <select
-                          value={accountLinkDrafts[account.id] || ""}
-                          onChange={(event) =>
-                            setAccountLinkDrafts((prev) => ({
-                              ...prev,
-                              [account.id]: event.target.value,
-                            }))
-                          }
-                          disabled={accountBusyId === account.id}
-                          className="h-8 max-w-[180px] rounded-lg bg-[#151923] border border-[#2A303B] px-2 text-[10px] font-semibold text-[#C8CED8]"
-                          aria-label={`Link ${account.display_name || account.discord_username || "Discord account"} to existing player`}
-                          data-testid={`discord-link-existing-${account.id}`}
-                        >
-                          <option value="">Link existing player…</option>
-                          {[...players]
-                            .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")))
-                            .map((playerOption) => {
-                              const owner = discordAccounts.find(
-                                (candidate) =>
-                                  candidate.id !== account.id &&
-                                  String(candidate.player_id || "") === String(playerOption.id)
-                              );
-                              return (
-                                <option key={playerOption.id} value={playerOption.id}>
-                                  {playerOption.name} · {playerOption.currentElo} Elo{owner ? " · linked" : ""}
-                                </option>
-                              );
-                            })}
-                        </select>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          onClick={() => handleExistingPlayerLink(account)}
-                          disabled={
-                            accountBusyId === account.id ||
-                            !String(accountLinkDrafts[account.id] || "").trim()
-                          }
-                          className="h-8 px-2.5 rounded-lg border border-[#9146FF]/25 bg-[#9146FF]/[0.06] text-[#B88CFF] hover:bg-[#9146FF]/[0.12] text-[10px] font-black"
-                          data-testid={`discord-link-existing-confirm-${account.id}`}
-                        >
-                          {linkedPlayer ? "Relink" : "Link"}
-                        </Button>
-                      </div>
-
-                      {!linkedPlayer &&
-                        account.player_request_status !== "pending" &&
-                        account.player_request_status !== "rejected" && (
-                          <span className="h-8 px-2.5 rounded-lg border border-[#2A303B] bg-[#151923] text-[#737D8D] inline-flex items-center text-[10px] font-bold">
-                            Waiting for player request
-                          </span>
-                        )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
 
         </>
       )}
@@ -2034,69 +1832,398 @@ export default function AdminPanel() {
       )}
 
       {activeTab === "players" && (
-        <>
-      <div className="m8-panel rounded-2xl p-4" data-testid="admin-roster">
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <h3 className="font-display font-bold text-lg">Players ({players.length})</h3>
-          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Compact roster</span>
-        </div>
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-2 max-h-[520px] overflow-y-auto pr-1">
-          {players.map((p) => {
-            const isEditing = editing[p.id] !== undefined;
-            return (
-              <div key={p.id} className="flex flex-wrap items-center gap-2.5 p-2.5 rounded-lg bg-[#0F1218] border border-[#1D222C]" data-testid={`admin-player-${p.id}`}>
-                <PlayerAvatar name={p.name} elo={p.currentElo} size={30} />
-                {isEditing ? (
-                  <div className="flex-1 min-w-[260px] grid grid-cols-1 sm:grid-cols-[1fr_110px_auto] gap-2">
-                    <Input
-                      data-testid={`admin-edit-name-input-${p.id}`}
-                      value={editing[p.id].name}
-                      onChange={(e) => setEditing((prev) => ({ ...prev, [p.id]: { ...prev[p.id], name: e.target.value } }))}
-                      className="h-9 bg-[#0F1218] border-[#222834]"
-                      aria-label="Player nickname"
-                    />
-                    <Input
-                      data-testid={`admin-edit-elo-input-${p.id}`}
-                      type="number"
-                      value={editing[p.id].elo}
-                      onChange={(e) => setEditing((prev) => ({ ...prev, [p.id]: { ...prev[p.id], elo: e.target.value } }))}
-                      className="h-9 bg-[#0F1218] border-[#222834]"
-                      aria-label="Player Elo"
-                    />
-                    <Button onClick={() => savePlayer(p.id)} data-testid={`admin-save-player-${p.id}`} className="h-9 bg-emerald-500 hover:bg-emerald-600">
-                      <Check size={16} className="mr-1" /> Save
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    <span className="font-medium flex-1 min-w-[100px] truncate">{p.name}</span>
-                    <EloBadge elo={p.currentElo} />
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => setEditing((prev) => ({ ...prev, [p.id]: { name: p.name, elo: p.currentElo } }))}
-                      data-testid={`admin-edit-player-btn-${p.id}`}
-                      className="h-9 w-9"
-                    >
-                      <Pencil size={15} />
-                    </Button>
-                  </>
-                )}
-                <ConfirmButton
-                  iconOnly
-                  testid={`admin-remove-player-${p.id}`}
-                  icon={<Trash2 size={15} />}
-                  title={`Remove ${p.name}?`}
-                  desc="This player will be permanently removed from the roster."
-                  onConfirm={() => { removePlayer(p.id); toast.success(`${p.name} removed`); }}
+        <div className="m8-panel rounded-2xl p-5" data-testid="admin-player-management">
+          <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4 mb-5">
+            <div>
+              <div className="brand-kicker mb-1">Player Management</div>
+              <h3 className="font-display font-black text-xl tracking-[-0.02em]">
+                Players, Discord & Payments
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
+                One profile per player: roster data, Elo, Discord identity, payment links and account requests all live here.
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              onClick={loadDiscordAccounts}
+              className="bg-[#0F1218] border border-[#222834] shrink-0"
+              data-testid="player-management-refresh"
+            >
+              <RotateCcw size={14} className="mr-1.5" /> Refresh Accounts
+            </Button>
+          </div>
+
+          <div className="rounded-xl border border-[#222834] bg-[#0F1218] p-4 mb-4">
+            <div className="flex items-center gap-2 mb-3">
+              <UserPlus size={16} className="text-emerald-400" />
+              <div className="font-display font-bold">Add Player</div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_150px_auto] gap-3 sm:items-end">
+              <div>
+                <Label className="text-xs text-muted-foreground">Nickname</Label>
+                <Input
+                  data-testid="admin-new-name"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="e.g. Reaper"
+                  className="bg-[#0B0D12] border-[#222834] mt-1"
                 />
               </div>
-            );
-          })}
-        </div>
-      </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Starting Elo</Label>
+                <Input
+                  data-testid="admin-new-elo"
+                  type="number"
+                  value={newElo}
+                  onChange={(e) => setNewElo(e.target.value)}
+                  className="bg-[#0B0D12] border-[#222834] mt-1"
+                />
+              </div>
+              <Button
+                onClick={handleAdd}
+                data-testid="admin-add-player-btn"
+                className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold sm:px-6"
+              >
+                <UserPlus size={16} className="mr-1" /> Add Player
+              </Button>
+            </div>
+          </div>
 
-        </>
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            {[
+              ["all", "All", players.length],
+              ["linked", "Discord linked", players.filter((p) => playerAccountByPlayerId.has(String(p.id))).length],
+              ["unlinked", "No Discord", players.filter((p) => !playerAccountByPlayerId.has(String(p.id))).length],
+              ["pending", "Pending requests", pendingOrUnlinkedAccounts.filter((a) => a.player_request_status === "pending").length],
+              ["no-payment", "No payment", players.filter((p) => {
+                const a = playerAccountByPlayerId.get(String(p.id));
+                return a && !String(a.paypal_url || "").trim() && !String(a.revolut_url || "").trim();
+              }).length],
+            ].map(([key, label, count]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setPlayerAdminFilter(key)}
+                className={`h-8 px-3 rounded-lg border text-[10px] font-black uppercase tracking-wider transition-colors ${
+                  playerAdminFilter === key
+                    ? "bg-white text-black border-white"
+                    : "bg-[#0F1218] text-[#8D95A4] border-[#222834] hover:text-white"
+                }`}
+              >
+                {label}
+                <span className="ml-1.5 font-mono opacity-70">{count}</span>
+              </button>
+            ))}
+          </div>
+
+          {playerAdminFilter !== "pending" && (
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-2 max-h-[560px] overflow-y-auto pr-1" data-testid="admin-roster">
+              {filteredAdminPlayers.map((p) => {
+                const account = playerAccountByPlayerId.get(String(p.id)) || null;
+                const hasPayPal = Boolean(String(account?.paypal_url || "").trim());
+                const hasRevolut = Boolean(String(account?.revolut_url || "").trim());
+                const isEditing = editing[p.id] !== undefined;
+
+                const paymentLabel =
+                  hasPayPal && hasRevolut
+                    ? "PayPal + Revolut"
+                    : hasPayPal
+                      ? "PayPal"
+                      : hasRevolut
+                        ? "Revolut"
+                        : account
+                          ? "No payment"
+                          : "No Discord";
+
+                const paymentClass =
+                  hasPayPal && hasRevolut
+                    ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/[0.06]"
+                    : hasPayPal
+                      ? "text-[#61A8FF] border-[#61A8FF]/20 bg-[#61A8FF]/[0.06]"
+                      : hasRevolut
+                        ? "text-white border-white/15 bg-white/[0.04]"
+                        : "text-muted-foreground border-[#2A303B] bg-[#151923]";
+
+                return (
+                  <div
+                    key={p.id}
+                    className="rounded-xl border border-[#202631] bg-[#0F1218] p-3"
+                    data-testid={`admin-player-${p.id}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <PlayerAvatar name={p.name} elo={p.currentElo} size={36} />
+
+                      <div className="min-w-0 flex-1">
+                        {isEditing ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-[1fr_110px_auto] gap-2">
+                            <Input
+                              data-testid={`admin-edit-name-input-${p.id}`}
+                              value={editing[p.id].name}
+                              onChange={(e) => setEditing((prev) => ({
+                                ...prev,
+                                [p.id]: { ...prev[p.id], name: e.target.value },
+                              }))}
+                              className="h-9 bg-[#0B0D12] border-[#222834]"
+                              aria-label="Player nickname"
+                            />
+                            <Input
+                              data-testid={`admin-edit-elo-input-${p.id}`}
+                              type="number"
+                              value={editing[p.id].elo}
+                              onChange={(e) => setEditing((prev) => ({
+                                ...prev,
+                                [p.id]: { ...prev[p.id], elo: e.target.value },
+                              }))}
+                              className="h-9 bg-[#0B0D12] border-[#222834]"
+                              aria-label="Player Elo"
+                            />
+                            <Button
+                              onClick={() => savePlayer(p.id)}
+                              data-testid={`admin-save-player-${p.id}`}
+                              className="h-9 bg-emerald-500 hover:bg-emerald-600"
+                            >
+                              <Check size={15} className="mr-1" /> Save
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <div className="font-semibold truncate">{p.name}</div>
+                              <EloBadge elo={p.currentElo} />
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                              {account ? (
+                                <span className="h-7 px-2 rounded-lg border border-[#5865F2]/25 bg-[#5865F2]/[0.07] text-[#AAB0FF] inline-flex items-center gap-1.5 text-[10px] font-bold">
+                                  <MessageCircle size={11} />
+                                  {account.display_name || account.discord_username || "Discord linked"}
+                                </span>
+                              ) : (
+                                <span className="h-7 px-2 rounded-lg border border-[#2A303B] bg-[#151923] text-[#737D8D] inline-flex items-center text-[10px] font-bold">
+                                  No Discord linked
+                                </span>
+                              )}
+                              <span className={`h-7 px-2 rounded-lg border inline-flex items-center text-[10px] font-bold uppercase tracking-wider ${paymentClass}`}>
+                                {paymentLabel}
+                              </span>
+                            </div>
+                          </>
+                        )}
+
+                        {account && (
+                          <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                            <select
+                              value={accountLinkDrafts[account.id] || ""}
+                              onChange={(event) =>
+                                setAccountLinkDrafts((prev) => ({
+                                  ...prev,
+                                  [account.id]: event.target.value,
+                                }))
+                              }
+                              disabled={accountBusyId === account.id}
+                              className="h-8 max-w-[210px] rounded-lg bg-[#151923] border border-[#2A303B] px-2 text-[10px] font-semibold text-[#C8CED8]"
+                              aria-label={`Relink ${account.display_name || account.discord_username || "Discord account"}`}
+                            >
+                              <option value="">Relink Discord to…</option>
+                              {[...players]
+                                .filter((option) => String(option.id) !== String(p.id))
+                                .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")))
+                                .map((option) => (
+                                  <option key={option.id} value={option.id}>
+                                    {option.name} · {option.currentElo} Elo
+                                  </option>
+                                ))}
+                            </select>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() => handleExistingPlayerLink(account)}
+                              disabled={
+                                accountBusyId === account.id ||
+                                !String(accountLinkDrafts[account.id] || "").trim()
+                              }
+                              className="h-8 px-2.5 rounded-lg border border-[#9146FF]/25 bg-[#9146FF]/[0.06] text-[#B88CFF] hover:bg-[#9146FF]/[0.12] text-[10px] font-black"
+                            >
+                              Relink
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        {!isEditing && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setEditing((prev) => ({
+                              ...prev,
+                              [p.id]: { name: p.name, elo: p.currentElo },
+                            }))}
+                            data-testid={`admin-edit-player-btn-${p.id}`}
+                            className="h-9 w-9"
+                          >
+                            <Pencil size={15} />
+                          </Button>
+                        )}
+                        <ConfirmButton
+                          iconOnly
+                          testid={`admin-remove-player-${p.id}`}
+                          icon={<Trash2 size={15} />}
+                          title={`Remove ${p.name}?`}
+                          desc="This player will be permanently removed from the roster."
+                          onConfirm={() => {
+                            removePlayer(p.id);
+                            toast.success(`${p.name} removed`);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {(playerAdminFilter === "all" ||
+            playerAdminFilter === "pending" ||
+            playerAdminFilter === "unlinked") &&
+            pendingOrUnlinkedAccounts.length > 0 && (
+              <div className="mt-5 pt-5 border-t border-[#222834]">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div>
+                    <div className="brand-kicker mb-1">Discord Accounts</div>
+                    <div className="font-display font-bold">Pending / Unlinked</div>
+                  </div>
+                  <span className="m8-pill font-mono text-[#C8CED8]">
+                    {pendingOrUnlinkedAccounts.length}
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  {pendingOrUnlinkedAccounts
+                    .filter((account) =>
+                      playerAdminFilter !== "pending" ||
+                      account.player_request_status === "pending"
+                    )
+                    .map((account) => {
+                      const hasPayPal = Boolean(String(account?.paypal_url || "").trim());
+                      const hasRevolut = Boolean(String(account?.revolut_url || "").trim());
+
+                      const paymentLabel =
+                        hasPayPal && hasRevolut
+                          ? "PayPal + Revolut"
+                          : hasPayPal
+                            ? "PayPal"
+                            : hasRevolut
+                              ? "Revolut"
+                              : "No payment link";
+
+                      return (
+                        <div
+                          key={account.id}
+                          className="rounded-xl border border-[#202631] bg-[#0F1218] p-3 flex flex-col lg:flex-row lg:items-center gap-3"
+                        >
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            {account.avatar_url ? (
+                              <img
+                                src={account.avatar_url}
+                                alt=""
+                                className="w-9 h-9 rounded-lg object-cover shrink-0"
+                              />
+                            ) : (
+                              <div className="w-9 h-9 rounded-lg bg-[#5865F2]/15 border border-[#5865F2]/30 flex items-center justify-center shrink-0">
+                                <MessageCircle size={17} className="text-[#8E98FF]" />
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <div className="font-semibold text-sm truncate">
+                                {account.display_name || account.discord_username || "Discord User"}
+                              </div>
+                              <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                                {account.player_request_status === "pending"
+                                  ? `wants ${account.requested_player_name || "a player name"}`
+                                  : "not linked to a roster player"}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                            <span className="h-8 px-2.5 rounded-lg border border-[#2A303B] bg-[#151923] inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                              {paymentLabel}
+                            </span>
+
+                            {account.player_request_status === "pending" && account.requested_player_name && (
+                              <>
+                                <span className="h-8 px-2.5 rounded-lg border border-[#D5A33A]/25 bg-[#D5A33A]/[0.06] text-[#D5A33A] inline-flex items-center text-[10px] font-black">
+                                  New: {account.requested_player_name}
+                                </span>
+                                <Button
+                                  type="button"
+                                  onClick={() => handlePlayerRequest(account.id, "approve")}
+                                  disabled={accountBusyId === account.id}
+                                  className="h-8 px-3 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black text-[10px] font-black"
+                                >
+                                  <Check size={13} className="mr-1" />
+                                  Create New
+                                </Button>
+                                <Button
+                                  type="button"
+                                  onClick={() => handlePlayerRequest(account.id, "reject")}
+                                  disabled={accountBusyId === account.id}
+                                  variant="ghost"
+                                  className="h-8 px-3 rounded-lg border border-red-500/20 bg-red-500/[0.05] text-red-400 hover:bg-red-500/[0.10] text-[10px] font-black"
+                                >
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+
+                            <select
+                              value={accountLinkDrafts[account.id] || ""}
+                              onChange={(event) =>
+                                setAccountLinkDrafts((prev) => ({
+                                  ...prev,
+                                  [account.id]: event.target.value,
+                                }))
+                              }
+                              disabled={accountBusyId === account.id}
+                              className="h-8 max-w-[220px] rounded-lg bg-[#151923] border border-[#2A303B] px-2 text-[10px] font-semibold text-[#C8CED8]"
+                            >
+                              <option value="">Link existing player…</option>
+                              {[...players]
+                                .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")))
+                                .map((option) => {
+                                  const owner = discordAccounts.find(
+                                    (candidate) =>
+                                      candidate.id !== account.id &&
+                                      String(candidate.player_id || "") === String(option.id)
+                                  );
+                                  return (
+                                    <option key={option.id} value={option.id}>
+                                      {option.name} · {option.currentElo} Elo{owner ? " · linked" : ""}
+                                    </option>
+                                  );
+                                })}
+                            </select>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() => handleExistingPlayerLink(account)}
+                              disabled={
+                                accountBusyId === account.id ||
+                                !String(accountLinkDrafts[account.id] || "").trim()
+                              }
+                              className="h-8 px-2.5 rounded-lg border border-[#9146FF]/25 bg-[#9146FF]/[0.06] text-[#B88CFF] hover:bg-[#9146FF]/[0.12] text-[10px] font-black"
+                            >
+                              Link
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+        </div>
       )}
 
       <RecordMatchDialog
