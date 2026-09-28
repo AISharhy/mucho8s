@@ -867,6 +867,25 @@ textarea:focus-visible {
         height: 112px;
     }
 
+    .m8-profile-command-banner {
+        min-height: 286px;
+    }
+
+    .m8-profile-avatar-ring {
+        width: 132px;
+        height: 132px;
+    }
+
+    .m8-profile-edit-float span {
+        display: none;
+    }
+
+    .m8-profile-edit-float {
+        width: 32px;
+        padding: 0;
+        justify-content: center;
+    }
+
     .m8-profile-stat-strip {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -2801,7 +2820,7 @@ textarea:focus-visible {
 
 .m8-profile-command-banner {
     position: relative;
-    min-height: 282px;
+    min-height: 320px;
     overflow: hidden;
     background:
         radial-gradient(circle at 18% 72%, rgba(213,163,58,.13), transparent 24rem),
@@ -2861,8 +2880,8 @@ textarea:focus-visible {
 
 .m8-profile-avatar-ring {
     position: relative;
-    width: 126px;
-    height: 126px;
+    width: 164px;
+    height: 164px;
     border-radius: 999px;
     display: grid;
     place-items: center;
@@ -2887,8 +2906,8 @@ textarea:focus-visible {
 }
 
 .m8-profile-verified {
-    width: 28px;
-    height: 28px;
+    width: 31px;
+    height: 31px;
     display: grid;
     place-items: center;
     border-radius: 999px;
@@ -2922,6 +2941,32 @@ textarea:focus-visible {
     transform: translateY(-1px);
     border-color: #4B5565;
     background: #171D26;
+}
+
+.m8-profile-edit-float {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    z-index: 20;
+    height: 32px;
+    padding: 0 .65rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .38rem;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: .58rem;
+    background: rgba(9,12,17,.22);
+    color: rgba(231,235,241,.50);
+    font-size: .62rem;
+    font-weight: 800;
+    backdrop-filter: blur(8px);
+    transition: color .16s ease, background .16s ease, border-color .16s ease, opacity .16s ease;
+}
+
+.m8-profile-edit-float:hover {
+    color: #FFFFFF;
+    border-color: rgba(255,255,255,.18);
+    background: rgba(13,17,23,.58);
 }
 
 .m8-profile-challenge-btn {
