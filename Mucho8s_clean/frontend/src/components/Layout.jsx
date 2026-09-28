@@ -628,10 +628,6 @@ export const Layout = () => {
                     <div className="font-display font-bold">
                       {onlinePlayers.length} Online
                     </div>
-                    <div className="text-[10px] mt-1 text-[#B88CFF] inline-flex items-center gap-1">
-                      <Twitch size={11} />
-                      <span>{twitchLivePlayers.length} live on Twitch</span>
-                    </div>
                   </div>
                   <button
                     type="button"
