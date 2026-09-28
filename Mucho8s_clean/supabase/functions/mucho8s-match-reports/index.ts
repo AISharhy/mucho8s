@@ -15,8 +15,8 @@ const json = (body: unknown, status = 200) =>
 const BASE_ELO = 1000;
 const MIN_ELO = 500;
 const WIN_DELTA = 25;
-const LOSS_DELTA = 25;
-const MVP_BONUS = 3;
+const LOSS_DELTA = 15;
+const MVP_BONUS = 5;
 const MVP_DENIAL_BONUS = 3;
 const ELO_K = 50;
 const ELO_SCALE = 400;
@@ -92,6 +92,50 @@ const eloResultDelta = (elo: number, opponentElo: number, won: boolean) => {
     Math.min(MAX_RESULT_DELTA, Math.round(Math.abs(raw))),
   );
   return won ? magnitude : -magnitude;
+};
+
+const averageTeamElo = (byId: Record<string, any>, ids: string[]) => {
+  const values = ids
+    .map((id) => Number(byId[id]?.currentElo || BASE_ELO))
+    .filter(Number.isFinite);
+  return values.length
+    ? values.reduce((sum, value) => sum + value, 0) / values.length
+    : BASE_ELO;
+};
+
+const teamUpsetAdjustment = (
+  byId: Record<string, any>,
+  teamA: string[],
+  teamB: string[],
+  winner: string,
+) => {
+  const averageA = averageTeamElo(byId, teamA);
+  const averageB = averageTeamElo(byId, teamB);
+  const winnerAverage = winner === "B" ? averageB : averageA;
+  const loserAverage = winner === "B" ? averageA : averageB;
+  const difference = Math.max(0, Math.round(Math.abs(averageA - averageB)));
+
+  if (winnerAverage >= loserAverage || difference < 100) {
+    return {
+      applied: false,
+      averageA,
+      averageB,
+      difference,
+      winnerBonus: 0,
+      loserPenalty: 0,
+    };
+  }
+
+  if (difference >= 400) {
+    return { applied: true, averageA, averageB, difference, winnerBonus: 5, loserPenalty: 3 };
+  }
+  if (difference >= 300) {
+    return { applied: true, averageA, averageB, difference, winnerBonus: 4, loserPenalty: 3 };
+  }
+  if (difference >= 200) {
+    return { applied: true, averageA, averageB, difference, winnerBonus: 3, loserPenalty: 2 };
+  }
+  return { applied: true, averageA, averageB, difference, winnerBonus: 2, loserPenalty: 1 };
 };
 
 const sha256 = async (value: string) => {
@@ -205,27 +249,17 @@ const applyEffects = (
   const merdaSet = new Set(merdaIds);
   const clearedSet = new Set(merdaClearedIds);
   const changes: Record<string, number> = {};
-
-  const averageElo = (ids: string[]) => {
-    const values = ids
-      .map((id) => Number(byId[id]?.currentElo || BASE_ELO))
-      .filter(Number.isFinite);
-    return values.length
-      ? values.reduce((sum, value) => sum + value, 0) / values.length
-      : BASE_ELO;
-  };
-
-  const averageA = averageElo(teamA);
-  const averageB = averageElo(teamB);
-  const teamADelta = eloResultDelta(averageA, averageB, winner === "A");
-  const teamBDelta = eloResultDelta(averageB, averageA, winner === "B");
+  const upset = teamUpsetAdjustment(byId, teamA, teamB, winner);
 
   [...teamA, ...teamB].forEach((id) => {
     const player = byId[id];
     if (!player) return;
 
     const won = winners.includes(id);
-    let delta = teamA.includes(id) ? teamADelta : teamBDelta;
+    let delta = won ? WIN_DELTA : -LOSS_DELTA;
+    if (upset.applied) {
+      delta += won ? upset.winnerBonus : -upset.loserPenalty;
+    }
     if (mvpSet.has(id)) delta += MVP_BONUS;
     if (won && mvpDenialBonus > 0) delta += mvpDenialBonus;
 
@@ -334,13 +368,8 @@ const recomputeAwardState = (byId: Record<string, any>, matches: any[]) => {
         }
       });
 
-      const previousMvpSet = new Set(
-        Array.isArray(match?.mvpIds)
-          ? match.mvpIds.map(String)
-          : (match?.mvpId ? [String(match.mvpId)] : []),
-      );
       const mvpSet = new Set(mvpIds);
-      const previousBountyBonus = Math.max(0, Number(match?.mvpBountyBonus || 0));
+      const upset = teamUpsetAdjustment(byId, teamA, teamB, match?.winner === "B" ? "B" : "A");
       const nextChanges: Record<string, number> = {};
 
       [...teamA, ...teamB].forEach((id) => {
@@ -348,22 +377,17 @@ const recomputeAwardState = (byId: Record<string, any>, matches: any[]) => {
         if (!player) return;
 
         const won = winnerSet.has(id);
-        const oldDelta = Number(match?.eloChanges?.[id]);
-
-        let baseDelta = won ? WIN_DELTA : -LOSS_DELTA;
-        if (Number.isFinite(oldDelta) && oldDelta !== 0) {
-          baseDelta =
-            oldDelta -
-            (previousMvpSet.has(id) ? MVP_BONUS : 0) -
-            (won ? previousBountyBonus : 0);
-        }
-
+        const oldDelta = Number(match?.eloChanges?.[id] || 0);
+        const upsetDelta = upset.applied
+          ? (won ? upset.winnerBonus : -upset.loserPenalty)
+          : 0;
         const nextDelta =
-          baseDelta +
+          (won ? WIN_DELTA : -LOSS_DELTA) +
+          upsetDelta +
           (mvpSet.has(id) ? MVP_BONUS : 0) +
           (won ? mvpBountyBonus : 0);
 
-        if (Number.isFinite(oldDelta) && oldDelta !== 0 && oldDelta !== nextDelta) {
+        if (oldDelta !== nextDelta) {
           player.currentElo = Math.max(
             MIN_ELO,
             Number(player.currentElo || BASE_ELO) + (nextDelta - oldDelta),
@@ -381,6 +405,12 @@ const recomputeAwardState = (byId: Record<string, any>, matches: any[]) => {
       match.mvpBountyBonus = mvpBountyBonus;
       match.mvpBountyStoppedIds = mvpBountyStoppedIds;
       match.mvpBountyRecipientIds = mvpBountyBonus > 0 ? winners : [];
+      match.teamAverageEloA = Math.round(upset.averageA);
+      match.teamAverageEloB = Math.round(upset.averageB);
+      match.upsetApplied = upset.applied;
+      match.upsetEloDifference = upset.difference;
+      match.upsetWinnerBonus = upset.winnerBonus;
+      match.upsetLoserPenalty = upset.loserPenalty;
       match.eloChanges = nextChanges;
     });
 
@@ -622,6 +652,7 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
     const merdaClearedIds = automaticMerdaClearedIds(byId, winners);
     awardedMvpIds = mvpIds;
     awardedMerdaIds = merdaIds;
+    const upset = teamUpsetAdjustment(byId, teamA, teamB, report.winner);
     const eloChanges = applyEffects(
       byId,
       teamA,
@@ -650,6 +681,12 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       mvpBountyBonus,
       mvpBountyStoppedIds,
       mvpBountyRecipientIds: mvpBountyBonus > 0 ? winners : [],
+      teamAverageEloA: Math.round(upset.averageA),
+      teamAverageEloB: Math.round(upset.averageB),
+      upsetApplied: upset.applied,
+      upsetEloDifference: upset.difference,
+      upsetWinnerBonus: upset.winnerBonus,
+      upsetLoserPenalty: upset.loserPenalty,
       map: report.map || (Array.isArray(report.maps) ? report.maps[0] || "" : ""),
       maps: Array.isArray(report.maps) ? report.maps.map(String).slice(0, 3) : [],
       mode: report.mode || "",
