@@ -3,13 +3,14 @@ import React, { useEffect, useMemo, useState } from "react";
 const SUPABASE_URL = (process.env.REACT_APP_SUPABASE_URL || "").replace(/\/$/, "");
 
 const cacheKey = (game, mapName) =>
-  `m8-map-preview-v5:${String(game || "")}:${String(mapName || "")}`;
+  `m8-map-preview-v6:${String(game || "")}:${String(mapName || "")}`;
 
 const fandomMapsPreview = (game, mapName) => {
   if (!SUPABASE_URL || !game || !mapName) return "";
   const params = new URLSearchParams({
     game: String(game),
     map: String(mapName),
+    variant: "original",
   });
   return `${SUPABASE_URL}/functions/v1/mucho8s-map-preview?${params.toString()}`;
 };
