@@ -434,9 +434,10 @@ export default function MatchRoom() {
 
             <div className="flex flex-wrap items-center gap-2 mt-4">
               <ModeBadge mode="mucho8s" compact />
-              <span className="h-7 px-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-400 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider">
+              <span className="h-8 px-3 rounded-lg border border-emerald-500/25 bg-emerald-500/[0.08] text-emerald-400 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Live
+                <Timer size={12} />
+                Live · {liveDuration(match.created_at, now)}
               </span>
               <span className="m8-pill">{match.format || `${teamA.length}v${teamB.length}`}</span>
               {match.game && <span className="m8-pill">{match.game}</span>}
@@ -448,10 +449,6 @@ export default function MatchRoom() {
             </h1>
 
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <Timer size={14} />
-                {liveDuration(match.created_at, now)}
-              </span>
               <span>
                 Captain · <strong className="text-white">{playerMap[captainId]?.name || "Player"}</strong>
               </span>
@@ -756,8 +753,8 @@ export default function MatchRoom() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-3 mt-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-                  <span>{String(pair.platform || "paypal").toUpperCase()}</span>
-                  <span className="font-mono font-black text-magma">
+                  <span>Stake</span>
+                  <span className="font-mono font-black text-white">
                     {euro(pair.amount)}
                   </span>
                 </div>
