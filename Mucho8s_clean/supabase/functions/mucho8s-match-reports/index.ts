@@ -822,6 +822,64 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, liveMatch: data });
     }
 
+    if (action === "list-live-messages" || action === "send-live-message") {
+      const liveId = String(body?.id || "").trim();
+      if (!liveId) return json({ error: "Live match id is required" }, 400);
+
+      const { data: liveMatch, error: liveError } = await supabase
+        .from("live_team_matches")
+        .select("id,team_a,team_b,status")
+        .eq("id", liveId)
+        .maybeSingle();
+
+      if (liveError) throw liveError;
+      if (!liveMatch || liveMatch.status !== "live") {
+        return json({ error: "This Mucho8s is no longer live" }, 409);
+      }
+
+      const playerId = String(account?.player_id || "").trim();
+      const participants = [
+        ...(Array.isArray(liveMatch.team_a) ? liveMatch.team_a.map(String) : []),
+        ...(Array.isArray(liveMatch.team_b) ? liveMatch.team_b.map(String) : []),
+      ];
+      const participant = Boolean(playerId && participants.includes(playerId));
+
+      if (!isAdmin && !participant) {
+        return json({ error: "Match chat is private to Mucho8s players" }, 403);
+      }
+
+      if (action === "list-live-messages") {
+        const { data, error } = await supabase
+          .from("live_match_messages")
+          .select("id,live_match_id,sender_player_id,body,created_at")
+          .eq("live_match_id", liveId)
+          .order("created_at", { ascending: true })
+          .limit(200);
+
+        if (error) throw error;
+        return json({ ok: true, messages: data || [] });
+      }
+
+      const message = String(body?.message || "").trim();
+      if (!message) return json({ error: "Message is empty" }, 400);
+      if (message.length > 500) return json({ error: "Message is too long" }, 400);
+
+      const senderPlayerId = playerId || "__admin__";
+      const { data, error } = await supabase
+        .from("live_match_messages")
+        .insert({
+          live_match_id: liveId,
+          sender_account_id: user?.id || null,
+          sender_player_id: senderPlayerId,
+          body: message,
+        })
+        .select("id,live_match_id,sender_player_id,body,created_at")
+        .single();
+
+      if (error) throw error;
+      return json({ ok: true, message: data });
+    }
+
     if (action === "request-cancel-live") {
       const liveId = String(body?.id || "").trim();
       if (!liveId) return json({ error: "Live match id is required" }, 400);
