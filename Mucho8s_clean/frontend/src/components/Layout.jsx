@@ -6,7 +6,7 @@ import CompetitiveEventFX from "@/components/CompetitiveEventFX";
 import { PageSkeleton } from "@/components/ProductState";
 import { PlayerAvatar, EloBadge } from "@/components/shared";
 import ModeBadge from "@/components/ModeBadge";
-import { AlertTriangle, Bell, CheckCheck, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, Gamepad2, Search, ChevronDown, LogOut, MessageCircle } from "lucide-react";
+import { AlertTriangle, Bell, CheckCheck, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, Gamepad2, Search, ChevronDown, LogOut, MessageCircle, UserCircle } from "lucide-react";
 import { useData } from "@/context/DataContext";
 
 class PageErrorBoundary extends Component {
@@ -99,11 +99,15 @@ export const Layout = () => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [onlineOpen, setOnlineOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [markingAllRead, setMarkingAllRead] = useState(false);
   const [seenModeNotificationKeys, setSeenModeNotificationKeys] = useState(() => new Set());
 
   useEffect(() => {
     setAccountOpen(false);
+    setSearchOpen(false);
+    setSearchQuery("");
   }, [loc.pathname]);
 
   useEffect(() => {
@@ -387,6 +391,16 @@ export const Layout = () => {
       }));
   }, [dashboardData?.onlinePlayers, playerMap]);
 
+  const playerSearchResults = useMemo(() => {
+    const term = searchQuery.trim().toLowerCase();
+    if (!term) return [];
+    return Object.values(playerMap || {})
+      .filter(Boolean)
+      .filter((player) => String(player.name || "").toLowerCase().includes(term))
+      .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")))
+      .slice(0, 6);
+  }, [playerMap, searchQuery]);
+
   const busyPlayerIds = useMemo(() => {
     const ids = new Set();
     challenges.forEach((challenge) => {
@@ -425,8 +439,27 @@ export const Layout = () => {
 
           <Link to="/" className="m8-topbar-brand" aria-label="Mucho8s home">
             <span className="m8-topbar-wordmark">MUCHO<span>8S</span></span>
-            <span className="m8-topbar-submark">MATCHUP</span>
           </Link>
+
+          <button
+            type="button"
+            onClick={() => {
+              setOnlineOpen((open) => !open);
+              setNotificationsOpen(false);
+              setAccountOpen(false);
+              setSearchOpen(false);
+            }}
+            aria-label={`${onlinePlayers.length} players online`}
+            title="Players online"
+            aria-expanded={onlineOpen}
+            aria-controls="online-players-panel"
+            data-testid="header-online-players"
+            className="m8-topbar-online"
+          >
+            <span className="m8-topbar-online-dot" />
+            <span className="font-mono font-black">{onlinePlayers.length}</span>
+            <span>ONLINE</span>
+          </button>
 
           <nav className="m8-topbar-nav" aria-label="Primary navigation">
             {TOP_NAV.map((item) => (
@@ -441,35 +474,76 @@ export const Layout = () => {
           </nav>
 
           <div className="ml-auto flex items-center gap-2 relative">
-            <Link
-              to="/players"
-              className="m8-topbar-icon"
-              aria-label="Search players"
-              title="Search players"
-            >
-              <Search size={18} />
-            </Link>
-            <button
-              type="button"
-              onClick={() => {
-                setOnlineOpen((open) => !open);
-                setNotificationsOpen(false);
-                setAccountOpen(false);
+            <div
+              className={`m8-topbar-search ${searchOpen ? "is-open" : ""}`}
+              onMouseEnter={() => setSearchOpen(true)}
+              onMouseLeave={() => {
+                if (!searchQuery.trim()) setSearchOpen(false);
               }}
-              aria-label={`${onlinePlayers.length} players online`}
-              title="Players online"
-              aria-expanded={onlineOpen}
-              aria-controls="online-players-panel"
-              data-testid="header-online-players"
-              className="m8-action h-10 px-3 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.055] hover:bg-emerald-500/[0.09] transition-all flex items-center gap-2 text-emerald-400"
             >
-              <span className="relative flex w-2 h-2">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-35 animate-ping" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
-              </span>
-              <span className="font-mono text-xs font-black">{onlinePlayers.length}</span>
-              <span className="hidden sm:inline text-[10px] uppercase tracking-wider font-bold">Online</span>
-            </button>
+              <button
+                type="button"
+                className="m8-topbar-search-trigger"
+                aria-label="Search players"
+                title="Search players"
+                onClick={() => {
+                  setSearchOpen((open) => !open);
+                  setNotificationsOpen(false);
+                  setOnlineOpen(false);
+                  setAccountOpen(false);
+                }}
+              >
+                <Search size={18} />
+              </button>
+
+              <div className="m8-topbar-search-field">
+                <Search size={15} />
+                <input
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  onFocus={() => setSearchOpen(true)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") {
+                      setSearchQuery("");
+                      setSearchOpen(false);
+                      event.currentTarget.blur();
+                    }
+                  }}
+                  placeholder="Search players..."
+                  aria-label="Search players"
+                  data-testid="topbar-player-search"
+                />
+              </div>
+
+              {searchOpen && searchQuery.trim() && (
+                <div className="m8-topbar-search-results">
+                  {playerSearchResults.length ? (
+                    playerSearchResults.map((player) => (
+                      <Link
+                        key={player.id}
+                        to={`/players/${player.id}`}
+                        className="m8-topbar-search-result"
+                        onClick={() => {
+                          setSearchOpen(false);
+                          setSearchQuery("");
+                        }}
+                      >
+                        <PlayerAvatar
+                          name={player.name}
+                          elo={player.currentElo}
+                          size={28}
+                          avatarUrl={playerAvatars?.[player.id]}
+                        />
+                        <span>{player.name}</span>
+                        <small>{Number(player.currentElo || 0)} Elo</small>
+                      </Link>
+                    ))
+                  ) : (
+                    <div className="m8-topbar-search-empty">No players found</div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {discordPlayer && (
               <button
@@ -478,6 +552,7 @@ export const Layout = () => {
                   setNotificationsOpen((open) => !open);
                   setOnlineOpen(false);
                   setAccountOpen(false);
+                  setSearchOpen(false);
                 }}
                 aria-label={globalNotificationCount > 0 ? `${globalNotificationCount} notifications` : "Notifications"}
                 title="Notifications"
@@ -531,6 +606,7 @@ export const Layout = () => {
                     setAccountOpen((open) => !open);
                     setNotificationsOpen(false);
                     setOnlineOpen(false);
+                    setSearchOpen(false);
                   }}
                 >
                   {discordPlayer ? (
@@ -563,6 +639,18 @@ export const Layout = () => {
 
                 {accountOpen && (
                   <div className="m8-topbar-account-menu" role="menu">
+                    {discordPlayer && (
+                      <Link
+                        to={`/players/${discordPlayer.id}`}
+                        role="menuitem"
+                        className="m8-topbar-account-menu-item"
+                        onClick={() => setAccountOpen(false)}
+                      >
+                        <UserCircle size={15} />
+                        <span>Profile</span>
+                      </Link>
+                    )}
+                    <div className="m8-topbar-account-menu-separator" />
                     <button
                       type="button"
                       role="menuitem"
