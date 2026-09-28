@@ -17,6 +17,7 @@ const MIN_ELO = 500;
 const WIN_DELTA = 25;
 const LOSS_DELTA = 25;
 const MVP_BONUS = 3;
+const MVP_DENIAL_BONUS = 3;
 const ELO_K = 50;
 const ELO_SCALE = 400;
 const MIN_RESULT_DELTA = 5;
@@ -174,14 +175,14 @@ const automaticMvpIds = (byId: Record<string, any>, winners: string[]) =>
   winners.filter((id) => {
     const current = Number(byId[id]?.currentStreak || 0);
     const nextWinStreak = current > 0 ? current + 1 : 1;
-    return nextWinStreak >= 3 && nextWinStreak % 3 === 0;
+    return nextWinStreak >= 4 && nextWinStreak % 4 === 0;
   });
 
 const automaticMerdaIds = (byId: Record<string, any>, losers: string[]) =>
   losers.filter((id) => {
     const current = Number(byId[id]?.currentStreak || 0);
     const nextLossStreak = current < 0 ? Math.abs(current) + 1 : 1;
-    return nextLossStreak >= 3 && nextLossStreak % 3 === 0;
+    return nextLossStreak >= 4 && nextLossStreak % 4 === 0;
   });
 
 const automaticMerdaClearedIds = (byId: Record<string, any>, winners: string[]) =>
@@ -190,7 +191,7 @@ const automaticMerdaClearedIds = (byId: Record<string, any>, winners: string[]) 
     if (!player || Number(player.merdaCount || 0) <= 0) return false;
     const current = Number(player.currentStreak || 0);
     const nextWinStreak = current > 0 ? current + 1 : 1;
-    return nextWinStreak >= 3 && nextWinStreak % 3 === 0;
+    return nextWinStreak >= 4 && nextWinStreak % 4 === 0;
   });
 
 const applyEffects = (
@@ -201,6 +202,7 @@ const applyEffects = (
   mvpIds: string[] = [],
   merdaIds: string[] = [],
   merdaClearedIds: string[] = [],
+  mvpDenialBonus = 0,
 ) => {
   const winners = winner === "A" ? teamA : teamB;
   const mvpSet = new Set(mvpIds);
@@ -229,6 +231,7 @@ const applyEffects = (
     const won = winners.includes(id);
     let delta = teamA.includes(id) ? teamADelta : teamBDelta;
     if (mvpSet.has(id)) delta += MVP_BONUS;
+    if (won && mvpDenialBonus > 0) delta += mvpDenialBonus;
 
     const nextElo = Math.max(MIN_ELO, Number(player.currentElo || BASE_ELO) + delta);
     player.currentElo = nextElo;
@@ -295,7 +298,13 @@ const recomputeAwardState = (byId: Record<string, any>, matches: any[]) => {
       const teamA = Array.isArray(match?.teamA) ? match.teamA.map(String) : [];
       const teamB = Array.isArray(match?.teamB) ? match.teamB.map(String) : [];
       const winners = match?.winner === "B" ? teamB : teamA;
+      const losers = match?.winner === "B" ? teamA : teamB;
       const winnerSet = new Set(winners);
+      const mvpBountyStoppedIds = losers.filter((id) => {
+        const current = Number(byId[id]?.currentStreak || 0);
+        return current > 0 && current % 4 === 3;
+      });
+      const mvpBountyBonus = mvpBountyStoppedIds.length ? MVP_DENIAL_BONUS : 0;
       const mvpIds: string[] = [];
       const merdaIds: string[] = [];
       const merdaClearedIds: string[] = [];
@@ -312,17 +321,17 @@ const recomputeAwardState = (byId: Record<string, any>, matches: any[]) => {
 
         player.currentStreak = nextStreak;
 
-        if (won && nextStreak >= 3 && nextStreak % 3 === 0) {
+        if (won && nextStreak >= 4 && nextStreak % 4 === 0) {
           player.mvpCount = Math.max(0, Number(player.mvpCount || 0)) + 1;
           mvpIds.push(id);
         }
 
-        if (!won && Math.abs(nextStreak) >= 3 && Math.abs(nextStreak) % 3 === 0) {
+        if (!won && Math.abs(nextStreak) >= 4 && Math.abs(nextStreak) % 4 === 0) {
           player.merdaCount = Math.max(0, Number(player.merdaCount || 0)) + 1;
           merdaIds.push(id);
         }
 
-        if (won && nextStreak >= 3 && nextStreak % 3 === 0 && Number(player.merdaCount || 0) > 0) {
+        if (won && nextStreak >= 4 && nextStreak % 4 === 0 && Number(player.merdaCount || 0) > 0) {
           player.merdaCount = Math.max(0, Number(player.merdaCount || 0) - 1);
           merdaClearedIds.push(id);
         }
@@ -334,6 +343,7 @@ const recomputeAwardState = (byId: Record<string, any>, matches: any[]) => {
           : (match?.mvpId ? [String(match.mvpId)] : []),
       );
       const mvpSet = new Set(mvpIds);
+      const previousBountyBonus = Math.max(0, Number(match?.mvpBountyBonus || 0));
       const nextChanges: Record<string, number> = {};
 
       [...teamA, ...teamB].forEach((id) => {
@@ -345,10 +355,16 @@ const recomputeAwardState = (byId: Record<string, any>, matches: any[]) => {
 
         let baseDelta = won ? WIN_DELTA : -LOSS_DELTA;
         if (Number.isFinite(oldDelta) && oldDelta !== 0) {
-          baseDelta = oldDelta - (previousMvpSet.has(id) ? MVP_BONUS : 0);
+          baseDelta =
+            oldDelta -
+            (previousMvpSet.has(id) ? MVP_BONUS : 0) -
+            (won ? previousBountyBonus : 0);
         }
 
-        const nextDelta = baseDelta + (mvpSet.has(id) ? MVP_BONUS : 0);
+        const nextDelta =
+          baseDelta +
+          (mvpSet.has(id) ? MVP_BONUS : 0) +
+          (won ? mvpBountyBonus : 0);
 
         if (Number.isFinite(oldDelta) && oldDelta !== 0 && oldDelta !== nextDelta) {
           player.currentElo = Math.max(
@@ -365,6 +381,9 @@ const recomputeAwardState = (byId: Record<string, any>, matches: any[]) => {
       match.merdaIds = merdaIds;
       match.merdaId = merdaIds[0] || undefined;
       match.merdaClearedIds = merdaClearedIds;
+      match.mvpBountyBonus = mvpBountyBonus;
+      match.mvpBountyStoppedIds = mvpBountyStoppedIds;
+      match.mvpBountyRecipientIds = mvpBountyBonus > 0 ? winners : [];
       match.eloChanges = nextChanges;
     });
 
@@ -596,6 +615,11 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
 
     const winners = report.winner === "A" ? teamA : teamB;
     const losers = report.winner === "A" ? teamB : teamA;
+    const mvpBountyStoppedIds = losers.filter((id) => {
+      const current = Number(byId[id]?.currentStreak || 0);
+      return current > 0 && current % 4 === 3;
+    });
+    const mvpBountyBonus = mvpBountyStoppedIds.length ? MVP_DENIAL_BONUS : 0;
     const mvpIds = automaticMvpIds(byId, winners);
     const merdaIds = automaticMerdaIds(byId, losers);
     const merdaClearedIds = automaticMerdaClearedIds(byId, winners);
@@ -609,6 +633,7 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       mvpIds,
       merdaIds,
       merdaClearedIds,
+      mvpBountyBonus,
     );
 
     const match = {
@@ -625,6 +650,9 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       merdaIds,
       merdaId: merdaIds[0] || undefined,
       merdaClearedIds,
+      mvpBountyBonus,
+      mvpBountyStoppedIds,
+      mvpBountyRecipientIds: mvpBountyBonus > 0 ? winners : [],
       map: report.map || (Array.isArray(report.maps) ? report.maps[0] || "" : ""),
       maps: Array.isArray(report.maps) ? report.maps.map(String).slice(0, 3) : [],
       mode: report.mode || "",
