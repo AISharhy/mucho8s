@@ -488,15 +488,15 @@ export default function TeamBuilder() {
   };
 
   return (
-    <div className="m8-page-stack">
-      <section className="m8-panel rounded-[22px] p-5 sm:p-6">
+    <div className="m8-page-stack gap-3">
+      <section className="m8-panel rounded-[22px] p-4">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="brand-kicker mb-1">Play</div>
             <div className="flex items-center gap-2 mb-2">
               <ModeBadge mode="mucho8s" compact />
             </div>
-            <h2 className="font-display text-3xl font-black tracking-[-0.03em]">Mucho8s Builder</h2>
+            <h2 className="font-display text-2xl font-black tracking-[-0.03em]">Mucho8s Builder</h2>
             <p className="text-sm text-muted-foreground mt-1">
               Choose game and mode, build the teams, then send the Mucho8s live.
             </p>
@@ -512,8 +512,8 @@ export default function TeamBuilder() {
         </div>
       </section>
 
-      <section className="m8-panel rounded-[22px] p-5 sm:p-6">
-        <div className="flex items-center gap-3 mb-4">
+      <section className="m8-panel rounded-[22px] p-4">
+        <div className="flex items-center gap-3 mb-3">
           <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-black text-sm">1</div>
           <div>
             <div className="brand-kicker">Setup</div>
@@ -528,7 +528,7 @@ export default function TeamBuilder() {
               key={item}
               aria-pressed={game === item}
               onClick={() => changeGame(item)}
-              className={`h-11 rounded-xl border text-sm font-black transition-all ${
+              className={`h-9 rounded-lg border text-xs font-black transition-all ${
                 game === item
                   ? "bg-white text-black border-white"
                   : "bg-[#0F1218] border-[#222834] text-[#AAB1BE] hover:text-white"
@@ -540,7 +540,7 @@ export default function TeamBuilder() {
         </div>
 
         {game && (
-          <div className="mt-4">
+          <div className="mt-3">
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Mode</div>
             <div className="grid grid-cols-2 gap-2 max-w-xl">
               {MATCH_MODES.map((item) => (
@@ -549,7 +549,7 @@ export default function TeamBuilder() {
                   key={item}
                   aria-pressed={matchMode === item}
                   onClick={() => changeMatchMode(item)}
-                  className={`h-11 rounded-xl border text-sm font-bold transition-all ${
+                  className={`h-9 rounded-lg border text-xs font-bold transition-all ${
                     matchMode === item
                       ? "bg-[#D5A33A] text-black border-[#D5A33A]"
                       : "bg-[#0F1218] border-[#222834] text-[#AAB1BE] hover:text-white"
@@ -569,8 +569,8 @@ export default function TeamBuilder() {
       </section>
 
       {game && matchMode && (
-        <section className="m8-panel rounded-[22px] p-5 sm:p-6">
-          <div className="flex items-center gap-3 mb-4">
+        <section className="m8-panel rounded-[22px] p-4">
+          <div className="flex items-center gap-3 mb-3">
             <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-black text-sm">2</div>
             <div>
               <div className="brand-kicker">Teams</div>
@@ -606,7 +606,7 @@ export default function TeamBuilder() {
                   type="button"
                   onClick={() => changeTeamMethod(key)}
                   aria-pressed={active}
-                  className={`rounded-2xl border p-3.5 text-left transition-all ${
+                  className={`rounded-xl border p-2.5 text-left transition-all ${
                     active
                       ? "bg-white/[0.055] border-white/20 shadow-[inset_0_0_0_1px_rgba(255,255,255,.03)]"
                       : "bg-[#0F1218] border-[#222834] hover:border-[#394150]"
@@ -614,7 +614,7 @@ export default function TeamBuilder() {
                 >
                   <div className="flex items-center gap-2.5">
                     <span
-                      className={`w-9 h-9 rounded-xl border flex items-center justify-center ${
+                      className={`w-8 h-8 rounded-lg border flex items-center justify-center ${
                         active
                           ? "bg-white text-black border-white"
                           : "bg-[#151923] border-[#2A303B] text-[#9AA2AF]"
@@ -626,7 +626,7 @@ export default function TeamBuilder() {
                       <div className={`text-sm font-black ${active ? "text-white" : "text-[#C2C8D1]"}`}>
                         {title}
                       </div>
-                      <div className="text-[10px] text-[#697181] mt-0.5 leading-4">
+                      <div className="text-[9px] text-[#697181] mt-0.5 leading-3.5">
                         {text}
                       </div>
                     </div>
@@ -689,8 +689,8 @@ export default function TeamBuilder() {
       )}
 
       {game && matchMode && (
-        <section className="m8-panel rounded-[22px] p-5 sm:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <section className="m8-panel rounded-[22px] p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-black text-sm">3</div>
               <div>
@@ -709,7 +709,7 @@ export default function TeamBuilder() {
             </div>
           </div>
 
-          <div className="rounded-xl bg-[#0F1218] border border-[#222834] px-3 py-2.5 mb-3 text-xs text-muted-foreground flex items-center justify-between gap-3">
+          <div className="rounded-xl bg-[#0F1218] border border-[#222834] px-3 py-2 mb-2 text-[11px] text-muted-foreground flex items-center justify-between gap-3">
             <span>
               {validLobby
                 ? `${inferredFormat} detected automatically. Add more players to move to the next format.`
@@ -720,7 +720,7 @@ export default function TeamBuilder() {
             <UsersRound size={16} className="shrink-0" />
           </div>
 
-          <div className="relative mb-3">
+          <div className="relative mb-2">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
@@ -730,7 +730,7 @@ export default function TeamBuilder() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[390px] overflow-y-auto pr-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-1.5 max-h-[300px] overflow-y-auto pr-1">
             {filtered.map((player) => {
               const active = selected.includes(player.id);
               return (
@@ -738,7 +738,7 @@ export default function TeamBuilder() {
                   type="button"
                   key={player.id}
                   onClick={() => togglePlayer(player.id)}
-                  className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-all ${
+                  className={`flex items-center gap-2.5 rounded-xl border px-2.5 py-2 text-left transition-all ${
                     active
                       ? "bg-white/[0.05] border-[#4A5362]"
                       : "bg-[#0F1218] border-[#222834] hover:border-[#343B48]"
@@ -752,7 +752,7 @@ export default function TeamBuilder() {
                   <PlayerAvatar
                     name={player.name}
                     elo={player.currentElo}
-                    size={34}
+                    size={30}
                     avatarUrl={playerAvatars[player.id]}
                   />
                   <div className="min-w-0 flex-1">
@@ -1147,8 +1147,8 @@ export default function TeamBuilder() {
       )}
 
       {result && (
-        <section className="m8-panel rounded-[22px] p-5 sm:p-6">
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-5">
+        <section className="m8-panel rounded-[22px] p-4">
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3 mb-3">
             <div>
               <div className="brand-kicker mb-1">Ready</div>
               <h3 className="font-display text-2xl font-black">Alpha vs Bravo</h3>
