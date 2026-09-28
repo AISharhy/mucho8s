@@ -29,7 +29,6 @@ export default function AdminPanel() {
     isAdmin,
     adminAuthLoading,
     signOutDiscord,
-    discordPlayer,
     players,
     matches,
     playerMap,
@@ -47,8 +46,6 @@ export default function AdminPanel() {
     testDiscordWebhook,
     listDiscordAccounts,
     linkDiscordAccount,
-    listAdminAccess,
-    updateAdminAccess,
     listAdminChallenges,
     adminUpdateChallenge,
     adminDeleteChallenge,
@@ -59,6 +56,11 @@ export default function AdminPanel() {
     startNewSeason,
     updateCompetitionConfig,
     repairElo,
+    newsPosts,
+    refreshNewsPosts,
+    createNewsPost,
+    updateNewsPost,
+    deleteNewsPost,
   } = useData();
   const [newName, setNewName] = useState("");
   const [newElo, setNewElo] = useState(500);
@@ -69,8 +71,6 @@ export default function AdminPanel() {
   const [discordBusy, setDiscordBusy] = useState(false);
   const [discordAccounts, setDiscordAccounts] = useState([]);
   const [accountBusyId, setAccountBusyId] = useState("");
-  const [adminAccessRows, setAdminAccessRows] = useState([]);
-  const [adminAccessBusyId, setAdminAccessBusyId] = useState("");
   const [adminChallenges, setAdminChallenges] = useState([]);
   const [challengeBusyId, setChallengeBusyId] = useState("");
   const [challengeDrafts, setChallengeDrafts] = useState({});
@@ -85,6 +85,15 @@ export default function AdminPanel() {
   const [eloRepairBusy, setEloRepairBusy] = useState(false);
   const [competitionEdit, setCompetitionEdit] = useState(false);
   const [competitionBusy, setCompetitionBusy] = useState(false);
+  const [newsBusy, setNewsBusy] = useState(false);
+  const [editingNewsId, setEditingNewsId] = useState("");
+  const [newsDraft, setNewsDraft] = useState({
+    title: "",
+    summary: "",
+    category: "Platform",
+    accent: "#FF2A3B",
+    featured: false,
+  });
   const [competitionDraft, setCompetitionDraft] = useState({
     seasonName: "",
     startingElo: 500,
@@ -117,11 +126,6 @@ export default function AdminPanel() {
     if (list) setDiscordAccounts(list);
   }, [listDiscordAccounts]);
 
-  const loadAdminAccess = useCallback(async () => {
-    const list = await listAdminAccess();
-    if (list) setAdminAccessRows(list);
-  }, [listAdminAccess]);
-
   const loadAdminChallenges = useCallback(async () => {
     const list = await listAdminChallenges();
     if (!list) return;
@@ -151,14 +155,13 @@ export default function AdminPanel() {
       if (active) setDiscordConfigured(configured);
     });
     void loadDiscordAccounts();
-    void loadAdminAccess();
     void loadAdminChallenges();
     void loadAuditLogs();
 
     return () => {
       active = false;
     };
-  }, [admin, getDiscordStatus, loadDiscordAccounts, loadAdminAccess, loadAdminChallenges, loadAuditLogs]);
+  }, [admin, getDiscordStatus, loadDiscordAccounts, loadAdminChallenges, loadAuditLogs]);
 
   const sortedAdminChallenges = useMemo(
     () => [...adminChallenges].sort((a, b) => {
@@ -413,17 +416,57 @@ export default function AdminPanel() {
     toast.success(playerId ? "Discord account linked to player" : "Discord account unlinked");
   };
 
-  const setPlayerAdminAccess = async (row, enabled) => {
-    if (!row?.player_id || adminAccessBusyId) return;
+  const resetNewsDraft = () => {
+    setEditingNewsId("");
+    setNewsDraft({
+      title: "",
+      summary: "",
+      category: "Platform",
+      accent: "#FF2A3B",
+      featured: false,
+    });
+  };
 
-    setAdminAccessBusyId(row.player_id);
-    const ok = await updateAdminAccess(row.player_id, enabled);
-    setAdminAccessBusyId("");
+  const saveNewsPost = async () => {
+    const title = newsDraft.title.trim();
+    const summary = newsDraft.summary.trim();
+    if (!title || !summary || newsBusy) {
+      if (!title || !summary) toast.error("Add a title and post text");
+      return;
+    }
 
+    setNewsBusy(true);
+    const payload = { ...newsDraft, title, summary, published: true };
+    const saved = editingNewsId
+      ? await updateNewsPost(editingNewsId, payload)
+      : await createNewsPost(payload);
+    setNewsBusy(false);
+
+    if (!saved) return;
+    await refreshNewsPosts();
+    toast.success(editingNewsId ? "News post updated" : "News post published");
+    resetNewsDraft();
+  };
+
+  const editNewsPost = (post) => {
+    setEditingNewsId(String(post.id));
+    setNewsDraft({
+      title: post.title || "",
+      summary: post.summary || "",
+      category: post.category || "Platform",
+      accent: post.accent || "#FF2A3B",
+      featured: Boolean(post.featured),
+    });
+  };
+
+  const removeNewsPost = async (id) => {
+    if (newsBusy) return;
+    setNewsBusy(true);
+    const ok = await deleteNewsPost(id);
+    setNewsBusy(false);
     if (!ok) return;
-
-    await Promise.all([loadAdminAccess(), loadAuditLogs()]);
-    toast.success(enabled ? "Admin access granted" : "Admin access removed");
+    if (String(editingNewsId) === String(id)) resetNewsDraft();
+    toast.success("News post deleted");
   };
 
   const updateAdminChallenge = async (id, updates, successMessage = "Mucho1v1 updated") => {
@@ -1559,116 +1602,6 @@ export default function AdminPanel() {
       </div>
 
         </>
-      )}
-
-      {activeTab === "settings" && (
-        <div className="m8-panel rounded-2xl p-5" data-testid="admin-access-control">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-4">
-            <div>
-              <div className="brand-kicker mb-1">Admin</div>
-              <h3 className="font-display font-black text-xl tracking-[-0.02em]">Admin Access</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Choose which Discord-linked players can open the Admin Console.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="h-8 px-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.05] text-emerald-400 inline-flex items-center text-[10px] font-bold uppercase tracking-wider">
-                {adminAccessRows.filter((row) => row.is_admin).length} Admin
-              </span>
-              <Button
-                variant="ghost"
-                onClick={loadAdminAccess}
-                className="h-8 px-2.5 bg-[#0F1218] border border-[#222834]"
-              >
-                <RotateCcw size={13} className="mr-1.5" /> Refresh
-              </Button>
-            </div>
-          </div>
-
-          {adminAccessRows.length === 0 ? (
-            <div className="rounded-xl border border-[#222834] bg-[#0F1218] p-6 text-center text-sm text-muted-foreground">
-              No Discord-linked players available.
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {adminAccessRows.map((row) => {
-                const player = playerMap[row.player_id];
-                const busy = adminAccessBusyId === row.player_id;
-
-                return (
-                  <div
-                    key={row.player_id}
-                    className="rounded-xl border border-[#202631] bg-[#0F1218] p-3 flex flex-col sm:flex-row sm:items-center gap-3"
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {row.avatar_url ? (
-                        <img
-                          src={row.avatar_url}
-                          alt=""
-                          className="w-10 h-10 rounded-xl object-cover shrink-0"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-xl border border-[#2A303B] bg-[#151923] flex items-center justify-center shrink-0">
-                          <Shield size={16} className={row.is_admin ? "text-emerald-400" : "text-muted-foreground"} />
-                        </div>
-                      )}
-
-                      <div className="min-w-0">
-                        <div className="font-semibold text-sm truncate">
-                          {player?.name || row.display_name || "Player"}
-                        </div>
-                        <div className="text-[11px] text-muted-foreground truncate mt-0.5">
-                          {row.display_name || row.discord_username || "Discord account"}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 sm:justify-end">
-                      <span className={`h-8 px-2.5 rounded-lg border inline-flex items-center text-[10px] font-black uppercase tracking-wider ${
-                        row.is_admin
-                          ? "text-emerald-400 border-emerald-500/20 bg-emerald-500/[0.06]"
-                          : "text-muted-foreground border-[#2A303B] bg-[#151923]"
-                      }`}>
-                        {row.is_admin ? "Admin" : "Player"}
-                      </span>
-
-                      {row.is_admin ? (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          disabled={busy || String(row.player_id) === String(discordPlayer?.id || "")}
-                          onClick={() => void setPlayerAdminAccess(row, false)}
-                          title={
-                            String(row.player_id) === String(discordPlayer?.id || "")
-                              ? "Another Admin must remove your access"
-                              : "Remove Admin access"
-                          }
-                          className="h-9 rounded-lg border border-red-500/20 bg-red-500/[0.04] text-red-400 hover:bg-red-500/[0.08] hover:text-red-300 disabled:opacity-40"
-                        >
-                          Remove Admin
-                        </Button>
-                      ) : (
-                        <Button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => void setPlayerAdminAccess(row, true)}
-                          className="h-9 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-bold"
-                        >
-                          Make Admin
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          <div className="text-[11px] text-[#697181] mt-3">
-            Admin access follows the linked Discord account. The system always keeps at least one active Admin.
-          </div>
-        </div>
       )}
 
       {activeTab === "settings" && (
