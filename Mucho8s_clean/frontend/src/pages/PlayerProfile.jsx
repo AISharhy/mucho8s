@@ -1034,143 +1034,200 @@ export default function PlayerProfile() {
         </DialogContent>
       </Dialog>
 
-      <section className="m8-profile-hero rounded-[24px] overflow-hidden relative order-1">
-        <div className="m8-profile-banner">
-          <div className="m8-profile-grid" />
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#10151D] to-transparent" />
-        </div>
+      <section className="m8-profile-command rounded-[24px] overflow-hidden relative order-1">
+        <div className="m8-profile-command-banner">
+          <div className="m8-profile-command-grid" />
+          <div className="m8-profile-command-glow" />
 
-        <div className="relative z-10 px-5 sm:px-7 pb-6">
-          <div className="-mt-10 sm:-mt-12 flex flex-col lg:flex-row lg:items-end gap-5">
-            <div className={`relative shrink-0 self-start ${Number(player.merdaCount || 0) >= 5 ? "merda-avatar-critical" : ""}`}>
-              <div className="absolute -inset-2 rounded-[26px] bg-magma/10 blur-xl" />
-              <div className="relative rounded-[24px] border-4 border-[#10151D] shadow-2xl overflow-hidden">
-                <PlayerAvatar
-                  name={player.name}
-                  elo={player.currentElo}
-                  size={104}
-                  avatarUrl={playerAvatars[player.id]}
-                />
-              </div>
-            </div>
-
-            <div className="min-w-0 flex-1 pb-1">
-              <div className="brand-kicker mb-2">
-                {isOwnProfile ? "My Competitive Profile" : "Competitive Player Profile"}
-              </div>
-
-              <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
-                <div className="min-w-0">
-                  <div className="text-[9px] uppercase tracking-[0.18em] text-[#697181] font-bold">
-                    Name
-                  </div>
-                  <div className="font-display text-3xl sm:text-[38px] leading-none font-black tracking-[-0.04em] mt-1 flex items-center gap-2 min-w-0">
-                    <span className="truncate">{player.name}</span>
-                    <MerdaBadge count={player.merdaCount} />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-[9px] uppercase tracking-[0.18em] text-[#697181] font-bold">
-                    Rank
-                  </div>
-                  <div
-                    className="font-display text-sm sm:text-base font-black uppercase mt-1"
-                    style={{ color: tier.color }}
-                  >
-                    {tier.name}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-[9px] uppercase tracking-[0.18em] text-[#697181] font-bold">
-                    Elo
-                  </div>
-                  <div className="font-mono text-sm sm:text-base font-black text-white mt-1">
-                    {player.currentElo}
-                  </div>
-                </div>
-
-              </div>
-
-              <div className="mt-3 text-xs text-[#8A94A4]">
-                <span className="text-[#C8CED8]">{player.totalMatches || 0} matches</span>
-              </div>
-
-              <div className="mt-4 max-w-xl">
-                <RankProgress elo={player.currentElo} />
-              </div>
-            </div>
-
-            {!isOwnProfile && (
-              <Button
-                onClick={openChallengeAmount}
-                className="m8-action m8-action-primary h-11 px-6 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-extrabold tracking-wide"
-                data-testid="challenge-me-btn"
-              >
-                <Swords size={17} className="mr-2" /> MUCHO1V1
-              </Button>
-            )}
-          </div>
-
-          {Number(player.merdaCount || 0) > 0 && (
-            <div className="merda-debuff-panel mt-5 rounded-2xl px-4 py-3.5">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-[9px] uppercase tracking-[0.18em] text-[#B98A66] font-black">
-                    MERDA ACTIVE
-                  </div>
-                  <div className="mt-1 flex items-center gap-2">
-                    <MerdaBadge count={player.merdaCount} />
-                    <span className="text-xs font-semibold text-[#E0B58F]">
-                      1 WIN REMOVES 1
-                    </span>
-                  </div>
-                  <div className="text-[10px] text-[#9D806B] mt-1.5">
-                    Next win: x{Number(player.merdaCount || 0)} → x{Math.max(0, Number(player.merdaCount || 0) - 1)}
-                  </div>
-                </div>
-
-                <div className="w-full sm:w-52">
-                  <div className="flex items-center justify-between text-[9px] uppercase tracking-widest text-[#8D7665] mb-1.5">
-                    <span>Debuff pressure</span>
-                    <span>{Number(player.merdaCount || 0) >= 5 ? "Critical" : Number(player.merdaCount || 0) >= 3 ? "Heavy" : "Active"}</span>
-                  </div>
-                  <div className="merda-debuff-bar">
-                    <div
-                      className="merda-debuff-fill"
-                      style={{ width: `${Math.min(100, 18 + Number(player.merdaCount || 0) * 14)}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
+          {playerAvatars[player.id] && (
+            <div className="m8-profile-command-art" aria-hidden="true">
+              <img
+                src={playerAvatars[player.id]}
+                alt=""
+                referrerPolicy="no-referrer"
+              />
             </div>
           )}
 
-          <div className="m8-profile-stat-strip mt-6">
+          <div className="relative z-10 h-full px-5 sm:px-7 py-6 sm:py-7 flex items-end">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-5 w-full">
+              <div className={`m8-profile-avatar-ring ${Number(player.merdaCount || 0) >= 5 ? "merda-avatar-critical" : ""}`}>
+                <PlayerAvatar
+                  name={player.name}
+                  elo={player.currentElo}
+                  size={112}
+                  avatarUrl={playerAvatars[player.id]}
+                />
+              </div>
+
+              <div className="min-w-0 flex-1 pb-1">
+                <div className="brand-kicker text-[#C2A46B] mb-1.5">
+                  {isOwnProfile ? "My Competitive Profile" : "Competitive Player Profile"}
+                </div>
+
+                <div className="flex items-center gap-2 min-w-0">
+                  <h1 className="font-display text-3xl sm:text-[42px] leading-none font-black tracking-[-0.045em] truncate">
+                    {player.name}
+                  </h1>
+                  <span className="m8-profile-verified" title="Verified player">
+                    <BadgeCheck size={17} />
+                  </span>
+                </div>
+
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#A3ABB8]">
+                  <span>{player.totalMatches || 0} verified matches</span>
+                  <span className="text-[#3A424F]">·</span>
+                  <span>Peak {player.peakElo} Elo</span>
+                  <span className="text-[#3A424F]">·</span>
+                  <span className="text-[#D5A33A]">{tier.name}</span>
+                </div>
+
+                <div className="mt-3 flex items-center gap-2">
+                  {isOwnProfile ? (
+                    <button
+                      type="button"
+                      onClick={() => setProfileTab("edit")}
+                      className="m8-profile-edit-btn"
+                    >
+                      <Pencil size={14} />
+                      Edit Profile
+                    </button>
+                  ) : (
+                    <Button
+                      onClick={openChallengeAmount}
+                      className="m8-profile-challenge-btn"
+                      data-testid="challenge-me-btn"
+                    >
+                      <Swords size={15} className="mr-1.5" />
+                      MUCHO1V1
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative z-10 p-4 sm:p-5 bg-[#0B0F14] border-t border-[#222A35]">
+          <div className="grid grid-cols-1 xl:grid-cols-[1.9fr_.8fr_.8fr_.8fr] gap-3">
+            <div
+              className="m8-profile-rank-card"
+              style={{
+                "--profile-rank-color": tier.color,
+                "--profile-rank-accent": tier.accent,
+              }}
+            >
+              <div className="m8-profile-rank-emblem">
+                <Shield size={30} strokeWidth={2.1} />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="text-[9px] uppercase tracking-[0.2em] text-[#8E97A7] font-black">
+                  Current Rank
+                </div>
+                <div
+                  className="font-display text-2xl sm:text-[30px] font-black uppercase leading-none mt-1"
+                  style={{ color: tier.color }}
+                >
+                  {tier.name}
+                </div>
+                <div className="font-mono text-lg font-black mt-1 text-white">
+                  {player.currentElo.toLocaleString("it-IT")} Elo
+                </div>
+                <div className="mt-3 max-w-xl">
+                  <RankProgress elo={player.currentElo} compact />
+                </div>
+              </div>
+            </div>
+
+            <div className={`m8-profile-metric-card ${Number(player.merdaCount || 0) > 0 ? "m8-profile-merda-card" : ""}`}>
+              <div className="text-[9px] uppercase tracking-[0.18em] font-black text-[#9AA3B2]">
+                MERDA
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                {Number(player.merdaCount || 0) > 0 ? (
+                  <>
+                    <span className="text-3xl" aria-hidden="true">💩</span>
+                    <MerdaBadge count={player.merdaCount} />
+                  </>
+                ) : (
+                  <span className="font-display text-2xl font-black text-emerald-400">CLEAN</span>
+                )}
+              </div>
+              <div className="text-[10px] text-[#7E8796] mt-3 leading-4">
+                {Number(player.merdaCount || 0) > 0
+                  ? `Next win: x${player.merdaCount} → x${Math.max(0, Number(player.merdaCount || 0) - 1)}`
+                  : "No active debuff"}
+              </div>
+            </div>
+
+            <div className="m8-profile-metric-card">
+              <div className="text-[9px] uppercase tracking-[0.18em] font-black text-[#9AA3B2]">
+                {Number(player.currentStreak || 0) > 0
+                  ? "Win Streak"
+                  : Number(player.currentStreak || 0) < 0
+                    ? "Lose Streak"
+                    : "Streak"}
+              </div>
+              <div className={`mt-4 flex items-center gap-2 font-display text-3xl font-black ${
+                Number(player.currentStreak || 0) > 0
+                  ? "text-orange-400"
+                  : Number(player.currentStreak || 0) < 0
+                    ? "text-red-400"
+                    : "text-[#697181]"
+              }`}>
+                <Flame size={25} />
+                {Math.abs(Number(player.currentStreak || 0))}
+              </div>
+              <div className="text-[10px] text-[#7E8796] mt-3">
+                {Number(player.currentStreak || 0) > 0
+                  ? "Keep the run alive"
+                  : Number(player.currentStreak || 0) < 0
+                    ? "Break the streak"
+                    : "No active streak"}
+              </div>
+            </div>
+
+            <div className="m8-profile-metric-card">
+              <div className="text-[9px] uppercase tracking-[0.18em] font-black text-[#9AA3B2]">
+                Win Rate
+              </div>
+              <div
+                className="m8-profile-winrate-ring mt-2.5"
+                style={{ "--wr": `${Math.max(0, Math.min(100, winRate(player)))}` }}
+              >
+                <div>
+                  <strong>{winRate(player)}%</strong>
+                  <span>{player.wins || 0}W / {player.losses || 0}L</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="m8-profile-stat-strip mt-4">
             {[
               {
-                label: "Mucho8s Matches",
+                label: "Matches",
                 value: Number(player.totalMatches || 0),
                 tone: "text-white",
               },
               {
-                label: "Peak Elo",
-                value: player.peakElo,
+                label: "Wins",
+                value: Number(player.wins || 0),
+                tone: "text-emerald-400",
+              },
+              {
+                label: "Losses",
+                value: Number(player.losses || 0),
+                tone: "text-red-400",
+              },
+              {
+                label: "MVP",
+                value: Number(player.mvpCount || 0),
                 tone: "text-[#D5A33A]",
               },
               {
-                label: "Mucho8s Record",
-                value: `${player.wins || 0}W - ${player.losses || 0}L`,
-                tone: "text-white",
-              },
-              {
-                label: "Win Rate",
-                value: `${winRate(player)}%`,
-                tone: "text-white",
-              },
-              {
-                label: "Total Winnings",
+                label: "Winnings",
                 value: `€${(
                   Number(mucho8sInsights.wonValue || 0) +
                   Number(challengeStats.wonValue || 0)
@@ -1182,7 +1239,7 @@ export default function PlayerProfile() {
                 value: mucho8sInsights.bestWinStreak
                   ? `${mucho8sInsights.bestWinStreak}W`
                   : "—",
-                tone: "text-magma",
+                tone: "text-orange-400",
               },
             ].map((item) => (
               <div key={item.label} className="m8-profile-stat">
@@ -1197,52 +1254,17 @@ export default function PlayerProfile() {
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <span className="text-[10px] uppercase tracking-widest text-[#697181]">Forma recente</span>
+            <span className="text-[10px] uppercase tracking-widest text-[#697181]">Recent form</span>
             <Last10 record={player.last10} />
 
             <span className="hidden sm:inline text-[#2F3743]">·</span>
 
             <div className="flex flex-wrap items-center gap-3">
-              <span
-                title="General Trophies"
-                className="inline-flex items-center gap-1.5 text-[#C8CED8]"
-              >
+              <span className="inline-flex items-center gap-1.5 text-[#C8CED8]" title="General Trophies">
                 <Trophy size={13} />
-                <strong className="font-mono text-xs font-black">
-                  {generalTrophyCount}
-                </strong>
+                <strong className="font-mono text-xs font-black">{generalTrophyCount}</strong>
               </span>
-
-              <span className="text-[9px] uppercase tracking-widest text-[#596170]">
-                MVP
-              </span>
-
-              {[
-                ["Trophy8s", "bg-magma", "text-magma", "Mucho8s MVP"],
-                ["Trophy1v1", "bg-emerald-400", "text-emerald-400", "Mucho1v1 MVP"],
-                ["TrophyTourney", "bg-[#D5A33A]", "text-[#D5A33A]", "MuchoTourney MVP"],
-              ].map(([family, dotClass, textClass, label], index) => (
-                <React.Fragment key={family}>
-                  {index > 0 && <span className="text-[#3D4654]">·</span>}
-                  <span
-                    title={label}
-                    aria-label={`${label}: ${mvpModeCounts[family] || 0}`}
-                    className="inline-flex items-center gap-1.5"
-                  >
-                    <span
-                      className={`w-2.5 h-2.5 rounded-full ${dotClass} shadow-[0_0_8px_currentColor]`}
-                      aria-hidden="true"
-                    />
-                    <strong className={`font-mono text-xs font-black ${textClass}`}>
-                      {mvpModeCounts[family] || 0}
-                    </strong>
-                  </span>
-                </React.Fragment>
-              ))}
-            </div>
-
-            <div className="ml-auto pl-2 border-l border-[#242A35]">
-              <MerdaBadge count={player.merdaCount} />
+              <span className="text-[9px] uppercase tracking-widest text-[#596170]">Trophies</span>
             </div>
           </div>
         </div>
