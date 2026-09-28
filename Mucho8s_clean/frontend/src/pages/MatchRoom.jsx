@@ -254,7 +254,8 @@ export default function MatchRoom() {
 
   const teamA = Array.isArray(match.team_a) ? match.team_a : [];
   const teamB = Array.isArray(match.team_b) ? match.team_b : [];
-  const bo3Maps = Array.isArray(match.maps) ? match.maps.filter(Boolean).slice(0, 3) : [];
+  const seriesMaps = Array.isArray(match.maps) ? match.maps.filter(Boolean).slice(0, 5) : [];
+  const seriesBestOf = seriesMaps.length >= 5 ? 5 : 3;
   const captainId = String(match.captain_player_id || "");
   const isCaptain =
     Boolean(discordPlayer?.id) &&
@@ -420,19 +421,19 @@ export default function MatchRoom() {
         </div>
       </section>
 
-      {bo3Maps.length === 3 && (
+      {[3, 5].includes(seriesMaps.length) && (
         <section className="m8-panel rounded-[22px] p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3 mb-3">
             <div>
-              <div className="brand-kicker mb-1">BO3 Map Rotation</div>
+              <div className="brand-kicker mb-1">BO{seriesBestOf} Map Rotation</div>
               <div className="font-display font-black text-lg">Maps generated at confirmation</div>
             </div>
-            <span className="m8-pill">Best of 3</span>
+            <span className="m8-pill">Best of {seriesBestOf}</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            {bo3Maps.map((mapName, index) => (
+          <div className={seriesBestOf === 5 ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2" : "grid grid-cols-1 sm:grid-cols-3 gap-2"}>
+            {seriesMaps.map((mapName, index) => (
               <MapPreviewCard
-                key={mapName}
+                key={mapName + "-" + index}
                 mapName={mapName}
                 game={match.game}
                 mode={match.mode}
@@ -675,7 +676,7 @@ export default function MatchRoom() {
         title="Report Mucho8s Result"
         lockTeams
         lockContext
-        initialTeams={{ teamA, teamB, pairings }}
+        initialTeams={{ teamA, teamB, pairings, maps: seriesMaps }}
         initialCaptains={initialCaptains}
         creatorPlayerId={captainId}
         liveMatchId={match.id}
