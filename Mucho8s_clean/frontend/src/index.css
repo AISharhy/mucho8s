@@ -2505,6 +2505,17 @@ textarea:focus-visible {
         0 0 24px rgba(139,70,38,.10);
 }
 
+.m8-profile-mvp-card {
+    border-color: rgba(213,163,58,.34);
+    background:
+        radial-gradient(circle at 50% 42%, rgba(213,163,58,.12), transparent 10rem),
+        linear-gradient(180deg, rgba(213,163,58,.045), rgba(255,255,255,0)),
+        #0F141B;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.025),
+        0 0 22px rgba(213,163,58,.08);
+}
+
 .m8-profile-winrate-ring {
     --ring-track: #202733;
     width: 92px;
