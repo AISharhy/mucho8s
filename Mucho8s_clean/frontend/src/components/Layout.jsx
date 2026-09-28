@@ -459,6 +459,16 @@ export const Layout = () => {
     [onlinePlayers]
   );
 
+  const siteOnlinePlayers = useMemo(
+    () => onlinePlayers.filter((player) => Boolean(player?.lastSeenAt)),
+    [onlinePlayers]
+  );
+
+  const twitchOnlyPlayers = useMemo(
+    () => twitchLivePlayers.filter((player) => !player?.lastSeenAt),
+    [twitchLivePlayers]
+  );
+
   const playerSearchResults = useMemo(() => {
     const term = searchQuery.trim().toLowerCase();
     if (!term) return [];
@@ -640,50 +650,102 @@ export const Layout = () => {
                 </div>
 
                 <div className="max-h-[400px] overflow-y-auto p-2">
-                  {twitchLivePlayers.length === 0 ? (
+                  {siteOnlinePlayers.length === 0 && twitchOnlyPlayers.length === 0 ? (
                     <div className="py-8 text-center text-sm text-muted-foreground">
-                      No Twitch channels live right now.
+                      No players online right now.
                     </div>
                   ) : (
-                    <div className="space-y-1">
-                      <div className="px-3 pt-1 pb-1.5 text-[9px] uppercase tracking-[0.18em] font-black text-[#A970FF] flex items-center gap-1.5">
-                        <Twitch size={11} />
-                        <span>Live on Twitch</span>
-                      </div>
-
-                      {twitchLivePlayers.map((player) => (
-                        <Link
-                          key={`twitch:${player.id}`}
-                          to={`/live/${player.id}`}
-                          onClick={() => setOnlineOpen(false)}
-                          className="flex items-center gap-3 rounded-xl px-3 py-2.5 bg-[#9146FF]/[0.07] border border-[#9146FF]/20 hover:bg-[#9146FF]/[0.12] transition-colors"
-                        >
-                          <div className="relative">
-                            <PlayerAvatar
-                              name={player.name}
-                              elo={player.currentElo}
-                              size={34}
-                              avatarUrl={playerAvatars?.[player.id]}
-                            />
-                            <span className="absolute -right-0.5 -bottom-0.5 w-2.5 h-2.5 rounded-full bg-[#9146FF] border-2 border-[#101319]" />
+                    <div className="space-y-2">
+                      {siteOnlinePlayers.length > 0 && (
+                        <div>
+                          <div className="px-3 pt-1 pb-1.5 text-[9px] uppercase tracking-[0.18em] font-black text-[#657080]">
+                            Online now
                           </div>
+                          <div className="space-y-1">
+                            {siteOnlinePlayers.map((player) => {
+                              const inMatch = busyPlayerIds.has(String(player.id));
+                              return (
+                                <Link
+                                  key={`site:${player.id}`}
+                                  to={`/players/${player.id}`}
+                                  onClick={() => setOnlineOpen(false)}
+                                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-white/[0.04] transition-colors"
+                                >
+                                  <div className="relative">
+                                    <PlayerAvatar
+                                      name={player.name}
+                                      elo={player.currentElo}
+                                      size={34}
+                                      avatarUrl={playerAvatars?.[player.id]}
+                                    />
+                                    <span className="absolute -right-0.5 -bottom-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#101319]" />
+                                  </div>
 
-                          <div className="min-w-0 flex-1">
-                            <div className="font-semibold text-sm truncate">{player.name}</div>
-                            <div className="text-[10px] mt-0.5 text-[#C7A7FF] inline-flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#9146FF] animate-pulse" />
-                              <span>
-                                LIVE NOW
-                                {player.twitchStartedAt
-                                  ? ` · ${new Date(player.twitchStartedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-                                  : ""}
-                              </span>
-                            </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="font-semibold text-sm truncate">{player.name}</div>
+                                    {player.twitchLive ? (
+                                      <div className="text-[10px] mt-0.5 text-[#B88CFF] inline-flex items-center gap-1">
+                                        <Twitch size={11} />
+                                        <span>Online · LIVE on Twitch</span>
+                                      </div>
+                                    ) : (
+                                      <div className={`text-[10px] mt-0.5 ${inMatch ? "text-[#D5A33A]" : "text-emerald-400"}`}>
+                                        {inMatch ? "In Match" : "Available"}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <EloBadge elo={player.currentElo} />
+                                </Link>
+                              );
+                            })}
                           </div>
+                        </div>
+                      )}
 
-                          <EloBadge elo={player.currentElo} />
-                        </Link>
-                      ))}
+                      {twitchOnlyPlayers.length > 0 && (
+                        <div>
+                          <div className="px-3 pt-2 pb-1.5 text-[9px] uppercase tracking-[0.18em] font-black text-[#A970FF] flex items-center gap-1.5">
+                            <Twitch size={11} />
+                            <span>Live on Twitch</span>
+                          </div>
+                          <div className="space-y-1">
+                            {twitchOnlyPlayers.map((player) => (
+                              <Link
+                                key={`twitch:${player.id}`}
+                                to={`/live/${player.id}`}
+                                onClick={() => setOnlineOpen(false)}
+                                className="flex items-center gap-3 rounded-xl px-3 py-2.5 bg-[#9146FF]/[0.07] border border-[#9146FF]/20 hover:bg-[#9146FF]/[0.12] transition-colors"
+                              >
+                                <div className="relative">
+                                  <PlayerAvatar
+                                    name={player.name}
+                                    elo={player.currentElo}
+                                    size={34}
+                                    avatarUrl={playerAvatars?.[player.id]}
+                                  />
+                                  <span className="absolute -right-0.5 -bottom-0.5 w-2.5 h-2.5 rounded-full bg-[#9146FF] border-2 border-[#101319]" />
+                                </div>
+
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-semibold text-sm truncate">{player.name}</div>
+                                  <div className="text-[10px] mt-0.5 text-[#C7A7FF] inline-flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#9146FF] animate-pulse" />
+                                    <span>
+                                      LIVE NOW
+                                      {player.twitchStartedAt
+                                        ? ` · ${new Date(player.twitchStartedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                                        : ""}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <EloBadge elo={player.currentElo} />
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
