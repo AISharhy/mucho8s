@@ -6,7 +6,7 @@ import CompetitiveEventFX from "@/components/CompetitiveEventFX";
 import { PageSkeleton } from "@/components/ProductState";
 import { PlayerAvatar, EloBadge } from "@/components/shared";
 import ModeBadge from "@/components/ModeBadge";
-import { AlertTriangle, Bell, CheckCheck, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, Gamepad2, Search, ChevronDown, LogOut, MessageCircle, UserCircle } from "lucide-react";
+import { AlertTriangle, Bell, CheckCheck, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, Gamepad2, Search, ChevronDown, LogOut, MessageCircle, UserCircle, Twitch } from "lucide-react";
 import { useData } from "@/context/DataContext";
 
 class PageErrorBoundary extends Component {
@@ -73,6 +73,7 @@ const TITLES = {
   "/admin": "Admin Panel",
   "/challenges": "Mucho1v1",
   "/challenge-ranking": "Mucho1v1 Ranking",
+  "/live": "Live",
 };
 
 export const Layout = () => {
@@ -96,6 +97,7 @@ export const Layout = () => {
     playerMap,
     playerAvatars,
     dashboardData,
+    twitchLive,
     loaded,
   } = useData();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -767,6 +769,19 @@ export const Layout = () => {
 
             {discordSession ? (
               <div className="m8-topbar-account-wrap">
+                {discordPlayer && twitchLive && (
+                  <Link
+                    to={`/live/${discordPlayer.id}`}
+                    className="m8-twitch-live-chip"
+                    title="Watch my Twitch live"
+                    aria-label="Twitch live now"
+                    data-testid="header-twitch-live"
+                    onClick={() => setAccountOpen(false)}
+                  >
+                    <Twitch size={12} />
+                    <span>LIVE</span>
+                  </Link>
+                )}
                 <button
                   type="button"
                   className={`m8-topbar-account ${accountOpen ? "is-open" : ""}`}
@@ -819,6 +834,18 @@ export const Layout = () => {
                       >
                         <UserCircle size={15} />
                         <span>Profile</span>
+                      </Link>
+                    )}
+
+                    {discordPlayer && discordAccount?.twitch_channel && (
+                      <Link
+                        to={`/live/${discordPlayer.id}`}
+                        role="menuitem"
+                        className="m8-topbar-account-menu-item is-twitch"
+                        onClick={() => setAccountOpen(false)}
+                      >
+                        <Twitch size={15} />
+                        <span>{twitchLive ? "Twitch · Live" : "Twitch"}</span>
                       </Link>
                     )}
                     <div className="m8-topbar-account-menu-separator" />
