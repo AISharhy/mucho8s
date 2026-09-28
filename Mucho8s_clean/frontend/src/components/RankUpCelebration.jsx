@@ -10,8 +10,35 @@ const rankIndex = (rank) => Math.max(0, RANKS.findIndex((item) => item.id === ra
 export default function RankUpCelebration() {
   const { discordPlayer, loaded } = useData();
   const previousRef = useRef(null);
+  const previewHandledRef = useRef(false);
   const closeTimerRef = useRef(null);
   const [event, setEvent] = useState(null);
+
+  useEffect(() => {
+    if (!loaded || previewHandledRef.current || typeof window === "undefined") return;
+
+    const queryString = String(window.location.hash || "").split("?")[1] || "";
+    const previewId = new URLSearchParams(queryString).get("rankupPreview");
+    if (!previewId) return;
+
+    const newIndex = RANKS.findIndex((item) => item.id === previewId);
+    if (newIndex <= 0) return;
+
+    previewHandledRef.current = true;
+    const newRank = RANKS[newIndex];
+    const oldRank = RANKS[newIndex - 1];
+
+    setEvent({
+      id: `preview-${oldRank.id}-${newRank.id}`,
+      playerName: discordPlayer?.name || "MUCHO PLAYER",
+      oldRank,
+      newRank,
+      oldElo: Math.max(oldRank.min, newRank.min - 25),
+      newElo: newRank.min,
+      eloGain: 25,
+      preview: true,
+    });
+  }, [loaded, discordPlayer?.name]);
 
   useEffect(() => {
     if (!loaded || !discordPlayer?.id) return;
