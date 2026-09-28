@@ -734,7 +734,7 @@ export default function PlayerProfile() {
       )
       .map((match, index) =>
         matchEvent(match, {
-          note: `MERDA #${index + 1} · Mucho8s 3-loss streak penalty`,
+          note: `MERDA #${index + 1} · loss while the losing streak is at 3+`,
         })
       );
 
