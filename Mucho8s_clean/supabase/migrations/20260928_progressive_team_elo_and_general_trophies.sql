@@ -286,7 +286,9 @@ begin
       v_recipient_ids := case when v_winner = 'A' then v_team_a else v_team_b end;
     end if;
 
-    update tmp_m8_v7_state set last_general_bonus = 0;
+    update tmp_m8_v7_state
+    set last_general_bonus = 0
+    where player_id is not null;
 
     -- Update streak/MVP/MERDA and all General Trophy source counters.
     for v_player_id in
