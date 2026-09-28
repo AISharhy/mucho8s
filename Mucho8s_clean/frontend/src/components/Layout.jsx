@@ -90,6 +90,7 @@ export const Layout = () => {
     challengeNotificationCount,
     markChallengeSeen,
     adminChallengeAlertCount,
+    adminAccountAlertCount,
     isAdmin,
     challenges,
     liveMatches,
@@ -341,6 +342,18 @@ export const Layout = () => {
 
   const globalNotificationCount =
     Number(challengeNotificationCount || 0) + unseenMucho8sCount;
+
+  const adminMatchAttentionCount = useMemo(
+    () => (Array.isArray(matchReports) ? matchReports : []).filter((report) =>
+      ["pending", "disputed"].includes(String(report?.status || ""))
+    ).length,
+    [matchReports]
+  );
+
+  const adminAttentionCount =
+    Number(adminChallengeAlertCount || 0) +
+    Number(adminAccountAlertCount || 0) +
+    adminMatchAttentionCount;
 
   const persistSeenModeNotifications = (keys) => {
     if (!discordPlayer?.id) return;
@@ -752,18 +765,21 @@ export const Layout = () => {
               <Link
                 to="/admin"
                 data-testid="header-admin-alerts"
-                title={adminChallengeAlertCount > 0 ? `${adminChallengeAlertCount} Admin disputes need review` : "Admin Control Room"}
-                aria-label={adminChallengeAlertCount > 0 ? `${adminChallengeAlertCount} Admin disputes need review` : "Admin Control Room"}
+                title={adminAttentionCount > 0 ? `${adminAttentionCount} admin actions need attention` : "Admin Control Room"}
+                aria-label={adminAttentionCount > 0 ? `${adminAttentionCount} admin actions need attention` : "Admin Control Room"}
                 className={`relative w-10 h-10 rounded-xl border transition-all flex items-center justify-center ${
-                  adminChallengeAlertCount > 0
-                    ? "border-orange-500/30 bg-orange-500/10 text-orange-400 hover:bg-orange-500/15"
+                  adminAttentionCount > 0
+                    ? "border-orange-500/35 bg-orange-500/10 text-orange-400 hover:bg-orange-500/15"
                     : "border-[#242A35] bg-[#12151C] text-[#AAB1BE] hover:text-white"
                 }`}
               >
                 <Shield size={18} />
-                {adminChallengeAlertCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-[19px] h-[19px] px-1 rounded-full bg-orange-500 border-2 border-[#0D1016] text-black text-[9px] font-extrabold flex items-center justify-center">
-                    {adminChallengeAlertCount > 99 ? "99+" : adminChallengeAlertCount}
+                {adminAttentionCount > 0 && (
+                  <span
+                    data-testid="header-admin-alert-badge"
+                    className="absolute -top-1.5 -right-1.5 min-w-[19px] h-[19px] px-1 rounded-full bg-orange-500 border-2 border-[#0D1016] text-black text-[9px] font-extrabold leading-none flex items-center justify-center shadow-[0_0_14px_rgba(249,115,22,0.38)]"
+                  >
+                    {adminAttentionCount > 99 ? "99+" : adminAttentionCount}
                   </span>
                 )}
               </Link>
