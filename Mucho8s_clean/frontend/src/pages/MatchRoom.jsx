@@ -15,6 +15,7 @@ import { useData } from "@/context/DataContext";
 import { PlayerAvatar } from "@/components/shared";
 import ModeBadge from "@/components/ModeBadge";
 import MapPreviewCard from "@/components/MapPreviewCard";
+import LiveMatchChat from "@/components/LiveMatchChat";
 import { analyzeManualTeams } from "@/lib/chemistry";
 import { buildRivalries } from "@/lib/rivalries";
 import {
@@ -724,47 +725,51 @@ export default function MatchRoom() {
         />
       </section>
 
-      <section className="m8-panel rounded-2xl p-4 sm:p-5">
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <div>
-            <div className="brand-kicker mb-1 text-magma">Mucho8s</div>
-            <h2 className="font-display font-bold text-lg">Money Pairings</h2>
+      <section className="grid grid-cols-1 xl:grid-cols-[1fr_.9fr] gap-3 items-stretch">
+        <div className="m8-panel rounded-2xl p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div>
+              <div className="brand-kicker mb-1 text-magma">Mucho8s</div>
+              <h2 className="font-display font-bold text-lg">Money Pairings</h2>
+            </div>
+            <div className="inline-flex items-center gap-1.5 text-magma font-mono font-black text-sm">
+              <WalletCards size={15} />
+              {euro(totalStake)}
+            </div>
           </div>
-          <div className="inline-flex items-center gap-1.5 text-magma font-mono font-black text-sm">
-            <WalletCards size={15} />
-            {euro(totalStake)}
+
+          <div className="grid grid-cols-1 gap-2">
+            {pairings.map((pair, index) => {
+              const alpha = playerMap[pair.playerAId];
+              const bravo = playerMap[pair.playerBId];
+
+              return (
+                <div
+                  key={`${pair.playerAId}-${pair.playerBId}-${index}`}
+                  className="rounded-xl border border-[#222834] bg-[#0F1218] px-3 py-3"
+                >
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-semibold truncate flex-1">
+                      {alpha?.name || "Alpha"}
+                    </span>
+                    <span className="text-[#596170]">↔</span>
+                    <span className="font-semibold truncate flex-1 text-right">
+                      {bravo?.name || "Bravo"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 mt-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <span>Stake</span>
+                    <span className="font-mono font-black text-white">
+                      {euro(pair.amount)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {pairings.map((pair, index) => {
-            const alpha = playerMap[pair.playerAId];
-            const bravo = playerMap[pair.playerBId];
-
-            return (
-              <div
-                key={`${pair.playerAId}-${pair.playerBId}-${index}`}
-                className="rounded-xl border border-[#222834] bg-[#0F1218] px-3 py-3"
-              >
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="font-semibold truncate flex-1">
-                    {alpha?.name || "Alpha"}
-                  </span>
-                  <span className="text-[#596170]">↔</span>
-                  <span className="font-semibold truncate flex-1 text-right">
-                    {bravo?.name || "Bravo"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-3 mt-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-                  <span>Stake</span>
-                  <span className="font-mono font-black text-white">
-                    {euro(pair.amount)}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <LiveMatchChat liveMatchId={match.id} />
       </section>
 
       {!canReport && (
