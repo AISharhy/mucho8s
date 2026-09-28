@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Crown, Sparkles, Swords, TrendingDown, TrendingUp, Trophy } from "lucide-react";
+import { Crown, Sparkles, TrendingDown, TrendingUp, Trophy } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { RANKS, tierOf } from "@/lib/elo";
 
@@ -19,28 +19,12 @@ const eventStyle = {
     icon: TrendingDown,
     tone: "red",
   },
-  challWin: {
-    kicker: "Verified chall",
-    icon: Swords,
-    tone: "green",
-  },
-  challLoss: {
-    kicker: "Verified chall",
-    icon: Swords,
-    tone: "red",
-  },
   trophy: {
     kicker: "Milestone reached",
     icon: Trophy,
     tone: "gold",
   },
 };
-
-const euro = (cents, currency = "EUR") =>
-  new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency,
-  }).format(Number(cents || 0) / 100);
 
 const unlockedAchievementKeys = (player) => {
   if (!player?.id) return new Set();
@@ -75,7 +59,6 @@ const unlockedAchievementKeys = (player) => {
 export default function CompetitiveEventFX() {
   const {
     discordPlayer,
-    challenges,
   } = useData();
 
   const [event, setEvent] = useState(null);
@@ -83,8 +66,6 @@ export default function CompetitiveEventFX() {
   const timerRef = useRef(null);
   const previousEloRef = useRef(null);
   const previousRankRef = useRef(null);
-  const challengeSnapshotRef = useRef(new Map());
-  const challengeReadyRef = useRef(false);
   const achievementSnapshotRef = useRef(new Set());
   const achievementReadyRef = useRef(false);
 
@@ -167,63 +148,6 @@ export default function CompetitiveEventFX() {
       previousRankRef.current = nextRank.id;
     }
   }, [discordPlayer?.id, discordPlayer?.currentElo, pushEvent]);
-
-  useEffect(() => {
-    if (!discordPlayer?.id) {
-      challengeSnapshotRef.current = new Map();
-      challengeReadyRef.current = false;
-      return;
-    }
-
-    const relevant = (challenges || []).filter((challenge) =>
-      challenge.challenger_player_id === discordPlayer.id ||
-      challenge.challenged_player_id === discordPlayer.id
-    );
-
-    const nextSnapshot = new Map(
-      relevant.map((challenge) => [
-        challenge.id,
-        {
-          status: challenge.status,
-          winner: challenge.reported_winner_player_id || null,
-          verifiedAt: challenge.verified_at || null,
-        },
-      ])
-    );
-
-    if (!challengeReadyRef.current) {
-      if (relevant.length > 0) {
-        challengeSnapshotRef.current = nextSnapshot;
-        challengeReadyRef.current = true;
-      }
-      return;
-    }
-
-    relevant.forEach((challenge) => {
-      const previous = challengeSnapshotRef.current.get(challenge.id);
-      const justCompleted =
-        challenge.status === "completed" &&
-        challenge.reported_winner_player_id &&
-        (
-          !previous ||
-          previous.status !== "completed" ||
-          previous.verifiedAt !== challenge.verified_at
-        );
-
-      if (!justCompleted) return;
-
-      const won = challenge.reported_winner_player_id === discordPlayer.id;
-      pushEvent({
-        type: won ? "challWin" : "challLoss",
-        title: won ? "CHALL WON" : "CHALL LOST",
-        value: euro(challenge.amount_cents, challenge.currency || "EUR"),
-        detail: "Verified match result",
-        color: won ? "#34D399" : "#FB7185",
-      });
-    });
-
-    challengeSnapshotRef.current = nextSnapshot;
-  }, [challenges, discordPlayer?.id, pushEvent]);
 
   useEffect(() => {
     if (!discordPlayer?.id) {
