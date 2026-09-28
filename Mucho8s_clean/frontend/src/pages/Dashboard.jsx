@@ -266,7 +266,7 @@ const GuestDashboard = ({
               <span className="block text-magma mt-1">for every Mucho mode.</span>
             </h2>
             <p className="text-sm sm:text-base text-[#9199A7] mt-5 max-w-xl leading-6">
-              Mucho8s and Mucho1v1 are live. MuchoRanked and MuchoTourney are coming next.
+              Mucho8s and Mucho1v1 are live. MuchoTourney is coming next.
             </p>
 
             <div className="flex flex-wrap gap-2 mt-6">
@@ -817,16 +817,6 @@ const PersonalDashboard = ({
                   : "no verified 1v1 yet"}
               </div>
             </Link>
-
-            <div className="rounded-xl border border-[#4F8CFF]/20 bg-[#4F8CFF]/[0.025] p-3.5">
-              <ModeBadge mode="muchoranked" compact />
-              <div className="font-display text-sm font-black mt-3 text-[#4F8CFF]">
-                COMING SOON
-              </div>
-              <div className="text-[10px] text-muted-foreground mt-1">
-                ranked queue
-              </div>
-            </div>
 
             <div className="rounded-xl border border-[#D5A33A]/20 bg-[#D5A33A]/[0.025] p-3.5">
               <ModeBadge mode="muchotourney" compact />
