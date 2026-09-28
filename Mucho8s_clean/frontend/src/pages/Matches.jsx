@@ -120,6 +120,15 @@ const liveDuration = (createdAt, now = Date.now()) => {
   return `${days}d ${remainingHours}h`;
 };
 
+const storedDuration = (minutes) => {
+  const value = Math.max(0, Math.round(Number(minutes) || 0));
+  if (!value) return "—";
+  if (value < 60) return `${value}m`;
+  const hours = Math.floor(value / 60);
+  const remaining = value % 60;
+  return remaining ? `${hours}h ${String(remaining).padStart(2, "0")}m` : `${hours}h`;
+};
+
 export default function Matches() {
   const {
     matches,
@@ -495,10 +504,7 @@ export default function Matches() {
       <div
         className="absolute inset-x-0 top-0 h-[2px]"
         style={{
-          background:
-            match.winner === "A"
-              ? "linear-gradient(90deg, transparent, #FF2A3B, transparent)"
-              : "linear-gradient(90deg, transparent, #D5A33A, transparent)",
+          background: "linear-gradient(90deg, transparent, rgba(52,211,153,.9), transparent)",
         }}
       />
 
@@ -537,20 +543,7 @@ export default function Matches() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap justify-end">
-          <span
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide border"
-            style={{
-              background:
-                match.winner === "A"
-                  ? "rgba(255,42,59,0.10)"
-                  : "rgba(213,163,58,0.10)",
-              color: match.winner === "A" ? "#FF5361" : "#E6B94E",
-              borderColor:
-                match.winner === "A"
-                  ? "rgba(255,42,59,0.22)"
-                  : "rgba(213,163,58,0.22)",
-            }}
-          >
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black tracking-wide border border-emerald-500/25 bg-emerald-500/[0.08] text-emerald-400">
             <Trophy size={13} />
             {match.winner === "A" ? "Alpha" : "Bravo"} won
           </span>
@@ -612,25 +605,59 @@ export default function Matches() {
         </div>
       </div>
 
+      <div className="mb-4 rounded-2xl border border-[#222834] bg-[#0D1118] p-3">
+        <div className="text-[9px] uppercase tracking-[0.16em] text-[#697181] mb-2">Match Summary</div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+          <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.05] px-3 py-2.5">
+            <div className="text-[9px] uppercase tracking-widest text-[#697181]">Winner</div>
+            <div className="font-display font-black text-emerald-400 mt-1">
+              {match.winner === "A" ? "Alpha" : "Bravo"}
+            </div>
+          </div>
+          <div className="rounded-xl border border-sky-500/15 bg-sky-500/[0.04] px-3 py-2.5">
+            <div className="text-[9px] uppercase tracking-widest text-[#697181]">Duration</div>
+            <div className="font-mono font-black text-sky-300 mt-1">
+              {storedDuration(match.durationMinutes)}
+            </div>
+          </div>
+          <div className="rounded-xl border border-[#2A303B] bg-[#0F1218] px-3 py-2.5">
+            <div className="text-[9px] uppercase tracking-widest text-[#697181]">Total Stake</div>
+            <div className="font-mono font-black text-white mt-1">
+              {money((Array.isArray(match.pairings) ? match.pairings : []).reduce((sum, pair) => sum + Math.max(0, Number(pair?.amount) || 0), 0))}
+            </div>
+          </div>
+          <div className="rounded-xl border border-[#2A303B] bg-[#0F1218] px-3 py-2.5">
+            <div className="text-[9px] uppercase tracking-widest text-[#697181]">Format</div>
+            <div className="font-display font-black text-[#C8CED8] mt-1">
+              {Array.isArray(match.maps) && match.maps.length === 3 ? "Best of 3" : ((match.teamA?.length || 0) + "v" + (match.teamB?.length || 0))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 items-stretch gap-3 sm:gap-4">
         <div
           className="rounded-xl p-4 border"
           style={{
             background:
               match.winner === "A"
-                ? "rgba(255,42,59,0.055)"
-                : "rgba(15,18,24,.72)",
+                ? "rgba(16,185,129,0.055)"
+                : "rgba(239,68,68,0.035)",
             borderColor:
-              match.winner === "A" ? "rgba(255,42,59,.20)" : "#1C202E",
+              match.winner === "A" ? "rgba(16,185,129,.24)" : "rgba(239,68,68,.16)",
           }}
         >
           <div className="flex items-center justify-between gap-2 mb-3">
-            <div className="text-xs font-black uppercase tracking-widest text-magma">
+            <div className="text-xs font-black uppercase tracking-widest text-[#C8CED8]">
               Alpha
             </div>
-            {match.winner === "A" && (
-              <span className="text-[9px] uppercase tracking-widest text-emerald-400 font-black">
+            {match.winner === "A" ? (
+              <span className="px-2 py-1 rounded-md border border-emerald-500/20 bg-emerald-500/[0.06] text-[9px] uppercase tracking-widest text-emerald-400 font-black">
                 Winner
+              </span>
+            ) : (
+              <span className="px-2 py-1 rounded-md border border-red-500/20 bg-red-500/[0.05] text-[9px] uppercase tracking-widest text-red-400 font-black">
+                Loser
               </span>
             )}
           </div>
@@ -651,19 +678,23 @@ export default function Matches() {
           style={{
             background:
               match.winner === "B"
-                ? "rgba(213,163,58,0.05)"
-                : "rgba(15,18,24,.72)",
+                ? "rgba(16,185,129,0.055)"
+                : "rgba(239,68,68,0.035)",
             borderColor:
-              match.winner === "B" ? "rgba(213,163,58,.20)" : "#1C202E",
+              match.winner === "B" ? "rgba(16,185,129,.24)" : "rgba(239,68,68,.16)",
           }}
         >
           <div className="flex items-center justify-between gap-2 mb-3">
-            <div className="text-xs font-black uppercase tracking-widest text-gold">
+            <div className="text-xs font-black uppercase tracking-widest text-[#C8CED8]">
               Bravo
             </div>
-            {match.winner === "B" && (
-              <span className="text-[9px] uppercase tracking-widest text-emerald-400 font-black">
+            {match.winner === "B" ? (
+              <span className="px-2 py-1 rounded-md border border-emerald-500/20 bg-emerald-500/[0.06] text-[9px] uppercase tracking-widest text-emerald-400 font-black">
                 Winner
+              </span>
+            ) : (
+              <span className="px-2 py-1 rounded-md border border-red-500/20 bg-red-500/[0.05] text-[9px] uppercase tracking-widest text-red-400 font-black">
+                Loser
               </span>
             )}
           </div>
@@ -688,11 +719,15 @@ export default function Matches() {
           >
             <div className="flex items-center gap-2 mb-3">
               <WalletCards size={15} className="text-emerald-400" />
-              <span className="brand-kicker text-magma">Mucho8s Pairings</span>
-              <span className="ml-auto text-[10px] text-muted-foreground">
-                {match.pairings.length} pairings
-              </span>
-
+              <span className="brand-kicker text-[#C8CED8]">Matchups & Stakes</span>
+              <div className="ml-auto flex items-center gap-2">
+                <span className="text-[10px] text-muted-foreground">
+                  {match.pairings.length} pairings
+                </span>
+                <span className="font-mono text-[11px] font-black text-emerald-400">
+                  {money(match.pairings.reduce((sum, pair) => sum + Math.max(0, Number(pair?.amount) || 0), 0))}
+                </span>
+              </div>
 
             </div>
 
@@ -707,35 +742,32 @@ export default function Matches() {
                 return (
                   <div
                     key={pair.playerAId + "-" + pair.playerBId + "-" + index}
-                    className="m8-panel-quiet rounded-xl px-3 py-2.5"
+                    className="rounded-xl border border-[#252C37] bg-[#0F1218] px-3 py-3"
                   >
-                    <div className="flex items-center gap-2 text-sm min-w-0">
-                      <span
-                        className={`font-semibold truncate ${
-                          winnerId === pair.playerAId ? "text-emerald-400" : ""
-                        }`}
-                      >
-                        {alpha?.name || "Alpha"}
-                      </span>
-                      <ArrowRightLeft
-                        size={13}
-                        className="text-muted-foreground shrink-0"
-                      />
-                      <span
-                        className={`font-semibold truncate ${
-                          winnerId === pair.playerBId ? "text-emerald-400" : ""
-                        }`}
-                      >
-                        {bravo?.name || "Bravo"}
-                      </span>
+                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-sm min-w-0">
+                      <div className="min-w-0 flex items-center gap-1.5">
+                        <span className={`font-bold truncate ${winnerId === pair.playerAId ? "text-emerald-400" : "text-red-400"}`}>
+                          {alpha?.name || "Alpha"}
+                        </span>
+                        <span className={`shrink-0 text-[8px] font-black px-1.5 py-0.5 rounded ${winnerId === pair.playerAId ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
+                          {winnerId === pair.playerAId ? "W" : "L"}
+                        </span>
+                      </div>
+                      <ArrowRightLeft size={13} className="text-[#596170] shrink-0" />
+                      <div className="min-w-0 flex items-center justify-end gap-1.5">
+                        <span className={`shrink-0 text-[8px] font-black px-1.5 py-0.5 rounded ${winnerId === pair.playerBId ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
+                          {winnerId === pair.playerBId ? "W" : "L"}
+                        </span>
+                        <span className={`font-bold truncate ${winnerId === pair.playerBId ? "text-emerald-400" : "text-red-400"}`}>
+                          {bravo?.name || "Bravo"}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 mt-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                      <span>€{Number(pair.amount || 0).toFixed(2)}</span>
-                      <span>·</span>
-                      <span>
-                        {String(pair.platform || "paypal").toUpperCase()}
+                    <div className="flex items-center justify-between gap-3 mt-2.5 pt-2 border-t border-[#1D222C]">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        Stake <strong className="ml-1 font-mono text-white">€{Number(pair.amount || 0).toFixed(2)}</strong>
                       </span>
-                      <span className="ml-auto text-emerald-400">
+                      <span className="text-[10px] uppercase tracking-wider font-black text-emerald-400">
                         {winner?.name || "Winner"} won
                       </span>
                     </div>
