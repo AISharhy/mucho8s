@@ -3,9 +3,9 @@ import { RANKS, rankProgress } from "@/lib/elo";
 import { ArrowRight, Crown, Gem, Shield, Star, TrendingUp } from "lucide-react";
 
 const iconFor = (index) => {
-  if (index >= 5) return Crown;
-  if (index >= 3) return Gem;
-  if (index >= 2) return Star;
+  if (index >= RANKS.length - 1) return Crown;
+  if (index >= 15) return Gem;
+  if (index >= 9) return Star;
   return Shield;
 };
 
@@ -136,7 +136,7 @@ export default function RankGuide() {
 
         <div className="rounded-xl border border-[#242A35] bg-[#0F1218] p-4 mt-3">
           <div className="text-xs text-muted-foreground leading-5">
-            Every new official season starts at <strong className="text-white">500 Elo · Iron</strong>.
+            Every new official season starts at <strong className="text-white">500 Elo · Iron I</strong>.
             A player enters the leaderboard after playing the first competitive match of that season.
           </div>
         </div>
@@ -188,24 +188,24 @@ export default function RankGuide() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-5">
           <EloExample
-            left="950 Bronze"
-            right="1150 Gold"
-            result="If Bronze wins: about +38 Elo. Gold loses about −38 Elo."
+            left="950 Bronze II"
+            right="1150 Silver I"
+            result="If Bronze II wins: about +38 Elo. Silver I loses about −38 Elo."
           />
           <EloExample
-            left="1150 Gold"
-            right="950 Bronze"
-            result="If Gold wins: about +12 Elo. Bronze loses about −12 Elo."
+            left="1150 Silver I"
+            right="950 Bronze II"
+            result="If Silver I wins: about +12 Elo. Bronze II loses about −12 Elo."
           />
           <EloExample
-            left="1050 Silver"
-            right="1250 Platinum"
-            result="If Silver wins: about +38 Elo. Platinum loses about −38 Elo."
+            left="1050 Bronze III"
+            right="1250 Silver II"
+            result="If Bronze III wins: about +38 Elo. Silver II loses about −38 Elo."
           />
           <EloExample
-            left="850 Iron"
-            right="1400 Masters"
-            result="A major Iron upset reaches the cap: +45 Elo / −45 Elo."
+            left="850 Bronze I"
+            right="2300 Masters"
+            result="A major Bronze I upset against Masters reaches the cap: +45 Elo / −45 Elo."
           />
         </div>
 
