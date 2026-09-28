@@ -108,13 +108,6 @@ Deno.serve(async (req: Request) => {
       }),
     );
     const twitchLivePlayers = twitchChecks.filter(Boolean);
-    console.log("[twitch-presence]", JSON.stringify({
-      configured: (twitchAccounts || []).map((row: any) => ({
-        player_id: String(row?.player_id || ""),
-        twitch_channel: String(row?.twitch_channel || ""),
-      })),
-      live: twitchLivePlayers,
-    }));
 
     return new Response(JSON.stringify({
       ok: true,
@@ -128,7 +121,7 @@ Deno.serve(async (req: Request) => {
       headers: {
         ...corsHeaders,
         "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=15",
+        "Cache-Control": "no-store",
       },
     });
   } catch (error) {
