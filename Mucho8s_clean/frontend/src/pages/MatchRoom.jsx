@@ -11,7 +11,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
-import { PlayerAvatar } from "@/components/shared";
+import { PlayerAvatar, MerdaBadge, merdaSurfaceClass } from "@/components/shared";
 import ModeBadge from "@/components/ModeBadge";
 import MapPreviewCard from "@/components/MapPreviewCard";
 import LiveMatchChat from "@/components/LiveMatchChat";
@@ -78,18 +78,21 @@ const TeamPanel = ({
           <Link
             key={id}
             to={`/players/${id}`}
-            className="min-h-[52px] rounded-xl border border-[#202631] bg-[#12161D] px-3 py-2.5 flex items-center gap-3 hover:border-[#353D49] transition-all"
+            className={`min-h-[52px] rounded-xl border border-[#202631] bg-[#12161D] px-3 py-2.5 flex items-center gap-3 hover:border-[#353D49] transition-all ${merdaSurfaceClass(player?.merdaCount)}`}
           >
-            <PlayerAvatar
-              name={player?.name || "Player"}
-              elo={player?.currentElo || 1000}
-              size={34}
-              avatarUrl={playerAvatars[id]}
-            />
+            <div className={Number(player?.merdaCount || 0) >= 5 ? "merda-avatar-critical" : ""}>
+              <PlayerAvatar
+                name={player?.name || "Player"}
+                elo={player?.currentElo || 1000}
+                size={34}
+                avatarUrl={playerAvatars[id]}
+              />
+            </div>
 
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-sm flex items-center gap-2 min-w-0">
                 <span className="truncate">{player?.name || "Player"}</span>
+                <MerdaBadge count={player?.merdaCount} compact />
                 {String(id) === String(captainId || "") && (
                   <span className="text-[9px] uppercase tracking-wider text-[#D5A33A] inline-flex items-center gap-1 shrink-0">
                     <Crown size={10} /> Captain
@@ -211,6 +214,7 @@ export default function MatchRoom() {
           remaining,
           chasingMvp,
           clearingMerda,
+          merdaCount,
           side: isAlpha ? "Alpha" : "Bravo",
           opposingSide: isAlpha ? "Bravo" : "Alpha",
           bounty,
@@ -486,7 +490,7 @@ export default function MatchRoom() {
               <div className="font-display font-black text-sm mt-0.5">MVP & MERDA pressure</div>
             </div>
             <div className="text-[10px] uppercase tracking-widest text-[#697181]">
-              Only players close to the next milestone
+              Active pressure & redemption
             </div>
           </div>
 
@@ -495,15 +499,18 @@ export default function MatchRoom() {
               <div
                 key={item.id}
                 className={`rounded-xl border px-3 py-3 ${
-                  item.chasingMvp
-                    ? "border-[#D5A33A]/25 bg-[#D5A33A]/[0.045]"
-                    : "border-[#8B5E3C]/30 bg-[#8B5E3C]/[0.045]"
+                  item.clearingMerda
+                    ? merdaSurfaceClass(item.merdaCount)
+                    : item.chasingMvp
+                      ? "border-[#D5A33A]/25 bg-[#D5A33A]/[0.045]"
+                      : "border-[#8B5E3C]/30 bg-[#8B5E3C]/[0.045]"
                 }`}
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="font-display font-black text-sm truncate">{item.name}</span>
+                      <MerdaBadge count={item.merdaCount} compact />
                       <span className="text-[9px] uppercase tracking-widest text-muted-foreground shrink-0">
                         {item.side}
                       </span>
@@ -511,7 +518,8 @@ export default function MatchRoom() {
                     <div className="text-[11px] mt-1">
                       {item.clearingMerda ? (
                         <span className="text-[#C79A6B] font-semibold">
-                          💩 Win this match to clear 1 MERDA
+                          💩 WIN TO REDUCE MERDA · x{item.merdaCount} → x{Math.max(0, item.merdaCount - 1)}
+                          {item.chasingMvp && item.remaining === 1 ? " · 🏆 MVP also on this win" : ""}
                         </span>
                       ) : item.chasingMvp ? (
                         <span className="text-[#D5A33A] font-semibold">
