@@ -48,6 +48,7 @@ export default function AdminPanel() {
     listDiscordAccounts,
     approveDiscordPlayerRequest,
     rejectDiscordPlayerRequest,
+    linkDiscordAccount,
     listAdminChallenges,
     adminUpdateChallenge,
     adminDeleteChallenge,
@@ -78,6 +79,7 @@ export default function AdminPanel() {
   const [discordBusy, setDiscordBusy] = useState(false);
   const [discordAccounts, setDiscordAccounts] = useState([]);
   const [accountBusyId, setAccountBusyId] = useState("");
+  const [accountLinkDrafts, setAccountLinkDrafts] = useState({});
   const [adminChallenges, setAdminChallenges] = useState([]);
   const [challengeBusyId, setChallengeBusyId] = useState("");
   const [challengeDrafts, setChallengeDrafts] = useState({});
@@ -464,6 +466,31 @@ export default function AdminPanel() {
     } else {
       toast.success("Player name request rejected");
     }
+  };
+
+  const handleExistingPlayerLink = async (account) => {
+    const playerId = String(accountLinkDrafts[account.id] || "").trim();
+    if (!playerId) return toast.error("Choose an existing player first");
+
+    const player = playerMap[playerId];
+    if (!player) return toast.error("Player not found");
+
+    setAccountBusyId(account.id);
+    const updated = await linkDiscordAccount(account.id, playerId, { transfer: true });
+    setAccountBusyId("");
+    if (!updated) return;
+
+    setDiscordAccounts((prev) =>
+      prev.map((item) => {
+        if (item.id === account.id) return { ...item, ...updated };
+        if (String(item.player_id || "") === playerId) {
+          return { ...item, player_id: null, player_request_status: null };
+        }
+        return item;
+      })
+    );
+    setAccountLinkDrafts((prev) => ({ ...prev, [account.id]: "" }));
+    toast.success(`${account.display_name || account.discord_username || "Discord account"} linked to existing player ${player.name}`);
   };
 
   const resetNewsDraft = () => {
@@ -1755,7 +1782,7 @@ export default function AdminPanel() {
               Discord & Payments
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Players choose their Mucho8s name after Discord login. Approve or reject the request here; manual Discord linking is no longer required.
+              Approve a new player request or link the Discord account to an existing roster profile to preserve old Elo, stats and match history.
             </p>
           </div>
 
@@ -1854,15 +1881,17 @@ export default function AdminPanel() {
                         {paymentLabel}
                       </span>
 
-                      {linkedPlayer ? (
+                      {linkedPlayer && (
                         <span className="h-8 px-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-400 inline-flex items-center text-[10px] font-black uppercase tracking-wider">
                           <Check size={13} className="mr-1" />
                           {linkedPlayer.name}
                         </span>
-                      ) : account.player_request_status === "pending" && account.requested_player_name ? (
+                      )}
+
+                      {!linkedPlayer && account.player_request_status === "pending" && account.requested_player_name && (
                         <>
                           <span className="h-8 px-2.5 rounded-lg border border-[#D5A33A]/25 bg-[#D5A33A]/[0.06] text-[#D5A33A] inline-flex items-center text-[10px] font-black">
-                            {account.requested_player_name}
+                            New: {account.requested_player_name}
                           </span>
                           <Button
                             type="button"
@@ -1872,7 +1901,7 @@ export default function AdminPanel() {
                             data-testid={`discord-request-approve-${account.id}`}
                           >
                             <Check size={13} className="mr-1" />
-                            Approve
+                            Create New
                           </Button>
                           <Button
                             type="button"
@@ -1885,15 +1914,66 @@ export default function AdminPanel() {
                             Reject
                           </Button>
                         </>
-                      ) : account.player_request_status === "rejected" ? (
+                      )}
+
+                      {!linkedPlayer && account.player_request_status === "rejected" && (
                         <span className="h-8 px-2.5 rounded-lg border border-red-500/20 bg-red-500/[0.05] text-red-400 inline-flex items-center text-[10px] font-black uppercase tracking-wider">
-                          Rejected · waiting new request
-                        </span>
-                      ) : (
-                        <span className="h-8 px-2.5 rounded-lg border border-[#2A303B] bg-[#151923] text-[#737D8D] inline-flex items-center text-[10px] font-bold">
-                          Waiting for player request
+                          Rejected
                         </span>
                       )}
+
+                      <div className="flex items-center gap-1.5">
+                        <select
+                          value={accountLinkDrafts[account.id] || ""}
+                          onChange={(event) =>
+                            setAccountLinkDrafts((prev) => ({
+                              ...prev,
+                              [account.id]: event.target.value,
+                            }))
+                          }
+                          disabled={accountBusyId === account.id}
+                          className="h-8 max-w-[180px] rounded-lg bg-[#151923] border border-[#2A303B] px-2 text-[10px] font-semibold text-[#C8CED8]"
+                          aria-label={`Link ${account.display_name || account.discord_username || "Discord account"} to existing player`}
+                          data-testid={`discord-link-existing-${account.id}`}
+                        >
+                          <option value="">Link existing player…</option>
+                          {[...players]
+                            .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")))
+                            .map((playerOption) => {
+                              const owner = discordAccounts.find(
+                                (candidate) =>
+                                  candidate.id !== account.id &&
+                                  String(candidate.player_id || "") === String(playerOption.id)
+                              );
+                              return (
+                                <option key={playerOption.id} value={playerOption.id}>
+                                  {playerOption.name} · {playerOption.currentElo} Elo{owner ? " · linked" : ""}
+                                </option>
+                              );
+                            })}
+                        </select>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => handleExistingPlayerLink(account)}
+                          disabled={
+                            accountBusyId === account.id ||
+                            !String(accountLinkDrafts[account.id] || "").trim()
+                          }
+                          className="h-8 px-2.5 rounded-lg border border-[#9146FF]/25 bg-[#9146FF]/[0.06] text-[#B88CFF] hover:bg-[#9146FF]/[0.12] text-[10px] font-black"
+                          data-testid={`discord-link-existing-confirm-${account.id}`}
+                        >
+                          {linkedPlayer ? "Relink" : "Link"}
+                        </Button>
+                      </div>
+
+                      {!linkedPlayer &&
+                        account.player_request_status !== "pending" &&
+                        account.player_request_status !== "rejected" && (
+                          <span className="h-8 px-2.5 rounded-lg border border-[#2A303B] bg-[#151923] text-[#737D8D] inline-flex items-center text-[10px] font-bold">
+                            Waiting for player request
+                          </span>
+                        )}
                     </div>
                   </div>
                 </div>
