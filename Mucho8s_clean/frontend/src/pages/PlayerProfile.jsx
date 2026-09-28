@@ -10,7 +10,7 @@ import {
   MAX_TROPHY_LEVEL,
   trophyNextTier,
 } from "@/lib/trophyRules";
-import { PlayerAvatar, EloBadge, Last10, MerdaBadge, RankProgress } from "@/components/shared";
+import { PlayerAvatar, EloBadge, Last10, MerdaBadge, RankArtwork, RankProgress } from "@/components/shared";
 import ModeBadge, { isDirectMucho1v1 } from "@/components/ModeBadge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -1034,7 +1034,13 @@ export default function PlayerProfile() {
         </DialogContent>
       </Dialog>
 
-      <section className="m8-profile-command rounded-[24px] overflow-hidden relative order-1">
+      <section
+        className="m8-profile-command rounded-[24px] overflow-hidden relative order-1"
+        style={{
+          "--profile-rank-color": tier.color,
+          "--profile-rank-accent": tier.accent,
+        }}
+      >
         <div className="m8-profile-command-banner">
           <div className="m8-profile-command-grid" />
           <div className="m8-profile-command-glow" />
@@ -1079,7 +1085,7 @@ export default function PlayerProfile() {
                   <span className="text-[#3A424F]">·</span>
                   <span>Peak {player.peakElo} Elo</span>
                   <span className="text-[#3A424F]">·</span>
-                  <span className="text-[#D5A33A]">{tier.name}</span>
+                  <span style={{ color: tier.color }}>{tier.name}</span>
                 </div>
 
                 <div className="mt-3 flex items-center gap-2">
@@ -1118,7 +1124,7 @@ export default function PlayerProfile() {
               }}
             >
               <div className="m8-profile-rank-emblem">
-                <Shield size={30} strokeWidth={2.1} />
+                <RankArtwork rank={tier} size={76} className="m8-profile-rank-artwork" />
               </div>
 
               <div className="min-w-0 flex-1">
