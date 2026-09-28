@@ -65,6 +65,9 @@ const normalizePlayer = (p) => {
 const normalizeMatch = (m) => ({
   id: m?.id || uid(),
   date: m?.date || new Date().toISOString(),
+  durationMinutes: Number.isFinite(Number(m?.durationMinutes)) && Number(m?.durationMinutes) > 0
+    ? Math.round(Number(m.durationMinutes))
+    : null,
   teamA: Array.isArray(m?.teamA) ? m.teamA : [],
   teamB: Array.isArray(m?.teamB) ? m.teamB : [],
   winner: m?.winner === "B" ? "B" : "A",
