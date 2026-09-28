@@ -142,7 +142,6 @@ export default function PlayerProfile() {
     revolutUrl: "",
   });
   const [savingLinks, setSavingLinks] = useState(false);
-  const [profileRole, setProfileRole] = useState("");
   const [sendingChallenge, setSendingChallenge] = useState("");
   const [challengePlatform, setChallengePlatform] = useState("");
   const [challengeAmount, setChallengeAmount] = useState("5");
@@ -153,8 +152,7 @@ export default function PlayerProfile() {
       paypalUrl: publicProfile.paypalUrl || "",
       revolutUrl: publicProfile.revolutUrl || "",
     });
-    setProfileRole(["AR", "FLEX", "SMG"].includes(player?.role) ? player.role : "");
-  }, [id, publicProfile.paypalUrl, publicProfile.revolutUrl, player?.role]);
+  }, [id, publicProfile.paypalUrl, publicProfile.revolutUrl]);
 
   const playerMatches = useMemo(() => {
     if (!player) return [];
@@ -886,10 +884,7 @@ export default function PlayerProfile() {
   const tier = tierOf(player.currentElo);
   const saveLinks = async () => {
     setSavingLinks(true);
-    const ok = await saveMyChallengeLinks({
-      ...links,
-      role: profileRole,
-    });
+    const ok = await saveMyChallengeLinks(links);
     setSavingLinks(false);
     if (ok) toast.success("Profile updated");
   };
@@ -1095,14 +1090,6 @@ export default function PlayerProfile() {
                   </div>
                 </div>
 
-                <div>
-                  <div className="text-[9px] uppercase tracking-[0.18em] text-[#697181] font-bold">
-                    Role
-                  </div>
-                  <div className="font-display text-sm sm:text-base font-black uppercase text-white mt-1">
-                    {player.role || "—"}
-                  </div>
-                </div>
               </div>
 
               <div className="mt-3 text-xs text-[#8A94A4]">
@@ -1859,33 +1846,13 @@ export default function PlayerProfile() {
               <div className="brand-kicker mb-1">Edit Profile</div>
               <h3 className="font-display font-bold text-lg">Profile settings</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Choose your role and connect PayPal or Revolut for Mucho1v1.
+                Connect PayPal or Revolut for Mucho1v1.
               </p>
             </div>
             <Link2 size={18} className="text-[#697181] shrink-0 mt-1" />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="sm:col-span-2 rounded-xl bg-[#0F1218] border border-[#222834] p-3">
-              <Label className="text-xs font-semibold">Role</Label>
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                {["SMG", "AR", "FLEX"].map((role) => (
-                  <button
-                    key={role}
-                    type="button"
-                    onClick={() => setProfileRole(role)}
-                    className={`h-10 rounded-lg border text-xs font-black transition-all ${
-                      profileRole === role
-                        ? "bg-white text-black border-white"
-                        : "bg-[#151923] border-[#2A303B] text-[#C8CED8] hover:border-[#3A4350]"
-                    }`}
-                    data-testid={`profile-role-${role.toLowerCase()}`}
-                  >
-                    {role}
-                  </button>
-                ))}
-              </div>
-            </div>
             <div className="rounded-xl bg-[#0F1218] border border-[#222834] p-3">
               <Label className="text-xs font-semibold">PayPal</Label>
               <Input
