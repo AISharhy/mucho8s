@@ -350,6 +350,7 @@ export const DataProvider = ({ children }) => {
   const [matchReports, setMatchReports] = useState([]);
   const [liveMatches, setLiveMatches] = useState([]);
   const [adminChallengeAlertCount, setAdminChallengeAlertCount] = useState(0);
+  const [adminAccountAlertCount, setAdminAccountAlertCount] = useState(0);
   const [dashboardData, setDashboardData] = useState({
     activeChallenges: [],
     recentChallenges: [],
@@ -1312,19 +1313,37 @@ export const DataProvider = ({ children }) => {
   const refreshAdminChallengeAlerts = useCallback(async () => {
     if (!admin?.sessionToken) {
       setAdminChallengeAlertCount(0);
+      setAdminAccountAlertCount(0);
       return 0;
     }
 
-    const data = await adminChallengeRequest({ action: "admin-list" }, { silent: true });
-    const list = Array.isArray(data?.challenges) ? data.challenges : [];
-    const count = list.filter((challenge) =>
+    const [challengeData, accountData] = await Promise.all([
+      adminChallengeRequest({ action: "admin-list" }, { silent: true }),
+      accountRequest({ action: "admin-list" }, { silent: true }),
+    ]);
+
+    const challengesList = Array.isArray(challengeData?.challenges)
+      ? challengeData.challenges
+      : [];
+    const accountsList = Array.isArray(accountData?.accounts)
+      ? accountData.accounts
+      : [];
+
+    const challengeCount = challengesList.filter((challenge) =>
       challenge.status === "disputed" ||
       (challenge.payout_disputed_at && !challenge.payout_dispute_resolved_at)
     ).length;
 
-    setAdminChallengeAlertCount(count);
-    return count;
-  }, [admin, adminChallengeRequest]);
+    const accountCount = accountsList.filter((account) =>
+      !account?.player_id &&
+      account?.player_request_status === "pending" &&
+      Boolean(String(account?.requested_player_name || "").trim())
+    ).length;
+
+    setAdminChallengeAlertCount(challengeCount);
+    setAdminAccountAlertCount(accountCount);
+    return challengeCount + accountCount;
+  }, [admin, adminChallengeRequest, accountRequest]);
 
   useEffect(() => {
     if (!admin?.sessionToken) {
@@ -2257,6 +2276,7 @@ export const DataProvider = ({ children }) => {
     competitionData,
     challengeNotificationCount,
     adminChallengeAlertCount,
+    adminAccountAlertCount,
     refreshChallenges,
     refreshMatchReports,
     createLiveMatch,
