@@ -83,6 +83,7 @@ export const Layout = () => {
     discordLoading,
     signInWithDiscord,
     signOutDiscord,
+    submitPlayerNameRequest,
     challengeNotificationCount,
     markChallengeSeen,
     adminChallengeAlertCount,
@@ -101,6 +102,8 @@ export const Layout = () => {
   const [accountOpen, setAccountOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [requestedPlayerName, setRequestedPlayerName] = useState("");
+  const [submittingPlayerRequest, setSubmittingPlayerRequest] = useState(false);
   const [markingAllRead, setMarkingAllRead] = useState(false);
   const [seenModeNotificationKeys, setSeenModeNotificationKeys] = useState(() => new Set());
 
@@ -109,6 +112,22 @@ export const Layout = () => {
     setSearchOpen(false);
     setSearchQuery("");
   }, [loc.pathname]);
+
+  useEffect(() => {
+    if (!discordAccount?.id || discordAccount?.player_id) return;
+    setRequestedPlayerName(
+      discordAccount?.requested_player_name ||
+      discordAccount?.display_name ||
+      discordAccount?.discord_username ||
+      ""
+    );
+  }, [
+    discordAccount?.id,
+    discordAccount?.player_id,
+    discordAccount?.requested_player_name,
+    discordAccount?.display_name,
+    discordAccount?.discord_username,
+  ]);
 
   useEffect(() => {
     if (!discordPlayer?.id) {
@@ -427,10 +446,95 @@ export const Layout = () => {
     document.title = title === "MuchoMoney8s" ? "MuchoMoney8s" : `${title} · MuchoMoney8s`;
   }, [title]);
 
+  const needsPlayerOnboarding = Boolean(
+    discordSession &&
+    discordAccount &&
+    !discordAccount.player_id
+  );
+  const playerRequestStatus = String(discordAccount?.player_request_status || "");
+
+  const sendPlayerRequest = async (event) => {
+    event?.preventDefault?.();
+    const name = requestedPlayerName.trim();
+    if (!name || submittingPlayerRequest) return;
+
+    setSubmittingPlayerRequest(true);
+    await submitPlayerNameRequest(name);
+    setSubmittingPlayerRequest(false);
+  };
+
   return (
     <div className="min-h-screen bg-[#0B0D12]">
       <ChallengeCenter />
       <CompetitiveEventFX />
+
+      {needsPlayerOnboarding && (
+        <div className="m8-discord-onboarding" data-testid="discord-player-onboarding">
+          <div className="m8-discord-onboarding-card">
+            <div className="m8-discord-onboarding-icon">
+              <MessageCircle size={24} />
+            </div>
+
+            <div className="m8-discord-onboarding-kicker">Discord connected</div>
+
+            {playerRequestStatus === "pending" ? (
+              <>
+                <h2>Request sent</h2>
+                <p>
+                  You asked to use <strong>{discordAccount?.requested_player_name || requestedPlayerName}</strong> on Mucho8s.
+                  An Admin must approve it before your player profile becomes active.
+                </p>
+                <div className="m8-discord-request-status is-pending">
+                  <span />
+                  Waiting for Admin approval
+                </div>
+              </>
+            ) : (
+              <>
+                <h2>Choose your Mucho8s name</h2>
+                <p>
+                  This is the nickname other players will see. Send the request and an Admin will approve or reject it.
+                </p>
+
+                {playerRequestStatus === "rejected" && (
+                  <div className="m8-discord-request-status is-rejected">
+                    Your previous request was rejected. Choose another name and send it again.
+                  </div>
+                )}
+
+                <form onSubmit={sendPlayerRequest} className="m8-discord-onboarding-form">
+                  <label htmlFor="mucho-player-name">Player name</label>
+                  <input
+                    id="mucho-player-name"
+                    value={requestedPlayerName}
+                    onChange={(event) => setRequestedPlayerName(event.target.value)}
+                    maxLength={20}
+                    autoFocus
+                    placeholder="e.g. Sharhy"
+                    autoComplete="off"
+                  />
+                  <button
+                    type="submit"
+                    disabled={submittingPlayerRequest || requestedPlayerName.trim().length < 2}
+                  >
+                    {submittingPlayerRequest ? "Sending..." : "Send request"}
+                  </button>
+                </form>
+              </>
+            )}
+
+            <button
+              type="button"
+              className="m8-discord-onboarding-logout"
+              onClick={signOutDiscord}
+            >
+              <LogOut size={14} />
+              Logout Discord
+            </button>
+          </div>
+        </div>
+      )}
+
       <header className="m8-topbar sticky top-0 z-40">
         <div className="m8-topbar-inner">
           <div className="lg:hidden">
