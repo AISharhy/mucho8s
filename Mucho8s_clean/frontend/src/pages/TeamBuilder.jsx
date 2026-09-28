@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
-import { PlayerAvatar } from "@/components/shared";
+import { PlayerAvatar, MerdaBadge, merdaSurfaceClass } from "@/components/shared";
 import ModeBadge from "@/components/ModeBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -745,7 +745,7 @@ export default function TeamBuilder() {
                     active
                       ? "bg-white/[0.05] border-[#4A5362]"
                       : "bg-[#0F1218] border-[#222834] hover:border-[#343B48]"
-                  }`}
+                  } ${merdaSurfaceClass(player.merdaCount)}`}
                 >
                   <span className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${
                     active ? "bg-magma border-magma" : "border-[#343B48]"
@@ -761,6 +761,7 @@ export default function TeamBuilder() {
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold truncate flex items-center gap-2">
                       <span className="truncate">{player.name}</span>
+                      <MerdaBadge count={player.merdaCount} compact />
                       {onlinePlayerIds.has(String(player.id)) && (
                         <span
                           className="w-2 h-2 rounded-full bg-emerald-400 shrink-0"
@@ -1183,10 +1184,11 @@ export default function TeamBuilder() {
               </div>
               <div className="space-y-2">
                 {result.teamA.map((player) => (
-                  <div key={player.id} className="flex items-center gap-3 rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+                  <div key={player.id} className={`flex items-center gap-3 rounded-xl bg-[#0F1218] border border-[#1D222C] p-3 ${merdaSurfaceClass(player.merdaCount)}`}>
                     <PlayerAvatar name={player.name} elo={player.currentElo} size={36} avatarUrl={playerAvatars[player.id]} />
                     <div className="font-semibold truncate flex-1 flex items-center gap-2">
-                      {player.name}
+                      <span className="truncate">{player.name}</span>
+                      <MerdaBadge count={player.merdaCount} compact />
                       {result?.draftCaptains?.A === player.id && (
                         <span className="text-[9px] uppercase tracking-wider text-[#D5A33A] inline-flex items-center gap-1">
                           <Crown size={11} /> Draft
@@ -1221,10 +1223,11 @@ export default function TeamBuilder() {
               </div>
               <div className="space-y-2">
                 {result.teamB.map((player) => (
-                  <div key={player.id} className="flex items-center gap-3 rounded-xl bg-[#0F1218] border border-[#1D222C] p-3">
+                  <div key={player.id} className={`flex items-center gap-3 rounded-xl bg-[#0F1218] border border-[#1D222C] p-3 ${merdaSurfaceClass(player.merdaCount)}`}>
                     <PlayerAvatar name={player.name} elo={player.currentElo} size={36} avatarUrl={playerAvatars[player.id]} />
                     <div className="font-semibold truncate flex-1 flex items-center gap-2">
-                      {player.name}
+                      <span className="truncate">{player.name}</span>
+                      <MerdaBadge count={player.merdaCount} compact />
                       {result?.draftCaptains?.B === player.id && (
                         <span className="text-[9px] uppercase tracking-wider text-[#D5A33A] inline-flex items-center gap-1">
                           <Crown size={11} /> Draft
