@@ -165,8 +165,16 @@ export default function AdminPanel() {
     void loadAdminChallenges();
     void loadAuditLogs();
 
+    // Keep Discord/player approval requests fresh while the Admin Console is open.
+    // Previously this list only refreshed on page load/manual Refresh, so a new
+    // request could keep showing "Waiting for player request" after it was sent.
+    const accountRefreshTimer = window.setInterval(() => {
+      if (active) void loadDiscordAccounts();
+    }, 10000);
+
     return () => {
       active = false;
+      window.clearInterval(accountRefreshTimer);
     };
   }, [admin, getDiscordStatus, loadDiscordAccounts, loadAdminChallenges, loadAuditLogs]);
 
