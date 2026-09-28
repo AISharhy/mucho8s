@@ -503,7 +503,11 @@ export const DataProvider = ({ children }) => {
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/mucho8s-dashboard`, {
         method: "GET",
-        headers: { apikey: SUPABASE_ANON_KEY },
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          "Cache-Control": "no-cache",
+        },
+        cache: "no-store",
       });
       if (!res.ok) return null;
       const data = await res.json();
