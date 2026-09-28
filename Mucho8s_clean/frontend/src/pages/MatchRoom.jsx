@@ -189,16 +189,18 @@ export default function MatchRoom() {
       .map((playerId) => {
         const player = playerMap?.[playerId];
         const streak = Number(player?.currentStreak || 0);
-        if (!streak) return null;
+        const merdaCount = Math.max(0, Number(player?.merdaCount || 0));
+        if (!streak && merdaCount <= 0) return null;
 
         const run = Math.abs(streak);
-        const cycleProgress = run % 4;
-        const remaining = cycleProgress === 0 ? 4 : 4 - cycleProgress;
-
-        // Keep the room focused: only show players within two results of the next milestone.
-        if (remaining > 2) return null;
-
+        const cycleProgress = run % 3;
+        const remaining = cycleProgress === 0 ? 3 : 3 - cycleProgress;
         const chasingMvp = streak > 0;
+        const clearingMerda = merdaCount > 0;
+
+        // Show players close to a new award, plus anyone who can clear a MERDA with one win.
+        if (!clearingMerda && remaining > 2) return null;
+
         const isAlpha = alphaIds.includes(playerId);
         const bounty = chasingMvp && remaining === 1 ? 3 : 0;
 
@@ -208,6 +210,7 @@ export default function MatchRoom() {
           streak,
           remaining,
           chasingMvp,
+          clearingMerda,
           side: isAlpha ? "Alpha" : "Bravo",
           opposingSide: isAlpha ? "Bravo" : "Alpha",
           bounty,
@@ -218,7 +221,10 @@ export default function MatchRoom() {
         };
       })
       .filter(Boolean)
-      .sort((a, b) => a.remaining - b.remaining || Math.abs(b.streak) - Math.abs(a.streak));
+      .sort((a, b) => {
+        if (a.clearingMerda !== b.clearingMerda) return a.clearingMerda ? -1 : 1;
+        return a.remaining - b.remaining || Math.abs(b.streak) - Math.abs(a.streak);
+      });
   }, [match, playerMap]);
 
   if (!match) {
@@ -503,7 +509,11 @@ export default function MatchRoom() {
                       </span>
                     </div>
                     <div className="text-[11px] mt-1">
-                      {item.chasingMvp ? (
+                      {item.clearingMerda ? (
+                        <span className="text-[#C79A6B] font-semibold">
+                          💩 Win this match to clear 1 MERDA
+                        </span>
+                      ) : item.chasingMvp ? (
                         <span className="text-[#D5A33A] font-semibold">
                           🏆 {item.remaining} {item.remaining === 1 ? "win" : "wins"} from MVP #{item.nextCount}
                         </span>
@@ -549,13 +559,12 @@ export default function MatchRoom() {
           </summary>
 
           <div className="border-t border-[#1D222C] p-4 space-y-4">
-            <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
               {[
                 ["Quality", String(liveTeamIntel.lobbyQuality) + "%"],
                 ["Balance", String(liveTeamIntel.balanceScore) + "%"],
                 ["Chemistry", String(liveTeamIntel.chemistryScore) + "%"],
                 ["Freshness", String(liveTeamIntel.freshnessScore) + "%"],
-                ["Role balance", String(liveTeamIntel.roleBalanceScore) + "%"],
                 ["Alpha Elo", liveTeamIntel.avgEloA],
                 ["Bravo Elo", liveTeamIntel.avgEloB],
               ].map(([label, value]) => (
