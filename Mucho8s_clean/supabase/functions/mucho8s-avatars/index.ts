@@ -31,7 +31,7 @@ Deno.serve(async (req: Request) => {
 
     const { data, error } = await supabase
       .from("player_accounts")
-      .select("player_id,avatar_url,paypal_url,revolut_url,cmg_url")
+      .select("player_id,avatar_url,paypal_url,revolut_url,cmg_url,twitch_channel")
       .not("player_id", "is", null);
 
     if (error) throw error;
@@ -46,6 +46,7 @@ Deno.serve(async (req: Request) => {
             paypalUrl: row?.paypal_url ? String(row.paypal_url) : "",
             revolutUrl: row?.revolut_url ? String(row.revolut_url) : "",
             cmgUrl: row?.cmg_url ? String(row.cmg_url) : "",
+            twitchChannel: row?.twitch_channel ? String(row.twitch_channel) : "",
           },
         ])
     );
