@@ -191,7 +191,7 @@ export default function ChallengeInbox() {
 
   return (
     <div className="m8-page-stack">
-      <section className="m8-panel rounded-2xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+      <section className="m8-panel m8-mode-zone is-mucho1v1 rounded-2xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
         <div>
           <div className="brand-kicker mb-1">Mucho1v1</div>
           <h2 className="font-display text-3xl font-black tracking-[-0.03em]">Mucho1v1 Inbox</h2>
@@ -213,7 +213,7 @@ export default function ChallengeInbox() {
               variant="ghost"
               className={`rounded-xl border ${
                 tab === key
-                  ? "bg-white text-black border-white hover:bg-white"
+                  ? "m8-mode-tab"
                   : "bg-[#0F1218] border-[#222834] text-[#AAB1BE] hover:text-white"
               }`}
             >
@@ -252,7 +252,7 @@ export default function ChallengeInbox() {
             return (
               <div
                 key={challenge.id}
-                className={`m8-panel rounded-2xl p-4 sm:p-5 ${
+                className={`m8-panel m8-mode-zone is-mucho1v1 rounded-2xl p-4 sm:p-5 ${
                   won ? "border-emerald-500/25" : lost ? "border-red-500/25" : ""
                 }`}
               >
