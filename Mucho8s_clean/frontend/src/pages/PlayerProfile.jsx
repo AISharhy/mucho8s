@@ -102,21 +102,21 @@ const trophySourceLabel = (trophy) => {
 const MerdaRainOverlay = ({ count = 0, visible = false }) => {
   const value = Math.max(0, Number(count || 0));
   const particles = useMemo(() => {
-    const total = value >= 5 ? 36 : value >= 3 ? 24 : value > 0 ? 14 : 0;
+    const total = value >= 5 ? 34 : value >= 3 ? 26 : value > 0 ? 20 : 0;
 
     return Array.from({ length: total }, (_, index) => ({
       id: index,
-      left: 4 + ((index * 37 + value * 11) % 92),
-      delay: ((index * 0.071) % 0.62).toFixed(2),
-      duration: (0.95 + ((index * 17) % 5) * 0.12).toFixed(2),
+      left: 2 + ((index * 37 + value * 11) % 96),
+      delay: ((index * 0.067) % 0.58).toFixed(2),
+      duration: (1.35 + ((index * 17) % 6) * 0.11).toFixed(2),
       size: value >= 5
-        ? 18 + ((index * 7) % 13)
+        ? 26 + ((index * 7) % 13)
         : value >= 3
-          ? 16 + ((index * 5) % 10)
-          : 14 + ((index * 3) % 7),
-      drift: -22 + ((index * 19) % 45),
-      rotate: -24 + ((index * 29) % 55),
-      opacity: value >= 5 ? 0.94 : value >= 3 ? 0.82 : 0.7,
+          ? 24 + ((index * 5) % 10)
+          : 22 + ((index * 3) % 9),
+      drift: -34 + ((index * 19) % 69),
+      rotate: -28 + ((index * 29) % 61),
+      opacity: value >= 5 ? 0.98 : value >= 3 ? 0.94 : 0.9,
     }));
   }, [value]);
 
@@ -132,6 +132,7 @@ const MerdaRainOverlay = ({ count = 0, visible = false }) => {
             left: `${particle.left}%`,
             fontSize: `${particle.size}px`,
             opacity: particle.opacity,
+            display: "block",
             "--merda-delay": `${particle.delay}s`,
             "--merda-duration": `${particle.duration}s`,
             "--merda-drift": `${particle.drift}px`,
@@ -208,7 +209,6 @@ export default function PlayerProfile() {
   const [selectedTrophyId, setSelectedTrophyId] = useState("");
   const [showMerdaIntro, setShowMerdaIntro] = useState(false);
   const [showCleanAgain, setShowCleanAgain] = useState(false);
-  const merdaIntroPlayerRef = useRef("");
   const previousMerdaRef = useRef({ playerId: "", count: 0 });
   const merdaCountValue = Math.max(0, Number(player?.merdaCount || 0));
 
@@ -220,13 +220,21 @@ export default function PlayerProfile() {
   }, [id, publicProfile.paypalUrl, publicProfile.revolutUrl]);
 
   useEffect(() => {
-    if (!player?.id || merdaCountValue <= 0) return undefined;
-    if (merdaIntroPlayerRef.current === String(player.id)) return undefined;
+    if (!player?.id || merdaCountValue <= 0) {
+      setShowMerdaIntro(false);
+      return undefined;
+    }
 
-    merdaIntroPlayerRef.current = String(player.id);
-    setShowMerdaIntro(true);
-    const timer = window.setTimeout(() => setShowMerdaIntro(false), 2500);
-    return () => window.clearTimeout(timer);
+    // Replay the intro whenever this profile is entered/loaded with active MERDA.
+    // A short delayed start also makes it reliable after route/data hydration.
+    setShowMerdaIntro(false);
+    const startTimer = window.setTimeout(() => setShowMerdaIntro(true), 60);
+    const endTimer = window.setTimeout(() => setShowMerdaIntro(false), 2350);
+
+    return () => {
+      window.clearTimeout(startTimer);
+      window.clearTimeout(endTimer);
+    };
   }, [player?.id, merdaCountValue]);
 
   useEffect(() => {
