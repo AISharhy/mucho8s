@@ -197,10 +197,20 @@ const imageUrlFromTag = (tag: string) => {
 
 const originalTileUrl = (url: string) => {
   if (!url) return "";
-  return url.replace(
-    /\/scale-to-width-down\/\d+/i,
-    ""
-  );
+  try {
+    const parsed = new URL(url);
+    parsed.pathname = parsed.pathname.replace(
+      /\/scale-to-width-down\/\d+/i,
+      ""
+    );
+    parsed.search = "";
+    parsed.hash = "";
+    return parsed.toString();
+  } catch {
+    return url
+      .replace(/\/scale-to-width-down\/\d+/i, "")
+      .replace(/[?#].*$/, "");
+  }
 };
 
 const usableImage = (url: string) => {
