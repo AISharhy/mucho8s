@@ -467,7 +467,10 @@ code, .font-mono {
 @media (prefers-reduced-motion: reduce) {
     .dashboard-logo-mark,
     .dashboard-logo-orbit,
-    .dashboard-logo-stage::before {
+    .dashboard-logo-stage::before,
+    .m8-profile-rank-aura,
+    .m8-profile-rank-artwork,
+    .m8-profile-rank-shine::after {
         animation: none !important;
     }
 }
@@ -3785,6 +3788,102 @@ textarea:focus-visible {
     box-shadow:
         0 0 0 1px color-mix(in srgb, var(--profile-rank-color) 28%, transparent),
         0 0 26px color-mix(in srgb, var(--profile-rank-color) 18%, transparent);
+}
+
+
+/* Clean rank motion test: preserves the original Mucho rank artwork. */
+.m8-profile-rank-visual {
+    position: relative;
+    width: 82px;
+    height: 82px;
+    display: grid;
+    place-items: center;
+    isolation: isolate;
+    overflow: visible;
+}
+
+.m8-profile-rank-aura {
+    position: absolute;
+    inset: 7px;
+    z-index: -1;
+    border-radius: 22px;
+    background: color-mix(in srgb, var(--profile-rank-color) 18%, transparent);
+    filter: blur(14px);
+    opacity: .45;
+    transform: scale(.92);
+    animation: m8RankAuraPulse 3.6s ease-in-out infinite;
+}
+
+.m8-profile-rank-visual .m8-profile-rank-artwork {
+    position: relative;
+    z-index: 1;
+    transform: translateZ(0) scale(1);
+    filter:
+        saturate(1.02)
+        drop-shadow(0 6px 12px rgba(0,0,0,.22));
+    animation: m8RankIdleFloat 4.8s ease-in-out infinite;
+    transition:
+        transform .24s ease,
+        filter .24s ease,
+        box-shadow .24s ease;
+}
+
+.m8-profile-rank-shine {
+    position: absolute;
+    z-index: 2;
+    inset: 3px;
+    border-radius: 20px;
+    pointer-events: none;
+    overflow: hidden;
+    opacity: .46;
+    mix-blend-mode: screen;
+}
+
+.m8-profile-rank-shine::after {
+    content: "";
+    position: absolute;
+    top: -30%;
+    left: -58%;
+    width: 34%;
+    height: 160%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,.18),
+        rgba(255,255,255,.48),
+        rgba(255,255,255,.12),
+        transparent
+    );
+    transform: rotate(14deg);
+    animation: m8RankShineSweep 5.8s cubic-bezier(.22,.61,.36,1) infinite;
+}
+
+.m8-profile-rank-card:hover .m8-profile-rank-artwork {
+    transform: translateY(-1px) scale(1.035);
+    filter:
+        saturate(1.06)
+        drop-shadow(0 8px 16px color-mix(in srgb, var(--profile-rank-color) 26%, rgba(0,0,0,.28)));
+}
+
+.m8-profile-rank-card:hover .m8-profile-rank-aura {
+    opacity: .62;
+}
+
+@keyframes m8RankIdleFloat {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-2px) scale(1.012); }
+}
+
+@keyframes m8RankAuraPulse {
+    0%, 100% { opacity: .34; transform: scale(.92); }
+    50% { opacity: .55; transform: scale(1.03); }
+}
+
+@keyframes m8RankShineSweep {
+    0%, 68% { transform: translateX(0) rotate(14deg); opacity: 0; }
+    72% { opacity: .28; }
+    82% { opacity: .52; }
+    92%, 100% { transform: translateX(430%) rotate(14deg); opacity: 0; }
 }
 
 .m8-profile-metric-card {
