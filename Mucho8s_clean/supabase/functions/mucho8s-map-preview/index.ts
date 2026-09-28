@@ -195,11 +195,11 @@ const imageUrlFromTag = (tag: string) => {
   return "";
 };
 
-const highResTileUrl = (url: string) => {
+const originalTileUrl = (url: string) => {
   if (!url) return "";
   return url.replace(
     /\/scale-to-width-down\/\d+/i,
-    "/scale-to-width-down/1000"
+    ""
   );
 };
 
@@ -240,7 +240,7 @@ const findTileImage = (section: string, mapName: string) => {
       .map((match) => imageUrlFromTag(match[0]))
       .filter(usableImage);
 
-    if (imageTags[0]) return highResTileUrl(imageTags[0]);
+    if (imageTags[0]) return originalTileUrl(imageTags[0]);
   }
 
   return "";
