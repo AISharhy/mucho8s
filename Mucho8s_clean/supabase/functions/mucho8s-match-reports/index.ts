@@ -553,6 +553,23 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
   const alreadyExists = existingMatches.some((match: any) => String(match?.id) === String(report.match_id));
 
   const verifiedAt = new Date().toISOString();
+  let liveDurationMinutes: number | null = null;
+
+  const { data: liveTiming, error: liveTimingError } = await supabase
+    .from("live_team_matches")
+    .select("created_at,closed_at")
+    .eq("match_id", report.match_id)
+    .maybeSingle();
+
+  if (liveTimingError) throw liveTimingError;
+  if (liveTiming?.created_at) {
+    const startedAt = new Date(liveTiming.created_at).getTime();
+    const finishedAt = new Date(liveTiming.closed_at || report.played_at || verifiedAt).getTime();
+    if (Number.isFinite(startedAt) && Number.isFinite(finishedAt) && finishedAt >= startedAt) {
+      liveDurationMinutes = Math.max(1, Math.round((finishedAt - startedAt) / 60000));
+    }
+  }
+
   let awardedMvpIds: string[] = [];
   let awardedMerdaIds: string[] = [];
 
@@ -597,6 +614,7 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
     const match = {
       id: report.match_id,
       date: report.played_at || report.created_at || verifiedAt,
+      durationMinutes: liveDurationMinutes,
       teamA,
       teamB,
       winner: report.winner,
