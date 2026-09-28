@@ -76,9 +76,13 @@ create table if not exists public.player_accounts (
   paypal_url text,
   revolut_url text,
   cmg_url text,
+  twitch_channel text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.player_accounts
+  add column if not exists twitch_channel text;
 
 alter table public.player_accounts enable row level security;
 revoke all on table public.player_accounts from anon, authenticated;
