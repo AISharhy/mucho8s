@@ -1735,3 +1735,329 @@ textarea:focus-visible {
         animation: none !important;
     }
 }
+
+
+/* Rank Guide pyramid */
+.rank-pyramid-stage {
+    position: relative;
+    isolation: isolate;
+    border: 1px solid #2B313D;
+    background:
+        radial-gradient(circle at 50% 12%, rgba(213,163,58,.15), transparent 21rem),
+        radial-gradient(circle at 18% 76%, rgba(255,42,59,.07), transparent 22rem),
+        radial-gradient(circle at 82% 70%, rgba(101,213,211,.06), transparent 22rem),
+        linear-gradient(180deg, #111318 0%, #090B0F 100%);
+    box-shadow: 0 24px 68px rgba(0,0,0,.28);
+}
+
+.rank-pyramid-stage::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 7.5rem;
+    width: min(58vw, 680px);
+    height: min(58vw, 680px);
+    transform: translateX(-50%);
+    border-radius: 999px;
+    border: 1px solid rgba(213,163,58,.12);
+    box-shadow:
+        0 0 0 54px rgba(213,163,58,.018),
+        0 0 0 108px rgba(213,163,58,.012);
+    pointer-events: none;
+}
+
+.rank-pyramid-grid {
+    position: absolute;
+    inset: 0;
+    opacity: .13;
+    pointer-events: none;
+    background-image:
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size: 34px 34px;
+    mask-image: radial-gradient(circle at 50% 45%, #000 0%, transparent 72%);
+}
+
+.rank-pyramid-ambient {
+    position: absolute;
+    top: 15%;
+    bottom: 4%;
+    width: 18rem;
+    filter: blur(24px);
+    opacity: .38;
+    pointer-events: none;
+}
+
+.rank-pyramid-ambient-left {
+    left: -8rem;
+    background: radial-gradient(ellipse, rgba(213,163,58,.16), transparent 66%);
+}
+
+.rank-pyramid-ambient-right {
+    right: -8rem;
+    background: radial-gradient(ellipse, rgba(255,42,59,.11), transparent 66%);
+}
+
+.rank-pyramid-wrap {
+    position: relative;
+    z-index: 2;
+    width: min(100%, 980px);
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.rank-pyramid-step {
+    position: relative;
+    min-width: 290px;
+    transition: transform .2s ease, filter .2s ease;
+}
+
+.rank-pyramid-step:hover {
+    transform: translateY(-2px) scale(1.006);
+    filter: brightness(1.09);
+    z-index: 3;
+}
+
+.rank-pyramid-tier {
+    position: relative;
+    min-height: 76px;
+    padding: .9rem 4.25rem .9rem 4.7rem;
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    clip-path: polygon(7% 0, 93% 0, 100% 100%, 0 100%);
+    overflow: hidden;
+    color: var(--rank-color);
+    border: 1px solid transparent;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.015) 30%, rgba(0,0,0,.18)),
+        radial-gradient(circle at 50% 110%, var(--rank-glow), transparent 55%),
+        linear-gradient(100deg, color-mix(in srgb, var(--rank-accent) 76%, #080A0E), #11151D 52%, color-mix(in srgb, var(--rank-accent) 58%, #080A0E));
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.09),
+        inset 0 -1px 0 rgba(255,255,255,.04),
+        0 0 22px var(--rank-glow);
+}
+
+.rank-pyramid-tier::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    clip-path: inherit;
+    border-top: 2px solid var(--rank-color);
+    border-bottom: 2px solid var(--rank-color);
+    opacity: .82;
+    filter: drop-shadow(0 0 7px var(--rank-glow));
+}
+
+.rank-pyramid-tier::after {
+    content: "";
+    position: absolute;
+    inset: 1px 8%;
+    opacity: .12;
+    pointer-events: none;
+    background:
+        linear-gradient(116deg, transparent 24%, rgba(255,255,255,.28) 25%, transparent 27%),
+        linear-gradient(58deg, transparent 68%, rgba(255,255,255,.20) 69%, transparent 71%);
+}
+
+.rank-pyramid-shine {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: .46;
+    background: linear-gradient(115deg, transparent 8%, rgba(255,255,255,.10) 26%, transparent 43%);
+    transform: translateX(-24%);
+    transition: transform .45s ease;
+}
+
+.rank-pyramid-step:hover .rank-pyramid-shine {
+    transform: translateX(34%);
+}
+
+.rank-pyramid-icon {
+    position: relative;
+    z-index: 2;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border: 1px solid color-mix(in srgb, var(--rank-color) 46%, transparent);
+    background: rgba(8,10,14,.54);
+    color: var(--rank-color);
+    box-shadow:
+        inset 0 0 16px var(--rank-glow),
+        0 0 18px var(--rank-glow);
+}
+
+.rank-pyramid-copy {
+    position: relative;
+    z-index: 2;
+    min-width: 0;
+    flex: 1;
+    text-align: center;
+}
+
+.rank-pyramid-title {
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: clamp(.95rem, 1.8vw, 1.32rem);
+    font-weight: 900;
+    letter-spacing: .075em;
+    text-transform: uppercase;
+    color: var(--rank-color);
+    text-shadow: 0 0 15px var(--rank-glow);
+}
+
+.rank-pyramid-meta {
+    margin-top: .28rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .42rem;
+    color: #C5CBD5;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: clamp(.57rem, 1.1vw, .7rem);
+    font-weight: 700;
+    letter-spacing: .04em;
+    white-space: nowrap;
+}
+
+.rank-pyramid-dot {
+    color: var(--rank-color);
+    opacity: .78;
+}
+
+.rank-pyramid-arrow {
+    position: relative;
+    z-index: 2;
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    color: var(--rank-color);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem;
+    font-weight: 900;
+    text-shadow: 0 0 10px var(--rank-glow);
+}
+
+.rank-pyramid-connector {
+    height: 18px;
+    position: relative;
+    display: grid;
+    place-items: center;
+}
+
+.rank-pyramid-connector span {
+    width: 12px;
+    height: 12px;
+    transform: rotate(45deg);
+    border-top: 2px solid rgba(237,219,175,.80);
+    border-left: 2px solid rgba(237,219,175,.80);
+    filter: drop-shadow(0 0 6px rgba(213,163,58,.24));
+}
+
+.rank-pyramid-masters .rank-pyramid-tier,
+.rank-pyramid-tier.rank-pyramid-masters {
+    min-height: 86px;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.14),
+        0 0 26px rgba(255,79,104,.22),
+        0 0 52px rgba(213,163,58,.09);
+}
+
+.rank-pyramid-masters .rank-pyramid-title,
+.rank-pyramid-tier.rank-pyramid-masters .rank-pyramid-title {
+    font-size: clamp(1rem, 2vw, 1.45rem);
+}
+
+.rank-pyramid-base-glow {
+    width: min(90%, 920px);
+    height: 24px;
+    margin: -3px auto 0;
+    border-radius: 999px;
+    background: radial-gradient(ellipse, rgba(213,163,58,.22), transparent 68%);
+    filter: blur(7px);
+    opacity: .75;
+}
+
+.rank-guide-info-card {
+    border-radius: 1rem;
+    padding: 1rem;
+    border: 1px solid #242B36;
+    background: rgba(12,15,21,.80);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.02);
+}
+
+.rank-guide-info-card-top {
+    border-color: rgba(255,79,104,.22);
+    background:
+        radial-gradient(circle at 90% 0%, rgba(255,79,104,.08), transparent 11rem),
+        rgba(12,15,21,.84);
+}
+
+@media (max-width: 720px) {
+    .rank-pyramid-stage::before {
+        top: 9rem;
+        width: 30rem;
+        height: 30rem;
+    }
+
+    .rank-pyramid-step {
+        min-width: 0;
+    }
+
+    .rank-pyramid-tier {
+        min-height: 68px;
+        padding: .75rem 2.2rem .75rem 2.55rem;
+        gap: .55rem;
+    }
+
+    .rank-pyramid-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
+    }
+
+    .rank-pyramid-arrow {
+        display: none;
+    }
+
+    .rank-pyramid-meta {
+        white-space: normal;
+        flex-wrap: wrap;
+        line-height: 1.25;
+    }
+}
+
+@media (max-width: 500px) {
+    .rank-pyramid-step {
+        width: 100% !important;
+    }
+
+    .rank-pyramid-tier {
+        clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%);
+        padding-inline: 1.7rem;
+    }
+
+    .rank-pyramid-connector {
+        height: 12px;
+    }
+
+    .rank-pyramid-title {
+        letter-spacing: .04em;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rank-pyramid-step,
+    .rank-pyramid-shine {
+        transition: none !important;
+    }
+}
