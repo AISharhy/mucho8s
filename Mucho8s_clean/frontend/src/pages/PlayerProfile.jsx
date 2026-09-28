@@ -608,7 +608,7 @@ export default function PlayerProfile() {
       { label: "Untouchable", detail: "8 wins in a row", icon: Rocket, unlocked: bestWinStreak >= 8 },
 
       { label: "First Chall", detail: "Win 1 challenge", icon: Landmark, unlocked: challengeStats.wins >= 1 },
-      { label: "Chall Grinder", detail: "Win 4 challenges", icon: Swords, unlocked: challengeStats.wins >= 4 },
+      { label: "Chall Grinder", detail: "Win 4 challenges", icon: Landmark, unlocked: challengeStats.wins >= 4 },
       { label: "Veteran challenges", detail: "Win 10 challenges", icon: Medal, unlocked: challengeStats.wins >= 10 },
       { label: "Chall King", detail: "Win 20 challenges", icon: Crown, unlocked: challengeStats.wins >= 20 },
 
