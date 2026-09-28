@@ -88,8 +88,8 @@ export default function ChallengeLeaderboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <div className="brand-kicker mb-1">Competition</div>
+      <div className="m8-panel m8-mode-zone is-mucho1v1 rounded-2xl p-5 sm:p-6">
+        <div className="brand-kicker mb-1">Mucho1v1 Competition</div>
         <h2 className="font-display text-3xl font-extrabold">Challenge Leaderboard</h2>
         <p className="text-sm text-muted-foreground mt-1">
           {competitionData?.current?.season_name || `Season ${currentSeason}`} · €1 = 1 point. Money Won and Money Lost keep the real value of every verified match.
@@ -101,7 +101,7 @@ export default function ChallengeLeaderboard() {
           No verified challenges yet.
         </div>
       ) : (
-        <div className="card-surface rounded-2xl overflow-hidden">
+        <div className="card-surface m8-mode-zone is-mucho1v1 rounded-2xl overflow-hidden">
           <div className="hidden md:grid grid-cols-[70px_1fr_105px_105px_105px_115px_115px] gap-3 px-4 py-3 border-b border-[#1D222C] text-[10px] uppercase tracking-widest text-muted-foreground">
             <div>Rank</div>
             <div>Player</div>
