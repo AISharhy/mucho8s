@@ -2,7 +2,6 @@ import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
-  UsersRound,
   Search,
   Swords,
   Landmark,
@@ -227,7 +226,7 @@ export default function Play() {
               kicker="Money Team Play"
               title="Mucho8s"
               description="Build the teams, set the money pairings and send a Mucho8s live."
-              icon={UsersRound}
+              icon={Swords}
               accent="#FF2A3B"
             />
 
@@ -258,7 +257,7 @@ export default function Play() {
               className="w-full h-12 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-black inline-flex items-center justify-between px-4 transition-all"
             >
               <span className="inline-flex items-center gap-2">
-                <UsersRound size={17} />
+                <Swords size={17} />
                 OPEN MUCHO8S
               </span>
               <ArrowRight size={18} />
