@@ -167,15 +167,27 @@ const TeamList = ({
 
       return (
         <div key={id} className="flex items-start gap-2.5 min-w-0">
-          <PlayerAvatar
-            name={p.name}
-            elo={p.currentElo}
-            size={30}
-            avatarUrl={playerAvatars?.[id]}
-          />
+          <Link
+            to={`/players/${id}`}
+            className="shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-[#9146FF]/60"
+            aria-label={`Open ${p.name} profile`}
+          >
+            <PlayerAvatar
+              name={p.name}
+              elo={p.currentElo}
+              size={30}
+              avatarUrl={playerAvatars?.[id]}
+            />
+          </Link>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold truncate flex items-center gap-1.5">
-              <span className="truncate">{p.name}</span>
+              <Link
+                to={`/players/${id}`}
+                className="truncate hover:text-[#B88CFF] transition-colors"
+                aria-label={`Open ${p.name} profile`}
+              >
+                {p.name}
+              </Link>
               <MerdaBadge count={p.merdaCount} compact />
               {isMvp && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#D5A33A]/[0.08] border border-[#D5A33A]/20 text-[#D5A33A] text-[8px] font-black uppercase tracking-wider shrink-0">
@@ -1014,9 +1026,13 @@ export default function Matches() {
                   >
                     <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-sm min-w-0">
                       <div className="min-w-0 flex items-center gap-1.5">
-                        <span className={`font-bold truncate ${winnerId === pair.playerAId ? "text-emerald-400" : "text-red-400"}`}>
+                        <Link
+                          to={`/players/${pair.playerAId}`}
+                          className={`font-bold truncate hover:underline ${winnerId === pair.playerAId ? "text-emerald-400" : "text-red-400"}`}
+                          aria-label={`Open ${alpha?.name || "Alpha"} profile`}
+                        >
                           {alpha?.name || "Alpha"}
-                        </span>
+                        </Link>
                         <span className={`shrink-0 text-[8px] font-black px-1.5 py-0.5 rounded ${winnerId === pair.playerAId ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
                           {winnerId === pair.playerAId ? "W" : "L"}
                         </span>
@@ -1026,9 +1042,13 @@ export default function Matches() {
                         <span className={`shrink-0 text-[8px] font-black px-1.5 py-0.5 rounded ${winnerId === pair.playerBId ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
                           {winnerId === pair.playerBId ? "W" : "L"}
                         </span>
-                        <span className={`font-bold truncate ${winnerId === pair.playerBId ? "text-emerald-400" : "text-red-400"}`}>
+                        <Link
+                          to={`/players/${pair.playerBId}`}
+                          className={`font-bold truncate hover:underline ${winnerId === pair.playerBId ? "text-emerald-400" : "text-red-400"}`}
+                          aria-label={`Open ${bravo?.name || "Bravo"} profile`}
+                        >
                           {bravo?.name || "Bravo"}
-                        </span>
+                        </Link>
                       </div>
                     </div>
                     <div className="flex items-center justify-between gap-3 mt-2.5 pt-2 border-t border-[#1D222C]">
