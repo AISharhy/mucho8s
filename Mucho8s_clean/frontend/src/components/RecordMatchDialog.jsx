@@ -519,7 +519,7 @@ export const RecordMatchDialog = ({
               </div>
               <div>
                 <span className="font-semibold text-[#C79A6B]">MERDA 💩</span>
-                <span className="text-muted-foreground"> · Every 3 consecutive losses = +1 MERDA. Win 1 match to clear 1 MERDA.</span>
+                <span className="text-muted-foreground"> · MERDA starts at 3 straight losses. Every extra loss in the same streak adds +1 MERDA. Every win clears only 1 MERDA.</span>
               </div>
               <div>
                 <span className="font-semibold text-magma">MVP BOUNTY</span>
