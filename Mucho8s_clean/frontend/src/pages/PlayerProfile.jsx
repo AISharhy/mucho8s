@@ -49,6 +49,7 @@ import {
   BarChart3,
   List,
   Settings,
+  Landmark,
 } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer, Tooltip, YAxis, XAxis, CartesianGrid } from "recharts";
 import { toast } from "sonner";
