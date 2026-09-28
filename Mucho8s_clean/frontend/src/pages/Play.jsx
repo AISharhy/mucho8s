@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 const StepRow = ({ number, title, text, children }) => (
-  <div className="rounded-2xl border border-[#222834] bg-[#0F1218] p-3.5">
+  <div className="m8-play-step">
     <div className="flex items-start gap-3">
       <div className="w-7 h-7 shrink-0 rounded-lg border border-[#303744] bg-[#151923] flex items-center justify-center text-[11px] font-black text-[#C8CED8]">
         {number}
@@ -72,19 +72,17 @@ const PaymentLinks = ({ profile, compact = false }) => {
 };
 
 const ModeHeader = ({ kicker, title, description, icon: Icon, accent }) => (
-  <div className="flex items-start justify-between gap-4">
+  <div className="m8-play-mode-header">
     <div>
-      <div className="brand-kicker mb-2">{kicker}</div>
-      <h2 className="font-display text-2xl sm:text-[30px] font-black tracking-[-0.035em]">
-        {title}
-      </h2>
-      <p className="text-sm text-[#8D95A4] mt-2 leading-6 max-w-md">
+      <div className="m8-play-mode-kicker" style={{ color: accent }}>{kicker}</div>
+      <h2 className="m8-play-mode-title">{title}</h2>
+      <p className="m8-play-mode-description">
         {description}
       </p>
     </div>
 
     <div
-      className="w-12 h-12 rounded-xl border flex items-center justify-center shrink-0"
+      className="m8-play-mode-icon"
       style={{
         color: accent,
         borderColor: accent + "38",
@@ -194,11 +192,12 @@ export default function Play() {
 
   return (
     <div className="m8-page-stack">
-      <section className="m8-panel rounded-[22px] p-5 sm:p-6">
-        <div className="brand-kicker mb-1">Play</div>
+      <section className="m8-play-esports-hero">
+        <div className="m8-play-hero-scan" aria-hidden="true" />
+        <div className="brand-kicker mb-1 text-magma">Play</div>
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3">
           <div>
-            <h1 className="font-display text-3xl sm:text-4xl font-black tracking-[-0.04em]">
+            <h1 className="m8-play-hero-title">
               Choose your mode
             </h1>
             <p className="text-sm text-[#7F8795] mt-2">
@@ -206,20 +205,22 @@ export default function Play() {
             </p>
           </div>
 
-          <div className="hidden sm:flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-[#697181]">
-            <span className="m8-pill">Mucho8s</span>
-            <span className="m8-pill">Mucho1v1</span>
-            <span className="m8-pill text-[#697181]">MuchoTourney · Soon</span>
+          <div className="m8-play-mode-tabs" aria-label="Play modes">
+            <span className="m8-play-mode-tab is-8s"><Swords size={12} /> Mucho8s</span>
+            <span className="m8-play-mode-tab is-1v1"><Landmark size={12} /> Mucho1v1</span>
+            <span className="m8-play-mode-tab is-tourney"><Trophy size={12} /> MuchoTourney · Soon</span>
           </div>
         </div>
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+      <section className="m8-play-esports-grid">
         <div
-          className="relative overflow-hidden rounded-[22px] border border-[#2A313D] bg-[#10151D] p-5 sm:p-6 flex flex-col min-h-[500px]"
+          className="m8-play-mode-card is-8s"
           data-testid="play-8s-card"
         >
-          <div className="absolute w-72 h-72 -top-40 -right-24 rounded-full bg-magma/10 blur-3xl pointer-events-none" />
+          <div className="m8-play-card-grid" aria-hidden="true" />
+          <div className="m8-play-card-beam" aria-hidden="true" />
+          <div className="m8-play-card-emblem" aria-hidden="true"><Swords size={150} /></div>
 
           <div className="relative z-10">
             <ModeHeader
@@ -230,7 +231,7 @@ export default function Play() {
               accent="#FF2A3B"
             />
 
-            <div className="mt-6 space-y-2.5">
+            <div className="m8-play-step-stack">
               <StepRow
                 number="1"
                 title="Choose game & mode"
@@ -254,7 +255,7 @@ export default function Play() {
           <div className="relative z-10 mt-auto pt-6">
             <Link
               to="/team-builder"
-              className="w-full h-12 rounded-xl bg-magma hover:bg-[#ff3c4c] text-white font-black inline-flex items-center justify-between px-4 transition-all"
+              className="m8-play-cta is-8s"
             >
               <span className="inline-flex items-center gap-2">
                 <Swords size={17} />
@@ -269,25 +270,25 @@ export default function Play() {
           className="relative overflow-hidden rounded-[22px] border border-[#2A313D] bg-[#10151D] p-5 sm:p-6 flex flex-col min-h-[500px]"
           data-testid="play-money-chall-card"
         >
-          <div className="absolute w-64 h-64 -top-40 -right-24 rounded-full bg-emerald-500/[0.08] blur-3xl pointer-events-none" />
+          <div className="m8-play-card-grid" aria-hidden="true" />
+          <div className="m8-play-card-beam" aria-hidden="true" />
+          <div className="m8-play-card-emblem" aria-hidden="true"><Landmark size={150} /></div>
 
-          <div className="relative z-10 flex items-center justify-between gap-4">
+          <div className="relative z-10 m8-play-mode-header">
             <div className="min-w-0">
-              <div className="brand-kicker mb-1 text-emerald-400">Direct Money 1v1</div>
-              <h2 className="font-display text-2xl sm:text-[28px] font-black tracking-[-0.035em]">
-                Mucho1v1
-              </h2>
-              <p className="text-xs sm:text-sm text-[#7F8795] mt-1.5">
+              <div className="m8-play-mode-kicker text-emerald-400">Direct Money 1v1</div>
+              <h2 className="m8-play-mode-title">Mucho1v1</h2>
+              <p className="m8-play-mode-description">
                 Pick one opponent, choose the stake and send a Mucho1v1.
               </p>
             </div>
 
-            <div className="w-10 h-10 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] flex items-center justify-center shrink-0">
+            <div className="m8-play-mode-icon is-1v1">
               <Landmark size={18} className="text-emerald-400" />
             </div>
           </div>
 
-          <div className="relative z-10 mt-5 rounded-2xl border border-[#222834] bg-[#0F1218] p-3.5">
+          <div className="m8-play-control-panel relative z-10 mt-5">
             <div className="flex items-center justify-between gap-3 mb-2.5">
               <div>
                 <div className="text-[10px] uppercase tracking-[0.16em] text-[#697181]">
@@ -372,7 +373,268 @@ export default function Play() {
             </div>
           </div>
 
-          <div className="relative z-10 mt-3 rounded-2xl border border-[#222834] bg-[#0F1218] p-3.5">
+          <div className="m8-play-control-panel relative z-10 mt-3">
+            <div className="grid grid-cols-1 md:grid-cols-[1.35fr_0.9fr] gap-4">
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.16em] text-[#697181] mb-2">
+                  Stake
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  {[5, 10, 20].map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setAmount(String(value))}
+                      className={`h-9 min-w-12 px-3 rounded-lg border text-[11px] font-black transition-all ${
+                        String(amount) === String(value)
+                          ? "bg-emerald-400 text-black border-emerald-400"
+                          : "bg-[#151923] border-[#2A303B] text-[#B8C0CD] hover:border-[#3A424F]"
+                      }`}
+                    >
+                      €{value}
+                    </button>
+                  ))}
+
+                  <div className="relative min-w-0 flex-1">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                      €
+                    </span>
+                    <Input
+                      type="number"
+                      min="0.5"
+                      step="0.5"
+                      value={amount}
+                      onChange={(event) => setAmount(event.target.value)}
+                      className="h-9 pl-6 bg-[#151923] border-[#2A303B] text-xs font-mono rounded-lg"
+                      aria-label="Challenge amount"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.16em] text-[#697181] mb-2">
+                  Payment
+                </div>
+
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    ["paypal", "PayPal", targetHasPayPal],
+                    ["revolut", "Revolut", targetHasRevolut],
+                  ].map(([key, label, available]) => {
+                    const unavailable = Boolean(target) && !available;
+
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        disabled={unavailable}
+                        onClick={() => setPlatform(key)}
+                        title={
+                          unavailable
+                            ? `${target?.name || "Player"} has not linked ${label}`
+                            : label
+                        }
+                        className={`h-9 rounded-lg border text-[11px] font-black transition-all ${
+                          unavailable
+                            ? "bg-[#11151C] border-[#202631] text-[#555E6B] cursor-not-allowed"
+                            : platform === key
+                              ? "bg-emerald-400 text-black border-emerald-400"
+                              : "bg-[#151923] border-[#2A303B] text-[#B8C0CD] hover:border-[#3A424F]"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {target && !targetHasPayPal && !targetHasRevolut && (
+            <div className="relative z-10 mt-2.5 rounded-xl border border-red-500/15 bg-red-500/[0.04] px-3 py-2 text-[10px] text-red-300/80 flex items-center gap-2">
+              <Link2Off size={12} />
+              {target.name} has not linked PayPal or Revolut yet.
+            </div>
+          )}
+
+          <div className="relative z-10 mt-auto pt-4">
+            <Button
+              onClick={sendQuickChallenge}
+              disabled={Boolean(sending) || (Boolean(discordSession) && !canSend)}
+              className="m8-play-cta is-1v1"
+              data-testid="quick-chall-send"
+            >
+              <WalletCards size={15} className="mr-2" />
+              {!discordSession
+                ? "CONNECT DISCORD"
+                : sending
+                  ? "SENDING..."
+                  : target
+                    ? `SEND MUCHO1V1 · €${Number.isFinite(numericAmount) ? numericAmount.toFixed(2) : "0.00"}`
+                    : "CHOOSE AN OPPONENT"}
+            </Button>
+
+            {target && (
+              <div className="text-[10px] text-center text-[#697181] mt-2">
+                vs {target.name} · {platform === "paypal" ? "PayPal" : "Revolut"}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="m8-play-tourney-wrap">
+        <div
+          className="m8-play-tourney-card"
+          data-testid="play-tournaments-coming-soon"
+        >
+          <div className="m8-play-tourney-grid" aria-hidden="true" />
+          <div className="m8-play-tourney-stage" aria-hidden="true"><Trophy size={165} /></div>
+          <div className="relative z-10 h-full flex flex-col">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="brand-kicker">Competition Events</div>
+                  <span className="h-6 px-2 rounded-lg border border-[#D5A33A]/20 bg-[#D5A33A]/[0.06] text-[#D5A33A] inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-[0.14em]">
+                    <Clock3 size={10} />
+                    Coming Soon
+                  </span>
+                </div>
+                <h2 className="font-display text-2xl sm:text-[28px] font-black tracking-[-0.035em]">
+                  MuchoTourney
+                </h2>
+                <p className="text-sm text-[#7F8795] mt-2 max-w-md">
+                  Join organized events with team registration, brackets, match progression and tournament history.
+                </p>
+              </div>
+
+              <div className="m8-play-mode-icon is-tourney">
+                <Trophy size={19} className="text-[#D5A33A]" />
+              </div>
+            </div>
+
+            <div className="mt-auto pt-5 flex flex-wrap items-center gap-2">
+              <span className="m8-pill">Brackets</span>
+              <span className="m8-pill">Teams</span>
+              <span className="m8-pill">Live Progression</span>
+              <span className="m8-pill">History</span>
+            </div>
+
+            <div className="m8-play-tourney-soon">
+              <span>Coming Soon</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}className="m8-play-mode-card is-1v1"merald-500/[0.08] blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <div className="brand-kicker mb-1 text-emerald-400">Direct Money 1v1</div>
+              <h2 className="font-display text-2xl sm:text-[28px] font-black tracking-[-0.035em]">
+                Mucho1v1
+              </h2>
+              <p className="text-xs sm:text-sm text-[#7F8795] mt-1.5">
+                Pick one opponent, choose the stake and send a Mucho1v1.
+              </p>
+            </div>
+
+            <div className="w-10 h-10 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] flex items-center justify-center shrink-0">
+              <Landmark size={18} className="text-emerald-400" />
+            </div>
+          </div>
+
+          <div className="m8-play-control-panel relative z-10 mt-5">
+            <div className="flex items-center justify-between gap-3 mb-2.5">
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.16em] text-[#697181]">
+                  Opponent
+                </div>
+                <div className="text-sm font-bold mt-0.5">
+                  {target ? target.name : "Choose a player"}
+                </div>
+              </div>
+
+              {target && (
+                <div className="flex items-center gap-2">
+                  <PaymentLinks profile={targetProfile} />
+                  <PlayerAvatar
+                    name={target.name}
+                    elo={target.currentElo}
+                    size={30}
+                    avatarUrl={playerAvatars[target.id]}
+                  />
+                  <EloBadge elo={target.currentElo} />
+                </div>
+              )}
+            </div>
+
+            <div className="relative">
+              <Search
+                size={14}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search opponent..."
+                className="h-10 pl-9 bg-[#151923] border-[#2A303B] rounded-xl"
+                data-testid="quick-chall-search"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2.5 max-h-[154px] overflow-y-auto pr-1">
+              {opponents.map((player) => {
+                const selected = targetId === player.id;
+
+                return (
+                  <button
+                    type="button"
+                    key={player.id}
+                    onClick={() => chooseTarget(player.id)}
+                    className={`group h-11 flex items-center gap-2.5 rounded-xl border px-2.5 text-left transition-all ${
+                      selected
+                        ? "border-emerald-500/50 bg-emerald-500/[0.08]"
+                        : "border-[#202631] bg-[#11151C] hover:border-[#343C49] hover:bg-[#141923]"
+                    }`}
+                    data-testid={`quick-chall-player-${player.id}`}
+                  >
+                    <PlayerAvatar
+                      name={player.name}
+                      elo={player.currentElo}
+                      size={28}
+                      avatarUrl={playerAvatars[player.id]}
+                    />
+                    <span className="font-semibold text-xs truncate flex-1">
+                      {player.name}
+                    </span>
+                    <PaymentLinks
+                      profile={playerProfiles?.[player.id] || null}
+                      compact
+                    />
+                    <span className={`font-mono text-[11px] font-bold ${
+                      selected ? "text-emerald-400" : "text-[#9AA2AF]"
+                    }`}>
+                      {Number(player.currentElo || 0)}
+                    </span>
+                  </button>
+                );
+              })}
+
+              {opponents.length === 0 && (
+                <div className="sm:col-span-2 h-16 rounded-xl border border-dashed border-[#2A303B] flex items-center justify-center text-xs text-muted-foreground">
+                  No players found
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="m8-play-control-panel relative z-10 mt-3">
             <div className="grid grid-cols-1 md:grid-cols-[1.35fr_0.9fr] gap-4">
               <div>
                 <div className="text-[10px] uppercase tracking-[0.16em] text-[#697181] mb-2">
