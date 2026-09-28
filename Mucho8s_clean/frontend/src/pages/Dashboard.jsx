@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar, EloBadge, RankBadge, RankProgress } from "@/components/shared";
+import { tierOf } from "@/lib/elo";
 import ModeBadge, { isDirectMucho1v1 } from "@/components/ModeBadge";
 import {
   TROPHY8S_RULES,
@@ -507,10 +508,17 @@ const PersonalDashboard = ({
 
   const record = `${discordPlayer.wins || 0}W - ${discordPlayer.losses || 0}L`;
   const streak = Number(discordPlayer.currentStreak || 0);
+  const currentTier = tierOf(discordPlayer.currentElo);
 
   return (
     <div className="m8-page-stack">
-      <section className="m8-hero rounded-[22px] p-5 sm:p-7">
+      <section
+        className="m8-hero m8-hero-rank rounded-[22px] p-5 sm:p-7"
+        style={{
+          "--profile-rank-color": currentTier.color,
+          "--profile-rank-accent": currentTier.accent,
+        }}
+      >
         <span className="m8-hero-accent" />
 
         <div className="relative z-10">
@@ -525,7 +533,7 @@ const PersonalDashboard = ({
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
             <div className="relative shrink-0 self-start">
-              <div className="absolute -inset-2 rounded-2xl bg-magma/[0.07] blur-xl" />
+              <div className="absolute -inset-2 rounded-2xl m8-dashboard-rank-avatar-glow blur-xl" />
               <div className="relative">
                 <PlayerAvatar
                   name={discordPlayer.name}
@@ -543,7 +551,7 @@ const PersonalDashboard = ({
               </h2>
 
               <div className="flex flex-wrap items-center gap-2.5 mt-3">
-                <RankBadge elo={discordPlayer.currentElo} />
+                <RankBadge elo={discordPlayer.currentElo} showElo={false} />
                 <span className="font-mono text-xs font-black text-white">
                   {discordPlayer.currentElo} Elo
                 </span>
