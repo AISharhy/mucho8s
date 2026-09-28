@@ -289,11 +289,33 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    return new Response(null, {
-      status: 302,
+    const imageResponse = await fetch(resolved.imageUrl, {
+      redirect: "follow",
+      headers: {
+        "user-agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/153 Safari/537.36",
+        referer: MAPS_PAGE,
+        accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      },
+    });
+
+    const contentType = String(imageResponse.headers.get("content-type") || "");
+    if (!imageResponse.ok || !contentType.toLowerCase().startsWith("image/")) {
+      return new Response("Preview image unavailable", {
+        status: 404,
+        headers: {
+          ...corsHeaders,
+          "Cache-Control": "public, max-age=900",
+          "X-Preview-Source": "callofduty.fandom.com/wiki/Maps",
+        },
+      });
+    }
+
+    return new Response(imageResponse.body, {
+      status: 200,
       headers: {
         ...corsHeaders,
-        Location: resolved.imageUrl,
+        "Content-Type": contentType,
         "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
         "X-Preview-Source": "callofduty.fandom.com/wiki/Maps",
         "X-Preview-Reference": resolved.referenceUrl,
