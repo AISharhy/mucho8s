@@ -502,6 +502,41 @@ code, .font-mono {
     box-shadow: 0 24px 70px rgba(0,0,0,.22);
 }
 
+.m8-hero-rank {
+    border-color: color-mix(in srgb, var(--profile-rank-color) 22%, #272E3A);
+    background:
+        linear-gradient(
+            115deg,
+            color-mix(in srgb, var(--profile-rank-color) 11%, transparent),
+            transparent 34%
+        ),
+        radial-gradient(
+            circle at 90% 10%,
+            color-mix(in srgb, var(--profile-rank-accent) 10%, transparent),
+            transparent 21rem
+        ),
+        linear-gradient(145deg, #141922 0%, #0D1118 68%);
+}
+
+.m8-hero-rank .m8-hero-accent {
+    background: linear-gradient(
+        180deg,
+        transparent,
+        var(--profile-rank-color) 20%,
+        var(--profile-rank-color) 80%,
+        transparent
+    );
+    box-shadow: 0 0 24px color-mix(in srgb, var(--profile-rank-color) 38%, transparent);
+}
+
+.m8-hero-rank .brand-kicker {
+    color: color-mix(in srgb, var(--profile-rank-color) 72%, #8D95A4);
+}
+
+.m8-dashboard-rank-avatar-glow {
+    background: color-mix(in srgb, var(--profile-rank-color) 12%, transparent);
+}
+
 .m8-hero::after {
     content: "";
     position: absolute;
