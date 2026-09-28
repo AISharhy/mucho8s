@@ -6,6 +6,35 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, OPTIONS",
 };
 
+const isTwitchChannelLive = async (channel: string) => {
+  const normalizedChannel = String(channel || "").trim().replace(/^@+/, "");
+  if (!normalizedChannel) return false;
+
+  try {
+    const response = await fetch(
+      `https://decapi.me/twitch/uptime/${encodeURIComponent(normalizedChannel)}`,
+      {
+        headers: {
+          "User-Agent": "Mucho8s/1.0",
+          "Accept": "text/plain",
+        },
+        signal: AbortSignal.timeout(3500),
+      },
+    );
+    const statusText = (await response.text()).trim();
+    const normalized = statusText.toLowerCase();
+
+    return response.ok &&
+      Boolean(statusText) &&
+      !normalized.includes("offline") &&
+      !normalized.includes("not live") &&
+      !normalized.includes("does not exist") &&
+      !normalized.includes("error");
+  } catch {
+    return false;
+  }
+};
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "GET") {
@@ -28,6 +57,7 @@ Deno.serve(async (req: Request) => {
       { data: activeChallenges, error: activeError },
       { data: recentChallenges, error: recentError },
       { data: presence, error: presenceError },
+      { data: twitchAccounts, error: twitchAccountsError },
       { data: config, error: configError },
     ] = await Promise.all([
       supabase
@@ -49,6 +79,12 @@ Deno.serve(async (req: Request) => {
         .order("last_seen_at", { ascending: false })
         .limit(100),
       supabase
+        .from("player_accounts")
+        .select("player_id,twitch_channel")
+        .not("player_id", "is", null)
+        .not("twitch_channel", "is", null)
+        .limit(100),
+      supabase
         .from("competition_config")
         .select("season_number,season_name,season_started_at,updated_at")
         .eq("id", "main")
@@ -58,13 +94,27 @@ Deno.serve(async (req: Request) => {
     if (activeError) throw activeError;
     if (recentError) throw recentError;
     if (presenceError) throw presenceError;
+    if (twitchAccountsError) throw twitchAccountsError;
     if (configError) throw configError;
+
+    const twitchChecks = await Promise.all(
+      (twitchAccounts || []).map(async (row: any) => {
+        const playerId = String(row?.player_id || "").trim();
+        const twitchChannel = String(row?.twitch_channel || "").trim().replace(/^@+/, "");
+        if (!playerId || !twitchChannel) return null;
+
+        const live = await isTwitchChannelLive(twitchChannel);
+        return live ? { player_id: playerId, twitch_channel: twitchChannel } : null;
+      }),
+    );
+    const twitchLivePlayers = twitchChecks.filter(Boolean);
 
     return new Response(JSON.stringify({
       ok: true,
       activeChallenges: activeChallenges || [],
       recentChallenges: recentChallenges || [],
       onlinePlayers: presence || [],
+      twitchLivePlayers,
       competition: config || { season_number: 1, season_name: "Season 1" },
     }), {
       status: 200,
