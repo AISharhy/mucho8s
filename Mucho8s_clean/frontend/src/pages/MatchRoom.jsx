@@ -213,7 +213,7 @@ export default function MatchRoom() {
           bounty,
           nextCount: Math.max(
             1,
-            Number(chasingMvp ? player?.mvpCount : player?.merdaCount || 0) + 1
+            Number((chasingMvp ? player?.mvpCount : player?.merdaCount) || 0) + 1
           ),
         };
       })
