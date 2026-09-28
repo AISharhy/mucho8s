@@ -603,15 +603,15 @@ export const Layout = () => {
                 setAccountOpen(false);
                 setSearchOpen(false);
               }}
-              aria-label={`${twitchLivePlayers.length} Twitch channels live`}
-              title="Twitch channels live"
+              aria-label={`${onlinePlayers.length} players online`}
+              title="Players online"
               aria-expanded={onlineOpen}
               aria-controls="online-players-panel"
               data-testid="header-online-players"
               className="m8-topbar-online"
             >
               <span className="m8-topbar-online-dot" />
-              <span className="font-mono font-black">{twitchLivePlayers.length}</span>
+              <span className="font-mono font-black">{onlinePlayers.length}</span>
               <span>ONLINE</span>
             </button>
             {onlineOpen && (
@@ -626,11 +626,11 @@ export const Layout = () => {
                   <div>
                     <div className="brand-kicker mb-0.5">Presence</div>
                     <div className="font-display font-bold">
-                      {twitchLivePlayers.length} Live
+                      {onlinePlayers.length} Online
                     </div>
                     <div className="text-[10px] mt-1 text-[#B88CFF] inline-flex items-center gap-1">
                       <Twitch size={11} />
-                      <span>Twitch channels streaming now</span>
+                      <span>{twitchLivePlayers.length} live on Twitch</span>
                     </div>
                   </div>
                   <button
@@ -690,7 +690,7 @@ export const Layout = () => {
                       ))}
                     </div>
                   )}
-                </div>                </div>
+                </div>
               </div>
             )}
           </div>
