@@ -9,7 +9,6 @@ import {
   Timer,
   Trash2,
   Trophy,
-  WalletCards,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar } from "@/components/shared";
@@ -18,12 +17,6 @@ import MapPreviewCard from "@/components/MapPreviewCard";
 import LiveMatchChat from "@/components/LiveMatchChat";
 import { analyzeManualTeams } from "@/lib/chemistry";
 import { buildRivalries } from "@/lib/rivalries";
-import {
-  TROPHY8S_RULES,
-  MAX_TROPHY_LEVEL,
-  trophyGoalForLevel,
-  trophyRewardForLevel,
-} from "@/lib/trophyRules";
 import { Button } from "@/components/ui/button";
 import { RecordMatchDialog } from "@/components/RecordMatchDialog";
 import {
@@ -66,6 +59,7 @@ const TeamPanel = ({
   captainId,
   playerMap,
   playerAvatars,
+  stakeByPlayer,
 }) => (
   <div className="rounded-2xl border border-[#222834] bg-[#0F1218] p-4">
     <div
@@ -78,6 +72,7 @@ const TeamPanel = ({
     <div className="space-y-2">
       {ids.map((id) => {
         const player = playerMap[id];
+        const stake = Math.max(0, Number(stakeByPlayer?.[String(id)] || 0));
 
         return (
           <Link
@@ -93,11 +88,16 @@ const TeamPanel = ({
             />
 
             <div className="min-w-0 flex-1">
-              <div className="font-semibold text-sm truncate flex items-center gap-2">
-                {player?.name || "Player"}
+              <div className="font-semibold text-sm flex items-center gap-2 min-w-0">
+                <span className="truncate">{player?.name || "Player"}</span>
                 {String(id) === String(captainId || "") && (
-                  <span className="text-[9px] uppercase tracking-wider text-[#D5A33A] inline-flex items-center gap-1">
+                  <span className="text-[9px] uppercase tracking-wider text-[#D5A33A] inline-flex items-center gap-1 shrink-0">
                     <Crown size={10} /> Captain
+                  </span>
+                )}
+                {stake > 0 && (
+                  <span className="ml-auto shrink-0 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.07] px-2 py-1 font-mono text-[10px] font-black text-emerald-400">
+                    {euro(stake)}
                   </span>
                 )}
               </div>
@@ -144,181 +144,6 @@ export default function MatchRoom() {
     [liveMatches, id]
   );
 
-  const trophyOpportunities = useMemo(() => {
-    const playerId = String(discordPlayer?.id || "");
-    if (!match || !playerId) return [];
-
-    const liveA = Array.isArray(match.team_a) ? match.team_a.map(String) : [];
-    const liveB = Array.isArray(match.team_b) ? match.team_b.map(String) : [];
-    if (![...liveA, ...liveB].includes(playerId)) return [];
-
-    const history = (Array.isArray(matches) ? matches : [])
-      .filter(
-        (item) =>
-          (item.teamA || []).map(String).includes(playerId) ||
-          (item.teamB || []).map(String).includes(playerId)
-      )
-      .sort(
-        (a, b) =>
-          new Date(a?.date || 0).getTime() - new Date(b?.date || 0).getTime()
-      );
-
-    const h2h = new Map();
-    const lastByOpponent = new Map();
-    let streak = 0;
-    let wonValue = 0;
-    let maxWonPairing = 0;
-    let cleanSweepCount = 0;
-    let runItBackCount = 0;
-
-    history.forEach((item) => {
-      const teamA = (item.teamA || []).map(String);
-      const teamB = (item.teamB || []).map(String);
-      const inA = teamA.includes(playerId);
-      const opponents = inA ? teamB : teamA;
-      const winnerSide = item.winner === "B" ? "B" : "A";
-      const won = (inA && winnerSide === "A") || (!inA && winnerSide === "B");
-
-      streak = won
-        ? (streak > 0 ? streak + 1 : 1)
-        : (streak < 0 ? streak - 1 : -1);
-
-      if (won && streak > 0 && streak % 4 === 0) cleanSweepCount += 1;
-
-      const pairing = (Array.isArray(item.pairings) ? item.pairings : []).find(
-        (pair) =>
-          String(pair?.playerAId || "") === playerId ||
-          String(pair?.playerBId || "") === playerId
-      );
-      const amount = Math.max(0, Number(pairing?.amount) || 0);
-
-      if (won && amount > 0) {
-        wonValue += amount;
-        maxWonPairing = Math.max(maxWonPairing, amount);
-      }
-
-      let didRunItBack = false;
-      opponents.forEach((opponentId) => {
-        const key = String(opponentId);
-        const row = h2h.get(key) || { played: 0, wins: 0 };
-        const previous = lastByOpponent.get(key);
-
-        row.played += 1;
-        if (won) row.wins += 1;
-        h2h.set(key, row);
-
-        if (won && previous === "L") didRunItBack = true;
-        lastByOpponent.set(key, won ? "W" : "L");
-      });
-      if (didRunItBack) runItBackCount += 1;
-    });
-
-    let maxH2HPlayed = 0;
-    let maxH2HWins = 0;
-    h2h.forEach((row) => {
-      maxH2HPlayed = Math.max(maxH2HPlayed, Number(row?.played || 0));
-      maxH2HWins = Math.max(maxH2HWins, Number(row?.wins || 0));
-    });
-
-    const currentLevels = playerMap?.[playerId]?.trophy8sLevels || {};
-    const opportunities = [];
-
-    const addIfReached = (trophyId, potentialValue, detail) => {
-      const rule = TROPHY8S_RULES[trophyId];
-      const level = Math.max(0, Number(currentLevels?.[trophyId] || 0));
-      if (!rule || level >= MAX_TROPHY_LEVEL) return;
-
-      const nextLevel = level + 1;
-      const goal = trophyGoalForLevel(rule, nextLevel);
-      if (Number(potentialValue || 0) < goal) return;
-
-      opportunities.push({
-        id: trophyId,
-        title: rule.title,
-        level: nextLevel,
-        goal,
-        reward: trophyRewardForLevel(rule, nextLevel),
-        detail,
-      });
-    };
-
-    const nextWinStreak = streak > 0 ? streak + 1 : 1;
-    const nextCleanSweepCount =
-      nextWinStreak > 0 && nextWinStreak % 4 === 0
-        ? cleanSweepCount + 1
-        : cleanSweepCount;
-
-    const livePairing = (Array.isArray(match.pairings) ? match.pairings : []).find(
-      (pair) =>
-        String(pair?.playerAId || "") === playerId ||
-        String(pair?.playerBId || "") === playerId
-    );
-    const liveAmount = Math.max(0, Number(livePairing?.amount) || 0);
-
-    const liveOpponents = liveA.includes(playerId) ? liveB : liveA;
-    let nextMaxPlayed = maxH2HPlayed;
-    let nextMaxWins = maxH2HWins;
-    let canRunItBack = false;
-
-    liveOpponents.forEach((opponentId) => {
-      const key = String(opponentId);
-      const row = h2h.get(key) || { played: 0, wins: 0 };
-      nextMaxPlayed = Math.max(nextMaxPlayed, row.played + 1);
-      nextMaxWins = Math.max(nextMaxWins, row.wins + 1);
-      if (lastByOpponent.get(key) === "L") canRunItBack = true;
-    });
-
-    addIfReached(
-      "veteran",
-      history.length + 1,
-      "Complete this Mucho8s · match #" + (history.length + 1)
-    );
-    addIfReached(
-      "on-fire",
-      nextWinStreak,
-      "Win this Mucho8s · reach " + nextWinStreak + "W"
-    );
-    addIfReached(
-      "unstoppable",
-      nextWinStreak,
-      "Win this Mucho8s · reach " + nextWinStreak + "W"
-    );
-    addIfReached(
-      "clean-sweep",
-      nextCleanSweepCount,
-      "Win this Mucho8s · complete another 4W sweep"
-    );
-    addIfReached(
-      "money-maker",
-      wonValue + liveAmount,
-      "Win this pairing · total €" + (wonValue + liveAmount).toFixed(0)
-    );
-    addIfReached(
-      "high-roller",
-      Math.max(maxWonPairing, liveAmount),
-      "Win your €" + liveAmount.toFixed(0) + " pairing"
-    );
-    addIfReached(
-      "rivalry",
-      nextMaxPlayed,
-      "Play this Mucho8s · rivalry meeting milestone"
-    );
-    addIfReached(
-      "nemesis",
-      nextMaxWins,
-      "Win this Mucho8s · head-to-head win milestone"
-    );
-    if (canRunItBack) {
-      addIfReached(
-        "run-it-back",
-        runItBackCount + 1,
-        "Win this Mucho8s after the previous loss"
-      );
-    }
-
-    return opportunities;
-  }, [match, matches, discordPlayer?.id, playerMap]);
-
   const liveTeamIntel = useMemo(() => {
     if (!match) return null;
 
@@ -353,6 +178,48 @@ export default function MatchRoom() {
       avgEloB: Math.round(teamBPlayers.reduce((sum, player) => sum + Number(player.currentElo || 0), 0) / teamBPlayers.length),
     };
   }, [match, matches, challenges, playerMap]);
+
+  const streakWatch = useMemo(() => {
+    if (!match) return [];
+
+    const alphaIds = Array.isArray(match.team_a) ? match.team_a.map(String) : [];
+    const bravoIds = Array.isArray(match.team_b) ? match.team_b.map(String) : [];
+
+    return [...alphaIds, ...bravoIds]
+      .map((playerId) => {
+        const player = playerMap?.[playerId];
+        const streak = Number(player?.currentStreak || 0);
+        if (!streak) return null;
+
+        const run = Math.abs(streak);
+        const cycleProgress = run % 4;
+        const remaining = cycleProgress === 0 ? 4 : 4 - cycleProgress;
+
+        // Keep the room focused: only show players within two results of the next milestone.
+        if (remaining > 2) return null;
+
+        const chasingMvp = streak > 0;
+        const isAlpha = alphaIds.includes(playerId);
+        const bounty = chasingMvp && remaining === 1 ? 3 : 0;
+
+        return {
+          id: playerId,
+          name: player?.name || "Player",
+          streak,
+          remaining,
+          chasingMvp,
+          side: isAlpha ? "Alpha" : "Bravo",
+          opposingSide: isAlpha ? "Bravo" : "Alpha",
+          bounty,
+          nextCount: Math.max(
+            1,
+            Number(chasingMvp ? player?.mvpCount : player?.merdaCount || 0) + 1
+          ),
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.remaining - b.remaining || Math.abs(b.streak) - Math.abs(a.streak));
+  }, [match, playerMap]);
 
   if (!match) {
     return (
@@ -401,6 +268,15 @@ export default function MatchRoom() {
     (sum, pair) => sum + Math.max(0, Number(pair?.amount) || 0),
     0
   );
+
+  const stakeByPlayer = pairings.reduce((acc, pair) => {
+    const amount = Math.max(0, Number(pair?.amount) || 0);
+    const alphaId = String(pair?.playerAId || "");
+    const bravoId = String(pair?.playerBId || "");
+    if (alphaId) acc[alphaId] = amount;
+    if (bravoId) acc[bravoId] = amount;
+    return acc;
+  }, {});
 
   const requestCancel = async () => {
     if (!isCaptain || busy || cancelRequested) return;
@@ -556,6 +432,110 @@ export default function MatchRoom() {
         </section>
       )}
 
+      {cancelRequested && (
+        <section className="rounded-2xl border border-orange-500/20 bg-orange-500/[0.04] px-4 py-3 flex items-start gap-3">
+          <AlertTriangle size={16} className="text-orange-400 mt-0.5 shrink-0" />
+          <div>
+            <div className="text-sm font-bold text-orange-300">Cancellation awaiting Admin</div>
+            <div className="text-xs text-orange-200/60 mt-1">
+              The Mucho8s stays live until an Admin approves the cancellation or a result is reported.
+            </div>
+          </div>
+        </section>
+      )}
+
+      <section className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-3 items-stretch">
+        <TeamPanel
+          label="Alpha"
+          ids={teamA}
+          accent="#FF2A3B"
+          captainId={captainId}
+          playerMap={playerMap}
+          playerAvatars={playerAvatars}
+          stakeByPlayer={stakeByPlayer}
+        />
+
+        <div className="hidden lg:flex items-center justify-center px-2">
+          <div className="w-12 h-12 rounded-full border border-[#2A303B] bg-[#0F1218] flex items-center justify-center font-display font-black text-muted-foreground">
+            VS
+          </div>
+        </div>
+
+        <TeamPanel
+          label="Bravo"
+          ids={teamB}
+          accent="#D5A33A"
+          captainId={captainId}
+          playerMap={playerMap}
+          playerAvatars={playerAvatars}
+          stakeByPlayer={stakeByPlayer}
+        />
+      </section>
+
+      {streakWatch.length > 0 && (
+        <section className="rounded-2xl border border-[#343B48] bg-[#11151C] px-4 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+            <div>
+              <div className="brand-kicker text-[#AEB6C3]">Streak Watch</div>
+              <div className="font-display font-black text-sm mt-0.5">MVP & MERDA pressure</div>
+            </div>
+            <div className="text-[10px] uppercase tracking-widest text-[#697181]">
+              Only players close to the next milestone
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {streakWatch.map((item) => (
+              <div
+                key={item.id}
+                className={`rounded-xl border px-3 py-3 ${
+                  item.chasingMvp
+                    ? "border-[#D5A33A]/25 bg-[#D5A33A]/[0.045]"
+                    : "border-[#8B5E3C]/30 bg-[#8B5E3C]/[0.045]"
+                }`}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-display font-black text-sm truncate">{item.name}</span>
+                      <span className="text-[9px] uppercase tracking-widest text-muted-foreground shrink-0">
+                        {item.side}
+                      </span>
+                    </div>
+                    <div className="text-[11px] mt-1">
+                      {item.chasingMvp ? (
+                        <span className="text-[#D5A33A] font-semibold">
+                          🏆 {item.remaining} {item.remaining === 1 ? "win" : "wins"} from MVP #{item.nextCount}
+                        </span>
+                      ) : (
+                        <span className="text-[#C79A6B] font-semibold">
+                          💩 {item.remaining} {item.remaining === 1 ? "loss" : "losses"} from MERDA #{item.nextCount}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="font-mono font-black text-xs shrink-0">
+                    {item.streak > 0 ? `+${item.streak}W` : `${Math.abs(item.streak)}L`}
+                  </div>
+                </div>
+
+                {item.bounty > 0 && (
+                  <div className="mt-2 rounded-lg border border-magma/25 bg-magma/[0.055] px-2.5 py-2 text-[10px] flex items-center justify-between gap-2">
+                    <span className="font-semibold text-[#FF7580]">
+                      Stop the MVP run
+                    </span>
+                    <span className="font-mono font-black text-magma">
+                      {item.opposingSide} +{item.bounty} Elo
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {liveTeamIntel && (
         <details className="rounded-2xl border border-[#222834] bg-[#0B0F15] overflow-hidden group">
           <summary className="list-none cursor-pointer px-4 py-3 flex items-center justify-between gap-3 hover:bg-white/[0.025] transition-colors">
@@ -645,134 +625,16 @@ export default function MatchRoom() {
         </details>
       )}
 
-      {cancelRequested && (
-        <section className="rounded-2xl border border-orange-500/20 bg-orange-500/[0.04] px-4 py-3 flex items-start gap-3">
-          <AlertTriangle size={16} className="text-orange-400 mt-0.5 shrink-0" />
-          <div>
-            <div className="text-sm font-bold text-orange-300">Cancellation awaiting Admin</div>
-            <div className="text-xs text-orange-200/60 mt-1">
-              The Mucho8s stays live until an Admin approves the cancellation or a result is reported.
-            </div>
+      {!canReport && (
+        <section className="rounded-2xl border border-[#222834] bg-[#0F1218] px-4 py-3 flex items-start gap-3">
+          <ShieldCheck size={16} className="text-[#697181] mt-0.5 shrink-0" />
+          <div className="text-xs text-muted-foreground">
+            Only the Mucho8s captain or an Admin can report the final result.
           </div>
         </section>
       )}
 
-      {trophyOpportunities.length > 0 && (
-        <section className="rounded-2xl border border-[#343B48] bg-[#11151C] px-4 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="w-10 h-10 rounded-xl border border-[#343B48] bg-[#151923] flex items-center justify-center shrink-0">
-                <Trophy size={17} className="text-[#C8CED8]" />
-              </div>
-              <div>
-                <div className="brand-kicker text-[#AEB6C3]">Trophy Opportunity</div>
-                <div className="text-sm font-bold mt-0.5">
-                  This Mucho8s can level up{" "}
-                  {trophyOpportunities.length === 1
-                    ? "1 challenge"
-                    : trophyOpportunities.length + " challenges"}
-                </div>
-              </div>
-            </div>
-
-            <div className="font-mono font-black text-[#C8CED8] text-sm shrink-0">
-              +{trophyOpportunities.reduce((sum, item) => sum + item.reward, 0)} Elo potential
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2 mt-3">
-            {trophyOpportunities.map((item) => (
-              <div
-                key={item.id}
-                className="rounded-xl border border-[#2C333E] bg-[#0F1218] px-3 py-2"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="font-display font-bold text-sm">
-                    {item.title} · Lv {item.level}/{MAX_TROPHY_LEVEL}
-                  </span>
-                  <span className="font-mono text-[9px] font-black text-[#C8CED8]">
-                    +{item.reward}
-                  </span>
-                </div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">
-                  {item.detail}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-3 items-stretch">
-        <TeamPanel
-          label="Alpha"
-          ids={teamA}
-          accent="#FF2A3B"
-          captainId={captainId}
-          playerMap={playerMap}
-          playerAvatars={playerAvatars}
-        />
-
-        <div className="hidden lg:flex items-center justify-center px-2">
-          <div className="w-12 h-12 rounded-full border border-[#2A303B] bg-[#0F1218] flex items-center justify-center font-display font-black text-muted-foreground">
-            VS
-          </div>
-        </div>
-
-        <TeamPanel
-          label="Bravo"
-          ids={teamB}
-          accent="#D5A33A"
-          captainId={captainId}
-          playerMap={playerMap}
-          playerAvatars={playerAvatars}
-        />
-      </section>
-
-      <section className="grid grid-cols-1 xl:grid-cols-[1fr_.9fr] gap-3 items-stretch">
-        <div className="m8-panel rounded-2xl p-4 sm:p-5">
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <div>
-              <div className="brand-kicker mb-1 text-magma">Mucho8s</div>
-              <h2 className="font-display font-bold text-lg">Money Pairings</h2>
-            </div>
-            <div className="inline-flex items-center gap-1.5 text-magma font-mono font-black text-sm">
-              <WalletCards size={15} />
-              {euro(totalStake)}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-2">
-            {pairings.map((pair, index) => {
-              const alpha = playerMap[pair.playerAId];
-              const bravo = playerMap[pair.playerBId];
-
-              return (
-                <div
-                  key={`${pair.playerAId}-${pair.playerBId}-${index}`}
-                  className="rounded-xl border border-[#222834] bg-[#0F1218] px-3 py-3"
-                >
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-semibold truncate flex-1">
-                      {alpha?.name || "Alpha"}
-                    </span>
-                    <span className="text-[#596170]">↔</span>
-                    <span className="font-semibold truncate flex-1 text-right">
-                      {bravo?.name || "Bravo"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 mt-2 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    <span>Stake</span>
-                    <span className="font-mono font-black text-white">
-                      {euro(pair.amount)}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
+      <section>
         {canChat ? (
           <LiveMatchChat liveMatchId={match.id} />
         ) : (
@@ -787,15 +649,6 @@ export default function MatchRoom() {
           </div>
         )}
       </section>
-
-      {!canReport && (
-        <section className="rounded-2xl border border-[#222834] bg-[#0F1218] px-4 py-3 flex items-start gap-3">
-          <ShieldCheck size={16} className="text-[#697181] mt-0.5 shrink-0" />
-          <div className="text-xs text-muted-foreground">
-            Only the Mucho8s captain or an Admin can report the final result.
-          </div>
-        </section>
-      )}
 
       <RecordMatchDialog
         open={reportOpen}
