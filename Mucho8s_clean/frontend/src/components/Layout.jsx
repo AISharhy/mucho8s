@@ -98,7 +98,6 @@ export const Layout = () => {
     playerMap,
     playerAvatars,
     dashboardData,
-    twitchLive,
     loaded,
   } = useData();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -748,6 +747,32 @@ export const Layout = () => {
                 {item.label}
               </NavLink>
             ))}
+
+            {twitchLivePlayers.length > 0 && (
+              <Link
+                to={`/live/${twitchLivePlayers[0].id}`}
+                className="m8-twitch-live-chip"
+                title={
+                  twitchLivePlayers.length === 1
+                    ? `${twitchLivePlayers[0].name} is live on Twitch`
+                    : `${twitchLivePlayers.length} players are live on Twitch`
+                }
+                aria-label={
+                  twitchLivePlayers.length === 1
+                    ? `Watch ${twitchLivePlayers[0].name} live on Twitch`
+                    : `${twitchLivePlayers.length} players live on Twitch`
+                }
+                data-testid="header-global-twitch-live"
+              >
+                <Twitch size={12} />
+                <span>LIVE</span>
+                {twitchLivePlayers.length > 1 && (
+                  <span className="font-mono text-[9px] opacity-80">
+                    {twitchLivePlayers.length}
+                  </span>
+                )}
+              </Link>
+            )}
           </nav>
 
           <div className="ml-auto flex items-center gap-2 relative">
@@ -876,19 +901,6 @@ export const Layout = () => {
 
             {discordSession ? (
               <div className="m8-topbar-account-wrap">
-                {discordPlayer && twitchLive && (
-                  <Link
-                    to={`/live/${discordPlayer.id}`}
-                    className="m8-twitch-live-chip"
-                    title="Watch my Twitch live"
-                    aria-label="Twitch live now"
-                    data-testid="header-twitch-live"
-                    onClick={() => setAccountOpen(false)}
-                  >
-                    <Twitch size={12} />
-                    <span>LIVE</span>
-                  </Link>
-                )}
                 <button
                   type="button"
                   className={`m8-topbar-account ${accountOpen ? "is-open" : ""}`}
