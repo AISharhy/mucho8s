@@ -1746,18 +1746,25 @@ textarea:focus-visible {
     overflow: hidden;
     pointer-events: none;
     background:
-        linear-gradient(180deg, rgba(74,41,26,.025), transparent 38%),
-        radial-gradient(circle at 50% -10%, rgba(139,94,60,.07), transparent 32rem);
+        linear-gradient(180deg, rgba(74,41,26,.055), transparent 42%),
+        radial-gradient(circle at 50% -10%, rgba(139,94,60,.13), transparent 34rem),
+        radial-gradient(circle at 16% 90%, rgba(92,48,29,.08), transparent 22rem);
+    animation: merdaStormFlash .34s ease-out both;
 }
 
 .merda-rain-drop {
     position: absolute;
-    top: -42px;
+    top: -72px;
     z-index: 2;
     line-height: 1;
-    filter: drop-shadow(0 5px 8px rgba(51,27,17,.28));
+    filter: drop-shadow(0 7px 10px rgba(51,27,17,.42));
     will-change: transform, opacity;
-    animation: merdaRainFall var(--merda-duration, 1.2s) linear var(--merda-delay, 0s) both;
+    animation: merdaRainFall var(--merda-duration, 1.2s) cubic-bezier(.18,.52,.38,.98) var(--merda-delay, 0s) both;
+}
+
+.merda-rain-drop-giant {
+    z-index: 3;
+    filter: drop-shadow(0 10px 16px rgba(51,27,17,.55));
 }
 
 .m8-profile-merda-intro-critical {
@@ -1816,19 +1823,24 @@ textarea:focus-visible {
     text-transform: uppercase;
 }
 
+@keyframes merdaStormFlash {
+    0% { background-color: rgba(92,48,29,.16); }
+    100% { background-color: transparent; }
+}
+
 @keyframes merdaRainFall {
     0% {
-        transform: translate3d(0, -60px, 0) rotate(var(--merda-rotate, 0deg)) scale(.82);
+        transform: translate3d(0, -85px, 0) rotate(var(--merda-rotate, 0deg)) scale(.72);
         opacity: 0;
     }
-    8% {
+    5% {
         opacity: 1;
     }
-    82% {
-        opacity: .96;
+    78% {
+        opacity: .98;
     }
     100% {
-        transform: translate3d(var(--merda-drift, 0px), calc(100vh + 110px), 0) rotate(420deg) scale(1.05);
+        transform: translate3d(var(--merda-drift, 0px), calc(100vh + 155px), 0) rotate(560deg) scale(1.12);
         opacity: 0;
     }
 }
