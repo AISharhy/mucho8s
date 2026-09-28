@@ -2811,6 +2811,177 @@ textarea:focus-visible {
     }
 }
 
+/* Discord player-name onboarding */
+.m8-discord-onboarding {
+    position: fixed;
+    inset: 0;
+    z-index: 140;
+    display: grid;
+    place-items: center;
+    padding: 1.25rem;
+    background:
+        radial-gradient(circle at 50% 35%, rgba(88,101,242,.12), transparent 24rem),
+        rgba(5,8,12,.86);
+    backdrop-filter: blur(16px);
+}
+
+.m8-discord-onboarding-card {
+    width: min(92vw, 430px);
+    padding: 1.45rem;
+    border: 1px solid #29313D;
+    border-radius: 1.15rem;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,.018), transparent),
+        #0C1118;
+    box-shadow: 0 28px 80px rgba(0,0,0,.52);
+    text-align: center;
+}
+
+.m8-discord-onboarding-icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto .85rem;
+    display: grid;
+    place-items: center;
+    border-radius: 1rem;
+    color: #BFC5FF;
+    border: 1px solid rgba(88,101,242,.34);
+    background: rgba(88,101,242,.12);
+    box-shadow: 0 0 24px rgba(88,101,242,.10);
+}
+
+.m8-discord-onboarding-kicker {
+    color: #8E98FF;
+    font-size: .58rem;
+    font-weight: 900;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+}
+
+.m8-discord-onboarding-card h2 {
+    margin-top: .3rem;
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 1.45rem;
+    font-weight: 900;
+    letter-spacing: -.035em;
+    color: #F5F7FA;
+}
+
+.m8-discord-onboarding-card p {
+    margin: .7rem auto 0;
+    max-width: 34rem;
+    color: #8993A2;
+    font-size: .76rem;
+    line-height: 1.65;
+}
+
+.m8-discord-onboarding-card p strong {
+    color: #FFFFFF;
+}
+
+.m8-discord-onboarding-form {
+    margin-top: 1.05rem;
+    text-align: left;
+}
+
+.m8-discord-onboarding-form label {
+    display: block;
+    margin-bottom: .4rem;
+    color: #838D9C;
+    font-size: .58rem;
+    font-weight: 900;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.m8-discord-onboarding-form input {
+    width: 100%;
+    height: 46px;
+    padding: 0 .85rem;
+    border: 1px solid #2A3340;
+    border-radius: .75rem;
+    outline: none;
+    background: #111720;
+    color: #F3F5F8;
+    font-size: .86rem;
+    font-weight: 700;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.m8-discord-onboarding-form input:focus {
+    border-color: rgba(255,42,59,.55);
+    box-shadow: 0 0 0 3px rgba(255,42,59,.08);
+}
+
+.m8-discord-onboarding-form button {
+    width: 100%;
+    height: 44px;
+    margin-top: .7rem;
+    border-radius: .75rem;
+    background: #FF2A3B;
+    color: #FFFFFF;
+    font-size: .76rem;
+    font-weight: 900;
+    transition: background .15s ease, transform .15s ease, opacity .15s ease;
+}
+
+.m8-discord-onboarding-form button:hover:not(:disabled) {
+    background: #FF4352;
+    transform: translateY(-1px);
+}
+
+.m8-discord-onboarding-form button:disabled {
+    opacity: .45;
+    cursor: default;
+}
+
+.m8-discord-request-status {
+    margin-top: 1rem;
+    padding: .72rem .8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    border-radius: .72rem;
+    font-size: .7rem;
+    font-weight: 800;
+}
+
+.m8-discord-request-status.is-pending {
+    color: #E5BD57;
+    border: 1px solid rgba(213,163,58,.24);
+    background: rgba(213,163,58,.07);
+}
+
+.m8-discord-request-status.is-pending span {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: #D5A33A;
+    box-shadow: 0 0 11px rgba(213,163,58,.55);
+}
+
+.m8-discord-request-status.is-rejected {
+    color: #FF838C;
+    border: 1px solid rgba(255,42,59,.22);
+    background: rgba(255,42,59,.06);
+}
+
+.m8-discord-onboarding-logout {
+    margin-top: .9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    color: #6F7988;
+    font-size: .62rem;
+    font-weight: 800;
+    transition: color .15s ease;
+}
+
+.m8-discord-onboarding-logout:hover {
+    color: #D6DBE3;
+}
+
 /* Premium player profile command layout */
 .m8-profile-command {
     background: #0B0F14;
