@@ -45,7 +45,8 @@ export default function AdminPanel() {
     clearDiscordWebhook,
     testDiscordWebhook,
     listDiscordAccounts,
-    linkDiscordAccount,
+    approveDiscordPlayerRequest,
+    rejectDiscordPlayerRequest,
     listAdminChallenges,
     adminUpdateChallenge,
     adminDeleteChallenge,
@@ -401,18 +402,24 @@ export default function AdminPanel() {
     }
   };
 
-  const handleAccountLink = async (accountId, playerId) => {
+  const handlePlayerRequest = async (accountId, decision) => {
     setAccountBusyId(accountId);
-    const ok = await linkDiscordAccount(accountId, playerId || null);
+    const account = decision === "approve"
+      ? await approveDiscordPlayerRequest(accountId)
+      : await rejectDiscordPlayerRequest(accountId);
     setAccountBusyId("");
-    if (!ok) return;
+
+    if (!account) return;
 
     setDiscordAccounts((prev) =>
-      prev.map((account) =>
-        account.id === accountId ? { ...account, player_id: playerId || null } : account
-      )
+      prev.map((item) => item.id === accountId ? { ...item, ...account } : item)
     );
-    toast.success(playerId ? "Discord account linked to player" : "Discord account unlinked");
+
+    if (decision === "approve") {
+      toast.success(`${account.requested_player_name || "Player"} approved and created`);
+    } else {
+      toast.success("Player name request rejected");
+    }
   };
 
   const resetNewsDraft = () => {
@@ -1615,7 +1622,7 @@ export default function AdminPanel() {
               Discord & Payments
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Link Discord users to players and check which payout methods are connected.
+              Players choose their Mucho8s name after Discord login. Approve or reject the request here; manual Discord linking is no longer required.
             </p>
           </div>
 
@@ -1700,28 +1707,60 @@ export default function AdminPanel() {
                         </div>
                         <div className="text-[11px] text-muted-foreground truncate mt-0.5">
                           {account.display_name || account.discord_username || "Discord account"}
-                          {linkedPlayer ? " · linked" : " · not linked"}
+                          {linkedPlayer
+                            ? " · linked"
+                            : account.player_request_status === "pending"
+                              ? ` · wants ${account.requested_player_name || "a player name"}`
+                              : " · not linked"}
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                       <span className={`h-8 px-2.5 rounded-lg border inline-flex items-center text-[10px] font-bold uppercase tracking-wider ${paymentClass}`}>
                         {paymentLabel}
                       </span>
 
-                      <select
-                        value={account.player_id || ""}
-                        onChange={(e) => handleAccountLink(account.id, e.target.value)}
-                        disabled={accountBusyId === account.id}
-                        className="h-8 w-40 rounded-lg bg-[#151923] border border-[#2A303B] px-2.5 text-[11px] text-[#D7DBE2]"
-                        data-testid={`discord-account-player-${account.id}`}
-                      >
-                        <option value="">Not linked</option>
-                        {players.map((player) => (
-                          <option key={player.id} value={player.id}>{player.name}</option>
-                        ))}
-                      </select>
+                      {linkedPlayer ? (
+                        <span className="h-8 px-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-400 inline-flex items-center text-[10px] font-black uppercase tracking-wider">
+                          <Check size={13} className="mr-1" />
+                          {linkedPlayer.name}
+                        </span>
+                      ) : account.player_request_status === "pending" && account.requested_player_name ? (
+                        <>
+                          <span className="h-8 px-2.5 rounded-lg border border-[#D5A33A]/25 bg-[#D5A33A]/[0.06] text-[#D5A33A] inline-flex items-center text-[10px] font-black">
+                            {account.requested_player_name}
+                          </span>
+                          <Button
+                            type="button"
+                            onClick={() => handlePlayerRequest(account.id, "approve")}
+                            disabled={accountBusyId === account.id}
+                            className="h-8 px-3 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black text-[10px] font-black"
+                            data-testid={`discord-request-approve-${account.id}`}
+                          >
+                            <Check size={13} className="mr-1" />
+                            Approve
+                          </Button>
+                          <Button
+                            type="button"
+                            onClick={() => handlePlayerRequest(account.id, "reject")}
+                            disabled={accountBusyId === account.id}
+                            variant="ghost"
+                            className="h-8 px-3 rounded-lg border border-red-500/20 bg-red-500/[0.05] text-red-400 hover:bg-red-500/[0.10] text-[10px] font-black"
+                            data-testid={`discord-request-reject-${account.id}`}
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      ) : account.player_request_status === "rejected" ? (
+                        <span className="h-8 px-2.5 rounded-lg border border-red-500/20 bg-red-500/[0.05] text-red-400 inline-flex items-center text-[10px] font-black uppercase tracking-wider">
+                          Rejected · waiting new request
+                        </span>
+                      ) : (
+                        <span className="h-8 px-2.5 rounded-lg border border-[#2A303B] bg-[#151923] text-[#737D8D] inline-flex items-center text-[10px] font-bold">
+                          Waiting for player request
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
