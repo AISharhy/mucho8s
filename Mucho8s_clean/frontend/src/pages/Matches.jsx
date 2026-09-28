@@ -322,8 +322,7 @@ export default function Matches() {
               {names(teamA)} <span className="text-[#596170]">vs</span> {names(teamB)}
             </div>
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">
-              LIVE · {liveDuration(match.created_at, liveNow)}
-              {match.format ? ` · ${match.format}` : ""}
+              {match.format ? match.format : ""}
               {match.game ? ` · ${match.game}` : ""}
               {match.mode ? ` · ${match.mode}` : ""}
               {bo3Maps.length === 3 ? ` · BO3 · ${bo3Maps.join(" / ")}` : ""}
@@ -333,6 +332,9 @@ export default function Matches() {
         </div>
 
         <div className="flex items-center gap-2 sm:justify-end shrink-0">
+          <span className="h-8 px-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-400 inline-flex items-center text-[10px] font-black uppercase tracking-wider">
+            Live · {liveDuration(match.created_at, liveNow)}
+          </span>
           {cancelRequested && (
             <span className="h-8 px-2.5 rounded-lg border border-orange-500/20 bg-orange-500/[0.06] text-orange-400 inline-flex items-center text-[10px] font-black uppercase tracking-wider">
               Cancel requested
