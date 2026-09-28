@@ -10,9 +10,7 @@ import {
 const STATE_MACHINE = "State Machine 1";
 const ARTBOARD = "Main";
 
-// Public runtime endpoint that corresponds to the Marketplace file the user supplied.
-const TEMPLATE_SRC =
-  "https://public.rive.app/community/runtime-files/11488-21971-game-badge-upgrade-animation.riv";
+const TEMPLATE_SRC = `${process.env.PUBLIC_URL}/animations/game-badge-upgrade.riv`;
 
 export default function RankUpgradeRive({
   playKey,
