@@ -315,7 +315,7 @@ export default function MatchRoom() {
 
   return (
     <div className="m8-page-stack">
-      <section className="m8-panel rounded-[22px] p-5 sm:p-6">
+      <section className="m8-panel m8-mode-zone is-mucho8s rounded-[22px] p-5 sm:p-6">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
           <div className="min-w-0">
             <Link
