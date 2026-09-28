@@ -12,6 +12,7 @@ import {
 } from "@/lib/trophyRules";
 import { PlayerAvatar, EloBadge, Last10, MerdaBadge, RankArtwork, RankProgress } from "@/components/shared";
 import ModeBadge, { isDirectMucho1v1 } from "@/components/ModeBadge";
+import TwitchEmbed from "@/components/TwitchEmbed";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -202,6 +203,7 @@ export default function PlayerProfile() {
   const publicProfile = playerProfiles?.[id] || {};
   const targetHasPayPal = Boolean(String(publicProfile.paypalUrl || "").trim());
   const targetHasRevolut = Boolean(String(publicProfile.revolutUrl || "").trim());
+  const targetTwitchChannel = String(publicProfile.twitchChannel || "").trim();
   const targetHasPayment = targetHasPayPal || targetHasRevolut;
   const isOwnProfile = Boolean(discordSession && discordPlayer?.id === id);
   const requestedTab = searchParams.get("tab");
@@ -227,6 +229,7 @@ export default function PlayerProfile() {
   const [links, setLinks] = useState({
     paypalUrl: "",
     revolutUrl: "",
+    twitchChannel: "",
   });
   const [savingLinks, setSavingLinks] = useState(false);
   const [sendingChallenge, setSendingChallenge] = useState("");
@@ -242,8 +245,9 @@ export default function PlayerProfile() {
     setLinks({
       paypalUrl: publicProfile.paypalUrl || "",
       revolutUrl: publicProfile.revolutUrl || "",
+      twitchChannel: publicProfile.twitchChannel || "",
     });
-  }, [id, publicProfile.paypalUrl, publicProfile.revolutUrl]);
+  }, [id, publicProfile.paypalUrl, publicProfile.revolutUrl, publicProfile.twitchChannel]);
 
   useEffect(() => {
     if (!player?.id || merdaCountValue <= 0) {
@@ -1453,6 +1457,15 @@ export default function PlayerProfile() {
             </button>
           )}
         </div>
+
+          {profileTab === "overview" && targetTwitchChannel && (
+            <TwitchEmbed
+              channel={targetTwitchChannel}
+              playerName={player.name}
+              className="mt-3"
+            />
+          )}
+
           {profileTab === "overview" && (
             <div className="m8-profile-overview-grid" data-testid="profile-overview-dashboard">
               <div className="m8-profile-overview-column">
@@ -1738,7 +1751,7 @@ export default function PlayerProfile() {
                   <div className="brand-kicker mb-1">Edit Profile</div>
                   <h3 className="font-display font-bold text-lg">Profile settings</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Connect PayPal or Revolut for Mucho1v1.
+                    Connect PayPal or Revolut for Mucho1v1 and add your Twitch channel.
                   </p>
                 </div>
                 <Link2 size={18} className="text-[#697181] shrink-0 mt-1" />
@@ -1770,6 +1783,20 @@ export default function PlayerProfile() {
                   />
                   <div className="text-[10px] text-muted-foreground mt-2">
                     You can paste only your Revolut.me username.
+                  </div>
+                </div>
+
+                <div className="sm:col-span-2 rounded-xl bg-[#0F1218] border border-[#222834] p-3">
+                  <Label className="text-xs font-semibold">Twitch</Label>
+                  <Input
+                    value={links.twitchChannel}
+                    onChange={(e) => setLinks((prev) => ({ ...prev, twitchChannel: e.target.value }))}
+                    placeholder="username or twitch.tv/username"
+                    className="mt-2 bg-[#151923] border-[#2A303B]"
+                    data-testid="my-twitch-channel"
+                  />
+                  <div className="text-[10px] text-muted-foreground mt-2">
+                    Your channel appears directly on your public esports profile.
                   </div>
                 </div>
 
