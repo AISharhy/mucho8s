@@ -349,6 +349,7 @@ export const DataProvider = ({ children }) => {
   const [playerProfiles, setPlayerProfiles] = useState({});
   const [challenges, setChallenges] = useState([]);
   const [publicChallenges, setPublicChallenges] = useState([]);
+  const [newsPosts, setNewsPosts] = useState([]);
   const [matchReports, setMatchReports] = useState([]);
   const [liveMatches, setLiveMatches] = useState([]);
   const [adminChallengeAlertCount, setAdminChallengeAlertCount] = useState(0);
@@ -555,6 +556,84 @@ export const DataProvider = ({ children }) => {
     const timer = setInterval(fetchPublicChallenges, 30000);
     return () => clearInterval(timer);
   }, [fetchPublicChallenges]);
+
+  const fetchNewsPosts = useCallback(async () => {
+    if (!HAS_SUPABASE) {
+      setNewsPosts([]);
+      return [];
+    }
+
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/news_posts?select=*&published=eq.true&order=featured.desc,created_at.desc`,
+        { headers: { apikey: SUPABASE_ANON_KEY } },
+      );
+      if (!res.ok) return null;
+      const list = await res.json();
+      const posts = Array.isArray(list) ? list : [];
+      setNewsPosts(posts);
+      return posts;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!HAS_SUPABASE) return undefined;
+    void fetchNewsPosts();
+    const timer = setInterval(fetchNewsPosts, 30000);
+    return () => clearInterval(timer);
+  }, [fetchNewsPosts]);
+
+  const contentRequest = useCallback(async (payload, { silent = false } = {}) => {
+    if (!HAS_SUPABASE || !admin?.sessionToken) {
+      if (!silent) toast.error("Admin access required");
+      return null;
+    }
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/mucho8s-content`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_ANON_KEY,
+          "X-Admin-Session": admin.sessionToken,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (!silent) toast.error(data?.error || "Content action failed");
+        return null;
+      }
+      return data;
+    } catch {
+      if (!silent) toast.error("Content service unavailable");
+      return null;
+    }
+  }, [admin]);
+
+  const createNewsPost = useCallback(async (post) => {
+    const data = await contentRequest({ action: "create", ...post });
+    if (!data?.post) return null;
+    await fetchNewsPosts();
+    return data.post;
+  }, [contentRequest, fetchNewsPosts]);
+
+  const updateNewsPost = useCallback(async (id, post) => {
+    const data = await contentRequest({ action: "update", id, ...post });
+    if (!data?.post) return null;
+    await fetchNewsPosts();
+    return data.post;
+  }, [contentRequest, fetchNewsPosts]);
+
+  const deleteNewsPost = useCallback(async (id) => {
+    const data = await contentRequest({ action: "delete", id });
+    if (!data?.ok) return false;
+    await fetchNewsPosts();
+    return true;
+  }, [contentRequest, fetchNewsPosts]);
 
   const accountRequest = useCallback(async (payload, { session, silent = false } = {}) => {
     if (!HAS_SUPABASE) {
@@ -865,6 +944,18 @@ export const DataProvider = ({ children }) => {
     await refreshLiveMatches();
     return true;
   }, [matchReportRequest, refreshLiveMatches]);
+
+  const listLiveMatchMessages = useCallback(async (id, { silent = true } = {}) => {
+    if (!id) return [];
+    const data = await matchReportRequest({ action: "list-live-messages", id }, { silent });
+    return Array.isArray(data?.messages) ? data.messages : [];
+  }, [matchReportRequest]);
+
+  const sendLiveMatchMessage = useCallback(async (id, message) => {
+    if (!id) return null;
+    const data = await matchReportRequest({ action: "send-live-message", id, message });
+    return data?.message || null;
+  }, [matchReportRequest]);
 
   const refreshMatchReports = useCallback(async () => {
     if (!HAS_SUPABASE || (!admin?.sessionToken && !discordSession?.access_token)) {
@@ -2063,6 +2154,7 @@ export const DataProvider = ({ children }) => {
     playerProfiles,
     challenges,
     publicChallenges,
+    newsPosts,
     matchReports,
     liveMatches,
     dashboardData,
@@ -2074,6 +2166,8 @@ export const DataProvider = ({ children }) => {
     createLiveMatch,
     requestCancelLiveMatch,
     cancelLiveMatch,
+    listLiveMatchMessages,
+    sendLiveMatchMessage,
     createMatchReport,
     confirmMatchReport,
     disputeMatchReport,
@@ -2103,6 +2197,10 @@ export const DataProvider = ({ children }) => {
     listAdminAudit,
     logAdminAction,
     refreshPublicChallenges: fetchPublicChallenges,
+    refreshNewsPosts: fetchNewsPosts,
+    createNewsPost,
+    updateNewsPost,
+    deleteNewsPost,
     refreshDashboardData: fetchDashboardData,
     refreshCompetitionData: fetchCompetitionData,
     refreshAdminChallengeAlerts,
