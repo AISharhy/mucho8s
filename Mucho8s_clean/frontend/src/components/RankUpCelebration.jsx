@@ -5,6 +5,7 @@ import { RANKS, tierOf } from "@/lib/elo";
 import { RankArtwork } from "@/components/shared";
 import { rankFamilyFromId } from "@/lib/rankVisuals";
 import { captureEvent } from "@/lib/analytics";
+import RankUpgradeRive from "@/components/RankUpgradeRive";
 
 const MAJOR_RANK_FAMILIES = ["iron", "bronze", "silver", "gold", "platinum", "diamond", "masters"];
 
@@ -36,6 +37,8 @@ export default function RankUpCelebration() {
   const previewHandledRef = useRef(false);
   const closeTimerRef = useRef(null);
   const [event, setEvent] = useState(null);
+  const [riveReady, setRiveReady] = useState(false);
+  const [riveFailed, setRiveFailed] = useState(false);
 
   useEffect(() => {
     if (!loaded || previewHandledRef.current || typeof window === "undefined") return;
@@ -129,6 +132,9 @@ export default function RankUpCelebration() {
   useEffect(() => {
     if (!event) return undefined;
 
+    setRiveReady(false);
+    setRiveFailed(false);
+
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -184,7 +190,22 @@ export default function RankUpCelebration() {
       <div className="m8-rankup-content">
         <div className="m8-rankup-kicker">MUCHO RANK SYSTEM</div>
 
-        <div className="m8-rankup-stage" aria-hidden="true">
+        <div
+          className={`m8-rankup-stage ${riveReady && !riveFailed ? "is-rive" : "is-fallback"}`}
+          aria-hidden="true"
+        >
+          <RankUpgradeRive
+            playKey={event.id}
+            className="m8-rankup-rive-template"
+            onReady={() => setRiveReady(true)}
+            onError={() => {
+              setRiveReady(false);
+              setRiveFailed(true);
+            }}
+          />
+
+          <div className="m8-rankup-rive-center-mask" />
+
           <span className="m8-rankup-ring ring-one" />
           <span className="m8-rankup-ring ring-two" />
           <span className="m8-rankup-ring ring-three" />
