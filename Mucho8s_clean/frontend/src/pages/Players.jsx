@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useData } from "@/context/DataContext";
-import { PlayerAvatar, EloBadge, RankBadge, RankProgress, Last10, StreakBadge, WinRatePill, MvpBadge } from "@/components/shared";
+import { PlayerAvatar, RankBadge, Last10, StreakBadge, WinRatePill, MvpBadge } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ProductState";
 import { Search, Flame, ArrowUpRight, Users, Trophy } from "lucide-react";
@@ -51,7 +51,7 @@ export default function Players() {
 
   return (
     <div className="m8-page-stack">
-      <section className="m8-panel rounded-2xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+      <section className="m8-panel rounded-2xl p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
         <div>
           <div className="brand-kicker mb-1">Roster</div>
           <div className="flex items-center gap-2">
@@ -69,7 +69,7 @@ export default function Players() {
               placeholder="Search players..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="pl-10 bg-[#0F1218] border-[#222834] h-11 rounded-xl"
+              className="pl-10 bg-[#0F1218] border-[#222834] h-10 rounded-xl"
             />
           </div>
 
@@ -101,54 +101,49 @@ export default function Players() {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-4" data-testid="players-grid">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2.5" data-testid="players-grid">
         {list.map((p) => (
           <Link
             key={p.id}
             to={`/players/${p.id}`}
             data-testid={`player-card-${p.id}`}
-            className="m8-panel rounded-2xl p-5 text-left animate-fade-up block group hover:-translate-y-0.5 transition-transform duration-200"
+            className="m8-panel rounded-2xl p-3.5 text-left animate-fade-up block group hover:-translate-y-0.5 transition-transform duration-200 min-w-0"
           >
-            <div className="flex items-center gap-3 mb-5">
-              <PlayerAvatar name={p.name} elo={p.currentElo} size={46} avatarUrl={playerAvatars[p.id]} />
+            <div className="flex items-center gap-2.5 mb-3">
+              <PlayerAvatar name={p.name} elo={p.currentElo} size={40} avatarUrl={playerAvatars[p.id]} />
               <div className="min-w-0 flex-1">
-                <div className="font-display font-bold text-[17px] truncate flex items-center gap-1.5">
+                <div className="font-display font-bold text-[15px] truncate flex items-center gap-1.5">
                   {p.name}
-                  {p.currentStreak >= 3 && <Flame size={14} className="text-magma" />}
+                  {p.currentStreak >= 3 && <Flame size={12} className="text-magma shrink-0" />}
                 </div>
-                <div className="mt-1"><RankBadge elo={p.currentElo} compact /></div>
+                <div className="mt-0.5"><RankBadge elo={p.currentElo} compact /></div>
               </div>
-              <ArrowUpRight size={16} className="text-[#596170] group-hover:text-magma transition-colors" />
+              <ArrowUpRight size={14} className="text-[#596170] group-hover:text-magma transition-colors shrink-0" />
             </div>
 
-            <div className="grid grid-cols-2 gap-x-4 gap-y-4 text-sm">
-              <div>
-                <div className="brand-kicker mb-1">Current</div>
-                <EloBadge elo={p.currentElo} />
+            <div className="grid grid-cols-3 gap-1.5">
+              <div className="rounded-lg border border-[#202631] bg-[#0F1218] px-2 py-2">
+                <div className="text-[8px] uppercase tracking-widest text-[#697181]">Elo</div>
+                <div className="font-mono font-black text-sm mt-0.5">{p.currentElo}</div>
               </div>
-              <div>
-                <div className="brand-kicker mb-1">Peak</div>
-                <span className="font-mono font-bold text-white">{p.peakElo}</span>
+              <div className="rounded-lg border border-[#202631] bg-[#0F1218] px-2 py-2">
+                <div className="text-[8px] uppercase tracking-widest text-[#697181]">WR</div>
+                <div className="mt-0.5"><WinRatePill player={p} /></div>
               </div>
-              <div>
-                <div className="brand-kicker mb-1">Mucho8s WR</div>
-                <WinRatePill player={p} />
-              </div>
-              <div>
-                <div className="brand-kicker mb-1 text-magma">Trophy8s MVP</div>
-                <MvpBadge count={p.mvpCount} />
+              <div className="rounded-lg border border-[#202631] bg-[#0F1218] px-2 py-2">
+                <div className="text-[8px] uppercase tracking-widest text-[#697181]">MVP</div>
+                <div className="mt-0.5"><MvpBadge count={p.mvpCount} /></div>
               </div>
             </div>
 
-            <div className="mt-5 pt-4 border-t border-[#1D222C]">
-              <RankProgress elo={p.currentElo} compact />
-              <div className="flex items-center justify-between mt-3">
-                <div>
-                  <div className="text-[8px] uppercase tracking-widest text-[#697181] mb-1">Mucho8s form</div>
-                  <Last10 record={p.last10} />
+            <div className="mt-2.5 pt-2.5 border-t border-[#1D222C] flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <div className="text-[8px] uppercase tracking-widest text-[#697181] mb-1">
+                  Form · Peak {p.peakElo}
                 </div>
-                <StreakBadge streak={p.currentStreak} />
+                <Last10 record={p.last10} />
               </div>
+              <StreakBadge streak={p.currentStreak} />
             </div>
           </Link>
         ))}
