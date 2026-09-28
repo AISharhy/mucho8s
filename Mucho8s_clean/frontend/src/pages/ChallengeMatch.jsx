@@ -11,7 +11,7 @@ import {
   Check,
   ExternalLink,
   ShieldCheck,
-  Swords,
+  Landmark,
   Trophy,
   AlertTriangle,
   Clock3,
@@ -141,7 +141,7 @@ export default function ChallengeMatch() {
   if (!discordSession || !discordPlayer) {
     return (
       <div className="m8-panel rounded-2xl p-10 text-center max-w-xl mx-auto">
-        <Swords size={34} className="text-magma mx-auto mb-3" />
+        <Landmark size={34} className="text-emerald-400 mx-auto mb-3" />
         <h2 className="font-display text-2xl font-bold">Discord login required</h2>
         <p className="text-sm text-muted-foreground mt-2">
           Login with Discord from the sidebar to open this challenge.
@@ -347,7 +347,7 @@ export default function ChallengeMatch() {
           </div>
 
           <div className="text-center">
-            <Swords size={22} className="text-magma mx-auto" />
+            <Landmark size={22} className="text-emerald-400 mx-auto" />
             <div className="font-display text-3xl font-black mt-1 text-emerald-400">{money(challenge)}</div>
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">{platformLabel}</div>
           </div>
@@ -434,7 +434,7 @@ export default function ChallengeMatch() {
 
       {challenge.status === "accepted" && (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4 items-start">
-          <div className="m8-panel rounded-2xl p-5 border-magma/20">
+          <div className="m8-panel rounded-2xl p-5 border-emerald-500/20">
             <div className="text-center py-2">
               <div className="brand-kicker mb-1">Mucho1v1 Live</div>
               <h3 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.03em]">PLAY MUCHO1V1</h3>
