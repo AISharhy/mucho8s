@@ -76,7 +76,7 @@ const COMPETITION_NAV = [
   },
   {
     to: "/rank-guide",
-    label: "Guide",
+    label: "Guida",
     icon: BookOpen,
     testid: "nav-rank-guide-link",
     activeIcon: "text-[#C7CFDA]",
@@ -275,7 +275,7 @@ export const MobileNav = () => {
   );
   const aliasLabel =
     ["/balancer", "/draft"].includes(loc.pathname) ? "Team Builder" :
-    loc.pathname === "/ranks" ? "Guide" :
+    loc.pathname === "/ranks" ? "Guida" :
     loc.pathname === "/leaderboard" || loc.pathname === "/statistics" || loc.pathname === "/challenge-ranking" ? "Ranking" :
     null;
 
