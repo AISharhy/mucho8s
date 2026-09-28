@@ -2289,6 +2289,7 @@ export const DataProvider = ({ children }) => {
     adminAccountAlertCount,
     refreshChallenges,
     refreshMatchReports,
+    refreshLiveMatches,
     createLiveMatch,
     requestCancelLiveMatch,
     cancelLiveMatch,
