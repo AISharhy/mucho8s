@@ -638,12 +638,10 @@ export default function PlayerProfile() {
     () => ({
       Trophy8s: Math.max(0, Number(player?.mvpCount || 0)),
       Trophy1v1: Math.max(0, Number(challengeStats.mvpCount || 0)),
-      TrophyRanked: Math.max(0, Number(player?.mvpRankedCount || 0)),
       TrophyTourney: Math.max(0, Number(player?.mvpTourneyCount || 0)),
     }),
     [
       player?.mvpCount,
-      player?.mvpRankedCount,
       player?.mvpTourneyCount,
       challengeStats.mvpCount,
     ]
