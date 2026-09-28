@@ -5,7 +5,7 @@ const SUPABASE_URL = (process.env.REACT_APP_SUPABASE_URL || "").replace(/\/$/, "
 const cacheKey = (game, mapName) =>
   `m8-map-preview-v5:${String(game || "")}:${String(mapName || "")}`;
 
-const callOfDutyMapsPreview = (game, mapName) => {
+const fandomMapsPreview = (game, mapName) => {
   if (!SUPABASE_URL || !game || !mapName) return "";
   const params = new URLSearchParams({
     game: String(game),
@@ -39,7 +39,7 @@ export default function MapPreviewCard({
   className = "",
 }) {
   const primarySource = useMemo(
-    () => callOfDutyMapsPreview(game, mapName),
+    () => fandomMapsPreview(game, mapName),
     [game, mapName]
   );
 
