@@ -182,7 +182,9 @@ const automaticMerdaIds = (byId: Record<string, any>, losers: string[]) =>
   losers.filter((id) => {
     const current = Number(byId[id]?.currentStreak || 0);
     const nextLossStreak = current < 0 ? Math.abs(current) + 1 : 1;
-    return nextLossStreak >= 3 && nextLossStreak % 3 === 0;
+    // MERDA starts at 3 straight losses, then every further loss in the same
+    // losing streak adds another one: LLL=1, LLLL=2, LLLLL=3...
+    return nextLossStreak >= 3;
   });
 
 const automaticMerdaClearedIds = (byId: Record<string, any>, winners: string[]) =>
@@ -320,12 +322,13 @@ const recomputeAwardState = (byId: Record<string, any>, matches: any[]) => {
           mvpIds.push(id);
         }
 
-        if (!won && Math.abs(nextStreak) >= 3 && Math.abs(nextStreak) % 3 === 0) {
+        if (!won && Math.abs(nextStreak) >= 3) {
           player.merdaCount = Math.max(0, Number(player.merdaCount || 0)) + 1;
           merdaIds.push(id);
         }
 
         if (won && Number(player.merdaCount || 0) > 0) {
+          // Each win clears exactly one MERDA, even if more are still active.
           player.merdaCount = Math.max(0, Number(player.merdaCount || 0) - 1);
           merdaClearedIds.push(id);
         }
