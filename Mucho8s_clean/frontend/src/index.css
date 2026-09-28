@@ -2291,12 +2291,12 @@ textarea:focus-visible {
 }
 
 .m8-topbar-wordmark > span {
-    color: #D5A33A;
+    color: #FF2A3B;
 }
 
 .m8-topbar-submark {
     margin-top: .25rem;
-    color: #D5A33A;
+    color: #8B94A3;
     font-size: .43rem;
     line-height: 1;
     font-weight: 900;
@@ -2334,8 +2334,8 @@ textarea:focus-visible {
     right: .85rem;
     bottom: 0;
     height: 2px;
-    background: #D5A33A;
-    box-shadow: 0 0 10px rgba(213,163,58,.26);
+    background: #FF2A3B;
+    box-shadow: 0 0 10px rgba(255,42,59,.30);
 }
 
 .m8-topbar-icon {
@@ -2429,17 +2429,17 @@ textarea:focus-visible {
 }
 
 .m8-profile-sidebar-item.is-active {
-    color: #F4DE9E;
-    border-color: rgba(213,163,58,.20);
+    color: #FFFFFF;
+    border-color: rgba(255,42,59,.24);
     background:
-        linear-gradient(90deg, rgba(213,163,58,.16), rgba(213,163,58,.055));
+        linear-gradient(90deg, rgba(255,42,59,.16), rgba(255,42,59,.045));
     box-shadow:
-        inset 2px 0 0 #D5A33A,
+        inset 2px 0 0 #FF2A3B,
         0 7px 20px rgba(0,0,0,.10);
 }
 
 .m8-profile-sidebar-item.is-active svg {
-    color: #DDB24E;
+    color: #FF2A3B;
 }
 
 .m8-profile-content {
