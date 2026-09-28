@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   CalendarDays,
@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 
-const NEWS = [
+const STATIC_NEWS = [
   {
     id: "preseason-live",
     date: "28 Sep 2026",
@@ -45,8 +45,26 @@ const NEWS = [
   },
 ];
 
+const newsIcon = (category) => {
+  const key = String(category || "").toLowerCase();
+  if (key.includes("season") || key.includes("competition")) return Trophy;
+  if (key.includes("rank") || key.includes("elo")) return TrendingUp;
+  if (key.includes("update") || key.includes("platform")) return Sparkles;
+  return Newspaper;
+};
+
+const formatNewsDate = (value) => {
+  const date = new Date(value || Date.now());
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};
+
 export default function News() {
-  const { competitionData } = useData();
+  const { competitionData, newsPosts } = useData();
   const [activeIndex, setActiveIndex] = useState(0);
   const current = competitionData?.current || {};
 
@@ -56,15 +74,33 @@ export default function News() {
       ? "Pre-Season"
       : `Season ${current.season_number || 1}`);
 
+  const NEWS = useMemo(() => {
+    const dynamic = (Array.isArray(newsPosts) ? newsPosts : []).map((post) => ({
+      id: post.id,
+      date: formatNewsDate(post.created_at),
+      category: post.category || "Platform",
+      title: post.title,
+      summary: post.summary,
+      icon: newsIcon(post.category),
+      accent: post.accent || "#FF2A3B",
+      featured: Boolean(post.featured),
+      dynamic: true,
+    }));
+
+    return [...dynamic, ...STATIC_NEWS];
+  }, [newsPosts]);
+
   const activePost = NEWS[activeIndex] || NEWS[0];
   const ActiveIcon = activePost.icon;
 
   useEffect(() => {
+    if (!NEWS.length) return undefined;
+    if (activeIndex >= NEWS.length) setActiveIndex(0);
     const timer = window.setInterval(() => {
       setActiveIndex((currentIndex) => (currentIndex + 1) % NEWS.length);
     }, 5200);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [NEWS.length, activeIndex]);
 
   const changeSlide = (direction) => {
     setActiveIndex((currentIndex) => {
