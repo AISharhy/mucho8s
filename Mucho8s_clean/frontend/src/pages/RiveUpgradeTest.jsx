@@ -1,22 +1,25 @@
 import React from "react";
+import { X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import RankUpgradeRive from "@/components/RankUpgradeRive";
 
 export default function RiveUpgradeTest() {
-  return (
-    <section className="m8-panel rounded-[22px] p-5 sm:p-7 min-h-[620px] flex flex-col">
-      <div className="mb-5">
-        <div className="brand-kicker mb-1">Rive Test</div>
-        <h1 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.03em]">
-          Original Rank Upgrade
-        </h1>
-        <p className="text-sm text-muted-foreground mt-2">
-          Questa è l'animazione Rive originale senza overlay o logica Mucho.
-          Interagisci direttamente con il pulsante UPGRADE dentro l'animazione.
-        </p>
-      </div>
+  const navigate = useNavigate();
 
-      <div className="flex-1 min-h-[500px] rounded-2xl border border-[#242A35] bg-[#080B10] overflow-hidden grid place-items-center">
-        <RankUpgradeRive className="w-full h-[500px] sm:h-[560px]" />
+  return (
+    <section className="fixed inset-0 z-[12000] overflow-hidden bg-[#020305]">
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="absolute top-4 right-4 z-20 w-10 h-10 rounded-xl border border-white/10 bg-black/45 backdrop-blur-md text-white/70 hover:text-white hover:bg-black/65 transition-colors flex items-center justify-center"
+        aria-label="Close Rive test"
+        title="Close"
+      >
+        <X size={18} />
+      </button>
+
+      <div className="absolute inset-0">
+        <RankUpgradeRive className="w-screen h-screen" />
       </div>
     </section>
   );
