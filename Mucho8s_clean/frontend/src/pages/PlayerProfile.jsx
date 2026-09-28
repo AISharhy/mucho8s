@@ -1526,7 +1526,7 @@ export default function PlayerProfile() {
                         <strong>Mucho1v1</strong>
                         <span>{challengeStats.played ? challengeStats.winRate : 0}% WR</span>
                       </div>
-                      <Swords size={34} aria-hidden="true" />
+                      <Landmark size={34} aria-hidden="true" />
                     </div>
                   </div>
                 </section>
