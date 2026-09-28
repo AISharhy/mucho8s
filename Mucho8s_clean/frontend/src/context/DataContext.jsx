@@ -355,6 +355,7 @@ export const DataProvider = ({ children }) => {
     activeChallenges: [],
     recentChallenges: [],
     onlinePlayers: [],
+    twitchLivePlayers: [],
     competition: { season_number: 1, season_name: "Season 1" },
   });
   const [competitionData, setCompetitionData] = useState({
@@ -511,6 +512,7 @@ export const DataProvider = ({ children }) => {
           activeChallenges: Array.isArray(data.activeChallenges) ? data.activeChallenges : [],
           recentChallenges: Array.isArray(data.recentChallenges) ? data.recentChallenges : [],
           onlinePlayers: Array.isArray(data.onlinePlayers) ? data.onlinePlayers : [],
+          twitchLivePlayers: Array.isArray(data.twitchLivePlayers) ? data.twitchLivePlayers : [],
           competition: data.competition || { season_number: 1, season_name: "Season 1" },
         });
       }
