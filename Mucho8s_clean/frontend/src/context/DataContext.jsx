@@ -985,7 +985,17 @@ export const DataProvider = ({ children }) => {
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        if (!silent) toast.error(data?.error || "Match result action failed");
+        const errorValue = data?.error;
+        const message =
+          typeof errorValue === "string" && errorValue.trim()
+            ? errorValue.trim()
+            : typeof errorValue?.message === "string" && errorValue.message.trim()
+              ? errorValue.message.trim()
+              : typeof errorValue?.details === "string" && errorValue.details.trim()
+                ? errorValue.details.trim()
+                : "Match result action failed";
+
+        if (!silent) toast.error(message);
         return null;
       }
       return data;
