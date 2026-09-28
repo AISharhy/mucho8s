@@ -202,7 +202,6 @@ export default function PlayerProfile() {
   const publicProfile = playerProfiles?.[id] || {};
   const targetHasPayPal = Boolean(String(publicProfile.paypalUrl || "").trim());
   const targetHasRevolut = Boolean(String(publicProfile.revolutUrl || "").trim());
-  const targetTwitchChannel = String(publicProfile.twitchChannel || "").trim();
   const targetHasPayment = targetHasPayPal || targetHasRevolut;
   const isOwnProfile = Boolean(discordSession && discordPlayer?.id === id);
   const requestedTab = searchParams.get("tab");
