@@ -108,6 +108,13 @@ Deno.serve(async (req: Request) => {
       }),
     );
     const twitchLivePlayers = twitchChecks.filter(Boolean);
+    console.log("[twitch-presence]", JSON.stringify({
+      configured: (twitchAccounts || []).map((row: any) => ({
+        player_id: String(row?.player_id || ""),
+        twitch_channel: String(row?.twitch_channel || ""),
+      })),
+      live: twitchLivePlayers,
+    }));
 
     return new Response(JSON.stringify({
       ok: true,
