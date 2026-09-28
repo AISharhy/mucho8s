@@ -2229,7 +2229,7 @@ export default function PlayerProfile() {
               </p>
             </div>
             <Link
-              to="/matches"
+              to="/matches?view=history"
               className="text-[10px] uppercase tracking-widest text-magma hover:text-white inline-flex items-center gap-1"
             >
               Match Center <ChevronRight size={12} />
@@ -2289,7 +2289,7 @@ export default function PlayerProfile() {
                 return (
                   <Link
                     key={m.id}
-                    to="/matches"
+                    to={`/matches?view=history&match=${encodeURIComponent(m.id)}`}
                     className="group rounded-xl border border-[#222834] bg-[#0F1218] p-3.5 flex flex-col lg:flex-row lg:items-center gap-3 transition-all hover:border-[#3A4350]"
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
