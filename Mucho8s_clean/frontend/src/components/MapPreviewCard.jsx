@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 
 const FANDOM_FILE_REDIRECT = "https://callofduty.fandom.com/wiki/Special:Redirect/file/";
 const FANDOM_API = "https://callofduty.fandom.com/api.php";
+const SUPABASE_URL = (process.env.REACT_APP_SUPABASE_URL || "").replace(/\/$/, "");
 
 const GAME_FILE_TAGS = {
   BO7: ["BO7"],
@@ -87,7 +88,16 @@ const scoreSearchResult = (page, mapName, game) => {
 };
 
 const cacheKey = (game, mapName) =>
-  `m8-map-preview-v2:${String(game || "")}:${String(mapName || "")}`;
+  `m8-map-preview-v3:${String(game || "")}:${String(mapName || "")}`;
+
+const callOfDutyMapsPreview = (game, mapName) => {
+  if (!SUPABASE_URL || !game || !mapName) return "";
+  const params = new URLSearchParams({
+    game: String(game),
+    map: String(mapName),
+  });
+  return `${SUPABASE_URL}/functions/v1/mucho8s-map-preview?${params.toString()}`;
+};
 
 const readCached = (game, mapName) => {
   try {
@@ -152,8 +162,13 @@ export default function MapPreviewCard({
     () => candidateFilenames(mapName, game).map(fileRedirect),
     [mapName, game]
   );
+  const primarySource = useMemo(
+    () => callOfDutyMapsPreview(game, mapName),
+    [game, mapName]
+  );
   const [source, setSource] = useState(() => readCached(game, mapName) || "");
   const [candidateIndex, setCandidateIndex] = useState(-1);
+  const [fandomTried, setFandomTried] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -161,16 +176,25 @@ export default function MapPreviewCard({
     const cached = readCached(game, mapName);
 
     setCandidateIndex(-1);
+    setFandomTried(false);
     setLoaded(false);
-    setSource(cached || "");
 
     if (cached) {
+      setSource(cached);
+      return () => {
+        active = false;
+      };
+    }
+
+    if (primarySource) {
+      setSource(primarySource);
       return () => {
         active = false;
       };
     }
 
     void (async () => {
+      setFandomTried(true);
       try {
         const found = await searchArchive(mapName, game);
         if (active && found) {
@@ -184,16 +208,39 @@ export default function MapPreviewCard({
       if (active && candidates.length) {
         setCandidateIndex(0);
         setSource(candidates[0]);
+      } else if (active) {
+        setSource("");
       }
     })();
 
     return () => {
       active = false;
     };
-  }, [game, mapName, candidates]);
+  }, [game, mapName, candidates, primarySource]);
 
-  const handleError = () => {
+  const handleError = async () => {
     setLoaded(false);
+
+    if (!fandomTried && source === primarySource) {
+      setFandomTried(true);
+      try {
+        const found = await searchArchive(mapName, game);
+        if (found) {
+          setSource(found);
+          return;
+        }
+      } catch {
+        // Continue to filename-based fallbacks.
+      }
+
+      if (candidates.length) {
+        setCandidateIndex(0);
+        setSource(candidates[0]);
+      } else {
+        setSource("");
+      }
+      return;
+    }
 
     if (candidateIndex < 0) {
       if (candidates.length) {
@@ -230,6 +277,7 @@ export default function MapPreviewCard({
           alt=""
           loading="lazy"
           referrerPolicy="no-referrer"
+          data-preview-source={source === primarySource ? "callofdutymaps" : "fallback"}
           onLoad={handleLoad}
           onError={handleError}
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${loaded ? "opacity-70" : "opacity-0"}`}
