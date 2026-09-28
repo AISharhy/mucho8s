@@ -184,17 +184,22 @@ export default function PlayerProfile() {
   const targetHasPayment = targetHasPayPal || targetHasRevolut;
   const isOwnProfile = Boolean(discordSession && discordPlayer?.id === id);
   const requestedTab = searchParams.get("tab");
+  const publicProfileTabs = ["stats", "history", "achievements", "rivalries"];
   const profileTab =
-    isOwnProfile && ["mucho8s", "edit", "challenges"].includes(requestedTab)
-      ? requestedTab
-      : "overview";
+    requestedTab === "edit" && isOwnProfile
+      ? "edit"
+      : publicProfileTabs.includes(requestedTab)
+        ? requestedTab
+        : "overview";
 
   const setProfileTab = (tab) => {
-    if (!isOwnProfile) return;
-    if (["mucho8s", "edit", "challenges"].includes(tab)) {
-      setSearchParams({ tab }, { replace: true });
-    } else {
+    if (tab === "edit" && !isOwnProfile) return;
+    if (tab === "overview") {
       setSearchParams({}, { replace: true });
+      return;
+    }
+    if (["stats", "history", "achievements", "rivalries", "edit"].includes(tab)) {
+      setSearchParams({ tab }, { replace: true });
     }
   };
 
@@ -1357,82 +1362,311 @@ export default function PlayerProfile() {
         </div>
       </section>
 
-      {/* Profile navigation: editing lives in the hero action only. */}
-      {isOwnProfile && (
-        <div
-          className="order-2 grid grid-cols-2 sm:grid-cols-4 xl:inline-grid xl:grid-cols-4 gap-1 p-1 rounded-2xl bg-[#0F1218] border border-[#242A35] w-full xl:w-fit"
-          role="tablist"
-          aria-label="My Profile sections"
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={profileTab === "overview"}
-            onClick={() => setProfileTab("overview")}
-            className={`h-11 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold transition-all ${
-              profileTab === "overview"
-                ? "bg-white text-black shadow-sm"
-                : "text-[#9DA5B4] hover:text-white hover:bg-white/[0.04]"
-            }`}
-            data-testid="profile-tab-overview"
-          >
-            <UserCircle size={16} />
-            Profile
-          </button>
+      {profileTab !== "edit" && (
+        <div className="m8-profile-content order-2">
+          <div className="m8-profile-content-tabs" role="tablist" aria-label="Player profile sections">
+            {[
+              ["overview", "Overview"],
+              ["stats", "Detailed Stats"],
+              ["history", "Match History"],
+              ["achievements", "Achievements"],
+              ["rivalries", "Rivalries"],
+            ].map(([tab, label]) => (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={profileTab === tab}
+                onClick={() => setProfileTab(tab)}
+                className={`m8-profile-content-tab ${profileTab === tab ? "is-active" : ""}`}
+                data-testid={`profile-content-tab-${tab}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
-          <button
-            type="button"
-            role="tab"
-            aria-selected={profileTab === "mucho8s"}
-            onClick={() => setProfileTab("mucho8s")}
-            className={`h-11 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold transition-all ${
-              profileTab === "mucho8s"
-                ? "bg-magma text-white shadow-sm"
-                : "text-[#9DA5B4] hover:text-white hover:bg-white/[0.04]"
-            }`}
-            data-testid="profile-tab-mucho8s"
-          >
-            <Gamepad2 size={16} />
-            Mucho8s
-          </button>
+          {profileTab === "overview" && (
+            <div className="m8-profile-overview-grid" data-testid="profile-overview-dashboard">
+              <div className="m8-profile-overview-column">
+                <section className="m8-profile-compact-panel">
+                  <div className="m8-profile-panel-title">Lifetime Stats</div>
+                  <div className="m8-profile-lifetime-grid">
+                    {[
+                      ["Matches", Number(player.totalMatches || 0), "neutral"],
+                      ["Wins", Number(player.wins || 0), "win"],
+                      ["Losses", Number(player.losses || 0), "loss"],
+                      ["Win Rate", `${winRate(player)}%`, "neutral"],
+                    ].map(([label, value, tone]) => (
+                      <div key={label} className="m8-profile-lifetime-stat">
+                        <span>{label}</span>
+                        <strong className={tone === "win" ? "text-emerald-400" : tone === "loss" ? "text-red-400" : ""}>
+                          {value}
+                        </strong>
+                      </div>
+                    ))}
+                  </div>
+                </section>
 
-          <button
-            type="button"
-            role="tab"
-            aria-selected={profileTab === "challenges"}
-            onClick={() => setProfileTab("challenges")}
-            className={`h-11 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold transition-all relative ${
-              profileTab === "challenges"
-                ? "bg-emerald-400 text-black shadow-sm"
-                : "text-[#9DA5B4] hover:text-white hover:bg-white/[0.04]"
-            }`}
-            data-testid="profile-tab-challenges"
-          >
-            <Swords size={16} />
-            Mucho1v1
-            {myChallenges.some((challenge) =>
-              ["pending", "accepted", "result_pending", "disputed"].includes(challenge.status)
-            ) && (
-              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.55)]" />
-            )}
-          </button>
+                <section className="m8-profile-compact-panel">
+                  <div className="m8-profile-panel-head">
+                    <div className="m8-profile-panel-title">Recent Matches</div>
+                    <button type="button" onClick={() => setProfileTab("history")} className="m8-profile-see-all">
+                      See all
+                    </button>
+                  </div>
 
-          <button
-            type="button"
-            role="tab"
-            disabled
-            title="MuchoTourney · Coming Soon"
-            className="h-11 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold text-[#D5A33A]/65 border border-[#D5A33A]/10 bg-[#D5A33A]/[0.025] cursor-not-allowed"
-            data-testid="profile-tab-tourney"
-          >
-            <Trophy size={16} />
-            <span>MuchoTourney</span>
-            <span className="text-[7px] uppercase tracking-wider opacity-70">Soon</span>
-          </button>
+                  <div className="m8-profile-recent-list">
+                    {playerMatches.slice(0, 4).map((m) => {
+                      const teamA = (m.teamA || []).map(String);
+                      const teamB = (m.teamB || []).map(String);
+                      const inA = teamA.includes(String(player.id));
+                      const winnerSide = m.winner === "B" ? "B" : "A";
+                      const won = (inA && winnerSide === "A") || (!inA && winnerSide === "B");
+                      const coreEloDelta = Number(m.eloChanges?.[player.id] || 0);
+                      const pairing = (Array.isArray(m.pairings) ? m.pairings : []).find(
+                        (pair) =>
+                          String(pair?.playerAId || "") === String(player.id) ||
+                          String(pair?.playerBId || "") === String(player.id)
+                      );
+                      const stakeElo = Math.max(0, Math.round(Number(pairing?.amount || 0)));
+                      const eloDelta = coreEloDelta + (won ? stakeElo : -stakeElo);
+                      const mapName = (Array.isArray(m.maps) && m.maps[0]) || m.map || m.mode || "Mucho8s";
+
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => setProfileTab("history")}
+                          className="m8-profile-recent-row"
+                        >
+                          <div className="m8-profile-match-thumb" aria-hidden="true">
+                            <Gamepad2 size={17} />
+                          </div>
+                          <div className="m8-profile-match-mode">
+                            <strong>8s</strong>
+                            <span>{mapName}</span>
+                          </div>
+                          <div className={`m8-profile-match-result ${won ? "is-win" : "is-loss"}`}>
+                            <strong>{won ? "WIN" : "LOSS"}</strong>
+                            <span>{m.game || "Mucho8s"}</span>
+                          </div>
+                          <div className="m8-profile-match-meta">
+                            <span>{pairing ? `€${Number(pairing.amount || 0).toFixed(0)} stake` : "Ranked"}</span>
+                            <strong className={eloDelta >= 0 ? "text-emerald-400" : "text-red-400"}>
+                              {eloDelta >= 0 ? "+" : ""}{eloDelta} Elo
+                            </strong>
+                          </div>
+                          <div className="m8-profile-match-time">
+                            {m.date ? new Date(m.date).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }) : "—"}
+                          </div>
+                          <ChevronRight size={14} className="m8-profile-row-chevron" />
+                        </button>
+                      );
+                    })}
+
+                    {playerMatches.length === 0 && (
+                      <div className="m8-profile-empty-row">No Mucho8s recorded yet.</div>
+                    )}
+                  </div>
+                </section>
+              </div>
+
+              <div className="m8-profile-overview-column">
+                <section className="m8-profile-compact-panel">
+                  <div className="m8-profile-panel-title">Favorite Modes</div>
+                  <div className="m8-profile-mode-grid">
+                    <div className="m8-profile-mode-card">
+                      <div className="m8-profile-mode-copy">
+                        <strong>8s</strong>
+                        <span>{winRate(player)}% WR</span>
+                      </div>
+                      <Gamepad2 size={34} aria-hidden="true" />
+                    </div>
+                    <div className="m8-profile-mode-card">
+                      <div className="m8-profile-mode-copy">
+                        <strong>Mucho1v1</strong>
+                        <span>{challengeStats.played ? challengeStats.winRate : 0}% WR</span>
+                      </div>
+                      <Swords size={34} aria-hidden="true" />
+                    </div>
+                  </div>
+                </section>
+
+                <section className="m8-profile-compact-panel">
+                  <div className="m8-profile-panel-head">
+                    <div className="m8-profile-panel-title">Achievements</div>
+                    <button type="button" onClick={() => setProfileTab("achievements")} className="m8-profile-see-all">
+                      See all
+                    </button>
+                  </div>
+
+                  <div className="m8-profile-achievement-strip">
+                    {trophyCabinet.slice(0, 5).map((trophy, index) => (
+                      <button
+                        type="button"
+                        key={trophy.id}
+                        onClick={() => setSelectedTrophyId(trophy.id)}
+                        className={`m8-profile-achievement-mini tone-${index % 5}`}
+                        title={trophy.title}
+                      >
+                        <span className="m8-profile-achievement-hex">
+                          {trophy.iconType === "trophy" ? <Trophy size={20} /> : <span>{trophy.emoji || "★"}</span>}
+                        </span>
+                        <span>{trophy.title}</span>
+                      </button>
+                    ))}
+                    {trophyCabinet.length === 0 && (
+                      <div className="m8-profile-empty-row">No achievements unlocked yet.</div>
+                    )}
+                  </div>
+                </section>
+
+                <section className="m8-profile-compact-panel">
+                  <div className="m8-profile-panel-head">
+                    <div className="m8-profile-panel-title">Rivalries</div>
+                    <button type="button" onClick={() => setProfileTab("rivalries")} className="m8-profile-see-all">
+                      See all
+                    </button>
+                  </div>
+
+                  <div className="m8-profile-rivalry-mini-list">
+                    {rivalries.slice(0, 2).map((row) => {
+                      const opponent = playerMap[row.opponentId];
+                      return (
+                        <button
+                          type="button"
+                          key={row.opponentId}
+                          onClick={() => setProfileTab("rivalries")}
+                          className="m8-profile-rivalry-mini"
+                        >
+                          <span className="m8-profile-vs">VS</span>
+                          <PlayerAvatar
+                            name={opponent?.name || "Player"}
+                            elo={opponent?.currentElo || 1000}
+                            size={28}
+                            avatarUrl={playerAvatars[row.opponentId]}
+                          />
+                          <span className="m8-profile-rivalry-copy">
+                            <strong>{opponent?.name || "Player"}</strong>
+                            <small>{row.meetings} matches · {row.wins}W - {row.losses}L</small>
+                          </span>
+                          <span className="m8-profile-rival-label"><Swords size={12} /> Rival</span>
+                        </button>
+                      );
+                    })}
+                    {rivalries.length === 0 && (
+                      <div className="m8-profile-empty-row">No verified rivals yet.</div>
+                    )}
+                  </div>
+                </section>
+              </div>
+            </div>
+          )}
+
+          {profileTab === "stats" && (
+            <div className="m8-profile-detail-grid" data-testid="profile-detailed-stats">
+              <section className="m8-profile-compact-panel">
+                <div className="m8-profile-panel-title">Performance</div>
+                <div className="m8-profile-detail-stat-grid">
+                  {[
+                    ["Current Elo", player.currentElo.toLocaleString("it-IT")],
+                    ["Peak Elo", player.peakElo.toLocaleString("it-IT")],
+                    ["General Trophies", generalTrophyCount],
+                    ["MVP Trophy", Number(player.mvpCount || 0)],
+                    ["Best Win Streak", mucho8sInsights.bestWinStreak ? `${mucho8sInsights.bestWinStreak}W` : "—"],
+                    ["Total Winnings", `€${(Number(mucho8sInsights.wonValue || 0) + Number(challengeStats.wonValue || 0)).toFixed(0)}`],
+                  ].map(([label, value]) => (
+                    <div key={label} className="m8-profile-detail-stat">
+                      <span>{label}</span>
+                      <strong>{value}</strong>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="m8-profile-compact-panel">
+                <div className="m8-profile-panel-title">Mode Stats</div>
+                <div className="m8-profile-mode-stat-list">
+                  <div className="m8-profile-mode-stat-row">
+                    <span>Mucho8s</span>
+                    <strong>{winRate(player)}% WR</strong>
+                    <small>{player.wins || 0}W - {player.losses || 0}L</small>
+                  </div>
+                  <div className="m8-profile-mode-stat-row">
+                    <span>Mucho1v1</span>
+                    <strong>{challengeStats.played ? challengeStats.winRate : 0}% WR</strong>
+                    <small>{challengeStats.wins}W - {challengeStats.losses}L</small>
+                  </div>
+                </div>
+              </section>
+
+              <section className="m8-profile-compact-panel m8-profile-elo-panel">
+                <div className="m8-profile-panel-head">
+                  <div className="m8-profile-panel-title">Elo Progression</div>
+                  <span className="m8-pill">{player.currentElo} Elo</span>
+                </div>
+                <div className="h-56 mt-3">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={player.eloHistory || []}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1D222C" vertical={false} />
+                      <XAxis dataKey="match" stroke="#4B5563" fontSize={10} />
+                      <YAxis domain={["dataMin - 30", "dataMax + 30"]} stroke="#4B5563" fontSize={10} width={42} />
+                      <Tooltip
+                        contentStyle={{ background: "#101319", border: "1px solid #242A35", borderRadius: 8 }}
+                        labelStyle={{ color: "#9CA3AF" }}
+                      />
+                      <Line type="monotone" dataKey="elo" stroke={tier.color} strokeWidth={2.5} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {profileTab === "rivalries" && (
+            <section className="m8-profile-compact-panel" data-testid="profile-rivalries-full">
+              <div className="m8-profile-panel-head">
+                <div>
+                  <div className="m8-profile-panel-title">Rivalries</div>
+                  <div className="text-sm text-[#737D8D] mt-1">Verified head-to-head history.</div>
+                </div>
+                <Link to="/rivalries" className="m8-profile-see-all">Global rivalries</Link>
+              </div>
+
+              <div className="m8-profile-rivalry-full-list">
+                {rivalries.map((row) => {
+                  const opponent = playerMap[row.opponentId];
+                  return (
+                    <Link key={row.opponentId} to={`/players/${row.opponentId}`} className="m8-profile-rivalry-full-row">
+                      <span className="m8-profile-vs">VS</span>
+                      <PlayerAvatar
+                        name={opponent?.name || "Player"}
+                        elo={opponent?.currentElo || 1000}
+                        size={36}
+                        avatarUrl={playerAvatars[row.opponentId]}
+                      />
+                      <span className="m8-profile-rivalry-copy">
+                        <strong>{opponent?.name || "Player"}</strong>
+                        <small>{row.meetings} meetings · {row.teamMeetings} Mucho8s · {row.directMeetings} Mucho1v1</small>
+                      </span>
+                      <span className="m8-profile-rivalry-record">
+                        <b className="text-emerald-400">{row.wins}W</b>
+                        <em>-</em>
+                        <b className="text-red-400">{row.losses}L</b>
+                      </span>
+                      <ChevronRight size={14} />
+                    </Link>
+                  );
+                })}
+                {rivalries.length === 0 && <div className="m8-profile-empty-row">No verified rivals yet.</div>}
+              </div>
+            </section>
+          )}
         </div>
       )}
 
-      {(!isOwnProfile || profileTab === "overview") && (
+      {profileTab === "__legacy_overview" && (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 order-6">
             <div className="m8-panel rounded-2xl p-4 sm:p-5">
@@ -1535,7 +1769,7 @@ export default function PlayerProfile() {
         </>
       )}
 
-      {(!isOwnProfile || profileTab === "overview") && nextTrophyChallenges.length > 0 && (
+      {profileTab === "achievements" && nextTrophyChallenges.length > 0 && (
         <div
           className="m8-panel rounded-[22px] p-4 sm:p-5 order-4"
           data-testid="next-trophy-challenges"
@@ -1597,7 +1831,7 @@ export default function PlayerProfile() {
         </div>
       )}
 
-      {(!isOwnProfile || profileTab === "overview") && (
+      {profileTab === "achievements" && (
       <div className="m8-showcase rounded-[22px] p-4 sm:p-6 order-4" data-testid="trophy-cabinet">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
@@ -1835,7 +2069,7 @@ export default function PlayerProfile() {
         </DialogContent>
       </Dialog>
 
-      {isOwnProfile && profileTab === "mucho8s" && (
+      {profileTab === "history" && (
         <div className="m8-panel rounded-[22px] p-4 sm:p-5 order-3" data-testid="my-mucho8s-history">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
             <div>
@@ -2152,7 +2386,7 @@ export default function PlayerProfile() {
         </div>
       )}
 
-      {(!isOwnProfile || profileTab === "overview") && (
+      {profileTab === "__legacy_elo" && (
       <div className="m8-panel rounded-2xl p-4 sm:p-5 order-8">
         <div className="flex items-center justify-between gap-3 mb-3">
           <div>
@@ -2178,7 +2412,7 @@ export default function PlayerProfile() {
       </div>
       )}
 
-      {(!isOwnProfile || profileTab === "overview") && (
+      {profileTab === "__legacy_recent" && (
       <div className="m8-panel rounded-2xl p-4 sm:p-5 order-5">
         <div className="brand-kicker mb-1 text-magma">Mucho8s</div>
         <h3 className="font-display font-black text-xl tracking-[-0.02em] mb-4">Recent Mucho8s</h3>
