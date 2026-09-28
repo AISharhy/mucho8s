@@ -26,6 +26,7 @@ export const RecordMatchDialog = ({
   initialCaptains = null,
   creatorPlayerId = "",
   liveMatchId = "",
+  liveOnly = false,
   onReported,
 }) => {
   const { players, createMatchReport, createLiveMatch, editMatch } = useData();
@@ -250,6 +251,22 @@ export const RecordMatchDialog = ({
           ? "Result reported — Elo & stats recalculated"
           : "Mucho8s updated — Elo & stats recalculated"
       );
+    } else if (liveOnly) {
+      const liveMatch = await createLiveMatch({
+        teamA,
+        teamB,
+        game,
+        mode,
+        format: `${teamA.length}v${teamB.length}`,
+        pairings: submittedPairings,
+      });
+      if (!liveMatch) {
+        setSubmitting(false);
+        return;
+      }
+
+      toast.success("Mucho8s is now live");
+      onReported?.(null, liveMatch);
     } else {
       const report = await createMatchReport({
         teamA,
@@ -407,6 +424,7 @@ export const RecordMatchDialog = ({
             </>
           )}
 
+          {!liveOnly && (
           <div>
             <Label className="text-xs text-muted-foreground">Winner</Label>
             <div className="grid grid-cols-2 gap-2 mt-1">
@@ -432,6 +450,7 @@ export const RecordMatchDialog = ({
               </Button>
             </div>
           </div>
+          )}
 
           <div className="rounded-2xl bg-[#0F1218] border border-[#222834] p-4" data-testid="match-money-settings">
             <div className="flex items-center gap-2 mb-3">
@@ -569,7 +588,7 @@ export const RecordMatchDialog = ({
             Cancel
           </Button>
 
-          {!editData && liveMatchId && (
+          {!liveOnly && !editData && liveMatchId && (
             <Button
               type="button"
               variant="outline"
@@ -592,12 +611,14 @@ export const RecordMatchDialog = ({
           >
             <Crown size={16} className="mr-1" />
             {submitting
-              ? "Submitting..."
-              : reportOnly
-                ? "Update Result"
-                : editData
-                  ? "Update Mucho8s"
-                  : "Submit Mucho8s"}
+              ? (liveOnly ? "Starting..." : "Submitting...")
+              : liveOnly
+                ? "Start Mucho8s"
+                : reportOnly
+                  ? "Update Result"
+                  : editData
+                    ? "Update Mucho8s"
+                    : "Submit Mucho8s"}
           </Button>
         </DialogFooter>
       </DialogContent>
