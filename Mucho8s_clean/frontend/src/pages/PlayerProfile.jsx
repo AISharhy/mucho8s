@@ -2220,7 +2220,7 @@ export default function PlayerProfile() {
       </Dialog>
 
       {profileTab === "history" && (
-        <div className="m8-panel rounded-[22px] p-4 sm:p-5 order-3" data-testid="my-mucho8s-history">
+        <div className="m8-panel m8-mode-zone is-mucho8s rounded-[22px] p-4 sm:p-5 order-3" data-testid="my-mucho8s-history">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
             <div>
               <div className="brand-kicker mb-1 text-magma">Mucho8s</div>
@@ -2353,7 +2353,7 @@ export default function PlayerProfile() {
       )}
 
       {isOwnProfile && profileTab === "challenges" && (
-        <div className="m8-panel rounded-2xl p-4 sm:p-5 order-3" data-testid="my-challenges-panel">
+        <div className="m8-panel m8-mode-zone is-mucho1v1 rounded-2xl p-4 sm:p-5 order-3" data-testid="my-challenges-panel">
           <div className="mb-4">
             <div className="brand-kicker mb-1 text-emerald-400">Mucho1v1</div>
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
