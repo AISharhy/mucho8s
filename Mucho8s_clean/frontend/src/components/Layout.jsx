@@ -545,25 +545,91 @@ export const Layout = () => {
             <span className="m8-topbar-wordmark">MUCHO<span>8S</span></span>
           </Link>
 
-          <button
-            type="button"
-            onClick={() => {
-              setOnlineOpen((open) => !open);
-              setNotificationsOpen(false);
-              setAccountOpen(false);
-              setSearchOpen(false);
-            }}
-            aria-label={`${onlinePlayers.length} players online`}
-            title="Players online"
-            aria-expanded={onlineOpen}
-            aria-controls="online-players-panel"
-            data-testid="header-online-players"
-            className="m8-topbar-online"
-          >
-            <span className="m8-topbar-online-dot" />
-            <span className="font-mono font-black">{onlinePlayers.length}</span>
-            <span>ONLINE</span>
-          </button>
+          <div className="m8-topbar-online-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                setOnlineOpen((open) => !open);
+                setNotificationsOpen(false);
+                setAccountOpen(false);
+                setSearchOpen(false);
+              }}
+              aria-label={`${onlinePlayers.length} players online`}
+              title="Players online"
+              aria-expanded={onlineOpen}
+              aria-controls="online-players-panel"
+              data-testid="header-online-players"
+              className="m8-topbar-online"
+            >
+              <span className="m8-topbar-online-dot" />
+              <span className="font-mono font-black">{onlinePlayers.length}</span>
+              <span>ONLINE</span>
+            </button>
+            {onlineOpen && (
+              <div
+                id="online-players-panel"
+                role="dialog"
+                aria-label="Players online"
+                className="m8-topbar-online-panel m8-panel rounded-2xl shadow-2xl overflow-hidden z-50"
+              >
+                <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#1D222C]">
+                  <div>
+                    <div className="brand-kicker mb-0.5">Presence</div>
+                    <div className="font-display font-bold">
+                      {onlinePlayers.length} Online
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setOnlineOpen(false)}
+                    aria-label="Close online players"
+                    className="w-8 h-8 rounded-lg bg-[#171B23] border border-[#2A303B] flex items-center justify-center text-muted-foreground hover:text-white"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+
+                <div className="max-h-[400px] overflow-y-auto p-2">
+                  {onlinePlayers.length === 0 ? (
+                    <div className="py-8 text-center text-sm text-muted-foreground">
+                      No players online right now.
+                    </div>
+                  ) : (
+                    onlinePlayers.map((player) => {
+                      const inMatch = busyPlayerIds.has(String(player.id));
+                      return (
+                        <Link
+                          key={player.id}
+                          to={`/players/${player.id}`}
+                          onClick={() => setOnlineOpen(false)}
+                          className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-white/[0.04] transition-colors"
+                        >
+                          <div className="relative">
+                            <PlayerAvatar
+                              name={player.name}
+                              elo={player.currentElo}
+                              size={34}
+                              avatarUrl={playerAvatars?.[player.id]}
+                            />
+                            <span className="absolute -right-0.5 -bottom-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#101319]" />
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="font-semibold text-sm truncate">{player.name}</div>
+                            <div className={`text-[10px] mt-0.5 ${inMatch ? "text-[#D5A33A]" : "text-emerald-400"}`}>
+                              {inMatch ? "In Match" : "Available"}
+                            </div>
+                          </div>
+
+                          <EloBadge elo={player.currentElo} />
+                        </Link>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           <nav className="m8-topbar-nav" aria-label="Primary navigation">
             {TOP_NAV.map((item) => (
@@ -783,71 +849,6 @@ export const Layout = () => {
                 <span>{discordLoading ? "Connecting..." : "Login Discord"}</span>
               </button>
             )}
-            {onlineOpen && (
-              <div
-                id="online-players-panel"
-                role="dialog"
-                aria-label="Players online"
-                className="absolute right-0 top-12 w-[min(92vw,360px)] m8-panel rounded-2xl shadow-2xl overflow-hidden z-50"
-              >
-                <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#1D222C]">
-                  <div>
-                    <div className="brand-kicker mb-0.5">Presence</div>
-                    <div className="font-display font-bold">
-                      {onlinePlayers.length} Online
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setOnlineOpen(false)}
-                    aria-label="Close online players"
-                    className="w-8 h-8 rounded-lg bg-[#171B23] border border-[#2A303B] flex items-center justify-center text-muted-foreground hover:text-white"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-
-                <div className="max-h-[400px] overflow-y-auto p-2">
-                  {onlinePlayers.length === 0 ? (
-                    <div className="py-8 text-center text-sm text-muted-foreground">
-                      No players online right now.
-                    </div>
-                  ) : (
-                    onlinePlayers.map((player) => {
-                      const inMatch = busyPlayerIds.has(String(player.id));
-                      return (
-                        <Link
-                          key={player.id}
-                          to={`/players/${player.id}`}
-                          onClick={() => setOnlineOpen(false)}
-                          className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-white/[0.04] transition-colors"
-                        >
-                          <div className="relative">
-                            <PlayerAvatar
-                              name={player.name}
-                              elo={player.currentElo}
-                              size={34}
-                              avatarUrl={playerAvatars?.[player.id]}
-                            />
-                            <span className="absolute -right-0.5 -bottom-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#101319]" />
-                          </div>
-
-                          <div className="min-w-0 flex-1">
-                            <div className="font-semibold text-sm truncate">{player.name}</div>
-                            <div className={`text-[10px] mt-0.5 ${inMatch ? "text-[#D5A33A]" : "text-emerald-400"}`}>
-                              {inMatch ? "In Match" : "Available"}
-                            </div>
-                          </div>
-
-                          <EloBadge elo={player.currentElo} />
-                        </Link>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            )}
-
             {discordPlayer && notificationsOpen && (
                   <div
                     id="challenge-notifications-panel"
