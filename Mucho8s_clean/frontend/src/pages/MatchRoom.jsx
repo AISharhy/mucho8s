@@ -336,6 +336,7 @@ export default function MatchRoom() {
 
   const teamA = Array.isArray(match.team_a) ? match.team_a : [];
   const teamB = Array.isArray(match.team_b) ? match.team_b : [];
+  const bo3Maps = Array.isArray(match.maps) ? match.maps.filter(Boolean).slice(0, 3) : [];
   const captainId = String(match.captain_player_id || "");
   const isCaptain =
     Boolean(discordPlayer?.id) &&
@@ -490,6 +491,27 @@ export default function MatchRoom() {
           </div>
         </div>
       </section>
+
+      {bo3Maps.length === 3 && (
+        <section className="m8-panel rounded-[22px] p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div>
+              <div className="brand-kicker mb-1">BO3 Map Rotation</div>
+              <div className="font-display font-black text-lg">Maps generated at confirmation</div>
+            </div>
+            <span className="m8-pill">Best of 3</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {bo3Maps.map((mapName, index) => (
+              <div key={mapName} className="rounded-xl border border-[#2A303B] bg-[#0F1218] p-3.5">
+                <div className="text-[9px] uppercase tracking-[0.16em] text-[#697181]">Map {index + 1}</div>
+                <div className="font-display font-black mt-1">{mapName}</div>
+                <div className="text-[10px] text-muted-foreground mt-1">{match.mode}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {cancelRequested && (
         <section className="rounded-2xl border border-orange-500/20 bg-orange-500/[0.04] px-4 py-3 flex items-start gap-3">
