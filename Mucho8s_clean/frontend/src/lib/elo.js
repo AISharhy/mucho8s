@@ -1,10 +1,10 @@
 export const BASE_ELO = 1000;
 export const MIN_ELO = 500;
 export const WIN_DELTA = 25;
-export const LOSS_DELTA = 25;
-export const MVP_BONUS = 3;
+export const LOSS_DELTA = 15;
+export const MVP_BONUS = 5;
 export const MERDA_PENALTY = 0;
-export const UPSET_BONUS = 0;
+export const UPSET_BONUS = 5;
 
 export const ELO_K = 50;
 export const ELO_SCALE = 400;
@@ -27,6 +27,20 @@ export const eloResultDelta = (elo, opponentElo, won) => {
     Math.min(MAX_RESULT_DELTA, Math.round(Math.abs(raw)))
   );
   return won ? magnitude : -magnitude;
+};
+
+// Mucho8s team result: +25 / -15 base. The extra only applies when
+// the lower-average-Elo team wins, to reward upsets without over-punishing losses.
+export const teamUpsetModifier = (winnerAverageElo, loserAverageElo) => {
+  const winnerAvg = Number(winnerAverageElo) || BASE_ELO;
+  const loserAvg = Number(loserAverageElo) || BASE_ELO;
+  const difference = Math.max(0, Math.round(loserAvg - winnerAvg));
+
+  if (difference < 100) return { applied: false, difference, winnerBonus: 0, loserPenalty: 0 };
+  if (difference >= 400) return { applied: true, difference, winnerBonus: 5, loserPenalty: 3 };
+  if (difference >= 300) return { applied: true, difference, winnerBonus: 4, loserPenalty: 3 };
+  if (difference >= 200) return { applied: true, difference, winnerBonus: 3, loserPenalty: 2 };
+  return { applied: true, difference, winnerBonus: 2, loserPenalty: 1 };
 };
 
 // Balancing formula weights
