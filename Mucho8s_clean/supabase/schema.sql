@@ -35,6 +35,35 @@ alter table public.discord_config enable row level security;
 revoke all on table public.discord_config from anon, authenticated;
 
 
+-- Admin-authored posts displayed on the public News page.
+create table if not exists public.news_posts (
+  id uuid primary key default gen_random_uuid(),
+  title text not null check (char_length(title) between 1 and 120),
+  summary text not null check (char_length(summary) between 1 and 1200),
+  category text not null default 'Platform',
+  accent text not null default '#FF2A3B',
+  featured boolean not null default false,
+  published boolean not null default true,
+  author_player_id text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists news_posts_public_idx
+  on public.news_posts (published, featured desc, created_at desc);
+
+alter table public.news_posts enable row level security;
+revoke all on table public.news_posts from anon, authenticated;
+grant select on table public.news_posts to anon, authenticated;
+
+drop policy if exists "Public can read published news" on public.news_posts;
+create policy "Public can read published news"
+  on public.news_posts
+  for select
+  to anon, authenticated
+  using (published = true);
+
+
 -- Discord-authenticated player accounts.
 -- Access is mediated by the mucho8s-account Edge Function.
 create table if not exists public.player_accounts (
@@ -190,6 +219,23 @@ create index if not exists challenge_messages_challenge_created_idx
 
 alter table public.challenge_messages enable row level security;
 revoke all on table public.challenge_messages from anon, authenticated;
+
+
+-- Private text chat for live Mucho8s rooms.
+create table if not exists public.live_match_messages (
+  id uuid primary key default gen_random_uuid(),
+  live_match_id uuid not null references public.live_team_matches(id) on delete cascade,
+  sender_account_id uuid references auth.users(id) on delete set null,
+  sender_player_id text not null,
+  body text not null check (char_length(body) between 1 and 500),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists live_match_messages_match_created_idx
+  on public.live_match_messages (live_match_id, created_at asc);
+
+alter table public.live_match_messages enable row level security;
+revoke all on table public.live_match_messages from anon, authenticated;
 
 
 -- Persistent admin audit trail.
