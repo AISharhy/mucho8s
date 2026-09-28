@@ -234,6 +234,7 @@ export default function PlayerProfile() {
   const [challengePlatform, setChallengePlatform] = useState("");
   const [challengeAmount, setChallengeAmount] = useState("5");
   const [selectedTrophyId, setSelectedTrophyId] = useState("");
+  const [historyModeFilter, setHistoryModeFilter] = useState("all");
   const [showMerdaIntro, setShowMerdaIntro] = useState(false);
   const [showCleanAgain, setShowCleanAgain] = useState(false);
   const previousMerdaRef = useRef({ playerId: "", count: 0 });
@@ -350,6 +351,33 @@ export default function PlayerProfile() {
       matchPairings: completed.filter((challenge) => challenge.source === "match_pairing").length,
     };
   }, [publicChallenges, id]);
+
+  const profileHistoryRows = useMemo(() => {
+    const teamRows = playerMatches.map((match) => ({
+      type: "mucho8s",
+      date: match?.date || null,
+      item: match,
+    }));
+    const oneVOneRows = challengeStats.completed.map((challenge) => ({
+      type: "mucho1v1",
+      date: challenge?.verified_at || challenge?.created_at || null,
+      item: challenge,
+    }));
+
+    return [...teamRows, ...oneVOneRows].sort(
+      (a, b) => new Date(b.date || 0) - new Date(a.date || 0)
+    );
+  }, [playerMatches, challengeStats.completed]);
+
+  const filteredProfileHistoryRows = useMemo(
+    () =>
+      historyModeFilter === "all"
+        ? profileHistoryRows
+        : profileHistoryRows.filter((row) => row.type === historyModeFilter),
+    [profileHistoryRows, historyModeFilter]
+  );
+
+
 
   const mucho8sInsights = useMemo(() => {
     const ordered = [...playerMatches].sort(
@@ -647,6 +675,49 @@ export default function PlayerProfile() {
       achievementCatalog,
     };
   }, [challengeStats, id, player]);
+
+  const historySummary = useMemo(() => {
+    const team = {
+      matches: playerMatches.length,
+      wins: Number(player?.wins || 0),
+      losses: Number(player?.losses || 0),
+      winnings: Number(mucho8sInsights?.wonValue || 0),
+    };
+    const one = {
+      matches: challengeStats.played,
+      wins: challengeStats.wins,
+      losses: challengeStats.losses,
+      winnings: Number(challengeStats.wonValue || 0),
+    };
+
+    const selected =
+      historyModeFilter === "mucho8s"
+        ? team
+        : historyModeFilter === "mucho1v1"
+          ? one
+          : {
+              matches: team.matches + one.matches,
+              wins: team.wins + one.wins,
+              losses: team.losses + one.losses,
+              winnings: team.winnings + one.winnings,
+            };
+
+    const played = selected.wins + selected.losses;
+    return {
+      ...selected,
+      winRate: played ? Math.round((selected.wins / played) * 100) : 0,
+    };
+  }, [
+    historyModeFilter,
+    playerMatches.length,
+    player?.wins,
+    player?.losses,
+    mucho8sInsights?.wonValue,
+    challengeStats.played,
+    challengeStats.wins,
+    challengeStats.losses,
+    challengeStats.wonValue,
+  ]);
 
   const trophyChallenges = useMemo(() => {
     if (!player) return [];
@@ -2219,13 +2290,13 @@ export default function PlayerProfile() {
       </Dialog>
 
       {profileTab === "history" && (
-        <div className="m8-panel m8-mode-zone is-mucho8s rounded-[22px] p-4 sm:p-5 order-3" data-testid="my-mucho8s-history">
+        <div className="m8-panel rounded-[22px] p-4 sm:p-5 order-3" data-testid="profile-match-history">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
             <div>
-              <div className="brand-kicker mb-1 text-magma">Mucho8s</div>
-              <h3 className="font-display font-black text-xl">Mucho8s History</h3>
+              <div className="brand-kicker mb-1">Match History</div>
+              <h3 className="font-display font-black text-xl">Verified Match History</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Complete verified team history, Elo change, pairing and result.
+                Mucho8s and Mucho1v1 in one chronological timeline.
               </p>
             </div>
             <Link
@@ -2236,36 +2307,121 @@ export default function PlayerProfile() {
             </Link>
           </div>
 
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            {[
+              ["all", "All", profileHistoryRows.length],
+              ["mucho8s", "Mucho8s", playerMatches.length],
+              ["mucho1v1", "Mucho1v1", challengeStats.played],
+            ].map(([key, label, count]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setHistoryModeFilter(key)}
+                className={`h-8 px-3 rounded-lg border text-[10px] font-black uppercase tracking-wider transition-all ${
+                  historyModeFilter === key
+                    ? key === "mucho8s"
+                      ? "bg-magma text-white border-magma"
+                      : key === "mucho1v1"
+                        ? "bg-emerald-400 text-black border-emerald-400"
+                        : "bg-white text-black border-white"
+                    : "bg-[#0F1218] text-[#8D95A4] border-[#222834] hover:text-white"
+                }`}
+              >
+                {label}
+                <span className="ml-1.5 font-mono opacity-70">{count}</span>
+              </button>
+            ))}
+          </div>
+
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-4">
             <div className="m8-stat-card">
               <div className="brand-kicker">Matches</div>
-              <div className="font-display text-xl font-black mt-1">{player.totalMatches || 0}</div>
+              <div className="font-display text-xl font-black mt-1">{historySummary.matches}</div>
             </div>
             <div className="m8-stat-card">
               <div className="brand-kicker">Record</div>
               <div className="font-display text-xl font-black mt-1">
-                {player.wins || 0}W - {player.losses || 0}L
+                {historySummary.wins}W - {historySummary.losses}L
               </div>
             </div>
             <div className="m8-stat-card">
               <div className="brand-kicker">Win Rate</div>
-              <div className="font-display text-xl font-black mt-1">{winRate(player)}%</div>
+              <div className="font-display text-xl font-black mt-1">{historySummary.winRate}%</div>
             </div>
             <div className="m8-stat-card">
               <div className="brand-kicker">Winnings</div>
               <div className="font-display text-xl font-black mt-1 text-emerald-400">
-                €{Number(mucho8sInsights.wonValue || 0).toFixed(0)}
+                €{Number(historySummary.winnings || 0).toFixed(0)}
               </div>
             </div>
           </div>
 
-          {playerMatches.length === 0 ? (
+          {filteredProfileHistoryRows.length === 0 ? (
             <div className="rounded-xl border border-dashed border-[#2A303B] bg-[#0F1218] py-8 text-center text-sm text-muted-foreground">
-              No Mucho8s history yet.
+              No verified matches for this filter yet.
             </div>
           ) : (
             <div className="space-y-2">
-              {playerMatches.slice(0, 30).map((m) => {
+              {filteredProfileHistoryRows.slice(0, 40).map((row) => {
+                if (row.type === "mucho1v1") {
+                  const challenge = row.item;
+                  const opponentId =
+                    String(challenge.challenger_player_id) === String(player.id)
+                      ? challenge.challenged_player_id
+                      : challenge.challenger_player_id;
+                  const opponent = playerMap[opponentId];
+                  const won = String(challenge.reported_winner_player_id) === String(player.id);
+                  const stake = Math.max(0, Number(challenge.amount_cents || 0) / 100);
+                  const eloEvent = challenge?.elo_event || null;
+                  const eloDelta = won
+                    ? Number(eloEvent?.winner_delta)
+                    : Number(eloEvent?.loser_delta);
+                  const hasElo = Number.isFinite(eloDelta);
+
+                  return (
+                    <Link
+                      key={`1v1:${challenge.id}`}
+                      to={`/challenges/${challenge.id}`}
+                      className="group rounded-xl border border-emerald-500/15 bg-emerald-500/[0.035] p-3.5 flex flex-col lg:flex-row lg:items-center gap-3 transition-all hover:border-emerald-500/35"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <ModeBadge mode="mucho1v1" compact />
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={`font-black text-xs uppercase ${won ? "text-emerald-400" : "text-red-400"}`}>
+                              {won ? "WIN" : "LOSS"}
+                            </span>
+                            <span className="text-[10px] text-[#697181]">
+                              {String(challenge.platform || "payment").toUpperCase()} · verified
+                            </span>
+                          </div>
+                          <div className="text-sm font-semibold truncate mt-1">
+                            vs {opponent?.name || "Player"}
+                          </div>
+                          <div className="text-[10px] text-[#697181] mt-1">
+                            {challenge.verified_at
+                              ? new Date(challenge.verified_at).toLocaleDateString()
+                              : "—"}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                        <span className="m8-pill text-emerald-400">
+                          Stake €{stake.toFixed(2)}
+                        </span>
+                        {hasElo && (
+                          <span className={`m8-pill font-mono ${eloDelta >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                            Total {eloDelta >= 0 ? "+" : ""}{Math.round(eloDelta)} Elo
+                          </span>
+                        )}
+                        <ChevronRight size={13} className="text-[#596170] group-hover:text-white" />
+                      </div>
+                    </Link>
+                  );
+                }
+
+                const m = row.item;
                 const teamA = (m.teamA || []).map(String);
                 const teamB = (m.teamB || []).map(String);
                 const inA = teamA.includes(String(player.id));
@@ -2279,16 +2435,13 @@ export default function PlayerProfile() {
                     String(pair?.playerAId || "") === String(player.id) ||
                     String(pair?.playerBId || "") === String(player.id)
                 );
-                const stakeElo = Math.max(
-                  0,
-                  Math.round(Number(pairing?.amount || 0))
-                );
+                const stakeElo = Math.max(0, Math.round(Number(pairing?.amount || 0)));
                 const stakeDelta = won ? stakeElo : -stakeElo;
                 const eloDelta = coreEloDelta + stakeDelta;
 
                 return (
                   <Link
-                    key={m.id}
+                    key={`8s:${m.id}`}
                     to={`/matches?view=history&match=${encodeURIComponent(m.id)}`}
                     className="group rounded-xl border border-[#222834] bg-[#0F1218] p-3.5 flex flex-col lg:flex-row lg:items-center gap-3 transition-all hover:border-[#3A4350]"
                   >
@@ -2296,9 +2449,7 @@ export default function PlayerProfile() {
                       <ModeBadge mode="mucho8s" compact />
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className={`font-black text-xs uppercase ${
-                            won ? "text-emerald-400" : "text-red-400"
-                          }`}>
+                          <span className={`font-black text-xs uppercase ${won ? "text-emerald-400" : "text-red-400"}`}>
                             {won ? "WIN" : "LOSS"}
                           </span>
                           <span className="text-[10px] text-[#697181]">
@@ -2316,19 +2467,8 @@ export default function PlayerProfile() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                      {Number(m?.eloContext?.resultDelta) > 0 && (
-                        <span
-                          className="m8-pill text-[#C8CED8]"
-                          title={`Alpha avg ${m.eloContext.teamAElo} · Bravo avg ${m.eloContext.teamBElo}`}
-                        >
-                          Base ±{m.eloContext.resultDelta}
-                        </span>
-                      )}
                       {pairing && Number(pairing.amount || 0) > 0 && (
-                        <span
-                          className="m8-pill text-emerald-400"
-                          title="Stake: 1€ = 1 Elo"
-                        >
+                        <span className="m8-pill text-emerald-400" title="Stake: 1€ = 1 Elo">
                           Stake {stakeDelta >= 0 ? "+" : ""}{stakeDelta}
                         </span>
                       )}
