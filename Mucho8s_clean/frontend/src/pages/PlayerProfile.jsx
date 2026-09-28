@@ -105,26 +105,39 @@ const trophySourceLabel = (trophy) => {
 const MerdaRainOverlay = ({ count = 0, visible = false }) => {
   const value = Math.max(0, Number(count || 0));
   const particles = useMemo(() => {
-    // MERDA is intentionally cumulative: the higher the active count,
-    // the denser the profile-entry rain becomes.
-    // x1=22, x2=30, x3=38, x4=46, x5=54 ... capped to avoid UI overload.
-    const total = value > 0 ? Math.min(84, 14 + value * 8) : 0;
-    const intensity = Math.min(1, value / 6);
+    // Full trash mode: every MERDA stack makes the storm much denser.
+    // x1=48, x2=76, x3=104, x4=132, x5=160, then capped at 180.
+    const total = value > 0 ? Math.min(180, 20 + value * 28) : 0;
+    const intensity = Math.min(1.5, value / 4);
 
-    return Array.from({ length: total }, (_, index) => ({
-      id: index,
-      left: 2 + ((index * 37 + value * 11) % 96),
-      delay: ((index * 0.061) % (0.54 + intensity * 0.18)).toFixed(2),
-      duration: (1.35 + ((index * 17) % 6) * 0.11 + intensity * 0.12).toFixed(2),
-      size: Math.round(
-        21 +
-        Math.min(value, 6) * 1.3 +
-        ((index * 5) % 10)
-      ),
-      drift: -38 + ((index * 19) % 77),
-      rotate: -30 + ((index * 29) % 65),
-      opacity: Math.min(0.99, 0.88 + value * 0.02),
-    }));
+    return Array.from({ length: total }, (_, index) => {
+      const giant = index % 11 === 0;
+      const secondWave = index % 2 === 1;
+
+      return {
+        id: index,
+        left: ((index * 23 + value * 17) % 101),
+        delay: (
+          ((index * 0.028) % 0.62) +
+          (secondWave ? 0.72 : 0)
+        ).toFixed(2),
+        duration: (
+          1.02 +
+          ((index * 13) % 6) * 0.09 +
+          intensity * 0.06
+        ).toFixed(2),
+        size: Math.round(
+          23 +
+          Math.min(value, 6) * 2.2 +
+          ((index * 7) % 16) +
+          (giant ? 18 : 0)
+        ),
+        drift: -68 + ((index * 31) % 137),
+        rotate: -50 + ((index * 29) % 101),
+        opacity: Math.min(1, 0.93 + value * 0.012),
+        giant,
+      };
+    });
   }, [value]);
 
   if (!visible || value <= 0) return null;
@@ -134,7 +147,7 @@ const MerdaRainOverlay = ({ count = 0, visible = false }) => {
       {particles.map((particle) => (
         <span
           key={particle.id}
-          className="merda-rain-drop"
+          className={`merda-rain-drop ${particle.giant ? "merda-rain-drop-giant" : ""}`}
           style={{
             left: `${particle.left}%`,
             fontSize: `${particle.size}px`,
@@ -241,7 +254,7 @@ export default function PlayerProfile() {
     // A short delayed start also makes it reliable after route/data hydration.
     setShowMerdaIntro(false);
     const startTimer = window.setTimeout(() => setShowMerdaIntro(true), 60);
-    const endTimer = window.setTimeout(() => setShowMerdaIntro(false), 2350);
+    const endTimer = window.setTimeout(() => setShowMerdaIntro(false), 3400);
 
     return () => {
       window.clearTimeout(startTimer);
@@ -1145,7 +1158,7 @@ export default function PlayerProfile() {
 
       <section
         className={`m8-profile-command rounded-[24px] overflow-hidden relative order-1 ${
-          showMerdaIntro && merdaCountValue >= 5 ? "m8-profile-merda-intro-critical" : ""
+          showMerdaIntro && merdaCountValue >= 3 ? "m8-profile-merda-intro-critical" : ""
         }`}
         style={{
           "--profile-rank-color": tier.color,
