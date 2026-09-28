@@ -102,7 +102,7 @@ const trophySourceLabel = (trophy) => {
 const MerdaRainOverlay = ({ count = 0, visible = false }) => {
   const value = Math.max(0, Number(count || 0));
   const particles = useMemo(() => {
-    const total = value >= 5 ? 20 : value >= 3 ? 13 : value > 0 ? 7 : 0;
+    const total = value >= 5 ? 36 : value >= 3 ? 24 : value > 0 ? 14 : 0;
 
     return Array.from({ length: total }, (_, index) => ({
       id: index,
@@ -124,12 +124,6 @@ const MerdaRainOverlay = ({ count = 0, visible = false }) => {
 
   return (
     <div className="merda-rain-layer" aria-hidden="true">
-      <div className="merda-rain-status">
-        <span className="merda-rain-status-kicker">Debuff detected</span>
-        <strong>💩 MERDA ACTIVE · x{value}</strong>
-        <span>1 win removes 1</span>
-      </div>
-
       {particles.map((particle) => (
         <span
           key={particle.id}
@@ -231,7 +225,7 @@ export default function PlayerProfile() {
 
     merdaIntroPlayerRef.current = String(player.id);
     setShowMerdaIntro(true);
-    const timer = window.setTimeout(() => setShowMerdaIntro(false), 1700);
+    const timer = window.setTimeout(() => setShowMerdaIntro(false), 2500);
     return () => window.clearTimeout(timer);
   }, [player?.id, merdaCountValue]);
 
@@ -1016,6 +1010,9 @@ export default function PlayerProfile() {
 
   return (
     <div className="m8-page-stack">
+      <MerdaRainOverlay count={merdaCountValue} visible={showMerdaIntro} />
+      <CleanAgainOverlay visible={showCleanAgain} />
+
       <Link to="/players" className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-white self-start m8-pill order-0">
         <ArrowLeft size={16} /> Back to players
       </Link>
@@ -1135,8 +1132,6 @@ export default function PlayerProfile() {
           "--profile-rank-accent": tier.accent,
         }}
       >
-        <MerdaRainOverlay count={merdaCountValue} visible={showMerdaIntro} />
-        <CleanAgainOverlay visible={showCleanAgain} />
         <div className="m8-profile-command-banner">
           <div className="m8-profile-command-grid" />
           <div className="m8-profile-command-glow" />
