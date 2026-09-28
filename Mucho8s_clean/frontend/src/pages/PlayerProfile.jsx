@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { winRate, tierOf } from "@/lib/elo";
@@ -99,6 +99,72 @@ const trophySourceLabel = (trophy) => {
   return "General Trophy";
 };
 
+const MerdaRainOverlay = ({ count = 0, visible = false }) => {
+  const value = Math.max(0, Number(count || 0));
+  const particles = useMemo(() => {
+    const total = value >= 5 ? 20 : value >= 3 ? 13 : value > 0 ? 7 : 0;
+
+    return Array.from({ length: total }, (_, index) => ({
+      id: index,
+      left: 4 + ((index * 37 + value * 11) % 92),
+      delay: ((index * 0.071) % 0.62).toFixed(2),
+      duration: (0.95 + ((index * 17) % 5) * 0.12).toFixed(2),
+      size: value >= 5
+        ? 18 + ((index * 7) % 13)
+        : value >= 3
+          ? 16 + ((index * 5) % 10)
+          : 14 + ((index * 3) % 7),
+      drift: -22 + ((index * 19) % 45),
+      rotate: -24 + ((index * 29) % 55),
+      opacity: value >= 5 ? 0.94 : value >= 3 ? 0.82 : 0.7,
+    }));
+  }, [value]);
+
+  if (!visible || value <= 0) return null;
+
+  return (
+    <div className="merda-rain-layer" aria-hidden="true">
+      <div className="merda-rain-status">
+        <span className="merda-rain-status-kicker">Debuff detected</span>
+        <strong>💩 MERDA ACTIVE · x{value}</strong>
+        <span>1 win removes 1</span>
+      </div>
+
+      {particles.map((particle) => (
+        <span
+          key={particle.id}
+          className="merda-rain-drop"
+          style={{
+            left: `${particle.left}%`,
+            fontSize: `${particle.size}px`,
+            opacity: particle.opacity,
+            "--merda-delay": `${particle.delay}s`,
+            "--merda-duration": `${particle.duration}s`,
+            "--merda-drift": `${particle.drift}px`,
+            "--merda-rotate": `${particle.rotate}deg`,
+          }}
+        >
+          💩
+        </span>
+      ))}
+    </div>
+  );
+};
+
+const CleanAgainOverlay = ({ visible = false }) => {
+  if (!visible) return null;
+
+  return (
+    <div className="clean-again-overlay" role="status" aria-live="polite">
+      <span className="clean-again-spark" aria-hidden="true">✦</span>
+      <div>
+        <strong>CLEAN AGAIN</strong>
+        <span>MERDA cleared</span>
+      </div>
+    </div>
+  );
+};
+
 export default function PlayerProfile() {
   const { id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -146,6 +212,11 @@ export default function PlayerProfile() {
   const [challengePlatform, setChallengePlatform] = useState("");
   const [challengeAmount, setChallengeAmount] = useState("5");
   const [selectedTrophyId, setSelectedTrophyId] = useState("");
+  const [showMerdaIntro, setShowMerdaIntro] = useState(false);
+  const [showCleanAgain, setShowCleanAgain] = useState(false);
+  const merdaIntroPlayerRef = useRef("");
+  const previousMerdaRef = useRef({ playerId: "", count: 0 });
+  const merdaCountValue = Math.max(0, Number(player?.merdaCount || 0));
 
   useEffect(() => {
     setLinks({
@@ -153,6 +224,39 @@ export default function PlayerProfile() {
       revolutUrl: publicProfile.revolutUrl || "",
     });
   }, [id, publicProfile.paypalUrl, publicProfile.revolutUrl]);
+
+  useEffect(() => {
+    if (!player?.id || merdaCountValue <= 0) return undefined;
+    if (merdaIntroPlayerRef.current === String(player.id)) return undefined;
+
+    merdaIntroPlayerRef.current = String(player.id);
+    setShowMerdaIntro(true);
+    const timer = window.setTimeout(() => setShowMerdaIntro(false), 1700);
+    return () => window.clearTimeout(timer);
+  }, [player?.id, merdaCountValue]);
+
+  useEffect(() => {
+    if (!player?.id) return undefined;
+
+    const currentId = String(player.id);
+    const previous = previousMerdaRef.current;
+
+    if (previous.playerId !== currentId) {
+      previousMerdaRef.current = { playerId: currentId, count: merdaCountValue };
+      setShowCleanAgain(false);
+      return undefined;
+    }
+
+    if (previous.count > 0 && merdaCountValue === 0) {
+      setShowCleanAgain(true);
+      const timer = window.setTimeout(() => setShowCleanAgain(false), 1900);
+      previousMerdaRef.current = { playerId: currentId, count: merdaCountValue };
+      return () => window.clearTimeout(timer);
+    }
+
+    previousMerdaRef.current = { playerId: currentId, count: merdaCountValue };
+    return undefined;
+  }, [player?.id, merdaCountValue]);
 
   const playerMatches = useMemo(() => {
     if (!player) return [];
@@ -1035,12 +1139,16 @@ export default function PlayerProfile() {
       </Dialog>
 
       <section
-        className="m8-profile-command rounded-[24px] overflow-hidden relative order-1"
+        className={`m8-profile-command rounded-[24px] overflow-hidden relative order-1 ${
+          showMerdaIntro && merdaCountValue >= 5 ? "m8-profile-merda-intro-critical" : ""
+        }`}
         style={{
           "--profile-rank-color": tier.color,
           "--profile-rank-accent": tier.accent,
         }}
       >
+        <MerdaRainOverlay count={merdaCountValue} visible={showMerdaIntro} />
+        <CleanAgainOverlay visible={showCleanAgain} />
         <div className="m8-profile-command-banner">
           <div className="m8-profile-command-grid" />
           <div className="m8-profile-command-glow" />
