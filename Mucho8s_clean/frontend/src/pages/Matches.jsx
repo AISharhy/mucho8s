@@ -41,24 +41,127 @@ import {
 import { GAMES } from "@/lib/demoData";
 import { toast } from "sonner";
 
-const TeamList = ({ ids, playerMap, playerAvatars, eloChanges, pairings = [], mvpId, mvpIds = [], merdaId, merdaIds = [] }) => (
+const signedElo = (value) => {
+  const amount = Number(value || 0);
+  return `${amount >= 0 ? "+" : ""}${amount}`;
+};
+
+const TeamList = ({
+  ids,
+  playerMap,
+  playerAvatars,
+  eloChanges,
+  pairings = [],
+  mvpId,
+  mvpIds = [],
+  merdaId,
+  merdaIds = [],
+  match,
+  isWinner = false,
+}) => (
   <div className="flex-1 space-y-2">
     {ids.map((id) => {
       const p = playerMap[id];
       if (!p) return null;
+
       const baseDelta = Number(eloChanges?.[id] ?? 0);
       const pairing = (Array.isArray(pairings) ? pairings : []).find(
         (item) => item?.playerAId === id || item?.playerBId === id
       );
-      const valueBonus = Math.max(0, Math.round(Number(pairing?.amount) || 0));
-      const delta = baseDelta === 0
-        ? 0
-        : baseDelta + (baseDelta > 0 ? valueBonus : -valueBonus);
-      const isMvp = (Array.isArray(mvpIds) ? mvpIds : []).includes(id) || id === mvpId;
-      const isMerda = (Array.isArray(merdaIds) ? merdaIds : []).includes(id) || id === merdaId;
+      const stakeValue = Math.max(0, Math.round(Number(pairing?.amount) || 0));
+      const stakeDelta = baseDelta === 0 ? 0 : (isWinner ? stakeValue : -stakeValue);
+      const delta = baseDelta + stakeDelta;
+
+      const isMvp =
+        (Array.isArray(mvpIds) ? mvpIds : []).includes(id) || id === mvpId;
+      const isMerda =
+        (Array.isArray(merdaIds) ? merdaIds : []).includes(id) || id === merdaId;
+
+      const breakdown = [
+        {
+          key: "result",
+          label: isWinner ? "WIN" : "LOSS",
+          value: isWinner ? 25 : -15,
+        },
+      ];
+
+      if (match?.upsetApplied) {
+        const upsetValue = isWinner
+          ? Number(match?.upsetWinnerBonus || 0)
+          : -Number(match?.upsetLoserPenalty || 0);
+        if (upsetValue) {
+          breakdown.push({ key: "upset", label: "UPSET", value: upsetValue });
+        }
+      }
+
+      if (isMvp) {
+        breakdown.push({ key: "mvp", label: "MVP", value: 5 });
+      }
+
+      const bountyRecipients = Array.isArray(match?.mvpBountyRecipientIds)
+        ? match.mvpBountyRecipientIds
+        : [];
+      const bountyValue =
+        isWinner &&
+        Number(match?.mvpBountyBonus || 0) > 0 &&
+        (!bountyRecipients.length || bountyRecipients.includes(id))
+          ? Number(match.mvpBountyBonus)
+          : 0;
+      if (bountyValue) {
+        breakdown.push({ key: "bounty", label: "BOUNTY", value: bountyValue });
+      }
+
+      const trophyEvents = Array.isArray(match?.trophyUnlockEvents?.[id])
+        ? match.trophyUnlockEvents[id]
+        : [];
+      const trophyValue = trophyEvents.reduce(
+        (sum, event) => sum + Number(event?.reward || 0),
+        0
+      );
+      if (trophyValue) {
+        breakdown.push({
+          key: "trophy",
+          label: "TROPHIES",
+          value: trophyValue,
+          title: trophyEvents
+            .map((event) => {
+              const name = String(event?.id || "trophy")
+                .replaceAll("-", " ")
+                .replace(/\b\w/g, (letter) => letter.toUpperCase());
+              return `${name} Lv.${event?.level || "?"} ${signedElo(event?.reward || 0)}`;
+            })
+            .join(" · "),
+        });
+      }
+
+      const explainedMatchDelta = breakdown.reduce(
+        (sum, item) => sum + Number(item.value || 0),
+        0
+      );
+      const adjustment = baseDelta - explainedMatchDelta;
+      if (adjustment) {
+        breakdown.push({
+          key: "adjustment",
+          label: "ADJUST",
+          value: adjustment,
+        });
+      }
+
+      if (stakeDelta) {
+        breakdown.push({
+          key: "stake",
+          label: "STAKE",
+          value: stakeDelta,
+          title: `Money Chall €${stakeValue}`,
+        });
+      }
+
+      const breakdownTitle = `${breakdown
+        .map((item) => `${item.label} ${signedElo(item.value)}`)
+        .join(" · ")} = ${signedElo(delta)} Elo`;
 
       return (
-        <div key={id} className="flex items-center gap-2.5 min-w-0">
+        <div key={id} className="flex items-start gap-2.5 min-w-0">
           <PlayerAvatar
             name={p.name}
             elo={p.currentElo}
@@ -80,12 +183,34 @@ const TeamList = ({ ids, playerMap, playerAvatars, eloChanges, pairings = [], mv
                 </span>
               )}
             </div>
+
             <div className="text-[9px] uppercase tracking-widest text-[#596170] mt-0.5">
               {p.currentElo} Elo
             </div>
+
+            <div
+              className="mt-1 flex flex-wrap gap-x-1.5 gap-y-0.5 text-[8px] font-mono font-bold uppercase tracking-wide"
+              title={breakdownTitle}
+            >
+              {breakdown.map((item) => (
+                <span
+                  key={item.key}
+                  title={item.title || undefined}
+                  className={
+                    item.value >= 0
+                      ? "text-emerald-400/75"
+                      : "text-red-400/75"
+                  }
+                >
+                  {item.label} {signedElo(item.value)}
+                </span>
+              ))}
+            </div>
           </div>
+
           <span
-            className={`min-w-[52px] h-7 px-2 rounded-lg border inline-flex items-center justify-center font-mono text-[11px] font-black ${
+            title={breakdownTitle}
+            className={`min-w-[52px] h-7 px-2 rounded-lg border inline-flex items-center justify-center font-mono text-[11px] font-black ${ 
               delta >= 0
                 ? "text-emerald-400 bg-emerald-500/[0.06] border-emerald-500/15"
                 : "text-red-400 bg-red-500/[0.06] border-red-500/15"
@@ -699,6 +824,9 @@ export default function Matches() {
             mvpId={match.mvpId}
             mvpIds={match.mvpIds}
             merdaId={match.merdaId}
+            merdaIds={match.merdaIds}
+            match={match}
+            isWinner={match.winner === "A"}
           />
         </div>
 
@@ -736,6 +864,9 @@ export default function Matches() {
             mvpId={match.mvpId}
             mvpIds={match.mvpIds}
             merdaId={match.merdaId}
+            merdaIds={match.merdaIds}
+            match={match}
+            isWinner={match.winner === "B"}
           />
         </div>
       </div>
