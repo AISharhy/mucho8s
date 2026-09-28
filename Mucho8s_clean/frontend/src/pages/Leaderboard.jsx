@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useData } from "@/context/DataContext";
-import { PlayerAvatar, MvpBadge, RankBadge } from "@/components/shared";
+import { PlayerAvatar, MvpBadge, MerdaBadge, RankBadge } from "@/components/shared";
 import { rankProgress } from "@/lib/elo";
 import { Button } from "@/components/ui/button";
 import { isDirectMucho1v1 } from "@/components/ModeBadge";
@@ -400,6 +400,7 @@ export default function Leaderboard() {
                           avatarUrl={playerAvatars[p.id]}
                         />
                         <span className="font-medium">{p.name}</span>
+                        <MerdaBadge count={p.merdaCount} compact />
                       </Link>
                     </td>
 
