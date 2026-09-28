@@ -408,23 +408,44 @@ export const Layout = () => {
   };
 
   const onlinePlayers = useMemo(() => {
-    const rows = Array.isArray(dashboardData?.onlinePlayers)
+    const presenceRows = Array.isArray(dashboardData?.onlinePlayers)
       ? dashboardData.onlinePlayers
       : [];
-    const seen = new Set();
+    const twitchRows = Array.isArray(dashboardData?.twitchLivePlayers)
+      ? dashboardData.twitchLivePlayers
+      : [];
+    const byPlayerId = new Map();
 
-    return rows
-      .filter((row) => {
-        const id = String(row?.player_id || "").trim();
-        if (!id || seen.has(id) || !playerMap[id]) return false;
-        seen.add(id);
-        return true;
-      })
-      .map((row) => ({
-        ...playerMap[row.player_id],
-        lastSeenAt: row.last_seen_at,
-      }));
-  }, [dashboardData?.onlinePlayers, playerMap]);
+    presenceRows.forEach((row) => {
+      const id = String(row?.player_id || "").trim();
+      if (!id || !playerMap[id]) return;
+      byPlayerId.set(id, {
+        ...playerMap[id],
+        lastSeenAt: row?.last_seen_at || null,
+        twitchLive: false,
+        twitchChannel: "",
+      });
+    });
+
+    twitchRows.forEach((row) => {
+      const id = String(row?.player_id || "").trim();
+      if (!id || !playerMap[id]) return;
+      const current = byPlayerId.get(id) || {
+        ...playerMap[id],
+        lastSeenAt: null,
+      };
+      byPlayerId.set(id, {
+        ...current,
+        twitchLive: true,
+        twitchChannel: String(row?.twitch_channel || "").trim(),
+      });
+    });
+
+    return [...byPlayerId.values()].sort((a, b) => {
+      if (Boolean(a.twitchLive) !== Boolean(b.twitchLive)) return a.twitchLive ? -1 : 1;
+      return String(a.name || "").localeCompare(String(b.name || ""));
+    });
+  }, [dashboardData?.onlinePlayers, dashboardData?.twitchLivePlayers, playerMap]);
 
   const playerSearchResults = useMemo(() => {
     const term = searchQuery.trim().toLowerCase();
@@ -613,10 +634,11 @@ export const Layout = () => {
                   ) : (
                     onlinePlayers.map((player) => {
                       const inMatch = busyPlayerIds.has(String(player.id));
+                      const onTwitch = Boolean(player.twitchLive);
                       return (
                         <Link
                           key={player.id}
-                          to={`/players/${player.id}`}
+                          to={onTwitch ? `/live/${player.id}` : `/players/${player.id}`}
                           onClick={() => setOnlineOpen(false)}
                           className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-white/[0.04] transition-colors"
                         >
@@ -627,14 +649,25 @@ export const Layout = () => {
                               size={34}
                               avatarUrl={playerAvatars?.[player.id]}
                             />
-                            <span className="absolute -right-0.5 -bottom-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#101319]" />
+                            <span
+                              className={`absolute -right-0.5 -bottom-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#101319] ${
+                                onTwitch ? "bg-[#9146FF]" : "bg-emerald-400"
+                              }`}
+                            />
                           </div>
 
                           <div className="min-w-0 flex-1">
                             <div className="font-semibold text-sm truncate">{player.name}</div>
-                            <div className={`text-[10px] mt-0.5 ${inMatch ? "text-[#D5A33A]" : "text-emerald-400"}`}>
-                              {inMatch ? "In Match" : "Available"}
-                            </div>
+                            {onTwitch ? (
+                              <div className="text-[10px] mt-0.5 text-[#B88CFF] inline-flex items-center gap-1">
+                                <Twitch size={11} />
+                                <span>LIVE on Twitch</span>
+                              </div>
+                            ) : (
+                              <div className={`text-[10px] mt-0.5 ${inMatch ? "text-[#D5A33A]" : "text-emerald-400"}`}>
+                                {inMatch ? "In Match" : "Available"}
+                              </div>
+                            )}
                           </div>
 
                           <EloBadge elo={player.currentElo} />
