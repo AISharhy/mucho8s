@@ -1382,45 +1382,43 @@ export default function PlayerProfile() {
         </div>
       </section>
 
-      <div className="m8-profile-workspace order-2">
-        <aside className="m8-profile-sidebar" aria-label="Player profile navigation">
-          <nav>
-            {[
-              ["overview", "Profile", UserCircle],
-              ["stats", "Stats", BarChart3],
-              ["history", "Match History", List],
-              ["achievements", "Achievements", Trophy],
-              ["rivalries", "Rivalries", Swords],
-            ].map(([tab, label, Icon]) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setProfileTab(tab)}
-                className={`m8-profile-sidebar-item ${profileTab === tab ? "is-active" : ""}`}
-                aria-current={profileTab === tab ? "page" : undefined}
-                data-testid={`profile-sidebar-${tab}`}
-              >
-                <Icon size={16} strokeWidth={1.8} />
-                <span>{label}</span>
-              </button>
-            ))}
+      <div className="m8-profile-content order-2">
+        <div className="m8-profile-content-tabs" role="tablist" aria-label="Player profile navigation">
+          {[
+            ["overview", "Profile", UserCircle],
+            ["stats", "Stats", BarChart3],
+            ["history", "Match History", List],
+            ["achievements", "Achievements", Trophy],
+            ["rivalries", "Rivalries", Swords],
+          ].map(([tab, label, Icon]) => (
+            <button
+              key={tab}
+              type="button"
+              role="tab"
+              aria-selected={profileTab === tab}
+              onClick={() => setProfileTab(tab)}
+              className={`m8-profile-content-tab ${profileTab === tab ? "is-active" : ""}`}
+              data-testid={`profile-content-tab-${tab}`}
+            >
+              <Icon size={15} strokeWidth={1.8} />
+              <span>{label}</span>
+            </button>
+          ))}
 
-            {isOwnProfile && (
-              <button
-                type="button"
-                onClick={() => setProfileTab("edit")}
-                className={`m8-profile-sidebar-item ${profileTab === "edit" ? "is-active" : ""}`}
-                aria-current={profileTab === "edit" ? "page" : undefined}
-                data-testid="profile-sidebar-settings"
-              >
-                <Settings size={16} strokeWidth={1.8} />
-                <span>Settings</span>
-              </button>
-            )}
-          </nav>
-        </aside>
-
-        <div className="m8-profile-content">
+          {isOwnProfile && (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={profileTab === "edit"}
+              onClick={() => setProfileTab("edit")}
+              className={`m8-profile-content-tab ${profileTab === "edit" ? "is-active" : ""}`}
+              data-testid="profile-content-tab-settings"
+            >
+              <Settings size={15} strokeWidth={1.8} />
+              <span>Settings</span>
+            </button>
+          )}
+        </div>
           {profileTab === "overview" && (
             <div className="m8-profile-overview-grid" data-testid="profile-overview-dashboard">
               <div className="m8-profile-overview-column">
@@ -1755,7 +1753,6 @@ export default function PlayerProfile() {
               </div>
             </div>
           )}
-        </div>
       </div>
 
       {profileTab === "__legacy_overview" && (
