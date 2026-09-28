@@ -1270,6 +1270,7 @@ export default function PlayerProfile() {
         </div>
       </section>
 
+      {/* Profile navigation: editing lives in the hero action only. */}
       {isOwnProfile && (
         <div
           className="order-2 grid grid-cols-2 sm:grid-cols-4 xl:inline-grid xl:grid-cols-4 gap-1 p-1 rounded-2xl bg-[#0F1218] border border-[#242A35] w-full xl:w-fit"
