@@ -204,7 +204,7 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const action = String(body?.action || "");
 
-    if (action === "sync" || action === "me" || action === "update-links" || action === "submit-player-request") {
+    if (action === "sync" || action === "me" || action === "update-links" || action === "submit-player-request" || action === "twitch-status") {
       const authHeader = req.headers.get("authorization") || "";
       const token = authHeader.replace(/^Bearer\s+/i, "").trim();
       if (!token) return json({ error: "Missing session" }, 401);
@@ -217,7 +217,7 @@ Deno.serve(async (req: Request) => {
 
       const { data: existing, error: existingError } = await supabase
         .from("player_accounts")
-        .select("player_id")
+        .select("player_id,twitch_channel")
         .eq("id", user.id)
         .maybeSingle();
       if (existingError) throw existingError;
@@ -290,6 +290,51 @@ Deno.serve(async (req: Request) => {
           })
           .eq("id", user.id);
         if (requestError) throw requestError;
+      }
+
+      if (action === "twitch-status") {
+        let twitchChannel = "";
+        try {
+          twitchChannel = cleanTwitchChannel(body?.twitchChannel || existing?.twitch_channel) || "";
+        } catch {
+          twitchChannel = "";
+        }
+
+        if (!twitchChannel) {
+          return json({ ok: true, channel: "", live: false, checkedAt: new Date().toISOString() });
+        }
+
+        let live = false;
+        let statusText = "";
+        try {
+          const statusResponse = await fetch(
+            `https://decapi.me/twitch/uptime/${encodeURIComponent(twitchChannel)}`,
+            {
+              headers: {
+                "User-Agent": "Mucho8s/1.0",
+                "Accept": "text/plain",
+              },
+            },
+          );
+          statusText = (await statusResponse.text()).trim();
+          const normalized = statusText.toLowerCase();
+          live = statusResponse.ok &&
+            Boolean(statusText) &&
+            !normalized.includes("offline") &&
+            !normalized.includes("not live") &&
+            !normalized.includes("does not exist") &&
+            !normalized.includes("error");
+        } catch {
+          live = false;
+        }
+
+        return json({
+          ok: true,
+          channel: twitchChannel,
+          live,
+          statusText,
+          checkedAt: new Date().toISOString(),
+        });
       }
 
       if (action === "update-links") {
