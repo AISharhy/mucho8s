@@ -303,9 +303,6 @@ export default function Leaderboard() {
                   <div className="font-display font-black text-lg truncate group-hover:text-magma transition-colors">
                     {p.name}
                   </div>
-                  <div className="mt-2">
-                    <RankBadge elo={p.totalPoints} compact />
-                  </div>
                 </div>
               </div>
 
