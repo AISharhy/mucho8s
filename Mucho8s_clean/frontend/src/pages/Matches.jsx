@@ -629,6 +629,14 @@ export default function Matches() {
         : challenge.challenger_player_id;
     const loser = safePlayerMap[loserId];
     const amount = Number(challenge.amount_cents || 0) / 100;
+    const eloEvent = challenge?.elo_event || null;
+    const winnerEloDelta = Number(eloEvent?.winner_delta);
+    const loserEloDelta = Number(eloEvent?.loser_delta);
+    const hasExactElo = Number.isFinite(winnerEloDelta) && Number.isFinite(loserEloDelta);
+    const stakeElo = Math.max(0, Math.round(amount));
+    const dynamicElo = hasExactElo
+      ? Math.max(0, Math.round(winnerEloDelta - stakeElo))
+      : null;
 
     return (
       <div
@@ -674,9 +682,18 @@ export default function Matches() {
             <div className="text-[9px] uppercase tracking-widest text-muted-foreground">
               Winner
             </div>
-            <div className="font-semibold mt-1">{winner?.name || "Player"}</div>
+            <div className="flex items-end justify-between gap-3 mt-1">
+              <div className="font-semibold">{winner?.name || "Player"}</div>
+              {hasExactElo && (
+                <div className="font-mono text-xl font-black text-emerald-400">
+                  +{Math.round(winnerEloDelta)} ELO
+                </div>
+              )}
+            </div>
             <div className="font-mono text-[11px] font-black text-emerald-400 mt-1">
-              Dynamic Elo + €{Math.max(0, Math.round(amount))} stake
+              {hasExactElo
+                ? `Dynamic +${dynamicElo} · Stake +${stakeElo}`
+                : `Dynamic Elo + €${Math.max(0, Math.round(amount))} stake`}
             </div>
           </div>
 
@@ -684,9 +701,18 @@ export default function Matches() {
             <div className="text-[9px] uppercase tracking-widest text-muted-foreground">
               Loser
             </div>
-            <div className="font-semibold mt-1">{loser?.name || "Player"}</div>
+            <div className="flex items-end justify-between gap-3 mt-1">
+              <div className="font-semibold">{loser?.name || "Player"}</div>
+              {hasExactElo && (
+                <div className="font-mono text-xl font-black text-red-400">
+                  {Math.round(loserEloDelta)} ELO
+                </div>
+              )}
+            </div>
             <div className="font-mono text-[11px] font-black text-red-400 mt-1">
-              Dynamic Elo + stake
+              {hasExactElo
+                ? `Dynamic -${dynamicElo} · Stake -${stakeElo}`
+                : "Dynamic Elo + stake"}
             </div>
           </div>
         </div>
