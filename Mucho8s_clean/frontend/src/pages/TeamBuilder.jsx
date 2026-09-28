@@ -449,8 +449,8 @@ export default function TeamBuilder() {
 
     if (!created) return;
 
-    toast.success("Mucho8s confirmed — now live in Match Center");
-    navigate("/matches");
+    toast.success("Mucho8s confirmed — BO3 maps generated");
+    navigate(`/matches/live/${created.id}`);
   };
 
   const generateTeams = () => {
@@ -1147,7 +1147,7 @@ export default function TeamBuilder() {
               <div className="brand-kicker mb-1">Ready</div>
               <h3 className="font-display text-2xl font-black">Alpha vs Bravo</h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Teams ready. Review balance, Elo and chemistry before confirming the Mucho8s.
+                Teams ready. Review balance, Elo and chemistry. BO3 maps are generated only after confirmation.
               </p>
             </div>
 
