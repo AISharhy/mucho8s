@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   UsersRound,
-  Medal,
   Search,
   Swords,
   Landmark,
@@ -204,14 +203,13 @@ export default function Play() {
               Choose your mode
             </h1>
             <p className="text-sm text-[#7F8795] mt-2">
-              Mucho8s and Mucho1v1 are live now. MuchoRanked and MuchoTourney are already in development.
+              Mucho8s and Mucho1v1 are live now. MuchoTourney is already in development.
             </p>
           </div>
 
           <div className="hidden sm:flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-[#697181]">
             <span className="m8-pill">Mucho8s</span>
             <span className="m8-pill">Mucho1v1</span>
-            <span className="m8-pill text-[#697181]">MuchoRanked · Soon</span>
             <span className="m8-pill text-[#697181]">MuchoTourney · Soon</span>
           </div>
         </div>
@@ -488,48 +486,7 @@ export default function Play() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-        <div
-          className="relative overflow-hidden rounded-[22px] border border-[#2A313D] bg-[#10151D] p-5 sm:p-6 min-h-[220px]"
-          data-testid="play-ranked-coming-soon"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-[#4F8CFF]/[0.055] via-transparent to-transparent pointer-events-none" />
-          <div className="relative z-10 h-full flex flex-col">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="brand-kicker">Competitive Queue</div>
-                  <span className="h-6 px-2 rounded-lg border border-[#4F8CFF]/20 bg-[#4F8CFF]/[0.06] text-[#76A7FF] inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-[0.14em]">
-                    <Clock3 size={10} />
-                    Coming Soon
-                  </span>
-                </div>
-                <h2 className="font-display text-2xl sm:text-[28px] font-black tracking-[-0.035em]">
-                  MuchoRanked
-                </h2>
-                <p className="text-sm text-[#7F8795] mt-2 max-w-md">
-                  Enter the queue, find a balanced lobby and play BO1 ranked matches with map and mode voting.
-                </p>
-              </div>
-
-              <div className="w-11 h-11 rounded-xl border border-[#4F8CFF]/25 bg-[#4F8CFF]/[0.06] flex items-center justify-center shrink-0">
-                <Medal size={19} className="text-[#4F8CFF]" />
-              </div>
-            </div>
-
-            <div className="mt-auto pt-5 flex flex-wrap items-center gap-2">
-              <span className="m8-pill">Queue Matchmaking</span>
-              <span className="m8-pill">BO1</span>
-              <span className="m8-pill">Map Vote</span>
-              <span className="m8-pill">Mode Vote</span>
-            </div>
-
-            <div className="mt-4 h-10 rounded-xl border border-[#2A303B] bg-[#0F1218] text-[#697181] flex items-center justify-center text-[10px] font-black uppercase tracking-[0.16em]">
-              In Development
-            </div>
-          </div>
-        </div>
-
+      <section className="grid grid-cols-1 lg:grid-cols-1 gap-4 items-stretch">
         <div
           className="relative overflow-hidden rounded-[22px] border border-[#2A313D] bg-[#10151D] p-5 sm:p-6 min-h-[220px]"
           data-testid="play-tournaments-coming-soon"
