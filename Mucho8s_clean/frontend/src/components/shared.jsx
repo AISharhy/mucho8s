@@ -198,12 +198,35 @@ export const MvpBadge = ({ count }) => (
   </span>
 );
 
-export const MerdaBadge = ({ count }) => (
-  <span className="inline-flex items-center gap-1 text-[#C79A6B] font-mono font-bold">
-    <span aria-hidden="true">💩</span>
-    {count}
-  </span>
-);
+export const merdaSeverity = (count) => {
+  const value = Math.max(0, Number(count || 0));
+  if (value >= 5) return "critical";
+  if (value >= 3) return "heavy";
+  if (value >= 1) return "active";
+  return "none";
+};
+
+export const merdaSurfaceClass = (count) => {
+  const severity = merdaSeverity(count);
+  return severity === "none" ? "" : `merda-surface merda-surface-${severity}`;
+};
+
+export const MerdaBadge = ({ count, compact = false }) => {
+  const value = Math.max(0, Number(count || 0));
+  if (value <= 0) return null;
+  const severity = merdaSeverity(value);
+
+  return (
+    <span
+      className={`merda-badge merda-badge-${severity} ${compact ? "merda-badge-compact" : ""}`}
+      title={`MERDA active x${value} · each win removes 1`}
+      aria-label={`MERDA active x${value}`}
+    >
+      <span aria-hidden="true">💩</span>
+      <span className="font-mono font-black">x{value}</span>
+    </span>
+  );
+};
 
 export const WinRatePill = ({ player }) => {
   const wr = winRate(player);
