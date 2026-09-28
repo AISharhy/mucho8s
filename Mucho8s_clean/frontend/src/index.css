@@ -1738,6 +1738,174 @@ textarea:focus-visible {
     animation: merdaClearPop .48s cubic-bezier(.2,.85,.25,1) both;
 }
 
+/* Profile-entry MERDA rain */
+.merda-rain-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 45;
+    overflow: hidden;
+    pointer-events: none;
+    background:
+        linear-gradient(180deg, rgba(74,41,26,.035), transparent 42%),
+        radial-gradient(circle at 50% 0%, rgba(139,94,60,.08), transparent 24rem);
+}
+
+.merda-rain-status {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 3;
+    min-width: 180px;
+    padding: .68rem .82rem;
+    border-radius: .85rem;
+    border: 1px solid rgba(181,106,58,.45);
+    background:
+        radial-gradient(circle at 0% 0%, rgba(181,106,58,.14), transparent 8rem),
+        rgba(12,12,13,.90);
+    backdrop-filter: blur(12px);
+    box-shadow:
+        0 12px 34px rgba(0,0,0,.30),
+        0 0 22px rgba(139,70,38,.13);
+    animation: merdaRainStatusIn .32s cubic-bezier(.2,.8,.2,1) both;
+}
+
+.merda-rain-status-kicker,
+.merda-rain-status > span:last-child {
+    display: block;
+    font-size: .55rem;
+    line-height: 1.2;
+    font-weight: 900;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+}
+
+.merda-rain-status-kicker {
+    color: #8E7866;
+}
+
+.merda-rain-status strong {
+    display: block;
+    margin-top: .22rem;
+    color: #E1A36B;
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: .78rem;
+    font-weight: 900;
+    letter-spacing: .045em;
+}
+
+.merda-rain-status > span:last-child {
+    margin-top: .22rem;
+    color: #A48A76;
+    letter-spacing: .08em;
+}
+
+.merda-rain-drop {
+    position: absolute;
+    top: -42px;
+    z-index: 2;
+    line-height: 1;
+    filter: drop-shadow(0 5px 8px rgba(51,27,17,.28));
+    will-change: transform, opacity;
+    animation: merdaRainFall var(--merda-duration, 1.2s) linear var(--merda-delay, 0s) both;
+}
+
+.m8-profile-merda-intro-critical {
+    animation: merdaProfileShake .44s cubic-bezier(.36,.07,.19,.97) .12s both;
+}
+
+.clean-again-overlay {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 46;
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    min-width: 178px;
+    padding: .72rem .86rem;
+    border-radius: .85rem;
+    border: 1px solid rgba(76,211,145,.34);
+    background:
+        radial-gradient(circle at 0% 20%, rgba(76,211,145,.14), transparent 8rem),
+        rgba(9,16,15,.93);
+    backdrop-filter: blur(12px);
+    box-shadow:
+        0 12px 34px rgba(0,0,0,.28),
+        0 0 24px rgba(76,211,145,.11);
+    pointer-events: none;
+    animation: cleanAgainIn .38s cubic-bezier(.2,.84,.24,1) both;
+}
+
+.clean-again-spark {
+    color: #61E5A2;
+    font-size: 1.35rem;
+    text-shadow: 0 0 16px rgba(97,229,162,.52);
+    animation: cleanAgainSpark 1s ease-in-out infinite;
+}
+
+.clean-again-overlay strong,
+.clean-again-overlay div > span {
+    display: block;
+}
+
+.clean-again-overlay strong {
+    color: #65E6A5;
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: .78rem;
+    font-weight: 900;
+    letter-spacing: .12em;
+}
+
+.clean-again-overlay div > span {
+    margin-top: .12rem;
+    color: #8BAA9C;
+    font-size: .56rem;
+    font-weight: 800;
+    letter-spacing: .10em;
+    text-transform: uppercase;
+}
+
+@keyframes merdaRainFall {
+    0% {
+        transform: translate3d(0, -36px, 0) rotate(var(--merda-rotate, 0deg)) scale(.82);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    78% {
+        opacity: .92;
+    }
+    100% {
+        transform: translate3d(var(--merda-drift, 0px), 720px, 0) rotate(385deg) scale(1.04);
+        opacity: 0;
+    }
+}
+
+@keyframes merdaRainStatusIn {
+    0% { opacity: 0; transform: translateY(-8px) scale(.94); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes merdaProfileShake {
+    0%, 100% { transform: translate3d(0,0,0) rotate(0); }
+    18% { transform: translate3d(-2px,1px,0) rotate(-.12deg); }
+    36% { transform: translate3d(2px,-1px,0) rotate(.12deg); }
+    54% { transform: translate3d(-1px,0,0) rotate(-.08deg); }
+    72% { transform: translate3d(1px,1px,0) rotate(.06deg); }
+}
+
+@keyframes cleanAgainIn {
+    0% { opacity: 0; transform: translateY(-7px) scale(.92); filter: blur(2px); }
+    65% { opacity: 1; transform: translateY(1px) scale(1.02); filter: blur(0); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes cleanAgainSpark {
+    0%, 100% { transform: scale(.92) rotate(-8deg); opacity: .72; }
+    50% { transform: scale(1.14) rotate(8deg); opacity: 1; }
+}
+
 @keyframes merdaBadgeThrob {
     0%, 100% { transform: translateY(0); box-shadow: 0 0 12px rgba(171,83,43,.10); }
     50% { transform: translateY(-1px); box-shadow: 0 0 20px rgba(171,83,43,.24); }
@@ -1775,8 +1943,16 @@ textarea:focus-visible {
     .merda-surface-critical,
     .merda-avatar-critical::after,
     .merda-pop,
-    .merda-clear-pop {
+    .merda-clear-pop,
+    .m8-profile-merda-intro-critical,
+    .merda-rain-status,
+    .clean-again-overlay,
+    .clean-again-spark {
         animation: none !important;
+    }
+
+    .merda-rain-drop {
+        display: none;
     }
 }
 
