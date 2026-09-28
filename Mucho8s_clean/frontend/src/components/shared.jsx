@@ -90,7 +90,7 @@ export const RankArtwork = ({ elo, rank: providedRank, family, size = 48, classN
   );
 };
 
-export const RankBadge = ({ elo, compact = false, showName = true }) => {
+export const RankBadge = ({ elo, compact = false, showName = true, showElo = true }) => {
   const rank = tierOf(elo);
   const artworkSize = compact ? 34 : 48;
 
@@ -106,7 +106,7 @@ export const RankBadge = ({ elo, compact = false, showName = true }) => {
           >
             {rank.name}
           </div>
-          {!compact && (
+          {!compact && showElo && (
             <div className="text-[10px] text-muted-foreground mt-1 font-mono">{elo} ELO</div>
           )}
         </div>
