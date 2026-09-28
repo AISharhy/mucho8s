@@ -30,7 +30,6 @@ const makePlayer = (name, startElo = MIN_ELO) => {
     currentStreak: 0,
     mvpCount: 0,
     merdaCount: 0,
-    role: "",
     eloHistory: [{ match: 0, elo }],
     createdAt: new Date().toISOString(),
   };
@@ -51,10 +50,6 @@ const normalizePlayer = (p) => {
     currentStreak: Number(p?.currentStreak) || 0,
     mvpCount: Math.max(0, Number(p?.mvpCount) || 0),
     merdaCount: Math.max(0, Number(p?.merdaCount) || 0),
-    role:
-      p?.role === "Main AR" ? "AR" :
-      p?.role === "Flex" ? "FLEX" :
-      ["AR", "FLEX", "SMG"].includes(p?.role) ? p.role : "",
     eloHistory: Array.isArray(p?.eloHistory) && p.eloHistory.length
       ? p.eloHistory
       : [{ match: 0, elo: cur }],
@@ -765,7 +760,7 @@ export const DataProvider = ({ children }) => {
     return () => clearInterval(timer);
   }, [discordSession, discordAccount?.player_id, accountRequest]);
 
-  const saveMyChallengeLinks = useCallback(async ({ paypalUrl, revolutUrl, role = "" }) => {
+  const saveMyChallengeLinks = useCallback(async ({ paypalUrl, revolutUrl }) => {
     if (!discordSession) {
       toast.error("Login with Discord first");
       return false;
@@ -776,7 +771,6 @@ export const DataProvider = ({ children }) => {
         action: "update-links",
         paypalUrl,
         revolutUrl,
-        role,
       },
       { session: discordSession },
     );
@@ -1950,11 +1944,10 @@ export const DataProvider = ({ children }) => {
     return persistWholeState(next, matches);
   }, [players, matches, backendWrite, persistWholeState]);
 
-  const editPlayer = useCallback(async (id, { name, currentElo, role = "" }) => {
+  const editPlayer = useCallback(async (id, { name, currentElo }) => {
     const cleanName = String(name || "").trim();
     if (!cleanName) return false;
     const elo = Math.max(MIN_ELO, Math.round(Number(currentElo) || BASE_ELO));
-    const cleanRole = ["AR", "FLEX", "SMG"].includes(role) ? role : "";
 
     if (STORAGE_MODE === "backend") {
       const okName = await backendWrite(`/players/${id}/name`, { method: "PUT", body: { name: cleanName } });
@@ -1967,11 +1960,10 @@ export const DataProvider = ({ children }) => {
     if (!p) return false;
     p.name = cleanName;
     p.currentElo = elo;
-    p.role = cleanRole;
     p.peakElo = Math.max(p.peakElo, elo);
     p.eloHistory = [...(p.eloHistory || []), { match: p.eloHistory?.length || 0, elo }];
     const ok = await persistWholeState(next, matches);
-    if (ok) void logAdminAction("player.update", "player", id, { name: cleanName, elo, role: cleanRole });
+    if (ok) void logAdminAction("player.update", "player", id, { name: cleanName, elo });
     return ok;
   }, [players, matches, backendWrite, persistWholeState, logAdminAction]);
 
