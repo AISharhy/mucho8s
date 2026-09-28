@@ -1537,7 +1537,7 @@ export default function AdminPanel() {
 
       {activeTab === "settings" && (
         <>
-      <div className="m8-panel rounded-2xl p-5" data-testid="discord-settings">
+      <div className="m8-panel rounded-2xl p-4" data-testid="discord-settings">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
@@ -1608,8 +1608,8 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      <div className="m8-panel rounded-2xl p-5" data-testid="discord-player-accounts">
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-4">
+      <div className="m8-panel rounded-2xl p-4" data-testid="discord-player-accounts">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-3">
           <div>
             <div className="brand-kicker mb-1">Player Accounts</div>
             <h3 className="font-display font-black text-xl tracking-[-0.02em]">
@@ -1630,7 +1630,7 @@ export default function AdminPanel() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-4">
+        <div className="grid grid-cols-4 gap-2 mb-3">
           {[
             ["PayPal", paymentLinkStats.paypal, "text-[#61A8FF]"],
             ["Revolut", paymentLinkStats.revolut, "text-white"],
@@ -1639,7 +1639,7 @@ export default function AdminPanel() {
           ].map(([label, value, tone]) => (
             <div
               key={label}
-              className="rounded-xl border border-[#222834] bg-[#0F1218] px-3 py-2.5"
+              className="rounded-xl border border-[#222834] bg-[#0F1218] px-3 py-2"
             >
               <div className="text-[9px] uppercase tracking-widest text-[#697181]">{label}</div>
               <div className={`font-mono font-black text-lg mt-0.5 ${tone}`}>{value}</div>
@@ -1652,7 +1652,7 @@ export default function AdminPanel() {
             No player has logged in with Discord yet.
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-2 max-h-[460px] overflow-y-auto pr-1">
             {discordAccounts.map((account) => {
               const hasPayPal = Boolean(String(account?.paypal_url || "").trim());
               const hasRevolut = Boolean(String(account?.revolut_url || "").trim());
@@ -1679,18 +1679,18 @@ export default function AdminPanel() {
               return (
                 <div
                   key={account.id}
-                  className="rounded-xl border border-[#202631] bg-[#0F1218] p-3"
+                  className="rounded-xl border border-[#202631] bg-[#0F1218] p-2.5"
                 >
-                  <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                  <div className="flex items-center gap-2.5">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       {account.avatar_url ? (
                         <img
                           src={account.avatar_url}
                           alt=""
-                          className="w-10 h-10 rounded-xl object-cover shrink-0"
+                          className="w-9 h-9 rounded-lg object-cover shrink-0"
                         />
                       ) : (
-                        <div className="w-10 h-10 rounded-xl bg-[#5865F2]/15 border border-[#5865F2]/30 flex items-center justify-center shrink-0">
+                        <div className="w-9 h-9 rounded-lg bg-[#5865F2]/15 border border-[#5865F2]/30 flex items-center justify-center shrink-0">
                           <MessageCircle size={17} className="text-[#8E98FF]" />
                         </div>
                       )}
@@ -1706,7 +1706,7 @@ export default function AdminPanel() {
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                    <div className="flex items-center gap-2 shrink-0">
                       <span className={`h-8 px-2.5 rounded-lg border inline-flex items-center text-[10px] font-bold uppercase tracking-wider ${paymentClass}`}>
                         {paymentLabel}
                       </span>
@@ -1715,7 +1715,7 @@ export default function AdminPanel() {
                         value={account.player_id || ""}
                         onChange={(e) => handleAccountLink(account.id, e.target.value)}
                         disabled={accountBusyId === account.id}
-                        className="h-9 w-full sm:w-52 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-xs text-[#D7DBE2]"
+                        className="h-8 w-40 rounded-lg bg-[#151923] border border-[#2A303B] px-2.5 text-[11px] text-[#D7DBE2]"
                         data-testid={`discord-account-player-${account.id}`}
                       >
                         <option value="">Not linked</option>
