@@ -16,6 +16,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -188,36 +193,87 @@ const TeamList = ({
               {p.currentElo} Elo
             </div>
 
-            <div
-              className="mt-1 flex flex-wrap gap-x-1.5 gap-y-0.5 text-[8px] font-mono font-bold uppercase tracking-wide"
-              title={breakdownTitle}
-            >
-              {breakdown.map((item) => (
-                <span
-                  key={item.key}
-                  title={item.title || undefined}
-                  className={
-                    item.value >= 0
-                      ? "text-emerald-400/75"
-                      : "text-red-400/75"
-                  }
-                >
-                  {item.label} {signedElo(item.value)}
-                </span>
-              ))}
-            </div>
           </div>
 
-          <span
-            title={breakdownTitle}
-            className={`min-w-[52px] h-7 px-2 rounded-lg border inline-flex items-center justify-center font-mono text-[11px] font-black ${ 
-              delta >= 0
-                ? "text-emerald-400 bg-emerald-500/[0.06] border-emerald-500/15"
-                : "text-red-400 bg-red-500/[0.06] border-red-500/15"
-            }`}
-          >
-            {delta >= 0 ? "+" : ""}{delta}
-          </span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                aria-label={`Show Elo breakdown for ${p.name}`}
+                className={`min-w-[52px] h-7 px-2 rounded-lg border inline-flex items-center justify-center font-mono text-[11px] font-black transition-colors cursor-pointer ${ 
+                  delta >= 0
+                    ? "text-emerald-400 bg-emerald-500/[0.06] border-emerald-500/15 hover:bg-emerald-500/[0.12]"
+                    : "text-red-400 bg-red-500/[0.06] border-red-500/15 hover:bg-red-500/[0.12]"
+                }`}
+              >
+                {delta >= 0 ? "+" : ""}{delta}
+              </button>
+            </PopoverTrigger>
+
+            <PopoverContent
+              align="end"
+              sideOffset={8}
+              className="w-72 rounded-xl border border-[#2A303B] bg-[#0D1118] p-0 shadow-2xl"
+            >
+              <div className="px-3.5 py-3 border-b border-[#202630]">
+                <div className="text-[9px] uppercase tracking-[0.18em] text-[#697181]">
+                  Elo Breakdown
+                </div>
+                <div className="mt-1 flex items-center justify-between gap-3">
+                  <span className="font-display font-black text-sm truncate">
+                    {p.name}
+                  </span>
+                  <span
+                    className={`font-mono text-sm font-black ${
+                      delta >= 0 ? "text-emerald-400" : "text-red-400"
+                    }`}
+                  >
+                    {signedElo(delta)} ELO
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-2.5 space-y-1.5">
+                {breakdown.map((item) => (
+                  <div
+                    key={item.key}
+                    className="rounded-lg border border-[#1D232C] bg-[#11161D] px-2.5 py-2"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-[#AAB1BE]">
+                        {item.label}
+                      </span>
+                      <span
+                        className={`font-mono text-[11px] font-black ${
+                          item.value >= 0 ? "text-emerald-400" : "text-red-400"
+                        }`}
+                      >
+                        {signedElo(item.value)}
+                      </span>
+                    </div>
+                    {item.title && (
+                      <div className="mt-1 text-[9px] leading-relaxed text-[#697181]">
+                        {item.title}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="px-3.5 py-2.5 border-t border-[#202630] flex items-center justify-between">
+                <span className="text-[9px] uppercase tracking-widest text-[#697181]">
+                  Total
+                </span>
+                <span
+                  className={`font-mono text-xs font-black ${
+                    delta >= 0 ? "text-emerald-400" : "text-red-400"
+                  }`}
+                >
+                  {signedElo(delta)} ELO
+                </span>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       );
     })}
