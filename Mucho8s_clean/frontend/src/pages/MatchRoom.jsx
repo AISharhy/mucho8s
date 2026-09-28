@@ -215,6 +215,7 @@ export default function MatchRoom() {
           chasingMvp,
           clearingMerda,
           merdaCount,
+          losingStreakIsStacking: streak <= -3,
           side: isAlpha ? "Alpha" : "Bravo",
           opposingSide: isAlpha ? "Bravo" : "Alpha",
           bounty,
@@ -518,7 +519,8 @@ export default function MatchRoom() {
                     <div className="text-[11px] mt-1">
                       {item.clearingMerda ? (
                         <span className="text-[#C79A6B] font-semibold">
-                          💩 WIN TO REDUCE MERDA · x{item.merdaCount} → x{Math.max(0, item.merdaCount - 1)}
+                          💩 WIN: x{item.merdaCount} → x{Math.max(0, item.merdaCount - 1)}
+                          {item.losingStreakIsStacking ? ` · LOSS: x${item.merdaCount} → x${item.merdaCount + 1}` : ""}
                           {item.chasingMvp && item.remaining === 1 ? " · 🏆 MVP also on this win" : ""}
                         </span>
                       ) : item.chasingMvp ? (
