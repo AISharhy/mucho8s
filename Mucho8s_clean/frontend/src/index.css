@@ -1104,6 +1104,90 @@ textarea:focus-visible {
 }
 
 
+/* Trial: unified visual identity for Mucho modes */
+.m8-mode-zone {
+    --m8-mode-accent: #FF2A3B;
+    --m8-mode-accent-rgb: 255,42,59;
+    position: relative;
+    overflow: hidden;
+    border-color: rgba(var(--m8-mode-accent-rgb), .28) !important;
+    background:
+        radial-gradient(circle at 92% 0%, rgba(var(--m8-mode-accent-rgb), .10), transparent 18rem),
+        linear-gradient(180deg, rgba(255,255,255,.012), transparent),
+        #0E131A !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.018),
+        0 16px 42px rgba(0,0,0,.16);
+}
+
+.m8-mode-zone::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 2px;
+    pointer-events: none;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(var(--m8-mode-accent-rgb), .95) 18%,
+        rgba(var(--m8-mode-accent-rgb), .72) 72%,
+        transparent
+    );
+    box-shadow: 0 0 18px rgba(var(--m8-mode-accent-rgb), .20);
+}
+
+.m8-mode-zone::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: .16;
+    background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size: 30px 30px;
+    mask-image: linear-gradient(135deg, #000 0, transparent 66%);
+}
+
+.m8-mode-zone > * {
+    position: relative;
+    z-index: 1;
+}
+
+.m8-mode-zone .brand-kicker,
+.m8-mode-zone .m8-mode-label {
+    color: rgb(var(--m8-mode-accent-rgb)) !important;
+}
+
+.m8-mode-zone.is-mucho8s {
+    --m8-mode-accent: #FF2A3B;
+    --m8-mode-accent-rgb: 255,42,59;
+}
+
+.m8-mode-zone.is-mucho1v1 {
+    --m8-mode-accent: #34D399;
+    --m8-mode-accent-rgb: 52,211,153;
+}
+
+.m8-mode-zone.is-muchotourney {
+    --m8-mode-accent: #D5A33A;
+    --m8-mode-accent-rgb: 213,163,58;
+}
+
+.m8-mode-zone.is-mucho8s:hover,
+.m8-mode-zone.is-mucho1v1:hover,
+.m8-mode-zone.is-muchotourney:hover {
+    border-color: rgba(var(--m8-mode-accent-rgb), .42) !important;
+}
+
+.m8-mode-tab {
+    border-color: rgba(var(--m8-mode-accent-rgb), .28) !important;
+    color: rgb(var(--m8-mode-accent-rgb)) !important;
+    background: rgba(var(--m8-mode-accent-rgb), .08) !important;
+}
+
 /* Full-gas esports Play lobby */
 .m8-play-esports-hero {
     position: relative;
