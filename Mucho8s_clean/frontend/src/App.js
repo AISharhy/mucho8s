@@ -22,6 +22,7 @@ import Rivalries from "@/pages/Rivalries";
 import RivalryDetail from "@/pages/RivalryDetail";
 import News from "@/pages/News";
 import Live from "@/pages/Live";
+import RiveUpgradeTest from "@/pages/RiveUpgradeTest";
 
 function IntroSplash({ onDone }) {
   const riveSrc = String(process.env.REACT_APP_RIVE_INTRO_SRC || "").trim();
@@ -122,6 +123,7 @@ function App() {
               <Route path="rank-guide" element={<RankGuide />} />
               <Route path="ranks" element={<RankGuide />} />
               <Route path="admin" element={<AdminPanel />} />
+              <Route path="rive-upgrade-test" element={<RiveUpgradeTest />} />
               <Route path="challenges" element={<ChallengeInbox />} />
               <Route path="challenges/:id" element={<ChallengeMatch />} />
               <Route path="*" element={<NotFound />} />
