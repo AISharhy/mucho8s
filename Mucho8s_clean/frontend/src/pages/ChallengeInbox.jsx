@@ -11,7 +11,7 @@ import {
   Clock3,
   History,
   ShieldCheck,
-  Swords,
+  Landmark,
   X,
   AlertTriangle,
   Trophy,
@@ -353,7 +353,7 @@ export default function ChallengeInbox() {
                         to={`/challenges/${challenge.id}`}
                         className="h-10 px-4 rounded-xl bg-[#181B26] border border-[#2A303B] text-sm font-semibold text-white inline-flex items-center justify-center hover:bg-white/[0.05]"
                       >
-                        {needsAction ? <AlertTriangle size={14} className="mr-1.5 text-[#D5A33A]" /> : <Swords size={14} className="mr-1.5" />}
+                        {needsAction ? <AlertTriangle size={14} className="mr-1.5 text-[#D5A33A]" /> : <Landmark size={14} className="mr-1.5 text-emerald-400" />}
                         {series ? "Open Series" : "Open Mucho1v1"}
                       </Link>
                     )}
