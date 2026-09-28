@@ -189,7 +189,8 @@ export default function TeamBuilder() {
     : result?.teamB?.some((player) => player.id === matchCaptainId)
       ? "B"
       : "";
-  const canConfirm = Boolean(result && (isAdmin || matchCaptainId));
+  const mapPoolConfigured = game !== "MW4";
+  const canConfirm = Boolean(result && (isAdmin || matchCaptainId) && mapPoolConfigured);
 
   const teamIntel = useMemo(() => {
     if (!result) return null;
@@ -558,6 +559,11 @@ export default function TeamBuilder() {
                 </button>
               ))}
             </div>
+            {game === "MW4" && (
+              <div className="mt-3 rounded-xl border border-orange-500/20 bg-orange-500/[0.04] px-3 py-2.5 text-[11px] text-orange-300">
+                MW4 BO3 map pool is not configured yet. Teams can still be prepared, but the match cannot go live until its competitive maps are added.
+              </div>
+            )}
           </div>
         )}
       </section>
@@ -1333,7 +1339,7 @@ export default function TeamBuilder() {
               onClick={() => void confirmMatch()}
               disabled={!canConfirm || confirmBusy}
               className="w-full h-11 bg-magma hover:bg-[#ff3c4c] text-white font-semibold"
-              title={canConfirm ? "" : "Only the Mucho8s creator or Admin can confirm"}
+              title={canConfirm ? "" : !mapPoolConfigured ? "MW4 competitive map pool is not configured yet" : "Only the Mucho8s creator or Admin can confirm"}
             >
               <Check size={16} className="mr-2" />
               {confirmBusy ? "Confirming..." : "Confirm Mucho8s"}
@@ -1342,7 +1348,9 @@ export default function TeamBuilder() {
 
           {!canConfirm && (
             <div className="text-[11px] text-muted-foreground text-center mt-2">
-              Mucho8s confirmation is limited to the creator or Admin.
+              {!mapPoolConfigured
+                ? "Add the MW4 competitive map pool before confirming this BO3."
+                : "Mucho8s confirmation is limited to the creator or Admin."}
             </div>
           )}
         </section>
