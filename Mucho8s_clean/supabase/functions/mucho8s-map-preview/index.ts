@@ -211,38 +211,28 @@ const findTileImage = (section: string, mapName: string) => {
   const aliases = MAP_ALIASES[mapName] || [mapName];
   const normalizedAliases = aliases.map(normalize).filter(Boolean);
 
-  const anchors = [...section.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/gi)];
-  const matches = anchors.filter((anchor) => {
-    const text = normalize(anchor[1]);
-    if (!text) return false;
-    return normalizedAliases.some((alias) => text === alias);
-  });
+  const items = [...section.matchAll(
+    /<div\b[^>]*class=["'][^"']*wikia-gallery-item[^"']*["'][^>]*>[\s\S]*?<div\b[^>]*class=["'][^"']*lightbox-caption[^"']*["'][^>]*>[\s\S]*?<\/div><\/div>/gi
+  )];
 
-  for (const anchor of matches) {
-    const anchorIndex = Number(anchor.index || 0);
-    const left = Math.max(0, anchorIndex - 5000);
-    const right = Math.min(section.length, anchorIndex + anchor[0].length + 2500);
-    const windowHtml = section.slice(left, right);
+  for (const itemMatch of items) {
+    const item = itemMatch[0];
+    const captionMatch = item.match(
+      /<div\b[^>]*class=["'][^"']*lightbox-caption[^"']*["'][^>]*>([\s\S]*?)<\/div>/i
+    );
+    const captionText = normalize(captionMatch?.[1] || "");
+    if (!captionText) continue;
 
-    const imageTags = [...windowHtml.matchAll(/<img\b[^>]*>/gi)]
-      .map((item) => ({
-        tag: item[0],
-        index: left + Number(item.index || 0),
-      }))
-      .map((item) => ({
-        ...item,
-        url: imageUrlFromTag(item.tag),
-      }))
-      .filter((item) => usableImage(item.url))
-      .sort((a, b) => {
-        const aDistance = Math.abs(a.index - anchorIndex);
-        const bDistance = Math.abs(b.index - anchorIndex);
-        return aDistance - bDistance;
-      });
+    const matchesMap = normalizedAliases.some(
+      (alias) => captionText === alias || captionText.startsWith(`${alias} `)
+    );
+    if (!matchesMap) continue;
 
-    if (imageTags[0]?.url) {
-      return imageTags[0].url;
-    }
+    const imageTags = [...item.matchAll(/<img\b[^>]*>/gi)]
+      .map((match) => imageUrlFromTag(match[0]))
+      .filter(usableImage);
+
+    if (imageTags[0]) return imageTags[0];
   }
 
   return "";
