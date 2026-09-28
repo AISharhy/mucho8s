@@ -825,7 +825,7 @@ export const DataProvider = ({ children }) => {
     fetchState,
   ]);
 
-  const saveMyChallengeLinks = useCallback(async ({ paypalUrl, revolutUrl }) => {
+  const saveMyChallengeLinks = useCallback(async ({ paypalUrl, revolutUrl, twitchChannel }) => {
     if (!discordSession) {
       toast.error("Login with Discord first");
       return false;
@@ -836,6 +836,7 @@ export const DataProvider = ({ children }) => {
         action: "update-links",
         paypalUrl,
         revolutUrl,
+        twitchChannel,
       },
       { session: discordSession },
     );
