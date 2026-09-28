@@ -36,26 +36,26 @@ const unique = (values) => [...new Set(values.filter(Boolean))];
 const candidateFilenames = (mapName, game) => {
   const names = MAP_ALIASES[mapName] || [mapName];
   const tags = GAME_FILE_TAGS[game] || [game].filter(Boolean);
-  const extensions = ["jpg", "png", "jpeg", "webp"];
-  const stems = [
-    "MenuScreen",
-    "LoadingScreen",
-    "Loading Screen",
-    "Load Screen",
-    "LoadScreen",
-    "Promo",
-    "Reveal",
-    "Aerial View",
-    "aerial view",
+  const patterns = [
+    ["MenuScreen", "jpg"],
+    ["MenuScreen", "png"],
+    ["LoadingScreen", "png"],
+    ["LoadingScreen", "jpg"],
+    ["Loading Screen", "jpg"],
+    ["Load Screen", "png"],
+    ["Load Screen", "jpg"],
+    ["Promo", "jpg"],
+    ["Promo", "png"],
+    ["Reveal", "png"],
+    ["Aerial View", "png"],
+    ["aerial view", "png"],
   ];
 
   const candidates = [];
   names.forEach((name) => {
     tags.forEach((tag) => {
-      stems.forEach((stem) => {
-        extensions.forEach((ext) => {
-          candidates.push(`${name} ${stem} ${tag}.${ext}`);
-        });
+      patterns.forEach(([stem, ext]) => {
+        candidates.push(`${name} ${stem} ${tag}.${ext}`);
       });
     });
   });
@@ -152,48 +152,67 @@ export default function MapPreviewCard({
     () => candidateFilenames(mapName, game).map(fileRedirect),
     [mapName, game]
   );
-  const [source, setSource] = useState(() => readCached(game, mapName) || candidates[0] || "");
-  const [candidateIndex, setCandidateIndex] = useState(0);
-  const [archiveSearched, setArchiveSearched] = useState(false);
+  const [source, setSource] = useState(() => readCached(game, mapName) || "");
+  const [candidateIndex, setCandidateIndex] = useState(-1);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    let active = true;
     const cached = readCached(game, mapName);
-    setCandidateIndex(0);
-    setArchiveSearched(false);
+
+    setCandidateIndex(-1);
     setLoaded(false);
-    setSource(cached || candidates[0] || "");
-  }, [game, mapName, candidates]);
+    setSource(cached || "");
 
-  const tryArchiveSearch = async () => {
-    if (archiveSearched) {
-      setSource("");
-      return;
+    if (cached) {
+      return () => {
+        active = false;
+      };
     }
 
-    setArchiveSearched(true);
-    try {
-      const found = await searchArchive(mapName, game);
-      if (found) {
-        setLoaded(false);
-        setSource(found);
-        return;
+    void (async () => {
+      try {
+        const found = await searchArchive(mapName, game);
+        if (active && found) {
+          setSource(found);
+          return;
+        }
+      } catch {
+        // Fall through to filename-based archive redirects.
       }
-    } catch {
-      // Candidate filenames and the visual fallback keep the card usable.
-    }
-    setSource("");
-  };
+
+      if (active && candidates.length) {
+        setCandidateIndex(0);
+        setSource(candidates[0]);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [game, mapName, candidates]);
 
   const handleError = () => {
     setLoaded(false);
+
+    if (candidateIndex < 0) {
+      if (candidates.length) {
+        setCandidateIndex(0);
+        setSource(candidates[0]);
+      } else {
+        setSource("");
+      }
+      return;
+    }
+
     const next = candidateIndex + 1;
     if (next < candidates.length) {
       setCandidateIndex(next);
       setSource(candidates[next]);
       return;
     }
-    void tryArchiveSearch();
+
+    setSource("");
   };
 
   const handleLoad = () => {
