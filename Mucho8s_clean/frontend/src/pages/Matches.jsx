@@ -776,9 +776,9 @@ export default function Matches() {
               {match.mode}
             </span>
           )}
-          {Array.isArray(match.maps) && match.maps.length === 3 && (
+          {Array.isArray(match.maps) && [3, 5].includes(match.maps.length) && (
             <span className="px-2 py-0.5 rounded-md bg-[#11151C] text-[10px] border border-[#2C333E] text-[#C8CED8]">
-              BO3 · {match.maps.join(" · ")}
+              BO{match.maps.length} · {match.maps.join(" · ")}
             </span>
           )}
           {Number(match?.eloContext?.resultDelta) > 0 && (
@@ -878,23 +878,25 @@ export default function Matches() {
           <div className="rounded-xl border border-[#2A303B] bg-[#0F1218] px-3 py-2.5">
             <div className="text-[9px] uppercase tracking-widest text-[#697181]">Format</div>
             <div className="font-display font-black text-[#C8CED8] mt-1">
-              {Array.isArray(match.maps) && match.maps.length === 3 ? "Best of 3" : ((match.teamA?.length || 0) + "v" + (match.teamB?.length || 0))}
+              {Array.isArray(match.maps) && [3, 5].includes(match.maps.length)
+                ? `Best of ${match.maps.length}`
+                : ((match.teamA?.length || 0) + "v" + (match.teamB?.length || 0))}
             </div>
           </div>
         </div>
       </div>
 
-      {Array.isArray(match.maps) && match.maps.length === 3 && (
+      {Array.isArray(match.maps) && [3, 5].includes(match.maps.length) && (
         <div className="mb-4">
           <div className="flex items-center justify-between gap-3 mb-2">
             <div className="text-[9px] uppercase tracking-[0.16em] text-[#697181]">
-              Saved BO3 rotation
+              Saved BO{match.maps.length} rotation
             </div>
             <span className="text-[9px] uppercase tracking-wider text-muted-foreground">
               Generated at match confirmation
             </span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className={match.maps.length === 5 ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2" : "grid grid-cols-1 sm:grid-cols-3 gap-2"}>
             {match.maps.map((mapName, index) => (
               <MapPreviewCard
                 key={mapName + "-" + index}
