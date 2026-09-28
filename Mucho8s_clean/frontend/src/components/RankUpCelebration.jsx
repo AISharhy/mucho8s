@@ -161,7 +161,7 @@ export default function RankUpCelebration() {
 
   return (
     <div
-      className="m8-rankup-overlay"
+      className={`m8-rankup-overlay ${riveReady && !riveFailed ? "is-rive" : "is-fallback"}`}
       role="dialog"
       aria-modal="true"
       aria-label={`Major rank up: ${newFamilyName}`}
