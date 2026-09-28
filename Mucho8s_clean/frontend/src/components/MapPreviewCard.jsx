@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 const SUPABASE_URL = (process.env.REACT_APP_SUPABASE_URL || "").replace(/\/$/, "");
 
 const cacheKey = (game, mapName) =>
-  `m8-map-preview-v4:${String(game || "")}:${String(mapName || "")}`;
+  `m8-map-preview-v5:${String(game || "")}:${String(mapName || "")}`;
 
 const callOfDutyMapsPreview = (game, mapName) => {
   if (!SUPABASE_URL || !game || !mapName) return "";
@@ -76,7 +76,7 @@ export default function MapPreviewCard({
           alt=""
           loading="lazy"
           referrerPolicy="no-referrer"
-          data-preview-source="callofdutymaps"
+          data-preview-source="fandom-maps"
           onLoad={handleLoad}
           onError={handleError}
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${loaded ? "opacity-70" : "opacity-0"}`}
