@@ -597,7 +597,7 @@ export default function PlayerProfile() {
         id: "merda",
         type: "merda",
         title: "MERDA",
-        detail: `Active x${player.merdaCount} · ogni 3 wins in a row ne elimini 1`,
+        detail: `Active x${player.merdaCount} · every win removes exactly 1`,
         count: Number(player.merdaCount || 0),
         emoji: "💩",
         source: "General",
@@ -1042,7 +1042,7 @@ export default function PlayerProfile() {
 
         <div className="relative z-10 px-5 sm:px-7 pb-6">
           <div className="-mt-10 sm:-mt-12 flex flex-col lg:flex-row lg:items-end gap-5">
-            <div className="relative shrink-0 self-start">
+            <div className={`relative shrink-0 self-start ${Number(player.merdaCount || 0) >= 5 ? "merda-avatar-critical" : ""}`}>
               <div className="absolute -inset-2 rounded-[26px] bg-magma/10 blur-xl" />
               <div className="relative rounded-[24px] border-4 border-[#10151D] shadow-2xl overflow-hidden">
                 <PlayerAvatar
@@ -1064,8 +1064,9 @@ export default function PlayerProfile() {
                   <div className="text-[9px] uppercase tracking-[0.18em] text-[#697181] font-bold">
                     Name
                   </div>
-                  <div className="font-display text-3xl sm:text-[38px] leading-none font-black tracking-[-0.04em] truncate mt-1">
-                    {player.name}
+                  <div className="font-display text-3xl sm:text-[38px] leading-none font-black tracking-[-0.04em] mt-1 flex items-center gap-2 min-w-0">
+                    <span className="truncate">{player.name}</span>
+                    <MerdaBadge count={player.merdaCount} />
                   </div>
                 </div>
 
@@ -1111,6 +1112,40 @@ export default function PlayerProfile() {
               </Button>
             )}
           </div>
+
+          {Number(player.merdaCount || 0) > 0 && (
+            <div className="merda-debuff-panel mt-5 rounded-2xl px-4 py-3.5">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[9px] uppercase tracking-[0.18em] text-[#B98A66] font-black">
+                    MERDA ACTIVE
+                  </div>
+                  <div className="mt-1 flex items-center gap-2">
+                    <MerdaBadge count={player.merdaCount} />
+                    <span className="text-xs font-semibold text-[#E0B58F]">
+                      1 WIN REMOVES 1
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-[#9D806B] mt-1.5">
+                    Next win: x{Number(player.merdaCount || 0)} → x{Math.max(0, Number(player.merdaCount || 0) - 1)}
+                  </div>
+                </div>
+
+                <div className="w-full sm:w-52">
+                  <div className="flex items-center justify-between text-[9px] uppercase tracking-widest text-[#8D7665] mb-1.5">
+                    <span>Debuff pressure</span>
+                    <span>{Number(player.merdaCount || 0) >= 5 ? "Critical" : Number(player.merdaCount || 0) >= 3 ? "Heavy" : "Active"}</span>
+                  </div>
+                  <div className="merda-debuff-bar">
+                    <div
+                      className="merda-debuff-fill"
+                      style={{ width: `${Math.min(100, 18 + Number(player.merdaCount || 0) * 14)}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="m8-profile-stat-strip mt-6">
             {[
@@ -2087,7 +2122,10 @@ export default function PlayerProfile() {
                     <Trophy size={14} className="text-[#D5A33A]" aria-label="MVP" />
                   )}
                   {((Array.isArray(m.merdaIds) && m.merdaIds.includes(player.id)) || m.merdaId === player.id) && (
-                    <span title="MERDA">💩</span>
+                    <span className="merda-pop text-[#D59B6A] font-mono text-[11px] font-black" title="MERDA +1">💩 +1</span>
+                  )}
+                  {(Array.isArray(m.merdaClearedIds) && m.merdaClearedIds.includes(player.id)) && (
+                    <span className="merda-clear-pop text-emerald-400 font-mono text-[11px] font-black" title="MERDA -1">💩 -1</span>
                   )}
                   <span className={`font-mono text-sm ${delta >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                     {delta >= 0 ? "+" : ""}{delta} Elo
