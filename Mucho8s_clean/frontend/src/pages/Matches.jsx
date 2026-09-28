@@ -315,7 +315,7 @@ export default function Matches() {
       <Link
         key={`live-team-${match.id}`}
         to={`/matches/live/${match.id}`}
-        className="m8-panel rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:border-[#394150] transition-all"
+        className="m8-panel m8-mode-zone is-mucho8s rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-4 transition-all"
       >
         <div className="flex items-center gap-4 min-w-0 flex-1">
           <ModeBadge mode="mucho8s" compact />
@@ -367,7 +367,7 @@ export default function Matches() {
       <Link
         key={`live-chall-${challenge.id}`}
         to={`/challenges/${challenge.id}`}
-        className="m8-panel rounded-2xl p-4 flex items-center gap-4 hover:border-[#394150] transition-all"
+        className="m8-panel m8-mode-zone is-mucho1v1 rounded-2xl p-4 flex items-center gap-4 transition-all"
       >
         <ModeBadge mode="mucho1v1" compact />
         <div className="min-w-0 flex-1">
@@ -397,7 +397,7 @@ export default function Matches() {
         type="button"
         key={`live-report-${report.id}`}
         onClick={() => setVerificationReportId(String(report.id))}
-        className="m8-panel w-full rounded-2xl p-4 flex items-center gap-4 hover:border-[#394150] transition-all text-left"
+        className="m8-panel m8-mode-zone is-mucho8s w-full rounded-2xl p-4 flex items-center gap-4 transition-all text-left"
       >
         <ModeBadge mode="mucho8s" compact />
         <div className="min-w-0 flex-1">
@@ -429,7 +429,7 @@ export default function Matches() {
     return (
       <div
         key={`chall-${challenge.id}`}
-        className="m8-panel rounded-[22px] p-5 animate-fade-up overflow-hidden relative"
+        className="m8-panel m8-mode-zone is-mucho1v1 rounded-[22px] p-5 animate-fade-up overflow-hidden relative"
         data-testid={`match-history-chall-${challenge.id}`}
       >
         <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-400 to-transparent" />
@@ -502,13 +502,13 @@ export default function Matches() {
   const renderTeamMatch = (match) => (
     <div
       key={match.id}
-      className="m8-panel rounded-[22px] p-5 animate-fade-up overflow-hidden relative"
+      className="m8-panel m8-mode-zone is-mucho8s rounded-[22px] p-5 animate-fade-up overflow-hidden relative"
       data-testid={`match-row-${match.id}`}
     >
       <div
         className="absolute inset-x-0 top-0 h-[2px]"
         style={{
-          background: "linear-gradient(90deg, transparent, rgba(52,211,153,.9), transparent)",
+          background: "linear-gradient(90deg, transparent, rgba(255,42,59,.95), transparent)",
         }}
       />
 
