@@ -570,7 +570,6 @@ export const Layout = () => {
                         <div className="flex items-center gap-2 mt-1.5" aria-label="Notification modes">
                           <span className="w-2 h-2 rounded-full bg-magma" title="Mucho8s" />
                           <span className="w-2 h-2 rounded-full bg-emerald-400" title="Mucho1v1" />
-                          <span className="w-2 h-2 rounded-full bg-[#4F8CFF]" title="MuchoRanked" />
                           <span className="w-2 h-2 rounded-full bg-[#D5A33A]" title="MuchoTourney" />
                         </div>
                       </div>
