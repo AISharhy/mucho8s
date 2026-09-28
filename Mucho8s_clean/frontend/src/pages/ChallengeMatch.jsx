@@ -324,7 +324,7 @@ export default function ChallengeMatch() {
         </div>
       </div>
 
-      <div className={`m8-hero rounded-[22px] p-5 sm:p-7 ${
+      <div className={`m8-hero m8-mode-zone is-mucho1v1 rounded-[22px] p-5 sm:p-7 ${
         challenge.status === "completed"
           ? completedWon
             ? "border-emerald-500/25"
@@ -380,7 +380,7 @@ export default function ChallengeMatch() {
       </div>
 
       {challenge.status === "pending" && (
-        <div className="m8-panel rounded-2xl p-5">
+        <div className="m8-panel m8-mode-zone is-mucho1v1 rounded-2xl p-5">
           {isChallenger ? (
             <div className="text-center py-4">
               <Clock3 size={28} className="text-[#D5A33A] mx-auto mb-3" />
