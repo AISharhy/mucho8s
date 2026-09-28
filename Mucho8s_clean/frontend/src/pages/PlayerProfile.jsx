@@ -1150,7 +1150,7 @@ export default function PlayerProfile() {
               className="w-full sm:w-auto bg-emerald-400 hover:bg-emerald-300 disabled:bg-emerald-900/60 disabled:text-emerald-200/40 text-black rounded-xl font-black"
               data-testid="send-challenge-confirm"
             >
-              <Swords size={16} className="mr-2" />
+              <Landmark size={16} className="mr-2" />
               {sendingChallenge ? "Sending..." : "Send Mucho1v1"}
             </Button>
           </DialogFooter>
