@@ -2803,6 +2803,18 @@ textarea:focus-visible {
 }
 
 
+.m8-topbar-online-wrap {
+    position: relative;
+    flex: 0 0 auto;
+}
+
+.m8-topbar-online-panel {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 10px);
+    width: min(92vw, 360px);
+}
+
 .m8-topbar-online {
     height: 30px;
     padding: 0 .55rem;
@@ -3289,7 +3301,7 @@ textarea:focus-visible {
         font-size: 1.03rem;
     }
 
-    .m8-topbar-online {
+    .m8-topbar-online-wrap {
         display: none;
     }
 
