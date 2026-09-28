@@ -31,7 +31,28 @@ Deno.serve(async (req: Request) => {
 
     if (error) throw error;
 
-    return new Response(JSON.stringify({ ok: true, challenges: data || [] }), {
+    const challenges = data || [];
+    const challengeIds = challenges.map((row: any) => row.id).filter(Boolean);
+    let eloByChallenge = new Map<string, any>();
+
+    if (challengeIds.length) {
+      const { data: eloEvents, error: eloError } = await supabase
+        .from("challenge_elo_events")
+        .select("challenge_id,winner_player_id,loser_player_id,points,winner_delta,loser_delta,updated_at")
+        .in("challenge_id", challengeIds);
+
+      if (eloError) throw eloError;
+      eloByChallenge = new Map(
+        (eloEvents || []).map((event: any) => [String(event.challenge_id), event]),
+      );
+    }
+
+    const hydratedChallenges = challenges.map((challenge: any) => ({
+      ...challenge,
+      elo_event: eloByChallenge.get(String(challenge.id)) || null,
+    }));
+
+    return new Response(JSON.stringify({ ok: true, challenges: hydratedChallenges }), {
       status: 200,
       headers: {
         ...corsHeaders,
