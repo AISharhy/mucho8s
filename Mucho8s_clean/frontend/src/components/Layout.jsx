@@ -616,7 +616,8 @@ export const Layout = () => {
                 id="online-players-panel"
                 role="dialog"
                 aria-label="Players online"
-                className="m8-topbar-online-panel m8-panel rounded-2xl shadow-2xl overflow-hidden z-50"
+                onMouseLeave={() => setOnlineOpen(false)}
+                className="m8-topbar-online-panel m8-topbar-popover-enter m8-panel rounded-2xl shadow-2xl overflow-hidden z-50"
               >
                 <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#1D222C]">
                   <div>
@@ -991,7 +992,7 @@ export const Layout = () => {
                     role="dialog"
                     aria-label="Notifications"
                     onMouseLeave={() => setNotificationsOpen(false)}
-                    className="absolute right-0 top-12 w-[min(92vw,410px)] m8-panel rounded-2xl shadow-2xl overflow-hidden z-50"
+                    className="absolute right-0 top-12 w-[min(92vw,410px)] m8-topbar-popover-enter m8-panel rounded-2xl shadow-2xl overflow-hidden z-50"
                   >
                     <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#1D222C]">
                       <div>
