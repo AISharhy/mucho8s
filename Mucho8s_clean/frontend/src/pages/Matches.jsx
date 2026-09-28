@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar, MerdaBadge } from "@/components/shared";
 import { Input } from "@/components/ui/input";
@@ -313,6 +313,7 @@ const storedDuration = (minutes) => {
 };
 
 export default function Matches() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     matches,
     publicChallenges,
@@ -337,7 +338,8 @@ export default function Matches() {
   const [editData, setEditData] = useState(null);
   const [verificationReportId, setVerificationReportId] = useState("");
   const [liveNow, setLiveNow] = useState(Date.now());
-  const [view, setView] = useState("live");
+  const requestedView = searchParams.get("view");
+  const [view, setView] = useState(requestedView === "history" ? "history" : "live");
   const [query, setQuery] = useState("");
   const [winnerFilter, setWinnerFilter] = useState("all");
   const [gameFilter, setGameFilter] = useState("ALL");
@@ -347,6 +349,13 @@ export default function Matches() {
     const timer = setInterval(() => setLiveNow(Date.now()), 30000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const nextView = searchParams.get("view");
+    if (nextView === "history" || nextView === "live") {
+      setView(nextView);
+    }
+  }, [searchParams]);
 
   const liveChallenges = useMemo(
     () =>
@@ -431,6 +440,20 @@ export default function Matches() {
       (a, b) => new Date(b.date) - new Date(a.date)
     );
   }, [safeMatches, publicChallenges]);
+
+  useEffect(() => {
+    const matchId = searchParams.get("match");
+    if (view !== "history" || !matchId) return undefined;
+
+    const timer = window.setTimeout(() => {
+      document.getElementById(`match-history-${matchId}`)?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 80);
+
+    return () => window.clearTimeout(timer);
+  }, [view, searchParams, safeMatches.length]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -683,7 +706,10 @@ export default function Matches() {
   const renderTeamMatch = (match) => (
     <div
       key={match.id}
-      className="m8-panel m8-mode-zone is-mucho8s rounded-[22px] p-5 animate-fade-up overflow-hidden relative"
+      id={`match-history-${match.id}`}
+      className={`m8-panel m8-mode-zone is-mucho8s rounded-[22px] p-5 animate-fade-up overflow-hidden relative ${
+        searchParams.get("match") === String(match.id) ? "ring-1 ring-magma/50 border-magma/40" : ""
+      }`}
       data-testid={`match-row-${match.id}`}
     >
       <div
@@ -1013,7 +1039,15 @@ export default function Matches() {
           <div className="inline-flex self-start lg:self-auto rounded-xl border border-[#222834] bg-[#0F1218] p-1">
             <button
               type="button"
-              onClick={() => setView("live")}
+              onClick={() => {
+                setView("live");
+                setSearchParams((prev) => {
+                  const next = new URLSearchParams(prev);
+                  next.set("view", "live");
+                  next.delete("match");
+                  return next;
+                });
+              }}
               className={`h-9 px-4 rounded-lg text-sm font-bold transition-all ${
                 view === "live"
                   ? "bg-white text-black"
@@ -1024,7 +1058,14 @@ export default function Matches() {
             </button>
             <button
               type="button"
-              onClick={() => setView("history")}
+              onClick={() => {
+                setView("history");
+                setSearchParams((prev) => {
+                  const next = new URLSearchParams(prev);
+                  next.set("view", "history");
+                  return next;
+                });
+              }}
               className={`h-9 px-4 rounded-lg text-sm font-bold transition-all ${
                 view === "history"
                   ? "bg-white text-black"
