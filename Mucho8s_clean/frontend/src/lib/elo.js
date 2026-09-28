@@ -122,66 +122,31 @@ export const playerForGame = (player, gameStats) =>
   playerForContext(player, gameStats);
 
 export const RANKS = [
-  {
-    id: "iron",
-    name: "Iron",
-    min: 500,
-    max: 899,
-    color: "#7C8798",
-    accent: "#3D4654",
-    roman: "VI",
-    description: "Entry division",
-  },
-  {
-    id: "bronze",
-    name: "Bronze",
-    min: 900,
-    max: 999,
-    color: "#C17845",
-    accent: "#6D3D24",
-    roman: "V",
-    description: "Rising competitor",
-  },
-  {
-    id: "silver",
-    name: "Silver",
-    min: 1000,
-    max: 1099,
-    color: "#C7CFDA",
-    accent: "#727D8A",
-    roman: "IV",
-    description: "Proven player",
-  },
-  {
-    id: "gold",
-    name: "Gold",
-    min: 1100,
-    max: 1199,
-    color: "#F4C451",
-    accent: "#9B6A13",
-    roman: "III",
-    description: "High-level competitor",
-  },
-  {
-    id: "platinum",
-    name: "Platinum",
-    min: 1200,
-    max: 1349,
-    color: "#65D5D3",
-    accent: "#1D747A",
-    roman: "II",
-    description: "Elite division",
-  },
-  {
-    id: "masters",
-    name: "Masters",
-    min: 1350,
-    max: Infinity,
-    color: "#F04A63",
-    accent: "#8A1730",
-    roman: "I",
-    description: "Top MuchoMoney8s division",
-  },
+  { id: "iron-1", name: "Iron I", min: 500, max: 599, color: "#7C8798", accent: "#3D4654", roman: "I", description: "Entry division" },
+  { id: "iron-2", name: "Iron II", min: 600, max: 699, color: "#8792A3", accent: "#46505E", roman: "II", description: "Iron progression" },
+  { id: "iron-3", name: "Iron III", min: 700, max: 799, color: "#929CAA", accent: "#505A68", roman: "III", description: "Top Iron division" },
+
+  { id: "bronze-1", name: "Bronze I", min: 800, max: 899, color: "#B56F42", accent: "#633A23", roman: "I", description: "Bronze entry" },
+  { id: "bronze-2", name: "Bronze II", min: 900, max: 999, color: "#C17845", accent: "#6D3D24", roman: "II", description: "Bronze progression" },
+  { id: "bronze-3", name: "Bronze III", min: 1000, max: 1099, color: "#CC8650", accent: "#79472A", roman: "III", description: "Top Bronze division" },
+
+  { id: "silver-1", name: "Silver I", min: 1100, max: 1199, color: "#B9C2CE", accent: "#66717E", roman: "I", description: "Silver entry" },
+  { id: "silver-2", name: "Silver II", min: 1200, max: 1299, color: "#C7CFDA", accent: "#727D8A", roman: "II", description: "Silver progression" },
+  { id: "silver-3", name: "Silver III", min: 1300, max: 1399, color: "#D5DCE5", accent: "#808B98", roman: "III", description: "Top Silver division" },
+
+  { id: "gold-1", name: "Gold I", min: 1400, max: 1499, color: "#E8B83F", accent: "#8C5E10", roman: "I", description: "Gold entry" },
+  { id: "gold-2", name: "Gold II", min: 1500, max: 1599, color: "#F4C451", accent: "#9B6A13", roman: "II", description: "Gold progression" },
+  { id: "gold-3", name: "Gold III", min: 1600, max: 1699, color: "#FFD36B", accent: "#AA771A", roman: "III", description: "Top Gold division" },
+
+  { id: "platinum-1", name: "Platinum I", min: 1700, max: 1799, color: "#52C8C6", accent: "#176A70", roman: "I", description: "Platinum entry" },
+  { id: "platinum-2", name: "Platinum II", min: 1800, max: 1899, color: "#65D5D3", accent: "#1D747A", roman: "II", description: "Platinum progression" },
+  { id: "platinum-3", name: "Platinum III", min: 1900, max: 1999, color: "#7BE3E1", accent: "#268188", roman: "III", description: "Top Platinum division" },
+
+  { id: "diamond-1", name: "Diamond I", min: 2000, max: 2099, color: "#8E8CFF", accent: "#4D4AA4", roman: "I", description: "Diamond entry" },
+  { id: "diamond-2", name: "Diamond II", min: 2100, max: 2199, color: "#A09EFF", accent: "#5A57B5", roman: "II", description: "Diamond progression" },
+  { id: "diamond-3", name: "Diamond III", min: 2200, max: 2299, color: "#B3B1FF", accent: "#6764C7", roman: "III", description: "Top Diamond division" },
+
+  { id: "masters", name: "Masters", min: 2300, max: Infinity, color: "#F04A63", accent: "#8A1730", roman: "M", description: "Top MuchoMoney8s division" },
 ];
 
 export const tierOf = (elo) => {
