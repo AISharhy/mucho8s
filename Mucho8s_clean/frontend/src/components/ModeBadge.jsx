@@ -1,6 +1,6 @@
 import React from "react";
 import {
-  UsersRound,
+  Swords,
   Landmark,
   Trophy,
 } from "lucide-react";
@@ -13,7 +13,7 @@ export const MODE_META = {
     textClass: "text-magma",
     borderClass: "border-magma/25",
     bgClass: "bg-magma/[0.06]",
-    icon: UsersRound,
+    icon: Swords,
   },
   mucho1v1: {
     label: "Mucho1v1",
