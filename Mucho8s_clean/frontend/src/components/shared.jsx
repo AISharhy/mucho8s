@@ -1,6 +1,7 @@
 import React from "react";
 import { tierOf, rankProgress, winRate } from "@/lib/elo";
-import { Crown, Flame, TrendingUp, TrendingDown, ChevronUp, Trophy } from "lucide-react";
+import { rankArtworkFor } from "@/lib/rankVisuals";
+import { Flame, TrendingUp, TrendingDown, Trophy } from "lucide-react";
 
 export const PlayerAvatar = ({ name, size = 40, elo, avatarUrl }) => {
   const tier = tierOf(elo ?? 1000);
@@ -67,43 +68,35 @@ export const EloBadge = ({ elo }) => {
   );
 };
 
+export const RankArtwork = ({ elo, rank: providedRank, family, size = 48, className = "" }) => {
+  const rank = providedRank || (elo !== undefined ? tierOf(elo) : null);
+  const src = rankArtworkFor(family || rank);
+  const label = rank?.name || String(family || "Rank");
+
+  return (
+    <img
+      src={src}
+      alt={`${label} rank`}
+      width={size}
+      height={size}
+      loading="lazy"
+      className={`rank-artwork shrink-0 object-cover ${className}`}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: Math.max(10, Math.round(size * 0.2)),
+      }}
+    />
+  );
+};
+
 export const RankBadge = ({ elo, compact = false, showName = true }) => {
   const rank = tierOf(elo);
-  const shieldSize = compact ? 34 : 48;
+  const artworkSize = compact ? 34 : 48;
 
   return (
     <div className="inline-flex items-center gap-2.5" title={`${rank.name} · ${elo} Elo`}>
-      <div
-        className="relative shrink-0 rank-emblem"
-        style={{ width: shieldSize, height: shieldSize }}
-      >
-        <div
-          className="absolute inset-0"
-          style={{
-            clipPath: "polygon(50% 0%, 91% 20%, 82% 77%, 50% 100%, 18% 77%, 9% 20%)",
-            background: `linear-gradient(145deg, ${rank.color}, ${rank.accent} 65%, #090A0F)`,
-            boxShadow: `0 0 18px ${rank.color}33`,
-          }}
-        />
-        <div
-          className="absolute"
-          style={{
-            inset: compact ? 3 : 4,
-            clipPath: "polygon(50% 0%, 91% 20%, 82% 77%, 50% 100%, 18% 77%, 9% 20%)",
-            background: "linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,0) 35%), #0B0D12",
-            border: `1px solid ${rank.color}66`,
-          }}
-        />
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <ChevronUp size={compact ? 13 : 17} style={{ color: rank.color }} strokeWidth={3} />
-          <span
-            className="font-display font-black leading-none"
-            style={{ color: rank.color, fontSize: compact ? 9 : 11 }}
-          >
-            {rank.roman}
-          </span>
-        </div>
-      </div>
+      <RankArtwork rank={rank} size={artworkSize} />
 
       {showName && (
         <div className="min-w-0">
