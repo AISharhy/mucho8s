@@ -21,6 +21,7 @@ import MatchRoom from "@/pages/MatchRoom";
 import Rivalries from "@/pages/Rivalries";
 import RivalryDetail from "@/pages/RivalryDetail";
 import News from "@/pages/News";
+import Live from "@/pages/Live";
 
 function IntroSplash({ onDone }) {
   const riveSrc = String(process.env.REACT_APP_RIVE_INTRO_SRC || "").trim();
@@ -106,6 +107,7 @@ function App() {
               <Route path="play" element={<Play />} />
               <Route path="players" element={<Players />} />
               <Route path="players/:id" element={<PlayerProfile />} />
+              <Route path="live/:id" element={<Live />} />
               <Route path="team-builder" element={<TeamBuilder />} />
               <Route path="balancer" element={<TeamBuilder />} />
               <Route path="draft" element={<TeamBuilder />} />
