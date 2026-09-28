@@ -119,51 +119,6 @@ export const teamBalance = (teamA, teamB) => {
   };
 };
 
-const ROLE_KEYS = ["Main AR", "Flex", "SMG", "Support"];
-
-export const roleBalance = (teamA, teamB) => {
-  const all = [...teamA, ...teamB];
-  const assigned = all.filter((player) => ROLE_KEYS.includes(player?.role)).length;
-  const confidence = all.length ? assigned / all.length : 0;
-
-  if (!assigned) {
-    return {
-      score: 50,
-      rawScore: 50,
-      confidence: 0,
-      assigned: 0,
-      total: all.length,
-      teamA: {},
-      teamB: {},
-    };
-  }
-
-  const count = (team) => ROLE_KEYS.reduce((acc, role) => {
-    acc[role] = team.filter((player) => player?.role === role).length;
-    return acc;
-  }, {});
-
-  const countsA = count(teamA);
-  const countsB = count(teamB);
-  const mismatch = ROLE_KEYS.reduce(
-    (sum, role) => sum + Math.abs(Number(countsA[role] || 0) - Number(countsB[role] || 0)),
-    0
-  );
-  const maxMismatch = Math.max(1, teamA.length + teamB.length);
-  const rawScore = Math.round(clamp(100 - (mismatch / maxMismatch) * 100));
-  const score = Math.round(50 * (1 - confidence) + rawScore * confidence);
-
-  return {
-    score,
-    rawScore,
-    confidence: Math.round(confidence * 100),
-    assigned,
-    total: all.length,
-    teamA: countsA,
-    teamB: countsB,
-  };
-};
-
 const sameIds = (left = [], right = []) => {
   const a = [...left].map(String).sort();
   const b = [...right].map(String).sort();
@@ -195,25 +150,16 @@ export const analyzeManualTeams = (teamA, teamB, matches = []) => {
   const chemistryB = teamChemistry(teamB, matches);
   const chemistryScore = Math.round((chemistryA.score + chemistryB.score) / 2);
   const balance = teamBalance(teamA, teamB);
-  const roles = roleBalance(teamA, teamB);
   const freshness = teamFreshness(teamA, teamB, matches);
-  const roleWeight = 0.2 * (roles.confidence / 100);
-  const qualityWeight = 0.45 + 0.25 + 0.1 + roleWeight;
   const lobbyQuality = Math.round(
-    (
-      balance.score * 0.45 +
-      chemistryScore * 0.25 +
-      freshness.score * 0.1 +
-      roles.score * roleWeight
-    ) / qualityWeight
+    balance.score * 0.55 +
+    chemistryScore * 0.3 +
+    freshness.score * 0.15
   );
 
   const why = [
     `Power difference: ${balance.diff}`,
     `Team chemistry: ${chemistryScore}%`,
-    roles.confidence > 0
-      ? `Role balance: ${roles.score}% · ${roles.confidence}% role data`
-      : "Role balance: waiting for role assignments",
     freshness.repeated
       ? `Freshness: ${freshness.score}% · this split appeared recently`
       : "Freshness: 100% · new team split",
@@ -230,17 +176,12 @@ export const analyzeManualTeams = (teamA, teamB, matches = []) => {
     strengthA: balance.strengthA,
     strengthB: balance.strengthB,
     strengthDiff: balance.diff,
-    roleBalanceScore: roles.score,
-    roleConfidence: roles.confidence,
-    roleCountsA: roles.teamA,
-    roleCountsB: roles.teamB,
     freshnessScore: freshness.score,
     lobbyQuality,
     why,
     draftScore: Math.round(
-      chemistryScore * 0.4 +
-      balance.score * 0.35 +
-      roles.score * 0.15 +
+      chemistryScore * 0.5 +
+      balance.score * 0.4 +
       freshness.score * 0.1
     ),
     pairings: buildCrossTeamPairings(teamA, teamB),
@@ -307,21 +248,18 @@ export const draftTeamsByPriority = (players, matches = [], priority = "elo") =>
     const score =
       priority === "chemistry"
         ? (
-            analysis.chemistryScore * 0.65 +
+            analysis.chemistryScore * 0.7 +
             analysis.balanceScore * 0.2 +
-            analysis.freshnessScore * 0.1 +
-            analysis.roleBalanceScore * 0.05
+            analysis.freshnessScore * 0.1
           )
         : priority === "mixed"
           ? (
-              analysis.balanceScore * 0.45 +
-              analysis.chemistryScore * 0.35 +
-              analysis.freshnessScore * 0.1 +
-              analysis.roleBalanceScore * 0.1
+              analysis.balanceScore * 0.5 +
+              analysis.chemistryScore * 0.4 +
+              analysis.freshnessScore * 0.1
             )
           : (
-              analysis.balanceScore * 0.75 +
-              analysis.roleBalanceScore * 0.15 +
+              analysis.balanceScore * 0.9 +
               analysis.freshnessScore * 0.1
             );
 
