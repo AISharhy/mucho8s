@@ -14,6 +14,8 @@ import {
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar } from "@/components/shared";
 import ModeBadge from "@/components/ModeBadge";
+import { analyzeManualTeams } from "@/lib/chemistry";
+import { buildRivalries } from "@/lib/rivalries";
 import {
   TROPHY8S_RULES,
   MAX_TROPHY_LEVEL,
@@ -114,6 +116,7 @@ export default function MatchRoom() {
   const {
     liveMatches,
     matches,
+    challenges,
     discordPlayer,
     playerMap,
     playerAvatars,
@@ -314,6 +317,41 @@ export default function MatchRoom() {
     return opportunities;
   }, [match, matches, discordPlayer?.id, playerMap]);
 
+  const liveTeamIntel = useMemo(() => {
+    if (!match) return null;
+
+    const aIds = Array.isArray(match.team_a) ? match.team_a.map(String) : [];
+    const bIds = Array.isArray(match.team_b) ? match.team_b.map(String) : [];
+    const teamAPlayers = aIds.map((playerId) => playerMap?.[playerId]).filter(Boolean);
+    const teamBPlayers = bIds.map((playerId) => playerMap?.[playerId]).filter(Boolean);
+    if (!teamAPlayers.length || teamAPlayers.length !== teamBPlayers.length) return null;
+
+    const contextMatches = (Array.isArray(matches) ? matches : []).filter((item) => {
+      if (match.game && item.game && item.game !== match.game) return false;
+      if (match.mode && item.mode && item.mode !== match.mode) return false;
+      return true;
+    });
+
+    const analysis = analyzeManualTeams(teamAPlayers, teamBPlayers, contextMatches);
+    if (!analysis) return null;
+
+    const setA = new Set(aIds);
+    const setB = new Set(bIds);
+    const rivalries = buildRivalries(contextMatches, challenges || [])
+      .filter((row) =>
+        (setA.has(String(row.playerAId)) && setB.has(String(row.playerBId))) ||
+        (setA.has(String(row.playerBId)) && setB.has(String(row.playerAId)))
+      )
+      .slice(0, 6);
+
+    return {
+      ...analysis,
+      rivalries,
+      avgEloA: Math.round(teamAPlayers.reduce((sum, player) => sum + Number(player.currentElo || 0), 0) / teamAPlayers.length),
+      avgEloB: Math.round(teamBPlayers.reduce((sum, player) => sum + Number(player.currentElo || 0), 0) / teamBPlayers.length),
+    };
+  }, [match, matches, challenges, playerMap]);
+
   if (!match) {
     return (
       <div className="m8-page-stack">
@@ -511,6 +549,95 @@ export default function MatchRoom() {
             ))}
           </div>
         </section>
+      )}
+
+      {liveTeamIntel && (
+        <details className="rounded-2xl border border-[#222834] bg-[#0B0F15] overflow-hidden group">
+          <summary className="list-none cursor-pointer px-4 py-3 flex items-center justify-between gap-3 hover:bg-white/[0.025] transition-colors">
+            <div>
+              <div className="brand-kicker mb-1">Match Intel · Advanced</div>
+              <div className="font-display font-black">Chemistry, balance & rivalry data</div>
+            </div>
+            <span className="text-[10px] uppercase tracking-widest text-[#697181]">
+              Open analysis ⌄
+            </span>
+          </summary>
+
+          <div className="border-t border-[#1D222C] p-4 space-y-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-2">
+              {[
+                ["Quality", String(liveTeamIntel.lobbyQuality) + "%"],
+                ["Balance", String(liveTeamIntel.balanceScore) + "%"],
+                ["Chemistry", String(liveTeamIntel.chemistryScore) + "%"],
+                ["Freshness", String(liveTeamIntel.freshnessScore) + "%"],
+                ["Role balance", String(liveTeamIntel.roleBalanceScore) + "%"],
+                ["Alpha Elo", liveTeamIntel.avgEloA],
+                ["Bravo Elo", liveTeamIntel.avgEloB],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-xl border border-[#222834] bg-[#0F1218] px-3 py-2.5">
+                  <div className="text-[9px] uppercase tracking-[0.14em] text-[#697181]">{label}</div>
+                  <div className="font-mono font-black mt-1">{value}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+              {[
+                ["Alpha", liveTeamIntel.chemistryA, "text-magma"],
+                ["Bravo", liveTeamIntel.chemistryB, "text-[#65D5D3]"],
+              ].map(([label, chemistry, tone]) => (
+                <div key={label} className="rounded-xl border border-[#222834] bg-[#0F1218] p-3.5">
+                  <div className={"text-[10px] uppercase tracking-widest font-black mb-2 " + tone}>
+                    {label} duo chemistry
+                  </div>
+                  <div className="space-y-2">
+                    {(chemistry?.pairs || []).slice(0, 4).map((pair) => (
+                      <div key={label + pair.a.id + pair.b.id} className="flex items-center gap-2 text-xs">
+                        <span className="flex-1 truncate">{pair.a.name} + {pair.b.name}</span>
+                        <span className="text-muted-foreground text-[10px]">{pair.matchesTogether} matches</span>
+                        <strong className="font-mono">{pair.score}%</strong>
+                      </div>
+                    ))}
+                    {!chemistry?.pairs?.length && (
+                      <div className="text-xs text-muted-foreground">No duo history yet.</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-xl border border-[#2A2520] bg-[#120F0D] p-3.5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.16em] text-[#8E7662]">Rivalry Heat</div>
+                  <div className="font-display font-black text-sm">Best cross-team storylines</div>
+                </div>
+                <span className="text-[10px] text-muted-foreground">{liveTeamIntel.rivalries.length} active</span>
+              </div>
+              {liveTeamIntel.rivalries.length ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {liveTeamIntel.rivalries.map((row) => (
+                    <div key={row.key} className="rounded-lg border border-[#2B251F] bg-black/10 px-3 py-2">
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span className="font-semibold truncate">
+                          {playerMap[row.playerAId]?.name || "Player"} vs {playerMap[row.playerBId]?.name || "Player"}
+                        </span>
+                        <span className="font-mono font-black text-[#D5A33A]">{row.meetings}x</span>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground mt-1">
+                        H2H {row.playerAWins}-{row.playerBWins}
+                        {row.currentStreak > 1 ? " · streak " + row.currentStreak : ""}
+                        {row.moneyVolume > 0 ? " · €" + Number(row.moneyVolume).toFixed(0) + " volume" : ""}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-xs text-muted-foreground">No rivalry history between these teams yet.</div>
+              )}
+            </div>
+          </div>
+        </details>
       )}
 
       {cancelRequested && (
