@@ -747,6 +747,41 @@ export const DataProvider = ({ children }) => {
     return data?.account || null;
   }, [accountRequest, discordSession]);
 
+  const submitPlayerNameRequest = useCallback(async (name) => {
+    if (!discordSession) {
+      toast.error("Login with Discord first");
+      return false;
+    }
+
+    const data = await accountRequest(
+      { action: "submit-player-request", name },
+      { session: discordSession },
+    );
+    if (!data?.account) return false;
+
+    setDiscordAccount(data.account);
+    toast.success("Player name request sent");
+    return true;
+  }, [accountRequest, discordSession]);
+
+  const approveDiscordPlayerRequest = useCallback(async (accountId) => {
+    const data = await accountRequest({ action: "admin-approve-request", accountId });
+    if (!data?.account) return null;
+
+    versionRef.current = -1;
+    await Promise.all([
+      fetchState(),
+      fetchPlayerAvatars(),
+      fetchDashboardData(),
+    ]);
+    return data.account;
+  }, [accountRequest, fetchDashboardData, fetchPlayerAvatars, fetchState]);
+
+  const rejectDiscordPlayerRequest = useCallback(async (accountId) => {
+    const data = await accountRequest({ action: "admin-reject-request", accountId });
+    return data?.account || null;
+  }, [accountRequest]);
+
   // Keep Discord-linked player presence fresh while the site is open.
   useEffect(() => {
     if (!discordSession?.access_token || !discordAccount?.player_id) return undefined;
@@ -759,6 +794,36 @@ export const DataProvider = ({ children }) => {
     const timer = setInterval(heartbeat, 60 * 1000);
     return () => clearInterval(timer);
   }, [discordSession, discordAccount?.player_id, accountRequest]);
+
+  // While a Discord account is waiting for approval, refresh automatically so
+  // the onboarding screen disappears as soon as an Admin approves the request.
+  useEffect(() => {
+    if (!discordSession?.access_token || discordAccount?.player_id) return undefined;
+
+    const refresh = async () => {
+      const data = await accountRequest(
+        { action: "me" },
+        { session: discordSession, silent: true },
+      );
+      if (data?.account) {
+        setDiscordAccount(data.account);
+        if (data.account.player_id) {
+          versionRef.current = -1;
+          void Promise.all([fetchState(), fetchPlayerAvatars(), fetchDashboardData()]);
+        }
+      }
+    };
+
+    const timer = setInterval(refresh, 7000);
+    return () => clearInterval(timer);
+  }, [
+    accountRequest,
+    discordAccount?.player_id,
+    discordSession,
+    fetchDashboardData,
+    fetchPlayerAvatars,
+    fetchState,
+  ]);
 
   const saveMyChallengeLinks = useCallback(async ({ paypalUrl, revolutUrl }) => {
     if (!discordSession) {
@@ -2204,6 +2269,9 @@ export const DataProvider = ({ children }) => {
     signInWithDiscord,
     signOutDiscord,
     refreshDiscordAccount,
+    submitPlayerNameRequest,
+    approveDiscordPlayerRequest,
+    rejectDiscordPlayerRequest,
     listDiscordAccounts,
     linkDiscordAccount,
     listAdminAccess,
