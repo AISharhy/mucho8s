@@ -6,9 +6,27 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, OPTIONS",
 };
 
-const isTwitchChannelLive = async (channel: string) => {
+const parseUptimeMs = (value: string) => {
+  const unitMs: Record<string, number> = {
+    year: 365 * 24 * 60 * 60 * 1000,
+    month: 30 * 24 * 60 * 60 * 1000,
+    week: 7 * 24 * 60 * 60 * 1000,
+    day: 24 * 60 * 60 * 1000,
+    hour: 60 * 60 * 1000,
+    minute: 60 * 1000,
+    second: 1000,
+  };
+
+  let total = 0;
+  for (const match of value.matchAll(/(\d+)\s*(year|month|week|day|hour|minute|second)s?/gi)) {
+    total += Number(match[1] || 0) * (unitMs[String(match[2] || "").toLowerCase()] || 0);
+  }
+  return total;
+};
+
+const getTwitchLiveInfo = async (channel: string) => {
   const normalizedChannel = String(channel || "").trim().replace(/^@+/, "");
-  if (!normalizedChannel) return false;
+  if (!normalizedChannel) return null;
 
   try {
     const response = await fetch(
@@ -23,15 +41,24 @@ const isTwitchChannelLive = async (channel: string) => {
     );
     const statusText = (await response.text()).trim();
     const normalized = statusText.toLowerCase();
-
-    return response.ok &&
+    const live =
+      response.ok &&
       Boolean(statusText) &&
       !normalized.includes("offline") &&
       !normalized.includes("not live") &&
       !normalized.includes("does not exist") &&
       !normalized.includes("error");
+
+    if (!live) return null;
+
+    const uptimeMs = parseUptimeMs(statusText);
+    return {
+      started_at: uptimeMs > 0
+        ? new Date(Date.now() - uptimeMs).toISOString()
+        : null,
+    };
   } catch {
-    return false;
+    return null;
   }
 };
 
@@ -103,11 +130,23 @@ Deno.serve(async (req: Request) => {
         const twitchChannel = String(row?.twitch_channel || "").trim().replace(/^@+/, "");
         if (!playerId || !twitchChannel) return null;
 
-        const live = await isTwitchChannelLive(twitchChannel);
-        return live ? { player_id: playerId, twitch_channel: twitchChannel } : null;
+        const liveInfo = await getTwitchLiveInfo(twitchChannel);
+        return liveInfo
+          ? {
+              player_id: playerId,
+              twitch_channel: twitchChannel,
+              started_at: liveInfo.started_at,
+            }
+          : null;
       }),
     );
-    const twitchLivePlayers = twitchChecks.filter(Boolean);
+    const twitchLivePlayers = twitchChecks
+      .filter(Boolean)
+      .sort((a: any, b: any) => {
+        const aStarted = Date.parse(String(a?.started_at || "")) || Number.MAX_SAFE_INTEGER;
+        const bStarted = Date.parse(String(b?.started_at || "")) || Number.MAX_SAFE_INTEGER;
+        return aStarted - bStarted;
+      });
 
     return new Response(JSON.stringify({
       ok: true,
