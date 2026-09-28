@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useData } from "@/context/DataContext";
-import { PlayerAvatar, RankBadge, Last10, StreakBadge, WinRatePill, MvpBadge } from "@/components/shared";
+import { PlayerAvatar, RankBadge, Last10, StreakBadge, WinRatePill, MvpBadge, MerdaBadge, merdaSurfaceClass } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ProductState";
 import { Search, Flame, ArrowUpRight, Users, Trophy } from "lucide-react";
@@ -107,13 +107,16 @@ export default function Players() {
             key={p.id}
             to={`/players/${p.id}`}
             data-testid={`player-card-${p.id}`}
-            className="m8-panel rounded-2xl p-3.5 text-left animate-fade-up block group hover:-translate-y-0.5 transition-transform duration-200 min-w-0"
+            className={`m8-panel rounded-2xl p-3.5 text-left animate-fade-up block group hover:-translate-y-0.5 transition-transform duration-200 min-w-0 ${merdaSurfaceClass(p.merdaCount)}`}
           >
             <div className="flex items-center gap-2.5 mb-3">
-              <PlayerAvatar name={p.name} elo={p.currentElo} size={40} avatarUrl={playerAvatars[p.id]} />
+              <div className={Number(p.merdaCount || 0) >= 5 ? "merda-avatar-critical" : ""}>
+                <PlayerAvatar name={p.name} elo={p.currentElo} size={40} avatarUrl={playerAvatars[p.id]} />
+              </div>
               <div className="min-w-0 flex-1">
                 <div className="font-display font-bold text-[15px] truncate flex items-center gap-1.5">
-                  {p.name}
+                  <span className="truncate">{p.name}</span>
+                  <MerdaBadge count={p.merdaCount} compact />
                   {p.currentStreak >= 3 && <Flame size={12} className="text-magma shrink-0" />}
                 </div>
                 <div className="mt-0.5"><RankBadge elo={p.currentElo} compact /></div>
