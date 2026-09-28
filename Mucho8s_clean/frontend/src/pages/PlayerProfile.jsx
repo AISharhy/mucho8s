@@ -1386,40 +1386,41 @@ export default function PlayerProfile() {
 
             <span className="hidden sm:inline text-[#2F3743]">·</span>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center gap-1.5 text-[#C8CED8]" title="General Trophies">
+            <div className="flex flex-wrap items-center gap-2.5" aria-label="Trophy counts">
+              <span
+                className="inline-flex items-center gap-1 text-[#C8CED8]"
+                title="General Trophies"
+                aria-label={`General trophies: ${generalTrophyCount}`}
+              >
                 <Trophy size={13} />
                 <strong className="font-mono text-xs font-black">{generalTrophyCount}</strong>
               </span>
-              <span className="text-[9px] uppercase tracking-widest text-[#596170]">Trophies</span>
-
-              <span className="hidden sm:inline text-[#2F3743]">·</span>
 
               <span
-                className="inline-flex items-center gap-1.5 text-magma"
+                className="inline-flex items-center gap-1 text-magma"
                 title="Mucho8s MVP Trophies"
+                aria-label={`Mucho8s trophies: ${mvpModeCounts.Trophy8s}`}
               >
                 <Trophy size={12} strokeWidth={2.2} />
                 <strong className="font-mono text-xs font-black">{mvpModeCounts.Trophy8s}</strong>
-                <span className="text-[9px] uppercase tracking-widest">Mucho8s</span>
               </span>
 
               <span
-                className="inline-flex items-center gap-1.5 text-emerald-400"
+                className="inline-flex items-center gap-1 text-emerald-400"
                 title="Mucho1v1 MVP Trophies"
+                aria-label={`Mucho1v1 trophies: ${mvpModeCounts.Trophy1v1}`}
               >
                 <Trophy size={12} strokeWidth={2.2} />
                 <strong className="font-mono text-xs font-black">{mvpModeCounts.Trophy1v1}</strong>
-                <span className="text-[9px] uppercase tracking-widest">Mucho1v1</span>
               </span>
 
               <span
-                className="inline-flex items-center gap-1.5 text-[#D5A33A]"
+                className="inline-flex items-center gap-1 text-[#D5A33A]"
                 title="MuchoTourney MVP Trophies"
+                aria-label={`MuchoTourney trophies: ${mvpModeCounts.TrophyTourney}`}
               >
                 <Trophy size={12} strokeWidth={2.2} />
                 <strong className="font-mono text-xs font-black">{mvpModeCounts.TrophyTourney}</strong>
-                <span className="text-[9px] uppercase tracking-widest">MuchoTourney</span>
               </span>
             </div>
           </div>
