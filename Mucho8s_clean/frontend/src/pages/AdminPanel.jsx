@@ -1784,14 +1784,17 @@ export default function AdminPanel() {
 
       {activeTab === "players" && (
         <>
-      <div className="m8-panel rounded-2xl p-5" data-testid="admin-roster">
-        <h3 className="font-display font-bold text-lg mb-4">Players ({players.length})</h3>
-        <div className="space-y-2">
+      <div className="m8-panel rounded-2xl p-4" data-testid="admin-roster">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <h3 className="font-display font-bold text-lg">Players ({players.length})</h3>
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Compact roster</span>
+        </div>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-2 max-h-[520px] overflow-y-auto pr-1">
           {players.map((p) => {
             const isEditing = editing[p.id] !== undefined;
             return (
-              <div key={p.id} className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-[#0F1218] border border-[#1D222C]" data-testid={`admin-player-${p.id}`}>
-                <PlayerAvatar name={p.name} elo={p.currentElo} size={34} />
+              <div key={p.id} className="flex flex-wrap items-center gap-2.5 p-2.5 rounded-lg bg-[#0F1218] border border-[#1D222C]" data-testid={`admin-player-${p.id}`}>
+                <PlayerAvatar name={p.name} elo={p.currentElo} size={30} />
                 {isEditing ? (
                   <div className="flex-1 min-w-[260px] grid grid-cols-1 sm:grid-cols-[1fr_110px_130px_auto] gap-2">
                     <Input
