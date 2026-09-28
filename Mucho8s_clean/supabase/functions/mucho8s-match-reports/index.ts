@@ -12,6 +12,33 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
 
+const errorMessage = (error: unknown) => {
+  if (typeof error === "string" && error.trim()) return error.trim();
+  if (error instanceof Error && error.message) return error.message;
+
+  if (error && typeof error === "object") {
+    const value = error as Record<string, unknown>;
+    const message = typeof value.message === "string" ? value.message.trim() : "";
+    const details = typeof value.details === "string" ? value.details.trim() : "";
+    const hint = typeof value.hint === "string" ? value.hint.trim() : "";
+    const code = typeof value.code === "string" ? value.code.trim() : "";
+
+    if (message) {
+      const extra = details || hint || code;
+      return extra && extra !== message ? `${message} — ${extra}` : message;
+    }
+
+    try {
+      const serialized = JSON.stringify(error);
+      if (serialized && serialized !== "{}") return serialized;
+    } catch {
+      // Fall through to the safe generic message below.
+    }
+  }
+
+  return "Unexpected match verification error";
+};
+
 const BASE_ELO = 1000;
 const MIN_ELO = 500;
 const WIN_DELTA = 25;
@@ -745,13 +772,18 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
 
     if (updateError) throw updateError;
 
-    await syncMoneyPairings(
-      supabase,
-      report,
-      verifiedAt,
-      verifierAccountId === null && verifierPlayerId === null,
-    );
   }
+
+  // Pairing sync is idempotent. Run it on retries too: a previous attempt may
+  // have written the team match to app_state and then failed while settling a
+  // money pairing. Skipping this when the match already exists would lock the
+  // report with missing pairing/Elo data.
+  await syncMoneyPairings(
+    supabase,
+    report,
+    verifiedAt,
+    verifierAccountId === null && verifierPlayerId === null,
+  );
 
   const { data: completed, error: completeError } = await supabase
     .from("team_match_reports")
@@ -1309,6 +1341,6 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Unknown action" }, 400);
   } catch (error) {
     console.error(error);
-    return json({ error: String(error).replace(/^Error:\s*/, "") }, 500);
+    return json({ error: errorMessage(error) }, 500);
   }
 });
