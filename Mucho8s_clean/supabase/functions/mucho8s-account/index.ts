@@ -515,20 +515,75 @@ Deno.serve(async (req: Request) => {
       const playerId = playerIdRaw == null || String(playerIdRaw).trim() === ""
         ? null
         : String(playerIdRaw).trim();
+      const transfer = Boolean(body?.transfer);
 
       if (!accountId) return json({ error: "Account is required" }, 400);
 
+      let previousOwner: any = null;
+      if (playerId) {
+        const { data: existingOwner, error: ownerError } = await supabase
+          .from("player_accounts")
+          .select(accountSelect)
+          .eq("player_id", playerId)
+          .neq("id", accountId)
+          .maybeSingle();
+        if (ownerError) throw ownerError;
+
+        if (existingOwner && !transfer) {
+          return json(
+            {
+              error: "This player is already linked to another Discord account",
+              linkedAccountId: existingOwner.id,
+            },
+            409,
+          );
+        }
+
+        if (existingOwner && transfer) {
+          previousOwner = existingOwner;
+          const { error: unlinkError } = await supabase
+            .from("player_accounts")
+            .update({
+              player_id: null,
+              player_request_status: null,
+              player_request_reviewed_at: new Date().toISOString(),
+              player_request_reviewed_by: "admin-transfer",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", existingOwner.id);
+          if (unlinkError) throw unlinkError;
+        }
+      }
+
+      const now = new Date().toISOString();
       const { data, error } = await supabase
         .from("player_accounts")
         .update({
           player_id: playerId,
-          updated_at: new Date().toISOString(),
+          player_request_status: playerId ? "approved" : null,
+          player_request_reviewed_at: playerId ? now : null,
+          player_request_reviewed_by: playerId ? "admin-link" : null,
+          updated_at: now,
         })
         .eq("id", accountId)
         .select(accountSelect)
         .single();
 
       if (error) {
+        // Best-effort rollback if a forced transfer had to unlink another account first.
+        if (previousOwner?.id && previousOwner?.player_id) {
+          await supabase
+            .from("player_accounts")
+            .update({
+              player_id: previousOwner.player_id,
+              player_request_status: previousOwner.player_request_status,
+              player_request_reviewed_at: previousOwner.player_request_reviewed_at,
+              player_request_reviewed_by: previousOwner.player_request_reviewed_by,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", previousOwner.id);
+        }
+
         if (String(error?.code) === "23505") {
           return json({ error: "This player is already linked to another Discord account" }, 409);
         }
@@ -539,7 +594,11 @@ Deno.serve(async (req: Request) => {
         await attachPlayerCompetitionRows(supabase, String(data.id), String(data.player_id));
       }
 
-      return json({ ok: true, account: data });
+      return json({
+        ok: true,
+        account: data,
+        transferredFromAccountId: previousOwner?.id || null,
+      });
     }
 
     return json({ error: "Unknown action" }, 400);
