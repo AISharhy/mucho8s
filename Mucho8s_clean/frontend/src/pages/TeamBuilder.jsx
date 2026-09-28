@@ -770,7 +770,7 @@ export default function TeamBuilder() {
                       )}
                     </div>
                     <div className="text-xs text-muted-foreground truncate">
-                      {player.currentElo} Elo{player.role ? ` · ${player.role}` : ""}
+                      {player.currentElo} Elo
                       {onlinePlayerIds.has(String(player.id)) ? " · Online" : ""}
                     </div>
                   </div>
@@ -1256,12 +1256,11 @@ export default function TeamBuilder() {
             </summary>
 
             <div className="border-t border-[#1D222C] p-4 space-y-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2">
                 <Metric label="Lobby Quality" value={String(result.lobbyQuality ?? result.balanceScore) + "%"} tone="text-emerald-400" />
                 <Metric label="Balance" value={String(result.balanceScore) + "%"} />
                 <Metric label="Chemistry" value={String(result.chemistryScore) + "%"} />
                 <Metric label="Freshness" value={String(result.freshnessScore) + "%"} />
-                <Metric label="Role Balance" value={String(result.roleBalanceScore) + "%"} />
                 <Metric label="Avg Elo Gap" value={teamIntel?.avgEloGap ?? 0} />
               </div>
 
