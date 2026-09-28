@@ -2902,6 +2902,36 @@ textarea:focus-visible {
     width: min(92vw, 360px);
 }
 
+@keyframes m8TopbarPopoverIn {
+    0% {
+        opacity: 0;
+        transform: translateY(-7px) scale(.975);
+        filter: blur(2px);
+    }
+    70% {
+        opacity: 1;
+        transform: translateY(1px) scale(1.005);
+        filter: blur(0);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+.m8-topbar-popover-enter {
+    transform-origin: top center;
+    animation: m8TopbarPopoverIn .22s cubic-bezier(.2,.8,.2,1) both;
+    will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .m8-topbar-popover-enter {
+        animation: none;
+    }
+}
+
 .m8-topbar-online {
     height: 30px;
     padding: 0 .55rem;
