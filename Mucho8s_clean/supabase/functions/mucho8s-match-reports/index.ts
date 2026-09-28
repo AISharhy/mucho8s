@@ -22,6 +22,64 @@ const ELO_SCALE = 400;
 const MIN_RESULT_DELTA = 5;
 const MAX_RESULT_DELTA = 45;
 
+const COMPETITIVE_MAP_POOLS: Record<string, Record<string, string[]>> = {
+  BO7: {
+    "Search & Destroy": ["Den", "Frequency", "Gridlock", "Raid", "Scar", "Standoff", "Hacienda"],
+    Hardpoint: ["Colossus", "Den", "Gridlock", "Frequency", "Scar", "Hacienda"],
+  },
+  BO6: {
+    "Search & Destroy": ["Protocol", "Rewind", "Skyline", "Vault", "Hacienda", "Firing Range", "Fringe"],
+    Hardpoint: ["Hacienda", "Protocol", "Red Card", "Skyline", "Vault"],
+  },
+  MW3: {
+    "Search & Destroy": ["Highrise", "Invasion", "Karachi", "Rio", "6 Star", "Scrapyard"],
+    Hardpoint: ["Sub Base", "Vista", "6 Star", "Karachi", "Rio"],
+  },
+  VG: {
+    "Search & Destroy": ["Tuscan", "Berlin", "Bocage", "USS Texas", "Demyansk"],
+    Hardpoint: ["Tuscan", "Gavutu", "Berlin", "Bocage"],
+  },
+  CW: {
+    "Search & Destroy": ["Checkmate", "Moscow", "Raid", "Express", "Standoff", "Miami"],
+    Hardpoint: ["Apocalypse", "Checkmate", "Garrison", "Moscow", "Raid"],
+  },
+  WW2: {
+    Hardpoint: ["Ardennes Forest", "Gibraltar", "London Docks", "Sainte Marie du Mont"],
+    "Search & Destroy": ["Ardennes Forest", "London Docks", "Sainte Marie du Mont", "USS Texas"],
+  },
+  BO2: {
+    "Search & Destroy": ["Cargo", "Express", "Raid", "Slums", "Standoff", "Meltdown"],
+    Hardpoint: ["Raid", "Standoff", "Slums", "Yemen"],
+  },
+};
+
+const competitiveMapPool = (game: string, mode: string, format: string) => {
+  let pool = [...(COMPETITIVE_MAP_POOLS?.[game]?.[mode] || [])];
+
+  if (game === "MW3" && mode === "Search & Destroy" && format !== "2v2") {
+    pool = pool.filter((map) => map !== "Scrapyard");
+  }
+  if (game === "CW" && mode === "Search & Destroy" && format === "2v2") {
+    pool = pool.filter((map) => map !== "Miami");
+  }
+
+  return [...new Set(pool)];
+};
+
+const drawBo3Maps = (game: string, mode: string, format: string) => {
+  const pool = competitiveMapPool(game, mode, format);
+  if (pool.length < 3) return [];
+
+  const shuffled = [...pool];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const bytes = new Uint32Array(1);
+    crypto.getRandomValues(bytes);
+    const randomIndex = bytes[0] % (index + 1);
+    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
+  }
+  return shuffled.slice(0, 3);
+};
+
 const expectedEloScore = (elo: number, opponentElo: number) =>
   1 / (1 + Math.pow(10, (opponentElo - elo) / ELO_SCALE));
 
@@ -549,7 +607,8 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       merdaIds,
       merdaId: merdaIds[0] || undefined,
       merdaClearedIds,
-      map: report.map || "",
+      map: report.map || (Array.isArray(report.maps) ? report.maps[0] || "" : ""),
+      maps: Array.isArray(report.maps) ? report.maps.map(String).slice(0, 3) : [],
       mode: report.mode || "",
       game: report.game || "",
       pairings: Array.isArray(report.pairings) ? report.pairings : [],
@@ -651,7 +710,7 @@ Deno.serve(async (req: Request) => {
     if (action === "list-live") {
       const { data, error } = await supabase
         .from("live_team_matches")
-        .select("id,match_id,team_a,team_b,game,mode,format,captain_player_id,status,created_at,cancel_requested_at,cancel_requested_by_player_id,pairings")
+        .select("id,match_id,team_a,team_b,game,mode,format,maps,captain_player_id,status,created_at,cancel_requested_at,cancel_requested_by_player_id,pairings")
         .eq("status", "live")
         .order("created_at", { ascending: false })
         .limit(12);
@@ -683,9 +742,20 @@ Deno.serve(async (req: Request) => {
         );
       const creatorPlayerId = String(account?.player_id || "").trim();
       const creatorInLobby = [...teamA, ...teamB].includes(creatorPlayerId);
+      const game = String(body?.game || "").trim();
+      const mode = String(body?.mode || "").trim();
+      const format = String(body?.format || "").trim();
+      const bo3Maps = drawBo3Maps(game, mode, format);
 
       if (teamA.length < 2 || teamA.length > 4 || teamA.length !== teamB.length) {
         return json({ error: "Teams must contain the same number of players (2-4)" }, 400);
+      }
+      if (bo3Maps.length !== 3) {
+        return json({
+          error: game === "MW4"
+            ? "MW4 competitive map pool is not configured yet"
+            : "No competitive BO3 map pool is configured for this game/mode/format",
+        }, 400);
       }
       if (!isAdmin && !creatorInLobby) {
         return json({ error: "The match creator must be one of the players in the lobby" }, 403);
@@ -713,9 +783,10 @@ Deno.serve(async (req: Request) => {
         match_id: crypto.randomUUID(),
         team_a: teamA,
         team_b: teamB,
-        game: String(body?.game || ""),
-        mode: String(body?.mode || ""),
-        format: String(body?.format || ""),
+        game,
+        mode,
+        format,
+        maps: bo3Maps,
         pairings,
         captain_player_id: creatorPlayerId || null,
         creator_account_id: user?.id || null,
@@ -953,6 +1024,7 @@ Deno.serve(async (req: Request) => {
         game: String(body?.game || ""),
         mode: String(body?.mode || ""),
         map: String(body?.map || ""),
+        maps: Array.isArray(liveMatch?.maps) ? liveMatch.maps.map(String).slice(0, 3) : [],
         pairings,
         season_number: seasonNumber,
         captain_a_player_id: captainA,
