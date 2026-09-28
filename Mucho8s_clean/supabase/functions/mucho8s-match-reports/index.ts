@@ -175,24 +175,18 @@ const automaticMvpIds = (byId: Record<string, any>, winners: string[]) =>
   winners.filter((id) => {
     const current = Number(byId[id]?.currentStreak || 0);
     const nextWinStreak = current > 0 ? current + 1 : 1;
-    return nextWinStreak >= 4 && nextWinStreak % 4 === 0;
+    return nextWinStreak >= 3 && nextWinStreak % 3 === 0;
   });
 
 const automaticMerdaIds = (byId: Record<string, any>, losers: string[]) =>
   losers.filter((id) => {
     const current = Number(byId[id]?.currentStreak || 0);
     const nextLossStreak = current < 0 ? Math.abs(current) + 1 : 1;
-    return nextLossStreak >= 4 && nextLossStreak % 4 === 0;
+    return nextLossStreak >= 3 && nextLossStreak % 3 === 0;
   });
 
 const automaticMerdaClearedIds = (byId: Record<string, any>, winners: string[]) =>
-  winners.filter((id) => {
-    const player = byId[id];
-    if (!player || Number(player.merdaCount || 0) <= 0) return false;
-    const current = Number(player.currentStreak || 0);
-    const nextWinStreak = current > 0 ? current + 1 : 1;
-    return nextWinStreak >= 4 && nextWinStreak % 4 === 0;
-  });
+  winners.filter((id) => Number(byId[id]?.merdaCount || 0) > 0);
 
 const applyEffects = (
   byId: Record<string, any>,
@@ -302,7 +296,7 @@ const recomputeAwardState = (byId: Record<string, any>, matches: any[]) => {
       const winnerSet = new Set(winners);
       const mvpBountyStoppedIds = losers.filter((id) => {
         const current = Number(byId[id]?.currentStreak || 0);
-        return current > 0 && current % 4 === 3;
+        return current > 0 && current % 3 === 2;
       });
       const mvpBountyBonus = mvpBountyStoppedIds.length ? MVP_DENIAL_BONUS : 0;
       const mvpIds: string[] = [];
@@ -321,17 +315,17 @@ const recomputeAwardState = (byId: Record<string, any>, matches: any[]) => {
 
         player.currentStreak = nextStreak;
 
-        if (won && nextStreak >= 4 && nextStreak % 4 === 0) {
+        if (won && nextStreak >= 3 && nextStreak % 3 === 0) {
           player.mvpCount = Math.max(0, Number(player.mvpCount || 0)) + 1;
           mvpIds.push(id);
         }
 
-        if (!won && Math.abs(nextStreak) >= 4 && Math.abs(nextStreak) % 4 === 0) {
+        if (!won && Math.abs(nextStreak) >= 3 && Math.abs(nextStreak) % 3 === 0) {
           player.merdaCount = Math.max(0, Number(player.merdaCount || 0)) + 1;
           merdaIds.push(id);
         }
 
-        if (won && nextStreak >= 4 && nextStreak % 4 === 0 && Number(player.merdaCount || 0) > 0) {
+        if (won && Number(player.merdaCount || 0) > 0) {
           player.merdaCount = Math.max(0, Number(player.merdaCount || 0) - 1);
           merdaClearedIds.push(id);
         }
@@ -617,7 +611,7 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
     const losers = report.winner === "A" ? teamB : teamA;
     const mvpBountyStoppedIds = losers.filter((id) => {
       const current = Number(byId[id]?.currentStreak || 0);
-      return current > 0 && current % 4 === 3;
+      return current > 0 && current % 3 === 2;
     });
     const mvpBountyBonus = mvpBountyStoppedIds.length ? MVP_DENIAL_BONUS : 0;
     const mvpIds = automaticMvpIds(byId, winners);
