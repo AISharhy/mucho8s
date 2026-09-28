@@ -455,6 +455,15 @@ code, .font-mono {
     filter: drop-shadow(0 5px 12px rgba(0,0,0,.35));
 }
 
+.rank-artwork {
+    display: block;
+    border: 0;
+    background: #070A0F;
+    box-shadow:
+        0 0 0 1px rgba(255,255,255,.035),
+        0 8px 18px rgba(0,0,0,.30);
+}
+
 @media (prefers-reduced-motion: reduce) {
     .dashboard-logo-mark,
     .dashboard-logo-orbit,
@@ -1895,6 +1904,19 @@ textarea:focus-visible {
         0 0 18px var(--rank-glow);
 }
 
+.rank-pyramid-icon-artwork {
+    border: 0;
+    background: transparent;
+    box-shadow: 0 0 18px var(--rank-glow);
+}
+
+.rank-pyramid-icon-artwork .rank-artwork {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 12px !important;
+    box-shadow: 0 0 18px var(--rank-glow);
+}
+
 .rank-pyramid-copy {
     position: relative;
     z-index: 2;
@@ -2140,11 +2162,16 @@ textarea:focus-visible {
     padding: 6px;
     flex: 0 0 auto;
     background:
-        radial-gradient(circle at 50% 50%, rgba(213,163,58,.12), transparent 66%),
-        linear-gradient(145deg, #E2B85E, #8A611D 52%, #3E2C0E);
+        radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--profile-rank-color) 18%, transparent), transparent 66%),
+        linear-gradient(
+            145deg,
+            color-mix(in srgb, var(--profile-rank-color) 82%, white),
+            var(--profile-rank-color) 52%,
+            color-mix(in srgb, var(--profile-rank-accent) 78%, #090B10)
+        );
     box-shadow:
         0 0 0 3px rgba(11,15,20,.9),
-        0 0 24px rgba(213,163,58,.18),
+        0 0 24px color-mix(in srgb, var(--profile-rank-color) 22%, transparent),
         0 14px 32px rgba(0,0,0,.34);
 }
 
@@ -2236,15 +2263,17 @@ textarea:focus-visible {
     display: grid;
     place-items: center;
     flex: 0 0 auto;
-    color: var(--profile-rank-color);
     border-radius: 1.25rem;
-    border: 1px solid color-mix(in srgb, var(--profile-rank-color) 38%, transparent);
-    background:
-        radial-gradient(circle, color-mix(in srgb, var(--profile-rank-color) 22%, transparent), transparent 68%),
-        #111720;
+    box-shadow: 0 0 24px color-mix(in srgb, var(--profile-rank-color) 18%, transparent);
+}
+
+.m8-profile-rank-artwork {
+    width: 76px !important;
+    height: 76px !important;
+    border-radius: 18px !important;
     box-shadow:
-        inset 0 0 26px color-mix(in srgb, var(--profile-rank-color) 14%, transparent),
-        0 0 22px color-mix(in srgb, var(--profile-rank-color) 12%, transparent);
+        0 0 0 1px color-mix(in srgb, var(--profile-rank-color) 28%, transparent),
+        0 0 26px color-mix(in srgb, var(--profile-rank-color) 18%, transparent);
 }
 
 .m8-profile-metric-card {
