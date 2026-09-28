@@ -64,7 +64,7 @@ const cleanPlayerName = (value: unknown) => {
   return name;
 };
 
-const accountSelect = "id,discord_id,discord_username,display_name,avatar_url,player_id,paypal_url,revolut_url,cmg_url,requested_player_name,player_request_status,player_request_requested_at,player_request_reviewed_at,player_request_reviewed_by,created_at,updated_at";
+const accountSelect = "id,discord_id,discord_username,display_name,avatar_url,player_id,paypal_url,revolut_url,cmg_url,twitch_channel,requested_player_name,player_request_status,player_request_requested_at,player_request_reviewed_at,player_request_reviewed_by,created_at,updated_at";
 
 const cleanPaymentLink = (value: unknown, provider: "paypal" | "revolut") => {
   const raw = String(value || "").trim();
@@ -88,6 +88,30 @@ const cleanPaymentLink = (value: unknown, provider: "paypal" | "revolut") => {
     throw new Error("Only http/https links are allowed");
   }
   return url.toString();
+};
+
+const cleanTwitchChannel = (value: unknown) => {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+
+  let channel = raw.replace(/^@+/, "").trim();
+  if (/^https?:\/\//i.test(channel)) {
+    const url = new URL(channel);
+    if (!/(^|\.)twitch\.tv$/i.test(url.hostname)) {
+      throw new Error("Use a valid twitch.tv channel");
+    }
+    channel = url.pathname.split("/").filter(Boolean)[0] || "";
+  } else {
+    channel = channel
+      .replace(/^(?:www\.)?twitch\.tv\//i, "")
+      .split(/[/?#]/)[0];
+  }
+
+  channel = channel.trim();
+  if (!/^[A-Za-z0-9_]{2,25}$/.test(channel)) {
+    throw new Error("Enter a valid Twitch username");
+  }
+  return channel.toLowerCase();
 };
 
 const attachPlayerCompetitionRows = async (
@@ -275,9 +299,11 @@ Deno.serve(async (req: Request) => {
 
         let paypalUrl = null;
         let revolutUrl = null;
+        let twitchChannel = null;
         try {
           paypalUrl = cleanPaymentLink(body?.paypalUrl, "paypal");
           revolutUrl = cleanPaymentLink(body?.revolutUrl, "revolut");
+          twitchChannel = cleanTwitchChannel(body?.twitchChannel);
         } catch (error) {
           return json({ error: String(error).replace(/^Error:\s*/, "") }, 400);
         }
@@ -288,6 +314,7 @@ Deno.serve(async (req: Request) => {
             paypal_url: paypalUrl,
             revolut_url: revolutUrl,
             cmg_url: null,
+            twitch_channel: twitchChannel,
             updated_at: new Date().toISOString(),
           })
           .eq("id", user.id);
