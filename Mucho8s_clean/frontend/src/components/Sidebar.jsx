@@ -169,7 +169,7 @@ const Brand = () => (
     </div>
     <div className="leading-tight min-w-0">
       <div className="font-display font-extrabold text-[14px] tracking-tight whitespace-nowrap">
-        MUCHO<span className="text-magma">MONEY</span><span className="text-white">8s</span>
+        MUCHO<span className="text-magma">8S</span>
       </div>
       <div className="text-[9px] uppercase tracking-[0.2em] text-[#697181] mt-1">Competitive Match Platform</div>
     </div>
