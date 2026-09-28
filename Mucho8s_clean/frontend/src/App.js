@@ -4,6 +4,8 @@ import { HashRouter, Routes, Route, Link } from "react-router-dom";
 import { DataProvider } from "@/context/DataContext";
 import { Layout } from "@/components/Layout";
 import { Toaster } from "@/components/ui/sonner";
+import AnalyticsRouteTracker from "@/components/AnalyticsRouteTracker";
+import RiveStage from "@/components/RiveStage";
 import Dashboard from "@/pages/Dashboard";
 import Players from "@/pages/Players";
 import Play from "@/pages/Play";
@@ -21,6 +23,9 @@ import RivalryDetail from "@/pages/RivalryDetail";
 import News from "@/pages/News";
 
 function IntroSplash({ onDone }) {
+  const riveSrc = String(process.env.REACT_APP_RIVE_INTRO_SRC || "").trim();
+  const riveStateMachine = String(process.env.REACT_APP_RIVE_INTRO_STATE_MACHINE || "").trim();
+
   useEffect(() => {
     const timer = setTimeout(onDone, 1350);
     return () => clearTimeout(timer);
@@ -30,12 +35,20 @@ function IntroSplash({ onDone }) {
     <div className="m8-intro" aria-label="MuchoMoney8s">
       <div className="m8-intro-inner">
         <div className="m8-intro-logo-wrap">
-          <img
-            src={`${process.env.PUBLIC_URL}/logo-mark.svg`}
-            alt="MuchoMoney8s"
-            className="m8-intro-logo"
+          <RiveStage
+            src={riveSrc}
+            stateMachines={riveStateMachine || undefined}
+            ariaLabel="MuchoMoney8s animated logo"
+            className="w-full h-full"
+            fallback={(
+              <img
+                src={`${process.env.PUBLIC_URL}/logo-mark.svg`}
+                alt="MuchoMoney8s"
+                className="m8-intro-logo"
+              />
+            )}
           />
-          <span className="m8-intro-slash" />
+          {!riveSrc && <span className="m8-intro-slash" />}
         </div>
         <div className="m8-intro-wordmark">
           <span>MUCHO</span><strong>MONEY</strong><span>8s</span>
@@ -85,6 +98,7 @@ function App() {
     <div className="App">
       <DataProvider>
         <HashRouter>
+          <AnalyticsRouteTracker />
           <Routes>
             <Route element={<Layout />}>
               <Route index element={<Dashboard />} />
