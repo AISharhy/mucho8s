@@ -1685,6 +1685,63 @@ export default function PlayerProfile() {
               </div>
             </section>
           )}
+
+          {isOwnProfile && profileTab === "edit" && (
+            <div className="m8-panel rounded-2xl p-4 sm:p-5 order-4" data-testid="edit-profile-panel">
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div>
+                  <div className="brand-kicker mb-1">Edit Profile</div>
+                  <h3 className="font-display font-bold text-lg">Profile settings</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Connect PayPal or Revolut for Mucho1v1.
+                  </p>
+                </div>
+                <Link2 size={18} className="text-[#697181] shrink-0 mt-1" />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="rounded-xl bg-[#0F1218] border border-[#222834] p-3">
+                  <Label className="text-xs font-semibold">PayPal</Label>
+                  <Input
+                    value={links.paypalUrl}
+                    onChange={(e) => setLinks((prev) => ({ ...prev, paypalUrl: e.target.value }))}
+                    placeholder="username or paypal.me/username"
+                    className="mt-2 bg-[#151923] border-[#2A303B]"
+                    data-testid="my-paypal-link"
+                  />
+                  <div className="text-[10px] text-muted-foreground mt-2">
+                    You can paste only your PayPal.Me username.
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-[#0F1218] border border-[#222834] p-3">
+                  <Label className="text-xs font-semibold">Revolut</Label>
+                  <Input
+                    value={links.revolutUrl}
+                    onChange={(e) => setLinks((prev) => ({ ...prev, revolutUrl: e.target.value }))}
+                    placeholder="username or revolut.me/username"
+                    className="mt-2 bg-[#151923] border-[#2A303B]"
+                    data-testid="my-revolut-link"
+                  />
+                  <div className="text-[10px] text-muted-foreground mt-2">
+                    You can paste only your Revolut.me username.
+                  </div>
+                </div>
+
+                <div className="sm:col-span-2 flex justify-end">
+                  <Button
+                    onClick={saveLinks}
+                    disabled={savingLinks}
+                    className="w-full sm:w-auto bg-magma hover:bg-[#ff3c4c] text-white rounded-xl"
+                    data-testid="save-profile-settings"
+                  >
+                    <Save size={15} className="mr-1.5" />
+                    {savingLinks ? "Saving..." : "Save Profile"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -2221,63 +2278,6 @@ export default function PlayerProfile() {
               })}
             </div>
           )}
-        </div>
-      )}
-
-      {isOwnProfile && profileTab === "edit" && (
-        <div className="m8-panel rounded-2xl p-4 sm:p-5 order-4" data-testid="edit-profile-panel">
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <div>
-              <div className="brand-kicker mb-1">Edit Profile</div>
-              <h3 className="font-display font-bold text-lg">Profile settings</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Connect PayPal or Revolut for Mucho1v1.
-              </p>
-            </div>
-            <Link2 size={18} className="text-[#697181] shrink-0 mt-1" />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="rounded-xl bg-[#0F1218] border border-[#222834] p-3">
-              <Label className="text-xs font-semibold">PayPal</Label>
-              <Input
-                value={links.paypalUrl}
-                onChange={(e) => setLinks((prev) => ({ ...prev, paypalUrl: e.target.value }))}
-                placeholder="username or paypal.me/username"
-                className="mt-2 bg-[#151923] border-[#2A303B]"
-                data-testid="my-paypal-link"
-              />
-              <div className="text-[10px] text-muted-foreground mt-2">
-                You can paste only your PayPal.Me username.
-              </div>
-            </div>
-
-            <div className="rounded-xl bg-[#0F1218] border border-[#222834] p-3">
-              <Label className="text-xs font-semibold">Revolut</Label>
-              <Input
-                value={links.revolutUrl}
-                onChange={(e) => setLinks((prev) => ({ ...prev, revolutUrl: e.target.value }))}
-                placeholder="username or revolut.me/username"
-                className="mt-2 bg-[#151923] border-[#2A303B]"
-                data-testid="my-revolut-link"
-              />
-              <div className="text-[10px] text-muted-foreground mt-2">
-                You can paste only your Revolut.me username.
-              </div>
-            </div>
-
-            <div className="sm:col-span-2 flex justify-end">
-              <Button
-                onClick={saveLinks}
-                disabled={savingLinks}
-                className="w-full sm:w-auto bg-magma hover:bg-[#ff3c4c] text-white rounded-xl"
-                data-testid="save-profile-settings"
-              >
-                <Save size={15} className="mr-1.5" />
-                {savingLinks ? "Saving..." : "Save Profile"}
-              </Button>
-            </div>
-          </div>
         </div>
       )}
 
