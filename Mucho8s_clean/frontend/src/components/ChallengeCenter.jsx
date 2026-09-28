@@ -4,7 +4,7 @@ import { useData } from "@/context/DataContext";
 import { Button } from "@/components/ui/button";
 import { PlayerAvatar } from "@/components/shared";
 import ModeBadge from "@/components/ModeBadge";
-import { Check, X, Swords, ShieldCheck, AlertTriangle, Trophy } from "lucide-react";
+import { Check, X, Landmark, ShieldCheck, AlertTriangle, Trophy } from "lucide-react";
 import { toast } from "sonner";
 
 const playChallengeTone = () => {
@@ -213,7 +213,7 @@ export default function ChallengeCenter() {
               <div className="absolute inset-0 rounded-2xl bg-emerald-500/20 blur-xl animate-pulse" />
               <div className="relative w-16 h-16 rounded-2xl bg-[#151923] border border-emerald-500/30 flex items-center justify-center">
                 {attention.type === "incoming" ? (
-                  <Swords size={30} className="text-emerald-400" />
+                  <Landmark size={30} className="text-emerald-400" />
                 ) : attention.type === "verify" ? (
                   <ShieldCheck size={30} className="text-emerald-400" />
                 ) : challenge.status === "completed" ? (
