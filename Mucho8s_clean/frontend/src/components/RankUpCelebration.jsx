@@ -3,9 +3,32 @@ import { X } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { RANKS, tierOf } from "@/lib/elo";
 import { RankArtwork } from "@/components/shared";
+import { rankFamilyFromId } from "@/lib/rankVisuals";
 import { captureEvent } from "@/lib/analytics";
 
-const rankIndex = (rank) => Math.max(0, RANKS.findIndex((item) => item.id === rank?.id));
+const MAJOR_RANK_FAMILIES = ["iron", "bronze", "silver", "gold", "platinum", "diamond", "masters"];
+
+const familyIndex = (rankOrFamily) => {
+  const family = typeof rankOrFamily === "string"
+    ? rankFamilyFromId(rankOrFamily)
+    : rankFamilyFromId(rankOrFamily?.id);
+  return Math.max(0, MAJOR_RANK_FAMILIES.indexOf(family));
+};
+
+const familyLabel = (rankOrFamily) => {
+  const family = typeof rankOrFamily === "string"
+    ? rankFamilyFromId(rankOrFamily)
+    : rankFamilyFromId(rankOrFamily?.id);
+  return family.charAt(0).toUpperCase() + family.slice(1);
+};
+
+const firstRankInFamily = (family) =>
+  RANKS.find((rank) => rankFamilyFromId(rank.id) === family) || RANKS[0];
+
+const lastRankInFamily = (family) => {
+  const matches = RANKS.filter((rank) => rankFamilyFromId(rank.id) === family);
+  return matches[matches.length - 1] || RANKS[0];
+};
 
 export default function RankUpCelebration() {
   const { discordPlayer, loaded } = useData();
@@ -21,18 +44,24 @@ export default function RankUpCelebration() {
     const previewId = new URLSearchParams(queryString).get("rankupPreview");
     if (!previewId) return;
 
-    const newIndex = RANKS.findIndex((item) => item.id === previewId);
-    if (newIndex <= 0) return;
+    const requestedFamily = MAJOR_RANK_FAMILIES.includes(previewId)
+      ? previewId
+      : rankFamilyFromId(previewId);
+    const newFamilyIndex = MAJOR_RANK_FAMILIES.indexOf(requestedFamily);
+    if (newFamilyIndex <= 0) return;
 
     previewHandledRef.current = true;
-    const newRank = RANKS[newIndex];
-    const oldRank = RANKS[newIndex - 1];
+    const previousFamily = MAJOR_RANK_FAMILIES[newFamilyIndex - 1];
+    const newRank = firstRankInFamily(requestedFamily);
+    const oldRank = lastRankInFamily(previousFamily);
 
     setEvent({
-      id: `preview-${oldRank.id}-${newRank.id}`,
+      id: `preview-${previousFamily}-${requestedFamily}`,
       playerName: discordPlayer?.name || "MUCHO PLAYER",
       oldRank,
       newRank,
+      oldFamily: previousFamily,
+      newFamily: requestedFamily,
       oldElo: Math.max(oldRank.min, newRank.min - 25),
       newElo: newRank.min,
       eloGain: 25,
@@ -44,11 +73,13 @@ export default function RankUpCelebration() {
     if (!loaded || !discordPlayer?.id) return;
 
     const currentRank = tierOf(discordPlayer.currentElo);
+    const currentFamily = rankFamilyFromId(currentRank.id);
     const snapshot = {
       playerId: String(discordPlayer.id),
       elo: Number(discordPlayer.currentElo || 0),
       rank: currentRank,
-      rankIndex: rankIndex(currentRank),
+      family: currentFamily,
+      familyIndex: familyIndex(currentFamily),
     };
 
     const previous = previousRef.current;
@@ -58,22 +89,30 @@ export default function RankUpCelebration() {
       return;
     }
 
-    if (snapshot.rankIndex > previous.rankIndex) {
+    const isMajorPromotion =
+      snapshot.familyIndex > previous.familyIndex &&
+      snapshot.family !== previous.family;
+
+    if (isMajorPromotion) {
       const nextEvent = {
-        id: `${snapshot.playerId}-${previous.rank.id}-${snapshot.rank.id}-${Date.now()}`,
+        id: `${snapshot.playerId}-${previous.family}-${snapshot.family}-${Date.now()}`,
         playerName: discordPlayer.name || "Player",
         oldRank: previous.rank,
         newRank: snapshot.rank,
+        oldFamily: previous.family,
+        newFamily: snapshot.family,
         oldElo: previous.elo,
         newElo: snapshot.elo,
         eloGain: Math.max(0, snapshot.elo - previous.elo),
       };
 
       setEvent(nextEvent);
-      captureEvent("rank_up", {
+      captureEvent("major_rank_up", {
         player_id: snapshot.playerId,
         old_rank: previous.rank.id,
         new_rank: snapshot.rank.id,
+        old_family: previous.family,
+        new_family: snapshot.family,
         old_elo: previous.elo,
         new_elo: snapshot.elo,
       });
@@ -111,13 +150,15 @@ export default function RankUpCelebration() {
   if (!event) return null;
 
   const { oldRank, newRank } = event;
+  const oldFamilyName = familyLabel(event.oldFamily || oldRank);
+  const newFamilyName = familyLabel(event.newFamily || newRank);
 
   return (
     <div
       className="m8-rankup-overlay"
       role="dialog"
       aria-modal="true"
-      aria-label={`Rank up: ${newRank.name}`}
+      aria-label={`Major rank up: ${newFamilyName}`}
       style={{
         "--rankup-color": newRank.color,
         "--rankup-accent": newRank.accent,
@@ -151,9 +192,8 @@ export default function RankUpCelebration() {
           <div className="m8-rankup-rank m8-rankup-old">
             <div className="m8-rankup-art-shell">
               <RankArtwork rank={oldRank} size={176} className="m8-rankup-artwork" />
-              <span className="m8-rankup-division">{oldRank.roman}</span>
             </div>
-            <div className="m8-rankup-old-name">{oldRank.name}</div>
+            <div className="m8-rankup-old-name">{oldFamilyName}</div>
           </div>
 
           <div className="m8-rankup-core">
@@ -163,14 +203,13 @@ export default function RankUpCelebration() {
           <div className="m8-rankup-rank m8-rankup-new">
             <div className="m8-rankup-art-shell">
               <RankArtwork rank={newRank} size={210} className="m8-rankup-artwork" />
-              <span className="m8-rankup-division">{newRank.roman}</span>
             </div>
           </div>
         </div>
 
         <div className="m8-rankup-copy">
-          <div className="m8-rankup-label">RANK UP</div>
-          <h2>{newRank.name}</h2>
+          <div className="m8-rankup-label">MAJOR RANK UP</div>
+          <h2>{newFamilyName}</h2>
           <div className="m8-rankup-meta">
             <span>{event.playerName}</span>
             <i />
