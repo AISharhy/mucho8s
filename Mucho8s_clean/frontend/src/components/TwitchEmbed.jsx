@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { ExternalLink, Radio } from "lucide-react";
 
 const normalizeChannel = (value) => {
@@ -28,28 +28,14 @@ export default function TwitchEmbed({
 }) {
   const normalizedChannel = normalizeChannel(channel);
 
-  const embedUrl = useMemo(() => {
-    if (!normalizedChannel || typeof window === "undefined") return "";
-
-    const parent = window.location.hostname || "localhost";
-    const params = new URLSearchParams({
-      channel: normalizedChannel,
-      parent,
-      autoplay: "false",
-      muted: "true",
-    });
-
-    return `https://player.twitch.tv/?${params.toString()}`;
-  }, [normalizedChannel]);
-
-  if (!normalizedChannel || !embedUrl) return null;
+  if (!normalizedChannel) return null;
 
   return (
     <section
       className={`m8-panel overflow-hidden rounded-2xl border border-[#9146FF]/25 bg-[#0E0B14] ${className}`}
       data-testid="player-twitch-embed"
     >
-      <div className="min-h-12 px-4 py-3 flex items-center justify-between gap-3 border-b border-[#9146FF]/15 bg-[#9146FF]/[0.06]">
+      <div className="min-h-12 px-4 py-3 flex items-center justify-between gap-3 bg-[#9146FF]/[0.06]">
         <div className="flex items-center gap-2 min-w-0">
           <span className="w-8 h-8 rounded-lg border border-[#9146FF]/25 bg-[#9146FF]/10 text-[#B88CFF] flex items-center justify-center shrink-0">
             <Radio size={15} />
@@ -73,20 +59,6 @@ export default function TwitchEmbed({
           Open Twitch
           <ExternalLink size={12} />
         </a>
-      </div>
-
-      <div className="w-full bg-black aspect-video min-h-[300px]">
-        <iframe
-          src={embedUrl}
-          title={`${playerName} Twitch stream`}
-          width="100%"
-          height="100%"
-          loading="lazy"
-          allow="autoplay; fullscreen; picture-in-picture"
-          allowFullScreen
-          frameBorder="0"
-          className="block w-full h-full min-h-[300px]"
-        />
       </div>
     </section>
   );
