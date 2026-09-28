@@ -209,7 +209,9 @@ Deno.serve(async (req: Request) => {
 
       if (accountError) throw accountError;
       if (!account?.player_id) {
-        return json(req, { error: "Discord account is not linked to a player" }, 403);
+        // Auto-login is a capability probe performed for every Discord user.
+        // A normal non-admin account is not an HTTP error.
+        return json(req, { ok: false, authorized: false, reason: "player_not_linked" });
       }
 
       const { data: access, error: accessError } = await supabase
@@ -221,7 +223,9 @@ Deno.serve(async (req: Request) => {
 
       if (accessError) throw accessError;
       if (!access) {
-        return json(req, { error: "Player account" }, 403);
+        // Do not emit 403s for ordinary users. The frontend simply keeps the
+        // admin controls hidden when automatic access is unavailable.
+        return json(req, { ok: false, authorized: false, reason: "not_admin" });
       }
 
       await supabase
