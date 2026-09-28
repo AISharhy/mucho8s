@@ -382,6 +382,10 @@ export default function MatchRoom() {
     Boolean(discordPlayer?.id) &&
     String(discordPlayer.id) === captainId;
   const canReport = isAdmin || isCaptain;
+  const canChat =
+    isAdmin ||
+    (Boolean(discordPlayer?.id) &&
+      [...teamA, ...teamB].map(String).includes(String(discordPlayer.id)));
   const cancelRequested = Boolean(match.cancel_requested_at);
   const pairings =
     Array.isArray(match.pairings) && match.pairings.length
@@ -769,7 +773,19 @@ export default function MatchRoom() {
           </div>
         </div>
 
-        <LiveMatchChat liveMatchId={match.id} />
+        {canChat ? (
+          <LiveMatchChat liveMatchId={match.id} />
+        ) : (
+          <div className="m8-panel rounded-2xl p-5 flex items-center justify-center min-h-[220px]">
+            <div className="text-center">
+              <ShieldCheck size={24} className="mx-auto text-[#394150]" />
+              <div className="font-display font-black mt-2">Private Match Chat</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Available only to lobby players and Admin.
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {!canReport && (
