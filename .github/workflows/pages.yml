@@ -36,6 +36,15 @@ jobs:
           npm install --legacy-peer-deps
           npm install --legacy-peer-deps --no-save ajv@8.17.1 ajv-keywords@5.1.0
 
+      - name: Prepara animazione Rive rank-up
+        run: |
+          mkdir -p public/animations
+          curl --fail --location --retry 3 --retry-delay 2 \
+            "https://public.rive.app/community/runtime-files/11488-21971-game-badge-upgrade-animation.riv" \
+            --output public/animations/game-badge-upgrade.riv
+          test "$(head -c 4 public/animations/game-badge-upgrade.riv)" = "RIVE"
+          ls -lh public/animations/game-badge-upgrade.riv
+
       - name: Compila sito
         run: npm run build
         env:
