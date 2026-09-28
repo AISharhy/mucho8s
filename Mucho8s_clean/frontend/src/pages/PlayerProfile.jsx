@@ -102,21 +102,25 @@ const trophySourceLabel = (trophy) => {
 const MerdaRainOverlay = ({ count = 0, visible = false }) => {
   const value = Math.max(0, Number(count || 0));
   const particles = useMemo(() => {
-    const total = value >= 5 ? 34 : value >= 3 ? 26 : value > 0 ? 20 : 0;
+    // MERDA is intentionally cumulative: the higher the active count,
+    // the denser the profile-entry rain becomes.
+    // x1=22, x2=30, x3=38, x4=46, x5=54 ... capped to avoid UI overload.
+    const total = value > 0 ? Math.min(84, 14 + value * 8) : 0;
+    const intensity = Math.min(1, value / 6);
 
     return Array.from({ length: total }, (_, index) => ({
       id: index,
       left: 2 + ((index * 37 + value * 11) % 96),
-      delay: ((index * 0.067) % 0.58).toFixed(2),
-      duration: (1.35 + ((index * 17) % 6) * 0.11).toFixed(2),
-      size: value >= 5
-        ? 26 + ((index * 7) % 13)
-        : value >= 3
-          ? 24 + ((index * 5) % 10)
-          : 22 + ((index * 3) % 9),
-      drift: -34 + ((index * 19) % 69),
-      rotate: -28 + ((index * 29) % 61),
-      opacity: value >= 5 ? 0.98 : value >= 3 ? 0.94 : 0.9,
+      delay: ((index * 0.061) % (0.54 + intensity * 0.18)).toFixed(2),
+      duration: (1.35 + ((index * 17) % 6) * 0.11 + intensity * 0.12).toFixed(2),
+      size: Math.round(
+        21 +
+        Math.min(value, 6) * 1.3 +
+        ((index * 5) % 10)
+      ),
+      drift: -38 + ((index * 19) % 77),
+      rotate: -30 + ((index * 29) % 65),
+      opacity: Math.min(0.99, 0.88 + value * 0.02),
     }));
   }, [value]);
 
