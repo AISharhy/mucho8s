@@ -897,17 +897,27 @@ export const DataProvider = ({ children }) => {
     return Array.isArray(data?.accounts) ? data.accounts : null;
   }, [accountRequest]);
 
-  const linkDiscordAccount = useCallback(async (accountId, playerId) => {
-    const data = await accountRequest({ action: "admin-link", accountId, playerId });
-    if (!data?.account) return false;
+  const linkDiscordAccount = useCallback(async (accountId, playerId, { transfer = false } = {}) => {
+    const data = await accountRequest({
+      action: "admin-link",
+      accountId,
+      playerId,
+      transfer,
+    });
+    if (!data?.account) return null;
 
     if (discordAccount?.id === accountId) {
       setDiscordAccount(data.account);
     }
 
-    void fetchPlayerAvatars();
-    return true;
-  }, [accountRequest, discordAccount, fetchPlayerAvatars]);
+    versionRef.current = -1;
+    await Promise.all([
+      fetchPlayerAvatars(),
+      fetchState(),
+      fetchDashboardData(),
+    ]);
+    return data.account;
+  }, [accountRequest, discordAccount, fetchDashboardData, fetchPlayerAvatars, fetchState]);
 
   const challengeRequest = useCallback(async (payload, { silent = false } = {}) => {
     if (!HAS_SUPABASE || !discordSession?.access_token) {
