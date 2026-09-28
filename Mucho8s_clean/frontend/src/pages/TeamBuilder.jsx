@@ -512,6 +512,7 @@ export default function TeamBuilder() {
         </div>
       </section>
 
+      <div className={`grid gap-3 items-start ${game && matchMode ? "xl:grid-cols-2" : "grid-cols-1"}`} data-testid="builder-setup-grid">
       <section className="m8-panel rounded-[22px] p-4">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-black text-sm">1</div>
@@ -687,6 +688,8 @@ export default function TeamBuilder() {
           )}
         </section>
       )}
+
+      </div>
 
       {game && matchMode && (
         <section className="m8-panel rounded-[22px] p-4">
