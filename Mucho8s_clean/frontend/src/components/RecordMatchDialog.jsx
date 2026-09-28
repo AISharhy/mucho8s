@@ -35,6 +35,7 @@ export const RecordMatchDialog = ({
   const [map, setMap] = useState("");
   const [mode, setMode] = useState(MATCH_MODES[0]);
   const [game, setGame] = useState(GAMES[0]);
+  const [bestOf, setBestOf] = useState(3);
   const [query, setQuery] = useState("");
   const [moneySettings, setMoneySettings] = useState({});
   const [pairingOrder, setPairingOrder] = useState([]);
@@ -55,6 +56,7 @@ export const RecordMatchDialog = ({
     setMap(editData?.map || "");
     setMode(editData?.mode || defaultMode || MATCH_MODES[0]);
     setGame(editData?.game || defaultGame || GAMES[0]);
+    setBestOf(Array.isArray(source?.maps) && source.maps.length >= 5 ? 5 : 3);
     setQuery("");
 
     const nextMoney = {};
@@ -258,6 +260,7 @@ export const RecordMatchDialog = ({
         game,
         mode,
         format: `${teamA.length}v${teamB.length}`,
+        bestOf,
         pairings: submittedPairings,
       });
       if (!liveMatch) {
@@ -295,6 +298,7 @@ export const RecordMatchDialog = ({
           game,
           mode,
           format: `${teamA.length}v${teamB.length}`,
+          bestOf,
           pairings: submittedPairings,
         });
       }
@@ -548,7 +552,7 @@ export const RecordMatchDialog = ({
           </div>
 
           {!reportOnly && !lockContext && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <Label className="text-xs text-muted-foreground">Mode</Label>
                 <select
@@ -570,6 +574,19 @@ export const RecordMatchDialog = ({
                   className="mt-1 w-full h-10 rounded-xl bg-[#0F1218] border border-[#3A3320] text-[#D5A33A] font-semibold px-3 text-sm"
                 >
                   {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <Label className="text-xs text-muted-foreground">Series</Label>
+                <select
+                  data-testid="best-of-select"
+                  value={bestOf}
+                  onChange={(e) => setBestOf(Number(e.target.value) === 5 ? 5 : 3)}
+                  className="mt-1 w-full h-10 rounded-xl bg-[#0F1218] border border-[#9146FF]/35 text-[#C7A7FF] font-semibold px-3 text-sm"
+                >
+                  <option value={3}>Best of 3</option>
+                  <option value={5}>Best of 5</option>
                 </select>
               </div>
             </div>
