@@ -14,6 +14,7 @@ import {
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar } from "@/components/shared";
 import ModeBadge from "@/components/ModeBadge";
+import MapPreviewCard from "@/components/MapPreviewCard";
 import { analyzeManualTeams } from "@/lib/chemistry";
 import { buildRivalries } from "@/lib/rivalries";
 import {
@@ -538,11 +539,13 @@ export default function MatchRoom() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {bo3Maps.map((mapName, index) => (
-              <div key={mapName} className="rounded-xl border border-[#2A303B] bg-[#0F1218] p-3.5">
-                <div className="text-[9px] uppercase tracking-[0.16em] text-[#697181]">Map {index + 1}</div>
-                <div className="font-display font-black mt-1">{mapName}</div>
-                <div className="text-[10px] text-muted-foreground mt-1">{match.mode}</div>
-              </div>
+              <MapPreviewCard
+                key={mapName}
+                mapName={mapName}
+                game={match.game}
+                mode={match.mode}
+                index={index}
+              />
             ))}
           </div>
         </section>
