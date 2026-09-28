@@ -54,6 +54,18 @@ const validateAdminSession = async (req: Request, supabase: any) => {
   return true;
 };
 
+const cleanPlayerName = (value: unknown) => {
+  const name = String(value || "").trim().replace(/\s+/g, " ");
+  if (name.length < 2) throw new Error("Name must be at least 2 characters");
+  if (name.length > 20) throw new Error("Name must be 20 characters or less");
+  if (!/^[\p{L}\p{N}_.\- ]+$/u.test(name)) {
+    throw new Error("Use only letters, numbers, spaces, dot, dash or underscore");
+  }
+  return name;
+};
+
+const accountSelect = "id,discord_id,discord_username,display_name,avatar_url,player_id,paypal_url,revolut_url,cmg_url,requested_player_name,player_request_status,player_request_requested_at,player_request_reviewed_at,player_request_reviewed_by,created_at,updated_at";
+
 const cleanPaymentLink = (value: unknown, provider: "paypal" | "revolut") => {
   const raw = String(value || "").trim();
   if (!raw) return null;
@@ -168,7 +180,7 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const action = String(body?.action || "");
 
-    if (action === "sync" || action === "me" || action === "update-links") {
+    if (action === "sync" || action === "me" || action === "update-links" || action === "submit-player-request") {
       const authHeader = req.headers.get("authorization") || "";
       const token = authHeader.replace(/^Bearer\s+/i, "").trim();
       if (!token) return json({ error: "Missing session" }, 401);
@@ -201,6 +213,61 @@ Deno.serve(async (req: Request) => {
         if (upsertError) throw upsertError;
       }
 
+      if (action === "submit-player-request") {
+        if (existing?.player_id) {
+          return json({ error: "This Discord account is already linked to a player" }, 409);
+        }
+
+        let requestedName = "";
+        try {
+          requestedName = cleanPlayerName(body?.name);
+        } catch (error) {
+          return json({ error: String(error).replace(/^Error:\s*/, "") }, 400);
+        }
+
+        const { data: state, error: stateError } = await supabase
+          .from("app_state")
+          .select("players")
+          .eq("id", "main")
+          .maybeSingle();
+        if (stateError) throw stateError;
+
+        const players = Array.isArray(state?.players) ? state.players : [];
+        const duplicatePlayer = players.some(
+          (player: any) => String(player?.name || "").trim().toLowerCase() === requestedName.toLowerCase()
+        );
+        if (duplicatePlayer) {
+          return json({ error: "That player name is already in use" }, 409);
+        }
+
+        const { data: duplicateRequest, error: duplicateRequestError } = await supabase
+          .from("player_accounts")
+          .select("id")
+          .ilike("requested_player_name", requestedName)
+          .eq("player_request_status", "pending")
+          .neq("id", user.id)
+          .limit(1)
+          .maybeSingle();
+        if (duplicateRequestError) throw duplicateRequestError;
+        if (duplicateRequest) {
+          return json({ error: "That player name already has a pending request" }, 409);
+        }
+
+        const now = new Date().toISOString();
+        const { error: requestError } = await supabase
+          .from("player_accounts")
+          .update({
+            requested_player_name: requestedName,
+            player_request_status: "pending",
+            player_request_requested_at: now,
+            player_request_reviewed_at: null,
+            player_request_reviewed_by: null,
+            updated_at: now,
+          })
+          .eq("id", user.id);
+        if (requestError) throw requestError;
+      }
+
       if (action === "update-links") {
         if (!existing?.player_id) {
           return json({ error: "Discord account is not linked to a player yet" }, 409);
@@ -231,7 +298,7 @@ Deno.serve(async (req: Request) => {
 
       const { data: account, error: accountError } = await supabase
         .from("player_accounts")
-        .select("id,discord_id,discord_username,display_name,avatar_url,player_id,paypal_url,revolut_url,cmg_url,created_at,updated_at")
+        .select(accountSelect)
         .eq("id", user.id)
         .maybeSingle();
       if (accountError) throw accountError;
@@ -253,10 +320,121 @@ Deno.serve(async (req: Request) => {
     if (action === "admin-list") {
       const { data, error } = await supabase
         .from("player_accounts")
-        .select("id,discord_id,discord_username,display_name,avatar_url,player_id,paypal_url,revolut_url,cmg_url,created_at,updated_at")
+        .select(accountSelect)
         .order("created_at", { ascending: true });
       if (error) throw error;
       return json({ ok: true, accounts: data || [] });
+    }
+
+    if (action === "admin-approve-request") {
+      const accountId = String(body?.accountId || "").trim();
+      if (!accountId) return json({ error: "Account is required" }, 400);
+
+      const { data: account, error: accountError } = await supabase
+        .from("player_accounts")
+        .select(accountSelect)
+        .eq("id", accountId)
+        .maybeSingle();
+      if (accountError) throw accountError;
+      if (!account) return json({ error: "Discord account not found" }, 404);
+      if (account.player_id) return json({ error: "Account is already linked" }, 409);
+      if (account.player_request_status !== "pending" || !account.requested_player_name) {
+        return json({ error: "There is no pending player request" }, 409);
+      }
+
+      const requestedName = cleanPlayerName(account.requested_player_name);
+
+      const { data: state, error: stateError } = await supabase
+        .from("app_state")
+        .select("players,version")
+        .eq("id", "main")
+        .maybeSingle();
+      if (stateError) throw stateError;
+      if (!state) return json({ error: "Player state unavailable" }, 500);
+
+      const players = Array.isArray(state.players) ? state.players : [];
+      if (players.some((player: any) =>
+        String(player?.name || "").trim().toLowerCase() === requestedName.toLowerCase()
+      )) {
+        return json({ error: "That player name is already in use" }, 409);
+      }
+
+      const { data: config } = await supabase
+        .from("competition_config")
+        .select("starting_elo")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const startingElo = Math.max(500, Math.round(Number(config?.starting_elo || 500)));
+      const playerId = crypto.randomUUID();
+      const now = new Date().toISOString();
+      const player = {
+        id: playerId,
+        name: requestedName,
+        currentElo: startingElo,
+        peakElo: startingElo,
+        totalMatches: 0,
+        wins: 0,
+        losses: 0,
+        avgPlacement: 0,
+        last10: [],
+        currentStreak: 0,
+        mvpCount: 0,
+        merdaCount: 0,
+        eloHistory: [{ match: 0, elo: startingElo }],
+        createdAt: now,
+      };
+
+      const { error: stateUpdateError } = await supabase
+        .from("app_state")
+        .update({
+          players: [...players, player],
+          version: Date.now(),
+          updated_at: now,
+        })
+        .eq("id", "main");
+      if (stateUpdateError) throw stateUpdateError;
+
+      const { data: updatedAccount, error: linkError } = await supabase
+        .from("player_accounts")
+        .update({
+          player_id: playerId,
+          player_request_status: "approved",
+          player_request_reviewed_at: now,
+          player_request_reviewed_by: "admin",
+          updated_at: now,
+        })
+        .eq("id", accountId)
+        .select(accountSelect)
+        .single();
+
+      if (linkError) throw linkError;
+      await attachPlayerCompetitionRows(supabase, accountId, playerId);
+      return json({ ok: true, account: updatedAccount, player });
+    }
+
+    if (action === "admin-reject-request") {
+      const accountId = String(body?.accountId || "").trim();
+      if (!accountId) return json({ error: "Account is required" }, 400);
+
+      const now = new Date().toISOString();
+      const { data: updatedAccount, error } = await supabase
+        .from("player_accounts")
+        .update({
+          player_request_status: "rejected",
+          player_request_reviewed_at: now,
+          player_request_reviewed_by: "admin",
+          updated_at: now,
+        })
+        .eq("id", accountId)
+        .eq("player_request_status", "pending")
+        .select(accountSelect)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!updatedAccount) return json({ error: "There is no pending player request" }, 409);
+      return json({ ok: true, account: updatedAccount });
     }
 
     if (action === "admin-link") {
@@ -275,7 +453,7 @@ Deno.serve(async (req: Request) => {
           updated_at: new Date().toISOString(),
         })
         .eq("id", accountId)
-        .select("id,discord_id,discord_username,display_name,avatar_url,player_id,paypal_url,revolut_url,cmg_url,created_at,updated_at")
+        .select(accountSelect)
         .single();
 
       if (error) {
