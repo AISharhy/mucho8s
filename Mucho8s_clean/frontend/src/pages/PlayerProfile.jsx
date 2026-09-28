@@ -13,6 +13,7 @@ import {
 import { PlayerAvatar, EloBadge, Last10, MerdaBadge, RankArtwork, RankProgress } from "@/components/shared";
 import ModeBadge, { isDirectMucho1v1 } from "@/components/ModeBadge";
 import TwitchEmbed from "@/components/TwitchEmbed";
+import RiveStage from "@/components/RiveStage";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -1253,7 +1254,20 @@ export default function PlayerProfile() {
               }}
             >
               <div className="m8-profile-rank-emblem">
-                <RankArtwork rank={tier} size={76} className="m8-profile-rank-artwork" />
+                <RiveStage
+                  src="https://public.rive.app/community/runtime-files/13780-26903-toptop-badge.riv"
+                  artboard="badge"
+                  stateMachines="main"
+                  ariaLabel={`${tier.name} animated rank badge`}
+                  className="w-[92px] h-[92px] scale-[1.08]"
+                  fallback={
+                    <RankArtwork
+                      rank={tier}
+                      size={76}
+                      className="m8-profile-rank-artwork"
+                    />
+                  }
+                />
               </div>
 
               <div className="min-w-0 flex-1">
