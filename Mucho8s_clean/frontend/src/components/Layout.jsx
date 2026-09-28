@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { Sidebar, MobileNav } from "@/components/Sidebar";
 import ChallengeCenter from "@/components/ChallengeCenter";
 import CompetitiveEventFX from "@/components/CompetitiveEventFX";
+import RankUpCelebration from "@/components/RankUpCelebration";
 import { PageSkeleton } from "@/components/ProductState";
 import { PlayerAvatar, EloBadge } from "@/components/shared";
 import ModeBadge from "@/components/ModeBadge";
@@ -470,6 +471,7 @@ export const Layout = () => {
     <div className="min-h-screen bg-[#0B0D12]">
       <ChallengeCenter />
       <CompetitiveEventFX />
+      <RankUpCelebration />
 
       {needsPlayerOnboarding && (
         <div className="m8-discord-onboarding" data-testid="discord-player-onboarding">
