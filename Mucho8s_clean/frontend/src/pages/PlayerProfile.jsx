@@ -1272,7 +1272,7 @@ export default function PlayerProfile() {
 
       {isOwnProfile && (
         <div
-          className="order-2 grid grid-cols-2 sm:grid-cols-3 xl:inline-grid xl:grid-cols-5 gap-1 p-1 rounded-2xl bg-[#0F1218] border border-[#242A35] w-full xl:w-fit"
+          className="order-2 grid grid-cols-2 sm:grid-cols-4 xl:inline-grid xl:grid-cols-4 gap-1 p-1 rounded-2xl bg-[#0F1218] border border-[#242A35] w-full xl:w-fit"
           role="tablist"
           aria-label="My Profile sections"
         >
@@ -1290,22 +1290,6 @@ export default function PlayerProfile() {
           >
             <UserCircle size={16} />
             Profile
-          </button>
-
-          <button
-            type="button"
-            role="tab"
-            aria-selected={profileTab === "edit"}
-            onClick={() => setProfileTab("edit")}
-            className={`h-11 px-4 rounded-xl inline-flex items-center justify-center gap-2 text-sm font-bold transition-all ${
-              profileTab === "edit"
-                ? "bg-white text-black shadow-sm"
-                : "text-[#9DA5B4] hover:text-white hover:bg-white/[0.04]"
-            }`}
-            data-testid="profile-tab-edit"
-          >
-            <Pencil size={15} />
-            Edit Profile
           </button>
 
           <button
