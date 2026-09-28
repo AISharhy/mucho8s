@@ -103,14 +103,11 @@ const averageTeamElo = (byId: Record<string, any>, ids: string[]) => {
     : BASE_ELO;
 };
 
-const teamUpsetAdjustment = (
-  byId: Record<string, any>,
-  teamA: string[],
-  teamB: string[],
+const upsetAdjustmentFromAverages = (
+  averageA: number,
+  averageB: number,
   winner: string,
 ) => {
-  const averageA = averageTeamElo(byId, teamA);
-  const averageB = averageTeamElo(byId, teamB);
   const winnerAverage = winner === "B" ? averageB : averageA;
   const loserAverage = winner === "B" ? averageA : averageB;
   const difference = Math.max(0, Math.round(Math.abs(averageA - averageB)));
@@ -137,6 +134,17 @@ const teamUpsetAdjustment = (
   }
   return { applied: true, averageA, averageB, difference, winnerBonus: 2, loserPenalty: 1 };
 };
+
+const teamUpsetAdjustment = (
+  byId: Record<string, any>,
+  teamA: string[],
+  teamB: string[],
+  winner: string,
+) => upsetAdjustmentFromAverages(
+  averageTeamElo(byId, teamA),
+  averageTeamElo(byId, teamB),
+  winner,
+);
 
 const sha256 = async (value: string) => {
   const bytes = new TextEncoder().encode(value);
@@ -369,7 +377,16 @@ const recomputeAwardState = (byId: Record<string, any>, matches: any[]) => {
       });
 
       const mvpSet = new Set(mvpIds);
-      const upset = teamUpsetAdjustment(byId, teamA, teamB, match?.winner === "B" ? "B" : "A");
+      const storedAverageA = Number(match?.teamAverageEloA);
+      const storedAverageB = Number(match?.teamAverageEloB);
+      const upset =
+        Number.isFinite(storedAverageA) && Number.isFinite(storedAverageB)
+          ? upsetAdjustmentFromAverages(
+              storedAverageA,
+              storedAverageB,
+              match?.winner === "B" ? "B" : "A",
+            )
+          : teamUpsetAdjustment(byId, teamA, teamB, match?.winner === "B" ? "B" : "A");
       const nextChanges: Record<string, number> = {};
 
       [...teamA, ...teamB].forEach((id) => {
