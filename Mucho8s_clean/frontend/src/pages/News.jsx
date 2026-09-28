@@ -87,7 +87,7 @@ export default function News() {
       dynamic: true,
     }));
 
-    return [...dynamic, ...STATIC_NEWS];
+    return dynamic.length ? dynamic : STATIC_NEWS;
   }, [newsPosts]);
 
   const activePost = NEWS[activeIndex] || NEWS[0];
