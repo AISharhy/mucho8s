@@ -505,7 +505,6 @@ export const DataProvider = ({ children }) => {
         method: "GET",
         headers: {
           apikey: SUPABASE_ANON_KEY,
-          "Cache-Control": "no-cache",
         },
         cache: "no-store",
       });
