@@ -1179,13 +1179,26 @@ export default function PlayerProfile() {
             </div>
           )}
 
+          {isOwnProfile && (
+            <button
+              type="button"
+              onClick={() => setProfileTab("edit")}
+              className="m8-profile-edit-float"
+              aria-label="Edit profile"
+              title="Edit profile"
+            >
+              <Pencil size={14} />
+              <span>Edit</span>
+            </button>
+          )}
+
           <div className="relative z-10 h-full px-5 sm:px-7 py-6 sm:py-7 flex items-end">
             <div className="flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-5 w-full">
               <div className={`m8-profile-avatar-ring ${Number(player.merdaCount || 0) >= 5 ? "merda-avatar-critical" : ""}`}>
                 <PlayerAvatar
                   name={player.name}
                   elo={player.currentElo}
-                  size={112}
+                  size={148}
                   avatarUrl={playerAvatars[player.id]}
                 />
               </div>
@@ -1196,7 +1209,7 @@ export default function PlayerProfile() {
                 </div>
 
                 <div className="flex items-center gap-2 min-w-0">
-                  <h1 className="font-display text-3xl sm:text-[42px] leading-none font-black tracking-[-0.045em] truncate">
+                  <h1 className="font-display text-[38px] sm:text-[56px] lg:text-[64px] leading-[0.92] font-black tracking-[-0.055em] truncate">
                     {player.name}
                   </h1>
                   <span className="m8-profile-verified" title="Verified player">
@@ -1208,27 +1221,18 @@ export default function PlayerProfile() {
                   <span>{player.totalMatches || 0} verified matches</span>
                 </div>
 
-                <div className="mt-3 flex items-center gap-2">
-                  {isOwnProfile ? (
-                    <button
-                      type="button"
-                      onClick={() => setProfileTab("edit")}
-                      className="m8-profile-edit-btn"
-                    >
-                      <Pencil size={14} />
-                      Edit Profile
-                    </button>
-                  ) : (
+                {!isOwnProfile && (
+                  <div className="mt-4 flex items-center gap-2">
                     <Button
                       onClick={openChallengeAmount}
                       className="m8-profile-challenge-btn"
                       data-testid="challenge-me-btn"
                     >
-                      <Swords size={15} className="mr-1.5" />
+                      <Landmark size={15} className="mr-1.5" />
                       MUCHO1V1
                     </Button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
