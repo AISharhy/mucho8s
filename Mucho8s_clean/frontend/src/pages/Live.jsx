@@ -1,8 +1,82 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, ExternalLink, Twitch } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar } from "@/components/shared";
+
+const LiveCard = ({ entry, playerAvatars }) => {
+  const { player, channel, startedAt } = entry;
+
+  return (
+    <section className="m8-live-page-hero">
+      <div className="m8-live-page-glow" aria-hidden="true" />
+
+      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+        <div>
+          <Link
+            to={`/players/${player.id}`}
+            className="inline-flex items-center gap-1.5 text-xs text-[#8E97A5] hover:text-white"
+          >
+            <ArrowLeft size={14} />
+            Back to profile
+          </Link>
+
+          <div className="flex items-center gap-4 mt-5">
+            <div className="m8-live-page-avatar">
+              <PlayerAvatar
+                name={player.name}
+                elo={player.currentElo}
+                size={68}
+                avatarUrl={playerAvatars?.[player.id]}
+              />
+              <span className="m8-live-page-avatar-dot" />
+            </div>
+
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="brand-kicker text-[#B88CFF]">Twitch Live</div>
+                <span className="m8-twitch-live-status">
+                  <span />
+                  LIVE NOW
+                </span>
+              </div>
+
+              <h2 className="font-display text-3xl sm:text-5xl font-black tracking-[-0.045em] mt-1 truncate">
+                {player.name}
+              </h2>
+
+              <div className="flex flex-wrap items-center gap-2 text-sm text-[#8D95A4] mt-1">
+                <span>@{channel}</span>
+                {startedAt && (
+                  <>
+                    <span className="text-[#444C59]">·</span>
+                    <span>
+                      Live since {new Date(startedAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <a
+          href={`https://www.twitch.tv/${encodeURIComponent(channel)}`}
+          target="_blank"
+          rel="noreferrer"
+          className="m8-live-open-twitch"
+        >
+          <Twitch size={16} />
+          Open Twitch
+          <ExternalLink size={13} />
+        </a>
+      </div>
+    </section>
+  );
+};
 
 export default function Live() {
   const { id } = useParams();
@@ -11,24 +85,58 @@ export default function Live() {
     playerProfiles,
     playerAvatars,
     discordPlayer,
-    twitchLive,
-    twitchStatusCheckedAt,
+    dashboardData,
   } = useData();
 
-  const playerId = id || discordPlayer?.id || "";
-  const player = playerMap?.[playerId] || null;
-  const profile = playerProfiles?.[playerId] || {};
-  const channel = String(profile?.twitchChannel || "").trim();
-  const isOwn = Boolean(discordPlayer?.id && discordPlayer.id === playerId);
-  const liveNow = isOwn ? Boolean(twitchLive) : null;
+  const liveEntries = useMemo(() => {
+    const rows = Array.isArray(dashboardData?.twitchLivePlayers)
+      ? dashboardData.twitchLivePlayers
+      : [];
 
-  if (!player) {
+    return rows
+      .map((row) => {
+        const playerId = String(row?.player_id || "").trim();
+        const player = playerMap?.[playerId];
+        const profile = playerProfiles?.[playerId] || {};
+        const channel = String(
+          row?.twitch_channel || profile?.twitchChannel || ""
+        ).trim();
+
+        if (!player || !channel) return null;
+
+        return {
+          player,
+          channel,
+          startedAt: row?.started_at || null,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => {
+        const aStarted = Date.parse(String(a?.startedAt || "")) || Number.MAX_SAFE_INTEGER;
+        const bStarted = Date.parse(String(b?.startedAt || "")) || Number.MAX_SAFE_INTEGER;
+        return aStarted - bStarted;
+      });
+  }, [dashboardData?.twitchLivePlayers, playerMap, playerProfiles]);
+
+  const fallbackEntry = useMemo(() => {
+    const playerId = id || discordPlayer?.id || "";
+    const player = playerMap?.[playerId] || null;
+    const profile = playerProfiles?.[playerId] || {};
+    const channel = String(profile?.twitchChannel || "").trim();
+
+    if (!player || !channel) return null;
+    return { player, channel, startedAt: null };
+  }, [id, discordPlayer?.id, playerMap, playerProfiles]);
+
+  const entries = liveEntries.length ? liveEntries : (fallbackEntry ? [fallbackEntry] : []);
+
+  if (!entries.length) {
     return (
       <section className="m8-panel rounded-[22px] p-8 min-h-[360px] flex flex-col items-center justify-center text-center">
         <Twitch size={30} className="text-[#9146FF] mb-3" />
-        <h1 className="font-display text-2xl font-black">Live page unavailable</h1>
+        <h1 className="font-display text-2xl font-black">No Twitch live right now</h1>
         <p className="text-sm text-muted-foreground mt-2">
-          This player could not be found.
+          Live channels will appear here automatically when a linked player starts streaming.
         </p>
       </section>
     );
@@ -36,77 +144,13 @@ export default function Live() {
 
   return (
     <div className="m8-page-stack">
-      <section className="m8-live-page-hero">
-        <div className="m8-live-page-glow" aria-hidden="true" />
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-          <div>
-            <Link
-              to={`/players/${player.id}`}
-              className="inline-flex items-center gap-1.5 text-xs text-[#8E97A5] hover:text-white"
-            >
-              <ArrowLeft size={14} />
-              Back to profile
-            </Link>
-
-            <div className="flex items-center gap-4 mt-5">
-              <div className="m8-live-page-avatar">
-                <PlayerAvatar
-                  name={player.name}
-                  elo={player.currentElo}
-                  size={68}
-                  avatarUrl={playerAvatars?.[player.id]}
-                />
-                {liveNow && <span className="m8-live-page-avatar-dot" />}
-              </div>
-
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <div className="brand-kicker text-[#B88CFF]">Twitch Live</div>
-                  {liveNow === true && (
-                    <span className="m8-twitch-live-status">
-                      <span />
-                      LIVE NOW
-                    </span>
-                  )}
-                  {liveNow === false && channel && (
-                    <span className="m8-twitch-offline-status">OFFLINE</span>
-                  )}
-                </div>
-
-                <h1 className="font-display text-3xl sm:text-5xl font-black tracking-[-0.045em] mt-1 truncate">
-                  {player.name}
-                </h1>
-
-                {channel && (
-                  <div className="text-sm text-[#8D95A4] mt-1">
-                    @{channel}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {channel && (
-            <a
-              href={`https://www.twitch.tv/${encodeURIComponent(channel)}`}
-              target="_blank"
-              rel="noreferrer"
-              className="m8-live-open-twitch"
-            >
-              <Twitch size={16} />
-              Open Twitch
-              <ExternalLink size={13} />
-            </a>
-          )}
-        </div>
-
-        {isOwn && twitchStatusCheckedAt && (
-          <div className="relative z-10 text-[9px] uppercase tracking-[0.14em] text-[#626B78] mt-5">
-            Live status auto-checks every minute
-          </div>
-        )}
-      </section>
-
+      {entries.map((entry) => (
+        <LiveCard
+          key={entry.player.id}
+          entry={entry}
+          playerAvatars={playerAvatars}
+        />
+      ))}
     </div>
   );
 }
