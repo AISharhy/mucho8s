@@ -6,7 +6,7 @@ import CompetitiveEventFX from "@/components/CompetitiveEventFX";
 import { PageSkeleton } from "@/components/ProductState";
 import { PlayerAvatar, EloBadge } from "@/components/shared";
 import ModeBadge from "@/components/ModeBadge";
-import { AlertTriangle, Bell, CheckCheck, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, Gamepad2, Search, ChevronDown, LogOut, MessageCircle, UserCircle } from "lucide-react";
+import { AlertTriangle, Bell, CheckCheck, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, Gamepad2, Search, ChevronDown, LogOut, MessageCircle } from "lucide-react";
 import { useData } from "@/context/DataContext";
 
 class PageErrorBoundary extends Component {
@@ -563,25 +563,6 @@ export const Layout = () => {
 
                 {accountOpen && (
                   <div className="m8-topbar-account-menu" role="menu">
-                    <div className="m8-topbar-account-menu-head">
-                      <span>Discord account</span>
-                      <strong>
-                        {discordPlayer?.name || discordAccount?.display_name || discordAccount?.discord_username || "Connected"}
-                      </strong>
-                    </div>
-
-                    {discordPlayer && (
-                      <Link
-                        to={`/players/${discordPlayer.id}`}
-                        role="menuitem"
-                        className="m8-topbar-account-menu-item"
-                        onClick={() => setAccountOpen(false)}
-                      >
-                        <UserCircle size={15} />
-                        <span>My Profile</span>
-                      </Link>
-                    )}
-
                     <button
                       type="button"
                       role="menuitem"
@@ -593,7 +574,7 @@ export const Layout = () => {
                       data-testid="discord-logout-btn-topbar"
                     >
                       <LogOut size={15} />
-                      <span>Logout Discord</span>
+                      <span>Logout</span>
                     </button>
                   </div>
                 )}
