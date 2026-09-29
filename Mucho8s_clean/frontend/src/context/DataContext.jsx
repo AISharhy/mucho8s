@@ -2076,11 +2076,32 @@ export const DataProvider = ({ children }) => {
 
   const removePlayer = useCallback(async (id) => {
     if (STORAGE_MODE === "backend") return backendWrite(`/players/${id}`, { method: "DELETE" });
+
     const removed = players.find((p) => p.id === id);
+    const quotedId = `"${String(id)}"`;
+    const hasMatchHistory = matches.some((match) => JSON.stringify(match).includes(quotedId));
+    const hasChallengeHistory = challenges.some((challenge) => JSON.stringify(challenge).includes(quotedId));
+    const hasLiveMatch = liveMatches.some((match) => JSON.stringify(match).includes(quotedId));
+    const hasLinkedAccount = Boolean(playerProfiles?.[id]);
+
+    if (hasMatchHistory || hasChallengeHistory || hasLiveMatch || hasLinkedAccount) {
+      toast.error("Protected player: relink/archive this profile instead of deleting it.");
+      return false;
+    }
+
     const ok = await persistWholeState(players.filter((p) => p.id !== id), matches);
     if (ok) void logAdminAction("player.delete", "player", id, { name: removed?.name || "" });
     return ok;
-  }, [players, matches, backendWrite, persistWholeState, logAdminAction]);
+  }, [
+    players,
+    matches,
+    challenges,
+    liveMatches,
+    playerProfiles,
+    backendWrite,
+    persistWholeState,
+    logAdminAction,
+  ]);
 
   const editElo = useCallback(async (id, currentElo) => {
     if (STORAGE_MODE === "backend") {
