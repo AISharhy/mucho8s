@@ -1,6 +1,6 @@
 import "@/App.css";
 import React, { useEffect, useState } from "react";
-import { HashRouter, Routes, Route, Link } from "react-router-dom";
+import { HashRouter, Routes, Route, Link, Navigate } from "react-router-dom";
 import { DataProvider } from "@/context/DataContext";
 import { Layout } from "@/components/Layout";
 import { Toaster } from "@/components/ui/sonner";
@@ -20,6 +20,9 @@ import ChallengeInbox from "@/pages/ChallengeInbox";
 import MatchRoom from "@/pages/MatchRoom";
 import Rivalries from "@/pages/Rivalries";
 import RivalryDetail from "@/pages/RivalryDetail";
+import BachecaLayout from "@/pages/BachecaLayout";
+import HallOfFame from "@/pages/HallOfFame";
+import Records from "@/pages/Records";
 import News from "@/pages/News";
 import Live from "@/pages/Live";
 import RiveUpgradeTest from "@/pages/RiveUpgradeTest";
@@ -115,7 +118,14 @@ function App() {
               <Route path="matches" element={<Matches />} />
               <Route path="matches/live/:id" element={<MatchRoom />} />
               <Route path="ranking" element={<Ranking />} />
-              <Route path="rivalries" element={<Rivalries />} />
+              <Route path="bacheca" element={<BachecaLayout />}>
+                <Route index element={<Navigate to="hall-of-fame" replace />} />
+                <Route path="hall-of-fame" element={<HallOfFame />} />
+                <Route path="rivalries" element={<Rivalries />} />
+                <Route path="records" element={<Records />} />
+              </Route>
+              <Route path="bacheca/rivalries/:playerAId/:playerBId" element={<RivalryDetail />} />
+              <Route path="rivalries" element={<Navigate to="/bacheca/rivalries" replace />} />
               <Route path="rivalries/:playerAId/:playerBId" element={<RivalryDetail />} />
               <Route path="leaderboard" element={<Ranking initialTab="leaderboard" />} />
               <Route path="statistics" element={<Ranking initialTab="statistics" />} />
