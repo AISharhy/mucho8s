@@ -570,7 +570,7 @@ export const RecordMatchDialog = ({
                 return (
                   <div
                     key={pair.key}
-                    className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_100px] gap-2 items-center rounded-xl bg-[#151923] border border-[#242A35] p-2.5"
+                    className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_100px_auto] gap-2 items-center rounded-xl bg-[#151923] border border-[#242A35] p-2.5"
                   >
                     <div className="text-sm font-semibold truncate">{alpha?.name || "Alpha"}</div>
                     <ArrowRightLeft size={13} className="text-muted-foreground" />
@@ -597,11 +597,31 @@ export const RecordMatchDialog = ({
                         min="0"
                         step="0.5"
                         value={pair.amount}
+                        disabled={Number(pair.amount) === 0}
                         onChange={(event) => updateMoneyPairing(pair.playerAId, "amount", event.target.value)}
-                        className="h-9 pl-6 bg-[#0F1218] border-[#2A303B] text-xs"
+                        className="h-9 pl-6 bg-[#0F1218] border-[#2A303B] text-xs disabled:opacity-55"
                         aria-label={`Amount for ${alpha?.name || "Alpha"} vs ${bravo?.name || "Bravo"}`}
                       />
                     </div>
+
+                    <label className="h-9 px-2.5 rounded-lg border border-[#2A303B] bg-[#0F1218] inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-wider cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={Number(pair.amount) === 0}
+                        onChange={(event) =>
+                          updateMoneyPairing(
+                            pair.playerAId,
+                            "amount",
+                            event.target.checked ? "0" : "5"
+                          )
+                        }
+                        className="accent-emerald-400"
+                        aria-label={`Free Chall for ${alpha?.name || "Alpha"} vs ${bravo?.name || "Bravo"}`}
+                      />
+                      <span className={Number(pair.amount) === 0 ? "text-emerald-400" : "text-muted-foreground"}>
+                        Free
+                      </span>
+                    </label>
 
                   </div>
                 );
@@ -621,7 +641,7 @@ export const RecordMatchDialog = ({
                     return (
                       <div
                         key={pair.id}
-                        className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_100px_36px] gap-2 items-center rounded-xl bg-emerald-500/[0.035] border border-emerald-500/15 p-2.5"
+                        className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_100px_auto_36px] gap-2 items-center rounded-xl bg-emerald-500/[0.035] border border-emerald-500/15 p-2.5"
                       >
                         <select
                           value={pair.playerAId}
@@ -656,11 +676,31 @@ export const RecordMatchDialog = ({
                             min="0"
                             step="0.5"
                             value={pair.amount}
+                            disabled={Number(pair.amount) === 0}
                             onChange={(event) => updateExtraPairing(pair.id, "amount", event.target.value)}
-                            className="h-9 pl-6 bg-[#0F1218] border-[#2A303B] text-xs"
+                            className="h-9 pl-6 bg-[#0F1218] border-[#2A303B] text-xs disabled:opacity-55"
                             aria-label={`Extra Chall amount for ${alpha?.name || "Alpha"} vs ${bravo?.name || "Bravo"}`}
                           />
                         </div>
+
+                        <label className="h-9 px-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.04] inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-wider cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={Number(pair.amount) === 0}
+                            onChange={(event) =>
+                              updateExtraPairing(
+                                pair.id,
+                                "amount",
+                                event.target.checked ? "0" : "5"
+                              )
+                            }
+                            className="accent-emerald-400"
+                            aria-label={`Free extra Chall for ${alpha?.name || "Alpha"} vs ${bravo?.name || "Bravo"}`}
+                          />
+                          <span className={Number(pair.amount) === 0 ? "text-emerald-400" : "text-muted-foreground"}>
+                            Free
+                          </span>
+                        </label>
 
                         <Button
                           type="button"
