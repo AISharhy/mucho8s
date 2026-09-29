@@ -245,7 +245,7 @@ export const RecordMatchDialog = ({
         teamA.includes(pair.playerAId) &&
         teamB.includes(pair.playerBId) &&
         Number.isFinite(pair.amount) &&
-        pair.amount > 0 &&
+        pair.amount >= 0 &&
         ["paypal", "revolut"].includes(pair.platform)
     );
 
@@ -296,7 +296,7 @@ export const RecordMatchDialog = ({
       toast.error(
         teamA.length !== teamB.length || teamA.length < 2 || teamA.length > 4
           ? "Both teams must be equal (2, 3 or 4 players each)"
-          : "Every Mucho8s pairing needs a valid money amount"
+          : "Every Mucho8s pairing needs a valid stake (0 or more)"
       );
       return;
     }
@@ -594,7 +594,7 @@ export const RecordMatchDialog = ({
                       <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">€</span>
                       <Input
                         type="number"
-                        min="0.5"
+                        min="0"
                         step="0.5"
                         value={pair.amount}
                         onChange={(event) => updateMoneyPairing(pair.playerAId, "amount", event.target.value)}
@@ -653,7 +653,7 @@ export const RecordMatchDialog = ({
                           <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">€</span>
                           <Input
                             type="number"
-                            min="0.5"
+                            min="0"
                             step="0.5"
                             value={pair.amount}
                             onChange={(event) => updateExtraPairing(pair.id, "amount", event.target.value)}
