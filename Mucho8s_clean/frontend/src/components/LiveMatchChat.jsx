@@ -101,7 +101,7 @@ export default function LiveMatchChat({ liveMatchId }) {
                   <MessageCircle size={20} className="text-[#394150] mx-auto mb-1.5" />
                   <div className="text-xs font-semibold text-[#AAB1BE]">No messages yet</div>
                   <div className="text-[10px] text-muted-foreground mt-1">
-                    Use the room chat to organize the BO{String(liveMatchId || "").length ? " series" : " match"}.
+                    Use the room chat to organize the match.
                   </div>
                 </div>
               </div>
