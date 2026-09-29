@@ -6,7 +6,6 @@ import {
   LockKeyhole,
   Medal,
   Search,
-  Sparkles,
   Trophy,
   UsersRound,
 } from "lucide-react";
