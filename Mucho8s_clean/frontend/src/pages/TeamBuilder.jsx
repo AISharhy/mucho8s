@@ -126,7 +126,7 @@ export default function TeamBuilder() {
   const [mapMode, setMapMode] = useState("random");
   const [manualMaps, setManualMaps] = useState([]);
   const [teamMethod, setTeamMethod] = useState("auto");
-  const [autoPriority, setAutoPriority] = useState("elo");
+  const [autoPriority, setAutoPriority] = useState("mixed");
   const [draftCaptainMode, setDraftCaptainMode] = useState("auto");
   const [draftCaptainA, setDraftCaptainA] = useState("");
   const [draftCaptainB, setDraftCaptainB] = useState("");
@@ -377,7 +377,7 @@ export default function TeamBuilder() {
     setMapMode("random");
     setManualMaps([]);
     setTeamMethod("auto");
-    setAutoPriority("elo");
+    setAutoPriority("mixed");
     setDraftCaptainMode("auto");
     resetLobby({ keepGame: false });
   };
@@ -850,9 +850,12 @@ export default function TeamBuilder() {
                     }}
                     className="mt-1 w-full h-11 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm font-semibold"
                   >
+                    <option value="mixed">Mixed · Default</option>
                     <option value="elo">Elo</option>
                     <option value="chemistry">Chemistry</option>
-                    <option value="mixed">Mixed</option>
+                    <option value="recent">Recent Form</option>
+                    <option value="freshness">Freshness</option>
+                    <option value="random">Random Balanced</option>
                   </select>
                 </label>
               )}
@@ -890,7 +893,19 @@ export default function TeamBuilder() {
                 </div>
                 <div className="text-[11px] text-muted-foreground mt-1">
                   {teamMethod === "auto"
-                    ? "The builder uses the selected priority and the existing match data."
+                    ? (
+                        autoPriority === "mixed"
+                          ? "Mixed · 50% Elo balance · 30% Chemistry · 20% Recent Form."
+                          : autoPriority === "elo"
+                            ? "Elo · prioritizes the smallest possible team strength difference."
+                            : autoPriority === "chemistry"
+                              ? "Chemistry · prioritizes teammates who historically perform well together."
+                              : autoPriority === "recent"
+                                ? "Recent Form · balances the last 10 matches, current win rate and streak."
+                                : autoPriority === "freshness"
+                                  ? "Freshness · avoids recently repeated teammates and opponent matchups."
+                                  : "Random Balanced · creates a varied split but blocks clearly unbalanced teams."
+                      )
                     : teamMethod === "draft"
                       ? "Two captains build the teams from the selected lobby."
                       : "You assign every selected player to Alpha or Bravo yourself."}
@@ -1320,10 +1335,11 @@ export default function TeamBuilder() {
               </summary>
 
               <div className="border-t border-[#1D222C] p-3 space-y-3">
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                   <Metric label="Lobby Quality" value={String(result.lobbyQuality ?? result.balanceScore) + "%"} tone="text-emerald-400" />
                   <Metric label="Balance" value={String(result.balanceScore) + "%"} />
                   <Metric label="Chemistry" value={String(result.chemistryScore) + "%"} />
+                  <Metric label="Recent Form" value={String(result.recentFormScore ?? 50) + "%"} />
                   <Metric label="Freshness" value={String(result.freshnessScore) + "%"} />
                   <Metric label="Avg Elo Gap" value={teamIntel?.avgEloGap ?? 0} />
                 </div>
