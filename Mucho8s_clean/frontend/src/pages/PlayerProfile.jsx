@@ -393,9 +393,9 @@ export default function PlayerProfile() {
         inA,
         won: (inA && winnerSide === "A") || (!inA && winnerSide === "B"),
         opponents: (inA ? match.teamB : match.teamA) || [],
-        pairing: (Array.isArray(match.pairings) ? match.pairings : []).find(
+        pairings: (Array.isArray(match.pairings) ? match.pairings : []).filter(
           (pair) => pair?.playerAId === id || pair?.playerBId === id
-        ) || null,
+        ),
       };
     };
 
@@ -428,7 +428,7 @@ export default function PlayerProfile() {
     const lastByOpponent = new Map();
 
     ordered.forEach((match) => {
-      const { won, opponents, pairing } = resultFor(match);
+      const { won, opponents, pairings } = resultFor(match);
 
       runningWins = won ? runningWins + 1 : 0;
       bestWinStreak = Math.max(bestWinStreak, runningWins);
@@ -439,16 +439,21 @@ export default function PlayerProfile() {
         }
       }
 
-      const amount = Math.max(0, Number(pairing?.amount) || 0);
+      const amounts = (pairings || [])
+        .map((pair) => Math.max(0, Number(pair?.amount) || 0))
+        .filter((amount) => amount > 0);
+      const amount = amounts.reduce((sum, value) => sum + value, 0);
+      const maxPairingAmount = amounts.length ? Math.max(...amounts) : 0;
+
       if (won && amount > 0) {
         wonValue += amount;
-        maxWonPairing = Math.max(maxWonPairing, amount);
+        maxWonPairing = Math.max(maxWonPairing, maxPairingAmount);
 
         if (!moneyMakerTrigger && wonValue >= 50) {
           moneyMakerTrigger = { match, cumulativeWonValue: wonValue };
         }
-        if (!highRollerTrigger && amount >= 20) {
-          highRollerTrigger = { match, amount };
+        if (!highRollerTrigger && maxPairingAmount >= 20) {
+          highRollerTrigger = { match, amount: maxPairingAmount };
         }
       }
 
@@ -2497,12 +2502,15 @@ export default function PlayerProfile() {
                 const winnerSide = m.winner === "B" ? "B" : "A";
                 const won = (inA && winnerSide === "A") || (!inA && winnerSide === "B");
                 const coreEloDelta = Number(m.eloChanges?.[player.id] || 0);
-                const pairing = (Array.isArray(m.pairings) ? m.pairings : []).find(
+                const playerPairings = (Array.isArray(m.pairings) ? m.pairings : []).filter(
                   (pair) =>
                     String(pair?.playerAId || "") === String(player.id) ||
                     String(pair?.playerBId || "") === String(player.id)
                 );
-                const stakeElo = Math.max(0, Math.round(Number(pairing?.amount || 0)));
+                const stakeElo = playerPairings.reduce(
+                  (sum, pair) => sum + Math.max(0, Math.round(Number(pair?.amount || 0))),
+                  0
+                );
                 const stakeDelta = won ? stakeElo : -stakeElo;
                 const eloDelta = coreEloDelta + stakeDelta;
 
@@ -2534,7 +2542,7 @@ export default function PlayerProfile() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                      {pairing && Number(pairing.amount || 0) > 0 && (
+                      {stakeElo > 0 && (
                         <span className="m8-pill text-emerald-400" title="Stake: 1€ = 1 Elo">
                           Stake {stakeDelta >= 0 ? "+" : ""}{stakeDelta}
                         </span>
@@ -2724,10 +2732,12 @@ export default function PlayerProfile() {
               .map((pid) => playerMap[pid]?.name)
               .filter(Boolean);
             const baseDelta = Number(m.eloChanges?.[player.id] || 0);
-            const pairing = (Array.isArray(m.pairings) ? m.pairings : []).find(
-              (item) => item?.playerAId === player.id || item?.playerBId === player.id
-            );
-            const valueBonus = Math.max(0, Math.round(Number(pairing?.amount) || 0));
+            const valueBonus = (Array.isArray(m.pairings) ? m.pairings : [])
+              .filter((item) => item?.playerAId === player.id || item?.playerBId === player.id)
+              .reduce(
+                (sum, item) => sum + Math.max(0, Math.round(Number(item?.amount) || 0)),
+                0
+              );
             const delta = baseDelta === 0
               ? 0
               : baseDelta + (baseDelta > 0 ? valueBonus : -valueBonus);
