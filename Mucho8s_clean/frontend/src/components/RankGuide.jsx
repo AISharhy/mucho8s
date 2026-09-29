@@ -165,9 +165,9 @@ export default function RankGuide() {
   return (
     <div className="m8-page-stack">
       <section className="m8-panel rounded-[22px] p-5 sm:p-6">
-        <div className="brand-kicker mb-1">Guida</div>
+        <div className="brand-kicker mb-1">Ranks</div>
         <h1 className="font-display text-3xl sm:text-4xl font-black tracking-[-0.04em]">
-          Come funzionano i Rank
+          Rank System
         </h1>
         <p className="text-sm text-[#8D95A4] mt-2 max-w-2xl leading-6">
           Parti da Iron I e scala la piramide fino a Masters. Ogni divisione vale 100 Elo: più sali, più il rank diventa raro e prestigioso.
