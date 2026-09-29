@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useData } from "@/context/DataContext";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, Send, MessageCircle } from "lucide-react";
-import { toast } from "sonner";
 
 const mergeMessages = (current, incoming) => {
   const byId = new Map();
