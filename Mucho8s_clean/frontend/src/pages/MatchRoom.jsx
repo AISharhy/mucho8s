@@ -61,7 +61,7 @@ const TeamPanel = ({
   playerAvatars,
   stakeByPlayer,
 }) => (
-  <div className="rounded-2xl border border-[#222834] bg-[#0F1218] p-4">
+  <div className="rounded-2xl border border-[#222834] bg-[#0F1218] p-3">
     <div
       className="text-[10px] uppercase tracking-[0.18em] font-black mb-3"
       style={{ color: accent }}
@@ -69,7 +69,7 @@ const TeamPanel = ({
       {label}
     </div>
 
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       {ids.map((id) => {
         const player = playerMap[id];
         const stake = Math.max(0, Number(stakeByPlayer?.[String(id)] || 0));
@@ -78,13 +78,13 @@ const TeamPanel = ({
           <Link
             key={id}
             to={`/players/${id}`}
-            className={`min-h-[52px] rounded-xl border border-[#202631] bg-[#12161D] px-3 py-2.5 flex items-center gap-3 hover:border-[#353D49] transition-all ${merdaSurfaceClass(player?.merdaCount)}`}
+            className={`min-h-[44px] rounded-lg border border-[#202631] bg-[#12161D] px-2.5 py-2 flex items-center gap-2.5 hover:border-[#353D49] transition-all ${merdaSurfaceClass(player?.merdaCount)}`}
           >
             <div className={Number(player?.merdaCount || 0) >= 5 ? "merda-avatar-critical" : ""}>
               <PlayerAvatar
                 name={player?.name || "Player"}
                 elo={player?.currentElo || 1000}
-                size={34}
+                size={30}
                 avatarUrl={playerAvatars[id]}
               />
             </div>
@@ -229,7 +229,7 @@ export default function MatchRoom() {
 
   if (!match) {
     return (
-      <div className="m8-page-stack">
+      <div className="m8-page-stack gap-3">
         <section className="m8-panel rounded-[22px] p-8 sm:p-10 text-center">
           <Gamepad2 size={30} className="mx-auto text-[#697181]" />
           <h1 className="font-display text-2xl font-black mt-3">Mucho8s Room unavailable</h1>
@@ -311,8 +311,8 @@ export default function MatchRoom() {
 
   return (
     <div className="m8-page-stack">
-      <section className="m8-panel m8-mode-zone is-mucho8s rounded-[22px] p-5 sm:p-6">
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+      <section className="m8-panel m8-mode-zone is-mucho8s rounded-[22px] p-4">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
           <div className="min-w-0">
             <Link
               to="/matches"
@@ -321,9 +321,9 @@ export default function MatchRoom() {
               <ArrowLeft size={14} /> Match Center
             </Link>
 
-            <div className="flex flex-wrap items-center gap-2 mt-4">
+            <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
               <ModeBadge mode="mucho8s" compact />
-              <span className="h-8 px-3 rounded-lg border border-emerald-500/25 bg-emerald-500/[0.08] text-emerald-400 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider">
+              <span className="h-7 px-2.5 rounded-lg border border-emerald-500/25 bg-emerald-500/[0.08] text-emerald-400 inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 <Timer size={12} />
                 Live · {liveDuration(match.created_at, now)}
@@ -333,11 +333,11 @@ export default function MatchRoom() {
               {match.mode && <span className="m8-pill">{match.mode}</span>}
             </div>
 
-            <h1 className="font-display text-3xl sm:text-4xl font-black tracking-[-0.04em] mt-3">
+            <h1 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.04em] mt-2">
               Mucho8s Room
             </h1>
 
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 text-xs text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[11px] text-muted-foreground">
               <span>
                 Captain · <strong className="text-white">{playerMap[captainId]?.name || "Player"}</strong>
               </span>
@@ -417,11 +417,11 @@ export default function MatchRoom() {
       </section>
 
       {[3, 5].includes(seriesMaps.length) && (
-        <section className="m8-panel rounded-[22px] p-4 sm:p-5">
-          <div className="flex items-center justify-between gap-3 mb-3">
+        <section className="m8-panel rounded-[22px] p-3">
+          <div className="flex items-center justify-between gap-3 mb-2">
             <div>
               <div className="brand-kicker mb-1">BO{seriesBestOf} Map Rotation</div>
-              <div className="font-display font-black text-lg">Maps generated at confirmation</div>
+              <div className="font-display font-black text-sm">Maps generated at confirmation</div>
             </div>
             <span className="m8-pill">Best of {seriesBestOf}</span>
           </div>
@@ -433,6 +433,7 @@ export default function MatchRoom() {
                 game={match.game}
                 mode={match.mode}
                 index={index}
+                compact
               />
             ))}
           </div>
@@ -451,7 +452,7 @@ export default function MatchRoom() {
         </section>
       )}
 
-      <section className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-3 items-stretch">
+      <section className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-2 items-stretch">
         <TeamPanel
           label="Alpha"
           ids={teamA}
@@ -463,7 +464,7 @@ export default function MatchRoom() {
         />
 
         <div className="hidden lg:flex items-center justify-center px-2">
-          <div className="w-12 h-12 rounded-full border border-[#2A303B] bg-[#0F1218] flex items-center justify-center font-display font-black text-muted-foreground">
+          <div className="w-10 h-10 rounded-full border border-[#2A303B] bg-[#0F1218] flex items-center justify-center font-display font-black text-xs text-muted-foreground">
             VS
           </div>
         </div>
@@ -479,82 +480,55 @@ export default function MatchRoom() {
         />
       </section>
 
-      <section className="rounded-2xl border border-[#343B48] bg-[#11151C] px-4 py-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-          <div>
+      <section className="rounded-xl border border-[#343B48] bg-[#11151C] px-3 py-2.5">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <div className="brand-kicker text-[#AEB6C3]">Streak Watch</div>
-            <div className="font-display font-black text-sm mt-0.5">MVP & MERDA pressure</div>
-          </div>
-          <div className="text-[10px] uppercase tracking-widest text-[#697181]">
-            Critical pressure only
-          </div>
-        </div>
-
-        {streakWatch.length === 0 ? (
-          <div className="min-h-[52px] rounded-xl border border-[#222834] bg-[#0D1117] px-4 flex items-center justify-center">
-            <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#697181]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#596170]" />
-              No pressure detected
+            <span className="hidden sm:inline text-[9px] uppercase tracking-widest text-[#697181]">
+              MVP & MERDA pressure
             </span>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {streakWatch.map((item) => (
-              <div
-                key={item.id}
-                className={`rounded-xl border px-3 py-3 ${
-                  item.oneWinFromMvp
-                    ? "border-[#D5A33A]/35 bg-[#D5A33A]/[0.055]"
-                    : "border-[#8B5E3C]/35 bg-[#8B5E3C]/[0.055]"
-                }`}
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-display font-black text-sm truncate">{item.name}</span>
-                      <MerdaBadge count={item.merdaCount} compact />
-                      <span className="text-[9px] uppercase tracking-widest text-muted-foreground shrink-0">
-                        {item.side}
-                      </span>
-                    </div>
 
-                    <div className="text-[11px] mt-1">
-                      {item.oneWinFromMvp ? (
-                        <span className="text-[#D5A33A] font-black">
-                          🏆 1 WIN FROM MVP #{item.nextCount}
-                        </span>
-                      ) : (
-                        <span className="text-[#C79A6B] font-black">
-                          💩 1 LOSS FROM MERDA #{item.nextCount}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="font-mono font-black text-xs shrink-0">
+          <div className="flex flex-wrap items-center gap-1.5 min-w-0 flex-1 lg:justify-end">
+            {streakWatch.length === 0 ? (
+              <span className="h-7 px-2.5 rounded-lg border border-[#222834] bg-[#0D1117] inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.16em] text-[#697181]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#596170]" />
+                No pressure detected
+              </span>
+            ) : (
+              streakWatch.map((item) => (
+                <div
+                  key={item.id}
+                  className={`min-h-7 rounded-lg border px-2.5 py-1.5 flex items-center gap-2 text-[10px] ${
+                    item.oneWinFromMvp
+                      ? "border-[#D5A33A]/35 bg-[#D5A33A]/[0.055]"
+                      : "border-[#8B5E3C]/35 bg-[#8B5E3C]/[0.055]"
+                  }`}
+                >
+                  <span className="font-display font-black">{item.name}</span>
+                  <span className={item.oneWinFromMvp ? "text-[#D5A33A] font-black" : "text-[#C79A6B] font-black"}>
+                    {item.oneWinFromMvp
+                      ? `🏆 1 WIN FROM MVP #${item.nextCount}`
+                      : `💩 1 LOSS FROM MERDA #${item.nextCount}`}
+                  </span>
+                  <span className="font-mono font-black text-[#AEB6C3]">
                     {item.streak > 0 ? `+${item.streak}W` : `${Math.abs(item.streak)}L`}
-                  </div>
+                  </span>
+                  {item.bounty > 0 && (
+                    <span className="text-magma font-black whitespace-nowrap">
+                      Stop → {item.opposingSide} +{item.bounty} Elo
+                    </span>
+                  )}
                 </div>
-
-                {item.bounty > 0 && (
-                  <div className="mt-2 rounded-lg border border-magma/25 bg-magma/[0.055] px-2.5 py-2 text-[10px] flex items-center justify-between gap-2">
-                    <span className="font-semibold text-[#FF7580]">
-                      Stop the MVP run
-                    </span>
-                    <span className="font-mono font-black text-magma">
-                      {item.opposingSide} +{item.bounty} Elo
-                    </span>
-                  </div>
-                )}
-              </div>
-            ))}
+              ))
+            )}
           </div>
-        )}
+        </div>
       </section>
 
       {liveTeamIntel && (
         <details className="rounded-2xl border border-[#222834] bg-[#0B0F15] overflow-hidden group">
-          <summary className="list-none cursor-pointer px-4 py-3 flex items-center justify-between gap-3 hover:bg-white/[0.025] transition-colors">
+          <summary className="list-none cursor-pointer px-3 py-2.5 flex items-center justify-between gap-3 hover:bg-white/[0.025] transition-colors">
             <div>
               <div className="brand-kicker mb-1">Match Intel · Advanced</div>
               <div className="font-display font-black">Chemistry, balance & rivalry data</div>
@@ -641,7 +615,7 @@ export default function MatchRoom() {
       )}
 
       {!canReport && (
-        <section className="rounded-2xl border border-[#222834] bg-[#0F1218] px-4 py-3 flex items-start gap-3">
+        <section className="rounded-xl border border-[#222834] bg-[#0F1218] px-3 py-2.5 flex items-start gap-3">
           <ShieldCheck size={16} className="text-[#697181] mt-0.5 shrink-0" />
           <div className="text-xs text-muted-foreground">
             Only the Mucho8s captain or an Admin can report the final result.
@@ -653,13 +627,11 @@ export default function MatchRoom() {
         {canChat ? (
           <LiveMatchChat liveMatchId={match.id} />
         ) : (
-          <div className="m8-panel rounded-2xl p-5 flex items-center justify-center min-h-[220px]">
-            <div className="text-center">
-              <ShieldCheck size={24} className="mx-auto text-[#394150]" />
-              <div className="font-display font-black mt-2">Private Match Chat</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Available only to lobby players and Admin.
-              </div>
+          <div className="m8-panel rounded-xl px-3 py-2.5 flex items-center gap-2 min-h-11">
+            <ShieldCheck size={15} className="text-[#394150] shrink-0" />
+            <div className="font-display font-black text-xs">PRIVATE MATCH CHAT</div>
+            <div className="text-[10px] text-muted-foreground">
+              Available only to lobby players and Admin.
             </div>
           </div>
         )}
