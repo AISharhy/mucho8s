@@ -4,6 +4,7 @@ import { ArrowRight, Award, Check, Sparkles, X } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar } from "@/components/shared";
 import { Button } from "@/components/ui/button";
+import { getSeasonAwards } from "@/lib/seasonAwards";
 
 const rarityClass = {
   legendary: "border-[#D5A33A]/55 shadow-[0_0_90px_rgba(213,163,58,.16)]",
@@ -12,7 +13,7 @@ const rarityClass = {
 };
 
 export default function SeasonAwardReveal() {
-  const { competitionData, discordPlayer, playerAvatars } = useData();
+  const { competitionData, discordPlayer, playerAvatars, publicChallenges } = useData();
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
   const [showAll, setShowAll] = useState(false);
@@ -26,10 +27,10 @@ export default function SeasonAwardReveal() {
 
   const awards = useMemo(() => {
     if (!latestArchive || !discordPlayer?.id) return [];
-    return (Array.isArray(latestArchive?.awards) ? latestArchive.awards : []).filter((award) =>
+    return getSeasonAwards(latestArchive, publicChallenges).filter((award) =>
       (Array.isArray(award?.playerIds) ? award.playerIds : []).map(String).includes(String(discordPlayer.id))
     );
-  }, [latestArchive, discordPlayer?.id]);
+  }, [latestArchive, discordPlayer?.id, publicChallenges]);
 
   const storageKey = latestArchive && discordPlayer?.id
     ? `mucho8s_season_awards_seen_${latestArchive.season_number}_${discordPlayer.id}`
