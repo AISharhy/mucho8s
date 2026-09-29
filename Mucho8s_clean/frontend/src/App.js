@@ -122,9 +122,9 @@ function App() {
                 <Route index element={<Navigate to="hall-of-fame" replace />} />
                 <Route path="hall-of-fame" element={<HallOfFame />} />
                 <Route path="rivalries" element={<Rivalries />} />
+                <Route path="rivalries/:playerAId/:playerBId" element={<RivalryDetail />} />
                 <Route path="records" element={<Records />} />
               </Route>
-              <Route path="bacheca/rivalries/:playerAId/:playerBId" element={<RivalryDetail />} />
               <Route path="rivalries" element={<Navigate to="/bacheca/rivalries" replace />} />
               <Route path="rivalries/:playerAId/:playerBId" element={<RivalryDetail />} />
               <Route path="leaderboard" element={<Ranking initialTab="leaderboard" />} />
