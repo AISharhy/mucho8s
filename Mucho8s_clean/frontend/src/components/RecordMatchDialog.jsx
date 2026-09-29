@@ -520,26 +520,6 @@ export const RecordMatchDialog = ({
             )}
           </div>
 
-          <div className="rounded-xl bg-[#0F1218] border border-[#2A303B] px-3 py-3">
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
-              Automatic Rules
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] leading-5">
-              <div>
-                <span className="font-semibold text-[#D5A33A] inline-flex items-center gap-1"><Trophy size={11} /> MVP</span>
-                <span className="text-muted-foreground"> · Every 3 consecutive Mucho8s wins = +1 MVP and +3 Elo.</span>
-              </div>
-              <div>
-                <span className="font-semibold text-[#C79A6B]">MERDA 💩</span>
-                <span className="text-muted-foreground"> · MERDA starts at 3 straight losses. Every extra loss in the same streak adds +1 MERDA. Every win clears only 1 MERDA.</span>
-              </div>
-              <div>
-                <span className="font-semibold text-magma">MVP BOUNTY</span>
-                <span className="text-muted-foreground"> · Beat a team with a player one win from MVP = +3 Elo to each winner.</span>
-              </div>
-            </div>
-          </div>
-
           {!reportOnly && !lockContext && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
