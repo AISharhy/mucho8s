@@ -63,7 +63,7 @@ const TeamPanel = ({
 }) => (
   <div className="rounded-2xl border border-[#222834] bg-[#0F1218] p-3">
     <div
-      className="text-[10px] uppercase tracking-[0.18em] font-black mb-3"
+      className="text-[10px] uppercase tracking-[0.18em] font-black mb-2"
       style={{ color: accent }}
     >
       {label}
@@ -310,7 +310,7 @@ export default function MatchRoom() {
   };
 
   return (
-    <div className="m8-page-stack">
+    <div className="m8-page-stack gap-3">
       <section className="m8-panel m8-mode-zone is-mucho8s rounded-[22px] p-4">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
           <div className="min-w-0">
