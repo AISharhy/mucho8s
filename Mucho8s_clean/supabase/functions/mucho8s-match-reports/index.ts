@@ -905,6 +905,29 @@ Deno.serve(async (req: Request) => {
       if (teamA.length < 2 || teamA.length > 4 || teamA.length !== teamB.length) {
         return json({ error: "Teams must contain the same number of players (2-4)" }, 400);
       }
+
+      if (pairings.length < teamA.length) {
+        return json({ error: "Every player must have at least one Money Chall pairing" }, 400);
+      }
+
+      const livePairKeys = new Set<string>();
+      const coveredLiveA = new Set<string>();
+      const coveredLiveB = new Set<string>();
+
+      for (const pair of pairings) {
+        const key = `${pair.playerAId}:${pair.playerBId}`;
+        if (livePairKeys.has(key)) {
+          return json({ error: "The same Money Chall pairing cannot be added twice" }, 400);
+        }
+        livePairKeys.add(key);
+        coveredLiveA.add(pair.playerAId);
+        coveredLiveB.add(pair.playerBId);
+      }
+
+      if (coveredLiveA.size !== teamA.length || coveredLiveB.size !== teamB.length) {
+        return json({ error: "Every player must appear in at least one Money Chall pairing" }, 400);
+      }
+
       if (seriesMaps.length !== bestOf) {
         return json({
           error: game === "MW4"
@@ -1166,23 +1189,35 @@ Deno.serve(async (req: Request) => {
       if (!isAdmin && !reporterOnA && !reporterOnB) {
         return json({ error: "The match creator must be one of the players in the lobby" }, 403);
       }
-      if (pairings.length !== teamA.length) {
-        return json({ error: "Every player matchup needs a money amount" }, 400);
+      if (pairings.length < teamA.length) {
+        return json({ error: "Every player must have at least one Money Chall pairing" }, 400);
       }
-      const seenA = new Set<string>();
-      const seenB = new Set<string>();
+
+      const pairingKeys = new Set<string>();
+      const coveredA = new Set<string>();
+      const coveredB = new Set<string>();
+
       for (const pair of pairings) {
         const validPlayers = teamA.includes(pair.playerAId) && teamB.includes(pair.playerBId);
         const validAmount = Number.isFinite(pair.amount) && pair.amount > 0;
         const validPlatform = SUPPORTED_MATCH_PLATFORMS.has(pair.platform);
+
         if (!validPlayers || !validAmount || !validPlatform) {
           return json({ error: "Each matchup must use a valid amount with PayPal or Revolut" }, 400);
         }
-        if (seenA.has(pair.playerAId) || seenB.has(pair.playerBId)) {
-          return json({ error: "Each player can appear only once in the money matchups" }, 400);
+
+        const pairingKey = `${pair.playerAId}:${pair.playerBId}`;
+        if (pairingKeys.has(pairingKey)) {
+          return json({ error: "The same Money Chall pairing cannot be added twice" }, 400);
         }
-        seenA.add(pair.playerAId);
-        seenB.add(pair.playerBId);
+
+        pairingKeys.add(pairingKey);
+        coveredA.add(pair.playerAId);
+        coveredB.add(pair.playerBId);
+      }
+
+      if (coveredA.size !== teamA.length || coveredB.size !== teamB.length) {
+        return json({ error: "Every player must appear in at least one Money Chall pairing" }, 400);
       }
       if (scoreA === scoreB && (scoreA > 0 || scoreB > 0)) {
         return json({ error: "A verified match cannot end in a draw" }, 400);
