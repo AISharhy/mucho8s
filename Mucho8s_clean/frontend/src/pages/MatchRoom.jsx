@@ -193,42 +193,37 @@ export default function MatchRoom() {
         const player = playerMap?.[playerId];
         const streak = Number(player?.currentStreak || 0);
         const merdaCount = Math.max(0, Number(player?.merdaCount || 0));
-        if (!streak && merdaCount <= 0) return null;
 
-        const run = Math.abs(streak);
-        const cycleProgress = run % 3;
-        const remaining = cycleProgress === 0 ? 3 : 3 - cycleProgress;
-        const chasingMvp = streak > 0;
-        const clearingMerda = merdaCount > 0;
+        // Streak Watch is intentionally "critical only":
+        // - MVP: the next win completes a 3-win milestone (2, 5, 8...).
+        // - MERDA: the next loss triggers/stacks MERDA once the player is at 2L or worse.
+        const oneWinFromMvp = streak > 0 && (streak + 1) % 3 === 0;
+        const oneLossFromMerda = streak <= -2;
 
-        // Show players close to a new award, plus anyone who can clear a MERDA with one win.
-        if (!clearingMerda && remaining > 2) return null;
+        if (!oneWinFromMvp && !oneLossFromMerda) return null;
 
         const isAlpha = alphaIds.includes(playerId);
-        const bounty = chasingMvp && remaining === 1 ? 3 : 0;
 
         return {
           id: playerId,
           name: player?.name || "Player",
           streak,
-          remaining,
-          chasingMvp,
-          clearingMerda,
           merdaCount,
-          losingStreakIsStacking: streak <= -3,
+          oneWinFromMvp,
+          oneLossFromMerda,
           side: isAlpha ? "Alpha" : "Bravo",
           opposingSide: isAlpha ? "Bravo" : "Alpha",
-          bounty,
+          bounty: oneWinFromMvp ? 3 : 0,
           nextCount: Math.max(
             1,
-            Number((chasingMvp ? player?.mvpCount : player?.merdaCount) || 0) + 1
+            Number((oneWinFromMvp ? player?.mvpCount : player?.merdaCount) || 0) + 1
           ),
         };
       })
       .filter(Boolean)
       .sort((a, b) => {
-        if (a.clearingMerda !== b.clearingMerda) return a.clearingMerda ? -1 : 1;
-        return a.remaining - b.remaining || Math.abs(b.streak) - Math.abs(a.streak);
+        if (a.oneWinFromMvp !== b.oneWinFromMvp) return a.oneWinFromMvp ? -1 : 1;
+        return Math.abs(b.streak) - Math.abs(a.streak);
       });
   }, [match, playerMap]);
 
@@ -484,28 +479,33 @@ export default function MatchRoom() {
         />
       </section>
 
-      {streakWatch.length > 0 && (
-        <section className="rounded-2xl border border-[#343B48] bg-[#11151C] px-4 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-            <div>
-              <div className="brand-kicker text-[#AEB6C3]">Streak Watch</div>
-              <div className="font-display font-black text-sm mt-0.5">MVP & MERDA pressure</div>
-            </div>
-            <div className="text-[10px] uppercase tracking-widest text-[#697181]">
-              Active pressure & redemption
-            </div>
+      <section className="rounded-2xl border border-[#343B48] bg-[#11151C] px-4 py-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+          <div>
+            <div className="brand-kicker text-[#AEB6C3]">Streak Watch</div>
+            <div className="font-display font-black text-sm mt-0.5">MVP & MERDA pressure</div>
           </div>
+          <div className="text-[10px] uppercase tracking-widest text-[#697181]">
+            Critical pressure only
+          </div>
+        </div>
 
+        {streakWatch.length === 0 ? (
+          <div className="min-h-[52px] rounded-xl border border-[#222834] bg-[#0D1117] px-4 flex items-center justify-center">
+            <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#697181]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#596170]" />
+              No pressure detected
+            </span>
+          </div>
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {streakWatch.map((item) => (
               <div
                 key={item.id}
                 className={`rounded-xl border px-3 py-3 ${
-                  item.clearingMerda
-                    ? merdaSurfaceClass(item.merdaCount)
-                    : item.chasingMvp
-                      ? "border-[#D5A33A]/25 bg-[#D5A33A]/[0.045]"
-                      : "border-[#8B5E3C]/30 bg-[#8B5E3C]/[0.045]"
+                  item.oneWinFromMvp
+                    ? "border-[#D5A33A]/35 bg-[#D5A33A]/[0.055]"
+                    : "border-[#8B5E3C]/35 bg-[#8B5E3C]/[0.055]"
                 }`}
               >
                 <div className="flex items-center gap-2 min-w-0">
@@ -517,20 +517,15 @@ export default function MatchRoom() {
                         {item.side}
                       </span>
                     </div>
+
                     <div className="text-[11px] mt-1">
-                      {item.clearingMerda ? (
-                        <span className="text-[#C79A6B] font-semibold">
-                          💩 WIN: x{item.merdaCount} → x{Math.max(0, item.merdaCount - 1)}
-                          {item.losingStreakIsStacking ? ` · LOSS: x${item.merdaCount} → x${item.merdaCount + 1}` : ""}
-                          {item.chasingMvp && item.remaining === 1 ? " · 🏆 MVP also on this win" : ""}
-                        </span>
-                      ) : item.chasingMvp ? (
-                        <span className="text-[#D5A33A] font-semibold">
-                          🏆 {item.remaining} {item.remaining === 1 ? "win" : "wins"} from MVP #{item.nextCount}
+                      {item.oneWinFromMvp ? (
+                        <span className="text-[#D5A33A] font-black">
+                          🏆 1 WIN FROM MVP #{item.nextCount}
                         </span>
                       ) : (
-                        <span className="text-[#C79A6B] font-semibold">
-                          💩 {item.remaining} {item.remaining === 1 ? "loss" : "losses"} from MERDA #{item.nextCount}
+                        <span className="text-[#C79A6B] font-black">
+                          💩 1 LOSS FROM MERDA #{item.nextCount}
                         </span>
                       )}
                     </div>
@@ -554,8 +549,8 @@ export default function MatchRoom() {
               </div>
             ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       {liveTeamIntel && (
         <details className="rounded-2xl border border-[#222834] bg-[#0B0F15] overflow-hidden group">
