@@ -16,6 +16,7 @@ import {
   BookOpen,
   Landmark,
   Newspaper,
+  GalleryVerticalEnd,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { tierOf } from "@/lib/elo";
@@ -68,11 +69,11 @@ const COMPETITION_NAV = [
     activeIcon: "text-[#D5A33A]",
   },
   {
-    to: "/rivalries",
-    label: "Rivalries",
-    icon: Flame,
-    testid: "nav-rivalries-link",
-    activeIcon: "text-orange-400",
+    to: "/bacheca",
+    label: "Bacheca",
+    icon: GalleryVerticalEnd,
+    testid: "nav-bacheca-link",
+    activeIcon: "text-[#D5A33A]",
   },
   {
     to: "/rank-guide",
@@ -276,6 +277,7 @@ export const MobileNav = () => {
   const aliasLabel =
     ["/balancer", "/draft"].includes(loc.pathname) ? "Team Builder" :
     loc.pathname === "/ranks" ? "Guida" :
+    loc.pathname.startsWith("/bacheca") || loc.pathname.startsWith("/rivalries") ? "Bacheca" :
     loc.pathname === "/leaderboard" || loc.pathname === "/statistics" || loc.pathname === "/challenge-ranking" ? "Ranking" :
     null;
 
