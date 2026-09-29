@@ -398,6 +398,38 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, accounts: data || [] });
     }
 
+    if (action === "admin-update") {
+      const accountId = String(body?.accountId || "").trim();
+      if (!accountId) return json({ error: "Account is required" }, 400);
+
+      let paypalUrl = null;
+      let revolutUrl = null;
+      let twitchChannel = null;
+      try {
+        paypalUrl = cleanPaymentLink(body?.paypalUrl, "paypal");
+        revolutUrl = cleanPaymentLink(body?.revolutUrl, "revolut");
+        twitchChannel = cleanTwitchChannel(body?.twitchChannel);
+      } catch (error) {
+        return json({ error: String(error).replace(/^Error:\s*/, "") }, 400);
+      }
+
+      const { data, error } = await supabase
+        .from("player_accounts")
+        .update({
+          paypal_url: paypalUrl,
+          revolut_url: revolutUrl,
+          twitch_channel: twitchChannel,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", accountId)
+        .select(accountSelect)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) return json({ error: "Discord account not found" }, 404);
+      return json({ ok: true, account: data });
+    }
+
     if (action === "admin-approve-request") {
       const accountId = String(body?.accountId || "").trim();
       if (!accountId) return json({ error: "Account is required" }, 400);
