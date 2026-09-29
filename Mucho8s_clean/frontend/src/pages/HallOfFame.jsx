@@ -12,6 +12,7 @@ import {
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar } from "@/components/shared";
 import { Input } from "@/components/ui/input";
+import { getSeasonAwards } from "@/lib/seasonAwards";
 import {
   Dialog,
   DialogContent,
@@ -43,9 +44,9 @@ const archivePlayerLookup = (archives = []) => {
   return map;
 };
 
-const normalizeAwards = (archives = []) =>
+const normalizeAwards = (archives = [], publicChallenges = []) =>
   archives.flatMap((season) =>
-    (Array.isArray(season?.awards) ? season.awards : []).map((award, index) => ({
+    getSeasonAwards(season, publicChallenges).map((award, index) => ({
       ...award,
       key: `${season.season_number}:${award.id || index}:${(award.playerIds || []).join("-")}`,
       seasonNumber: Number(award.seasonNumber ?? season.season_number ?? 0),
@@ -109,7 +110,7 @@ const AwardCard = ({ award, playerLookup, playerAvatars, onOpen }) => {
 };
 
 export default function HallOfFame() {
-  const { competitionData, playerMap, playerAvatars } = useData();
+  const { competitionData, playerMap, playerAvatars, publicChallenges } = useData();
   const archives = Array.isArray(competitionData?.archives) ? competitionData.archives : [];
   const [seasonFilter, setSeasonFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -121,7 +122,7 @@ export default function HallOfFame() {
     () => ({ ...archivedPlayers, ...(playerMap || {}) }),
     [archivedPlayers, playerMap]
   );
-  const awards = useMemo(() => normalizeAwards(archives), [archives]);
+  const awards = useMemo(() => normalizeAwards(archives, publicChallenges), [archives, publicChallenges]);
 
   const categories = useMemo(
     () => [...new Set(awards.map((award) => award.category).filter(Boolean))].sort(),
