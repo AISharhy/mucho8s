@@ -104,6 +104,7 @@ export default function Play() {
     discordPlayer,
     discordSession,
     signInWithDiscord,
+    isAdmin,
     createChallenge,
   } = useData();
 
@@ -159,6 +160,25 @@ export default function Play() {
     numericAmount > 0 &&
     ["paypal", "revolut"].includes(platform)
   );
+
+  const openMucho8s = async () => {
+    if (isAdmin) {
+      navigate("/team-builder");
+      return;
+    }
+
+    if (!discordSession) {
+      await signInWithDiscord();
+      return;
+    }
+
+    if (!discordPlayer) {
+      toast.error("Link your player account to play Mucho8s");
+      return;
+    }
+
+    navigate("/team-builder");
+  };
 
   const sendQuickChallenge = async () => {
     if (!discordSession) {
@@ -253,16 +273,22 @@ export default function Play() {
           </div>
 
           <div className="relative z-10 mt-auto pt-6">
-            <Link
-              to="/team-builder"
+            <button
+              type="button"
+              onClick={() => void openMucho8s()}
               className="m8-play-cta is-8s"
+              data-testid="open-mucho8s"
             >
               <span className="inline-flex items-center gap-2">
                 <Swords size={17} />
-                OPEN MUCHO8S
+                {!isAdmin && !discordSession
+                  ? "CONNECT DISCORD"
+                  : !isAdmin && !discordPlayer
+                    ? "LINK YOUR PLAYER TO PLAY"
+                    : "OPEN MUCHO8S"}
               </span>
               <ArrowRight size={18} />
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -463,18 +489,20 @@ export default function Play() {
           <div className="relative z-10 mt-auto pt-4">
             <Button
               onClick={sendQuickChallenge}
-              disabled={Boolean(sending) || (Boolean(discordSession) && !canSend)}
+              disabled={Boolean(sending) || (Boolean(discordSession && discordPlayer) && !canSend)}
               className="m8-play-cta is-1v1"
               data-testid="quick-chall-send"
             >
               <WalletCards size={15} className="mr-2" />
               {!discordSession
                 ? "CONNECT DISCORD"
-                : sending
-                  ? "SENDING..."
-                  : target
-                    ? `SEND MUCHO1V1 · €${Number.isFinite(numericAmount) ? numericAmount.toFixed(2) : "0.00"}`
-                    : "CHOOSE AN OPPONENT"}
+                : !discordPlayer
+                  ? "LINK YOUR PLAYER TO PLAY"
+                  : sending
+                    ? "SENDING..."
+                    : target
+                      ? `SEND MUCHO1V1 · €${Number.isFinite(numericAmount) ? numericAmount.toFixed(2) : "0.00"}`
+                      : "CHOOSE AN OPPONENT"}
             </Button>
 
             {target && (
