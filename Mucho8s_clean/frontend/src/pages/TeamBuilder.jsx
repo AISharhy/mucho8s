@@ -625,910 +625,819 @@ export default function TeamBuilder() {
 
   return (
     <div className="m8-page-stack gap-3">
-      <section className="m8-panel rounded-[22px] p-4">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <section className="m8-panel rounded-[22px] p-4 sm:p-5 max-w-6xl mx-auto w-full" data-testid="mucho8s-wizard">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-[#222834]">
           <div>
-            <div className="brand-kicker mb-1">Play</div>
-            <div className="flex items-center gap-2 mb-2">
-              <ModeBadge mode="mucho8s" compact />
-            </div>
-            <h2 className="font-display text-2xl font-black tracking-[-0.03em]">Mucho8s Builder</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Choose game and mode, build the teams, then send the Mucho8s live.
+            <div className="brand-kicker mb-1">Play · Mucho8s</div>
+            <h2 className="font-display text-2xl font-black tracking-[-0.03em]">
+              Create Match
+            </h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              One step at a time. Your previous choices stay saved when you go back.
             </p>
           </div>
 
           <Button
+            type="button"
             variant="ghost"
-            onClick={() => resetLobby({ keepGame: true })}
-            className="m8-action border border-[#222834] bg-[#0F1218] hover:border-[#394150]"
+            onClick={startOver}
+            className="h-9 px-3 border border-[#222834] bg-[#0F1218] text-xs"
           >
-            <RotateCcw size={15} className="mr-2" /> Clear Lobby
+            <RotateCcw size={14} className="mr-1.5" />
+            Start over
           </Button>
         </div>
-      </section>
 
-      <div className={`grid gap-3 items-start ${game && matchMode ? "xl:grid-cols-2" : "grid-cols-1"}`} data-testid="builder-setup-grid">
-      <section className="m8-panel rounded-[22px] p-4">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-black text-sm">1</div>
-          <div>
-            <div className="brand-kicker">Setup</div>
-            <h3 className="font-display text-xl font-black">Choose the game first</h3>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2" data-testid="team-builder-game">
-          {GAMES.map((item) => (
-            <button
-              type="button"
-              key={item}
-              aria-pressed={game === item}
-              onClick={() => changeGame(item)}
-              className={`h-9 rounded-lg border text-xs font-black transition-all ${
-                game === item
-                  ? "bg-white text-black border-white"
-                  : "bg-[#0F1218] border-[#222834] text-[#AAB1BE] hover:text-white"
-              }`}
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-
-        {game && (
-          <div className="mt-3">
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Mode</div>
-            <div className="grid grid-cols-2 gap-2 max-w-xl">
-              {MATCH_MODES.map((item) => (
-                <button
-                  type="button"
-                  key={item}
-                  aria-pressed={matchMode === item}
-                  onClick={() => changeMatchMode(item)}
-                  className={`h-9 rounded-lg border text-xs font-bold transition-all ${
-                    matchMode === item
-                      ? "bg-[#D5A33A] text-black border-[#D5A33A]"
-                      : "bg-[#0F1218] border-[#222834] text-[#AAB1BE] hover:text-white"
-                  }`}
+        <div className="grid grid-cols-4 gap-2 py-4">
+          {[
+            [1, "Setup"],
+            [2, "Teams"],
+            [3, "Lobby"],
+            [4, "Review"],
+          ].map(([step, label]) => {
+            const active = wizardStep === step;
+            const done = wizardStep > step;
+            return (
+              <div key={step} className="min-w-0">
+                <div
+                  className={
+                    "h-1 rounded-full mb-2 " +
+                    (active ? "bg-white" : done ? "bg-emerald-400" : "bg-[#242A35]")
+                  }
+                />
+                <div
+                  className={
+                    "text-[9px] sm:text-[10px] uppercase tracking-[0.14em] font-black truncate " +
+                    (active ? "text-white" : done ? "text-emerald-400" : "text-[#606978]")
+                  }
                 >
-                  {item}
-                </button>
-              ))}
+                  {step}. {label}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {wizardStep === 1 && (
+          <div className="rounded-2xl border border-[#222834] bg-[#0D1117] p-4 sm:p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="w-9 h-9 rounded-xl bg-white text-black flex items-center justify-center font-black">1</span>
+              <div>
+                <div className="font-display font-black text-lg">Match setup</div>
+                <div className="text-xs text-muted-foreground">Choose the basic rules, then continue.</div>
+              </div>
             </div>
 
-            {matchMode && (
-              <div className="mt-3">
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
-                  Series
-                </div>
-                <div className="grid grid-cols-2 gap-2 max-w-sm" data-testid="team-builder-best-of">
-                  {[3, 5].map((value) => (
-                    <button
-                      type="button"
-                      key={value}
-                      aria-pressed={bestOf === value}
-                      onClick={() => {
-                        setBestOf(value);
-                        setResult(null);
-                      }}
-                      className={`h-10 rounded-lg border text-xs font-black transition-all ${
-                        bestOf === value
-                          ? "bg-[#9146FF] text-white border-[#A96DFF] shadow-[0_0_20px_rgba(145,70,255,0.16)]"
-                          : "bg-[#0F1218] border-[#2B2537] text-[#B9A5D2] hover:border-[#6D4A91] hover:text-white"
-                      }`}
-                    >
-                      BO{value}
-                    </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label>
+                <span className="text-[10px] uppercase tracking-widest text-[#697181]">Game</span>
+                <select
+                  value={game}
+                  onChange={(event) => changeGame(event.target.value)}
+                  className="mt-1 w-full h-11 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm font-semibold"
+                  data-testid="wizard-game-select"
+                >
+                  <option value="">Choose game...</option>
+                  {GAMES.map((item) => (
+                    <option key={item} value={item}>{item}</option>
                   ))}
+                </select>
+              </label>
+
+              <label>
+                <span className="text-[10px] uppercase tracking-widest text-[#697181]">Mode</span>
+                <select
+                  value={matchMode}
+                  onChange={(event) => changeMatchMode(event.target.value)}
+                  disabled={!game}
+                  className="mt-1 w-full h-11 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm font-semibold disabled:opacity-40"
+                  data-testid="wizard-mode-select"
+                >
+                  <option value="">Choose mode...</option>
+                  {MATCH_MODES.map((item) => (
+                    <option key={item} value={item}>{item}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                <span className="text-[10px] uppercase tracking-widest text-[#697181]">Series</span>
+                <select
+                  value={bestOf}
+                  onChange={(event) => changeBestOf(event.target.value)}
+                  disabled={!matchMode}
+                  className="mt-1 w-full h-11 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm font-semibold disabled:opacity-40"
+                  data-testid="wizard-series-select"
+                >
+                  <option value={3}>BO3 · first to 2</option>
+                  <option value={5}>BO5 · first to 3</option>
+                </select>
+              </label>
+
+              <label>
+                <span className="text-[10px] uppercase tracking-widest text-[#697181]">Map rotation</span>
+                <select
+                  value={mapMode}
+                  onChange={(event) => changeMapMode(event.target.value)}
+                  disabled={!matchMode}
+                  className="mt-1 w-full h-11 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm font-semibold disabled:opacity-40"
+                  data-testid="wizard-map-mode-select"
+                >
+                  <option value="random">Random competitive maps</option>
+                  <option value="manual">Choose maps manually</option>
+                </select>
+              </label>
+            </div>
+
+            {game && matchMode && (
+              <div className="mt-4 rounded-xl border border-[#222834] bg-[#10151D] p-3">
+                <div className="flex items-center gap-2">
+                  {mapMode === "random" ? (
+                    <Shuffle size={15} className="text-[#A96DFF]" />
+                  ) : (
+                    <MapPinned size={15} className="text-[#D5A33A]" />
+                  )}
+                  <div className="text-xs font-bold">
+                    {mapMode === "random" ? "Random rotation" : "Manual rotation"}
+                  </div>
+                  <span className="ml-auto text-[10px] font-mono text-muted-foreground">
+                    {mapPool.length} maps in pool
+                  </span>
                 </div>
-                <div className="text-[10px] text-[#697181] mt-1.5">
-                  {bestOf === 5 ? "First to 3 maps" : "First to 2 maps"} · maps are generated automatically.
+
+                {mapMode === "random" ? (
+                  <div className="text-[11px] text-muted-foreground mt-2">
+                    The system will draw {bestOf} unique maps from the competitive pool when the match goes live.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-3">
+                    {Array.from({ length: bestOf }, (_, index) => (
+                      <label key={index}>
+                        <span className="text-[10px] text-muted-foreground">Map {index + 1}</span>
+                        <select
+                          value={manualMaps[index] || ""}
+                          onChange={(event) => changeManualMap(index, event.target.value)}
+                          className="mt-1 w-full h-10 rounded-lg bg-[#151923] border border-[#2A303B] px-2.5 text-xs font-semibold"
+                          data-testid={"manual-map-" + index}
+                        >
+                          <option value="">Choose map...</option>
+                          {mapPool
+                            .filter((mapName) => !manualMaps.includes(mapName) || manualMaps[index] === mapName)
+                            .map((mapName) => (
+                              <option key={mapName} value={mapName}>{mapName}</option>
+                            ))}
+                        </select>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {!mapPoolConfigured && (
+                  <div className="mt-3 text-[11px] text-orange-300">
+                    This game/mode does not currently have enough competitive maps for BO{bestOf}.
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex justify-end mt-5">
+              <Button
+                type="button"
+                onClick={() => setWizardStep(2)}
+                disabled={!setupValid}
+                className="h-11 px-5 bg-white hover:bg-[#E8E8E8] text-black font-black rounded-xl"
+              >
+                Continue
+                <ArrowRight size={15} className="ml-2" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {wizardStep === 2 && (
+          <div className="rounded-2xl border border-[#222834] bg-[#0D1117] p-4 sm:p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="w-9 h-9 rounded-xl bg-white text-black flex items-center justify-center font-black">2</span>
+              <div>
+                <div className="font-display font-black text-lg">Team method</div>
+                <div className="text-xs text-muted-foreground">Keep it simple: choose how the teams should be built.</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label>
+                <span className="text-[10px] uppercase tracking-widest text-[#697181]">Build method</span>
+                <select
+                  value={teamMethod}
+                  onChange={(event) => changeTeamMethod(event.target.value)}
+                  className="mt-1 w-full h-11 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm font-semibold"
+                  data-testid="wizard-team-method"
+                >
+                  <option value="auto">Auto Balance</option>
+                  <option value="draft">Captain Draft</option>
+                  <option value="manual">Manual teams</option>
+                </select>
+              </label>
+
+              {teamMethod === "auto" && (
+                <label>
+                  <span className="text-[10px] uppercase tracking-widest text-[#697181]">Balance priority</span>
+                  <select
+                    value={autoPriority}
+                    onChange={(event) => {
+                      setAutoPriority(event.target.value);
+                      setResult(null);
+                    }}
+                    className="mt-1 w-full h-11 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm font-semibold"
+                  >
+                    <option value="elo">Elo</option>
+                    <option value="chemistry">Chemistry</option>
+                    <option value="mixed">Mixed</option>
+                  </select>
+                </label>
+              )}
+
+              {teamMethod === "draft" && (
+                <label>
+                  <span className="text-[10px] uppercase tracking-widest text-[#697181]">Draft captains</span>
+                  <select
+                    value={draftCaptainMode}
+                    onChange={(event) => changeDraftCaptainMode(event.target.value)}
+                    className="mt-1 w-full h-11 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm font-semibold"
+                  >
+                    <option value="auto">Auto · highest Elo</option>
+                    <option value="manual">Choose manually</option>
+                  </select>
+                </label>
+              )}
+            </div>
+
+            <div className="mt-4 rounded-xl border border-[#222834] bg-[#10151D] px-3 py-3 flex items-start gap-3">
+              {teamMethod === "auto" ? (
+                <Scale size={17} className="text-emerald-400 mt-0.5" />
+              ) : teamMethod === "draft" ? (
+                <Crown size={17} className="text-[#D5A33A] mt-0.5" />
+              ) : (
+                <UsersRound size={17} className="text-[#65D5D3] mt-0.5" />
+              )}
+              <div>
+                <div className="text-xs font-bold">
+                  {teamMethod === "auto"
+                    ? "Automatic balanced teams"
+                    : teamMethod === "draft"
+                      ? "Snake draft · A → B → B → A"
+                      : "Full manual control"}
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-1">
+                  {teamMethod === "auto"
+                    ? "The builder uses the selected priority and the existing match data."
+                    : teamMethod === "draft"
+                      ? "Two captains build the teams from the selected lobby."
+                      : "You assign every selected player to Alpha or Bravo yourself."}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 mt-5">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setWizardStep(1)}
+                className="h-10 px-3 border border-[#2A303B]"
+              >
+                <ArrowLeft size={15} className="mr-1.5" />
+                Back
+              </Button>
+
+              <Button
+                type="button"
+                onClick={() => setWizardStep(3)}
+                className="h-11 px-5 bg-white hover:bg-[#E8E8E8] text-black font-black rounded-xl"
+              >
+                Select players
+                <ArrowRight size={15} className="ml-2" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {wizardStep === 3 && (
+          <div className="rounded-2xl border border-[#222834] bg-[#0D1117] p-4 sm:p-5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <div className="flex items-center gap-3">
+                <span className="w-9 h-9 rounded-xl bg-white text-black flex items-center justify-center font-black">3</span>
+                <div>
+                  <div className="font-display font-black text-lg">Lobby</div>
+                  <div className="text-xs text-muted-foreground">Check the players you want in the match.</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {inferredFormat && (
+                  <span className="m8-pill text-emerald-400 border-emerald-500/25">
+                    {inferredFormat}
+                  </span>
+                )}
+                <span className="font-mono text-sm font-black text-[#D5A33A]">{selectedCount}/8</span>
+              </div>
+            </div>
+
+            <div className="relative mb-3">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search player..."
+                className="h-10 pl-9 bg-[#151923] border-[#2A303B] rounded-xl"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 max-h-[350px] overflow-y-auto pr-1">
+              {filtered.map((player) => {
+                const active = selected.includes(player.id);
+                return (
+                  <label
+                    key={player.id}
+                    className={
+                      "min-h-[50px] rounded-xl border px-3 py-2 flex items-center gap-3 cursor-pointer transition-all " +
+                      (active
+                        ? "border-white/25 bg-white/[0.05]"
+                        : "border-[#222834] bg-[#10151D] hover:border-[#353D49]") +
+                      " " +
+                      merdaSurfaceClass(player.merdaCount)
+                    }
+                  >
+                    <input
+                      type="checkbox"
+                      checked={active}
+                      onChange={() => togglePlayer(player.id)}
+                      className="w-4 h-4 accent-white shrink-0"
+                    />
+                    <PlayerAvatar
+                      name={player.name}
+                      elo={player.currentElo}
+                      size={30}
+                      avatarUrl={playerAvatars[player.id]}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-sm truncate flex items-center gap-2">
+                        <span className="truncate">{player.name}</span>
+                        <MerdaBadge count={player.merdaCount} compact />
+                        {onlinePlayerIds.has(String(player.id)) && (
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" title="Online" />
+                        )}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {player.currentElo} Elo{onlinePlayerIds.has(String(player.id)) ? " · Online" : ""}
+                      </div>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+
+            <div className="mt-3 rounded-xl border border-[#222834] bg-[#10151D] px-3 py-2.5 text-[11px] text-muted-foreground">
+              {validLobby
+                ? inferredFormat + " ready. You can build the teams now or select more players for a larger lobby."
+                : nextSize
+                  ? "Select " + (nextSize - selectedCount) + " more player" + (nextSize - selectedCount === 1 ? "" : "s") + " for " + formatForCount(nextSize) + "."
+                  : "Maximum lobby size reached."}
+            </div>
+
+            {teamMethod === "manual" && validLobby && (
+              <div className="mt-4 pt-4 border-t border-[#222834]">
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-widest text-[#697181]">Manual split</div>
+                    <div className="text-xs font-bold mt-0.5">Assign every player with one dropdown.</div>
+                  </div>
+                  <div className="font-mono text-[10px] text-muted-foreground">
+                    A {manualA.length}/{perTeam} · B {manualB.length}/{perTeam}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {selected.map((id) => {
+                    const player = contextualPlayerMap[id];
+                    if (!player) return null;
+                    const currentSide = manualA.includes(id) ? "A" : manualB.includes(id) ? "B" : "";
+                    return (
+                      <div key={id} className="rounded-xl border border-[#222834] bg-[#10151D] px-3 py-2 flex items-center gap-3">
+                        <span className="text-xs font-semibold truncate flex-1">{player.name}</span>
+                        <select
+                          value={currentSide}
+                          onChange={(event) => {
+                            const side = event.target.value;
+                            setResult(null);
+                            setManualA((prev) => prev.filter((item) => item !== id));
+                            setManualB((prev) => prev.filter((item) => item !== id));
+                            if (side === "A") {
+                              if (manualA.length >= perTeam && !manualA.includes(id)) {
+                                toast.error("Alpha is already full");
+                                return;
+                              }
+                              setManualA((prev) => [...prev.filter((item) => item !== id), id]);
+                            }
+                            if (side === "B") {
+                              if (manualB.length >= perTeam && !manualB.includes(id)) {
+                                toast.error("Bravo is already full");
+                                return;
+                              }
+                              setManualB((prev) => [...prev.filter((item) => item !== id), id]);
+                            }
+                          }}
+                          className="h-9 min-w-[130px] rounded-lg bg-[#151923] border border-[#2A303B] px-2 text-xs font-semibold"
+                        >
+                          <option value="">Choose team...</option>
+                          <option value="A">Alpha</option>
+                          <option value="B">Bravo</option>
+                        </select>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {game === "MW4" && (
-              <div className="mt-3 rounded-xl border border-orange-500/20 bg-orange-500/[0.04] px-3 py-2.5 text-[11px] text-orange-300">
-                MW4 BO{bestOf} map pool is not configured yet. Teams can still be prepared, but the match cannot go live until its competitive maps are added.
+            {teamMethod === "draft" && validLobby && (
+              <div className="mt-4 pt-4 border-t border-[#222834]">
+                {!draftStarted ? (
+                  <>
+                    <div className="text-[10px] uppercase tracking-widest text-[#697181] mb-2">Draft captains</div>
+
+                    {draftCaptainMode === "auto" ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="rounded-xl border border-[#222834] bg-[#10151D] px-3 py-3">
+                          <div className="text-[9px] text-magma uppercase tracking-widest mb-1">Alpha captain</div>
+                          <div className="font-semibold text-sm">{autoDraftCaptains[0]?.name || "—"}</div>
+                        </div>
+                        <div className="rounded-xl border border-[#222834] bg-[#10151D] px-3 py-3">
+                          <div className="text-[9px] text-[#65D5D3] uppercase tracking-widest mb-1">Bravo captain</div>
+                          <div className="font-semibold text-sm">{autoDraftCaptains[1]?.name || "—"}</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <label>
+                          <span className="text-[10px] text-muted-foreground">Alpha captain</span>
+                          <select
+                            value={draftCaptainA}
+                            onChange={(event) => {
+                              setDraftCaptainA(event.target.value);
+                              clearDraftProgress();
+                              setResult(null);
+                            }}
+                            className="mt-1 h-10 w-full rounded-lg bg-[#151923] border border-[#2A303B] px-2.5 text-xs font-semibold"
+                          >
+                            <option value="">Choose player...</option>
+                            {selected
+                              .filter((id) => id !== draftCaptainB)
+                              .map((id) => (
+                                <option key={id} value={id}>{contextualPlayerMap[id]?.name || "Player"}</option>
+                              ))}
+                          </select>
+                        </label>
+
+                        <label>
+                          <span className="text-[10px] text-muted-foreground">Bravo captain</span>
+                          <select
+                            value={draftCaptainB}
+                            onChange={(event) => {
+                              setDraftCaptainB(event.target.value);
+                              clearDraftProgress();
+                              setResult(null);
+                            }}
+                            className="mt-1 h-10 w-full rounded-lg bg-[#151923] border border-[#2A303B] px-2.5 text-xs font-semibold"
+                          >
+                            <option value="">Choose player...</option>
+                            {selected
+                              .filter((id) => id !== draftCaptainA)
+                              .map((id) => (
+                                <option key={id} value={id}>{contextualPlayerMap[id]?.name || "Player"}</option>
+                              ))}
+                          </select>
+                        </label>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                      {[
+                        ["Alpha", draftTeamA, resolvedDraftCaptainA, "text-magma"],
+                        ["Bravo", draftTeamB, resolvedDraftCaptainB, "text-[#65D5D3]"],
+                      ].map(([label, ids, captainId, tone]) => (
+                        <div key={label} className="rounded-xl border border-[#222834] bg-[#10151D] p-3">
+                          <div className={"text-[10px] uppercase tracking-widest font-black mb-2 " + tone}>
+                            {label}
+                          </div>
+                          <div className="space-y-1.5">
+                            {ids.map((id) => (
+                              <div key={id} className="h-9 rounded-lg border border-[#202631] bg-[#12161D] px-2 flex items-center gap-2">
+                                <span className="text-xs font-semibold truncate flex-1">
+                                  {contextualPlayerMap[id]?.name || "Player"}
+                                </span>
+                                {id === captainId && <Crown size={11} className="text-[#D5A33A]" />}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {!draftComplete && (
+                      <div>
+                        <div className="rounded-xl border border-[#2A303B] bg-[#111720] px-3 py-2 mb-2 text-xs">
+                          <span className="text-muted-foreground">Now picking: </span>
+                          <span className="font-black">{currentDraftSide === "A" ? "Alpha" : "Bravo"}</span>
+                          <span className="text-muted-foreground ml-2">· A → B → B → A</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                          {draftAvailable.map((id) => (
+                            <button
+                              key={id}
+                              type="button"
+                              onClick={() => pickDraftPlayer(id)}
+                              className="h-10 rounded-lg border border-[#222834] bg-[#10151D] px-3 text-left text-xs font-semibold hover:border-[#3A424F]"
+                            >
+                              {contextualPlayerMap[id]?.name || "Player"}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={clearDraftProgress}
+                      className="h-9 px-3 rounded-lg border border-[#2A303B] bg-[#151923] text-[10px] font-bold text-muted-foreground hover:text-white"
+                    >
+                      <RotateCcw size={12} className="inline mr-1.5" />
+                      Restart draft
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between gap-2 mt-5">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setWizardStep(2)}
+                className="h-10 px-3 border border-[#2A303B]"
+              >
+                <ArrowLeft size={15} className="mr-1.5" />
+                Back
+              </Button>
+
+              {teamMethod === "draft" ? (
+                !draftStarted && (
+                  <Button
+                    type="button"
+                    onClick={startCaptainDraft}
+                    disabled={!validLobby || !resolvedDraftCaptainA || !resolvedDraftCaptainB}
+                    className="h-11 px-5 bg-[#D5A33A] hover:bg-[#E0B247] text-black font-black rounded-xl"
+                  >
+                    <Crown size={15} className="mr-2" />
+                    Start draft
+                  </Button>
+                )
+              ) : (
+                <Button
+                  type="button"
+                  onClick={generateTeams}
+                  disabled={
+                    !validLobby ||
+                    (teamMethod === "manual" && (manualA.length !== perTeam || manualB.length !== perTeam))
+                  }
+                  className="h-11 px-5 bg-white hover:bg-[#E8E8E8] text-black font-black rounded-xl"
+                >
+                  Build teams
+                  <ArrowRight size={15} className="ml-2" />
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {wizardStep === 4 && result && (
+          <div className="rounded-2xl border border-[#222834] bg-[#0D1117] p-4 sm:p-5">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 mb-4">
+              <div className="flex items-center gap-3">
+                <span className="w-9 h-9 rounded-xl bg-white text-black flex items-center justify-center font-black">4</span>
+                <div>
+                  <div className="font-display font-black text-lg">Review</div>
+                  <div className="text-xs text-muted-foreground">Everything in one place before the match goes live.</div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-black">
+                <span className="m8-pill">{game}</span>
+                <span className="m8-pill">{matchMode}</span>
+                <span className="m8-pill">BO{bestOf}</span>
+                <span className="m8-pill">{formatForCount(result.teamA.length + result.teamB.length)}</span>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-[#222834] bg-[#10151D] p-3 mb-3">
+              <div className="flex items-center gap-2 mb-2">
+                {mapMode === "manual" ? (
+                  <MapPinned size={14} className="text-[#D5A33A]" />
+                ) : (
+                  <Shuffle size={14} className="text-[#A96DFF]" />
+                )}
+                <span className="text-xs font-bold">
+                  {mapMode === "manual" ? "Manual map rotation" : "Random map rotation"}
+                </span>
+              </div>
+
+              {mapMode === "manual" ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {manualMaps.map((mapName, index) => (
+                    <span key={mapName + index} className="h-8 px-2.5 rounded-lg border border-[#3A3320] bg-[#17130B] text-[#D5A33A] inline-flex items-center text-[10px] font-black">
+                      M{index + 1} · {mapName}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-[11px] text-muted-foreground">
+                  {bestOf} unique maps will be drawn automatically from the competitive pool when you confirm.
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-3">
+              <Metric label="Balance" value={String(result.balanceScore) + "%"} tone="text-emerald-400" />
+              <Metric label="Alpha Elo" value={averageElo(result.teamA)} />
+              <Metric label="Bravo Elo" value={averageElo(result.teamB)} />
+              <Metric label="Alpha Chem" value={String(result.chemistryA.score) + "%"} />
+              <Metric label="Bravo Chem" value={String(result.chemistryB.score) + "%"} />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              {[
+                ["Alpha", result.teamA, "text-magma", result?.draftCaptains?.A],
+                ["Bravo", result.teamB, "text-[#65D5D3]", result?.draftCaptains?.B],
+              ].map(([label, team, tone, draftCaptainId]) => (
+                <div key={label} className="rounded-xl border border-[#222834] bg-[#10151D] p-3">
+                  <div className={"text-[10px] uppercase tracking-widest font-black mb-2 " + tone}>
+                    {label}
+                  </div>
+                  <div className="space-y-1.5">
+                    {team.map((player) => (
+                      <div
+                        key={player.id}
+                        className={"min-h-[44px] rounded-lg border border-[#202631] bg-[#12161D] px-2.5 py-2 flex items-center gap-2 " + merdaSurfaceClass(player.merdaCount)}
+                      >
+                        <PlayerAvatar
+                          name={player.name}
+                          elo={player.currentElo}
+                          size={28}
+                          avatarUrl={playerAvatars[player.id]}
+                        />
+                        <span className="text-xs font-semibold truncate flex-1">{player.name}</span>
+                        <MerdaBadge count={player.merdaCount} compact />
+                        {draftCaptainId === player.id && <Crown size={11} className="text-[#D5A33A]" />}
+                        {player.id === matchCaptainId && (
+                          <span className="text-[9px] uppercase tracking-wider text-emerald-400">Creator</span>
+                        )}
+                        <span className="font-mono text-[10px] text-muted-foreground">{player.currentElo}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <details className="mt-3 rounded-xl border border-[#222834] bg-[#0B0F15] overflow-hidden group">
+              <summary className="list-none cursor-pointer px-3 py-3 flex items-center justify-between gap-3 hover:bg-white/[0.025]">
+                <div>
+                  <div className="text-[9px] uppercase tracking-[0.16em] text-[#697181]">Advanced</div>
+                  <div className="text-xs font-black">Chemistry, rivalries and match intel</div>
+                </div>
+                <span className="w-7 h-7 rounded-lg border border-[#2A303B] bg-[#111720] inline-flex items-center justify-center group-open:rotate-180 transition-transform">⌄</span>
+              </summary>
+
+              <div className="border-t border-[#1D222C] p-3 space-y-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                  <Metric label="Lobby Quality" value={String(result.lobbyQuality ?? result.balanceScore) + "%"} tone="text-emerald-400" />
+                  <Metric label="Balance" value={String(result.balanceScore) + "%"} />
+                  <Metric label="Chemistry" value={String(result.chemistryScore) + "%"} />
+                  <Metric label="Freshness" value={String(result.freshnessScore) + "%"} />
+                  <Metric label="Avg Elo Gap" value={teamIntel?.avgEloGap ?? 0} />
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                  {[
+                    ["Alpha", result.chemistryA, teamIntel?.recordA, "text-magma"],
+                    ["Bravo", result.chemistryB, teamIntel?.recordB, "text-[#65D5D3]"],
+                  ].map(([label, chemistry, record, tone]) => (
+                    <div key={label} className="rounded-xl border border-[#222834] bg-[#10151D] p-3">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className={"text-[10px] uppercase tracking-widest font-black " + tone}>{label} chemistry</div>
+                        <div className="text-[9px] text-muted-foreground">
+                          {record?.played ? String(record.wins) + "W " + String(record.losses) + "L" : "No previous lineup"}
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        {(chemistry?.pairs || []).slice(0, 4).map((pair) => (
+                          <div key={label + pair.a.id + pair.b.id} className="flex items-center gap-2 text-[10px]">
+                            <span className="min-w-0 flex-1 truncate">{pair.a.name} + {pair.b.name}</span>
+                            <span className="text-muted-foreground">{pair.matchesTogether} together</span>
+                            <span className="font-mono font-black">{pair.score}%</span>
+                          </div>
+                        ))}
+                        {!chemistry?.pairs?.length && (
+                          <div className="text-[10px] text-muted-foreground">Not enough duo data yet.</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="rounded-xl border border-[#2A2520] bg-[#120F0D] p-3">
+                  <div className="text-[10px] uppercase tracking-widest text-[#8E7662] mb-2">
+                    Cross-team rivalries
+                  </div>
+                  {teamIntel?.rivalries?.length ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
+                      {teamIntel.rivalries.map((row) => (
+                        <div key={row.key} className="rounded-lg border border-[#2B251F] bg-black/10 px-2.5 py-2 text-[10px]">
+                          <div className="font-semibold truncate">
+                            {contextualPlayerMap[row.playerAId]?.name || "Player"} vs {contextualPlayerMap[row.playerBId]?.name || "Player"}
+                          </div>
+                          <div className="text-muted-foreground mt-0.5">
+                            H2H {row.playerAWins}-{row.playerBWins} · {row.meetings} meetings
+                            {row.currentStreak > 1 ? " · streak " + row.currentStreak : ""}
+                            {row.moneyVolume > 0 ? " · €" + Number(row.moneyVolume).toFixed(0) + " volume" : ""}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-[10px] text-muted-foreground">No meaningful rivalry history yet.</div>
+                  )}
+                </div>
+
+                {(result.why || []).length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {(result.why || []).map((reason) => (
+                      <div key={reason} className="rounded-lg border border-[#202631] bg-[#10151D] px-2.5 py-2 text-[10px] text-muted-foreground">
+                        {reason}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </details>
+
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 mt-5">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setResult(null);
+                  setWizardStep(3);
+                }}
+                className="h-10 px-3 border border-[#2A303B]"
+              >
+                <ArrowLeft size={15} className="mr-1.5" />
+                Back to lobby
+              </Button>
+
+              <Button
+                type="button"
+                onClick={() => void confirmMatch()}
+                disabled={!canConfirm || confirmBusy}
+                className="h-11 px-6 bg-magma hover:bg-[#ff3c4c] text-white font-black rounded-xl"
+                title={
+                  canConfirm
+                    ? ""
+                    : !mapPoolConfigured
+                      ? "Competitive map pool is not configured for this setup"
+                      : !manualMapSelectionValid
+                        ? "Fix the manual map rotation"
+                        : "Only the Mucho8s creator or Admin can confirm"
+                }
+              >
+                <Check size={16} className="mr-2" />
+                {confirmBusy ? "Confirming..." : "Confirm Mucho8s"}
+              </Button>
+            </div>
+
+            {!canConfirm && (
+              <div className="text-[10px] text-muted-foreground text-center mt-2">
+                {!mapPoolConfigured
+                  ? "This game/mode does not have enough competitive maps for BO" + bestOf + "."
+                  : !manualMapSelectionValid
+                    ? "The selected manual map rotation is not valid for this lobby format."
+                    : "Only the match creator or Admin can confirm this Mucho8s."}
               </div>
             )}
           </div>
         )}
       </section>
-
-      {game && matchMode && (
-        <section className="m8-panel rounded-[22px] p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-black text-sm">2</div>
-            <div>
-              <div className="brand-kicker">Teams</div>
-              <h3 className="font-display text-xl font-black">Choose the team method</h3>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-            {[
-              {
-                key: "auto",
-                title: "Auto Balance",
-                text: "System creates the best split for the selected priority.",
-                icon: Scale,
-              },
-              {
-                key: "draft",
-                title: "Captain Draft",
-                text: "Two draft captains pick the lobby with a snake order.",
-                icon: Crown,
-              },
-              {
-                key: "manual",
-                title: "Manual",
-                text: "Build Alpha and Bravo yourself with full control.",
-                icon: UsersRound,
-              },
-            ].map(({ key, title, text, icon: Icon }) => {
-              const active = teamMethod === key;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => changeTeamMethod(key)}
-                  aria-pressed={active}
-                  className={`rounded-xl border p-2.5 text-left transition-all ${
-                    active
-                      ? "bg-white/[0.055] border-white/20 shadow-[inset_0_0_0_1px_rgba(255,255,255,.03)]"
-                      : "bg-[#0F1218] border-[#222834] hover:border-[#394150]"
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span
-                      className={`w-8 h-8 rounded-lg border flex items-center justify-center ${
-                        active
-                          ? "bg-white text-black border-white"
-                          : "bg-[#151923] border-[#2A303B] text-[#9AA2AF]"
-                      }`}
-                    >
-                      <Icon size={16} />
-                    </span>
-                    <div>
-                      <div className={`text-sm font-black ${active ? "text-white" : "text-[#C2C8D1]"}`}>
-                        {title}
-                      </div>
-                      <div className="text-[9px] text-[#697181] mt-0.5 leading-3.5">
-                        {text}
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {teamMethod === "auto" && (
-            <div className="mt-3 rounded-xl border border-[#222834] bg-[#0F1218] p-3">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                  <div className="text-[10px] uppercase tracking-[0.16em] text-[#697181]">
-                    Balance priority
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Choose what the auto builder should value most.
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-1.5">
-                  {[
-                    ["elo", "Elo"],
-                    ["chemistry", "Chemistry"],
-                    ["mixed", "Mixed"],
-                  ].map(([key, label]) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => {
-                        setAutoPriority(key);
-                        setResult(null);
-                      }}
-                      className={`h-9 px-3 rounded-lg border text-[10px] font-black transition-all ${
-                        autoPriority === key
-                          ? "bg-white text-black border-white"
-                          : "bg-[#151923] border-[#2A303B] text-[#AAB1BE] hover:border-[#3A424F]"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {teamMethod === "draft" && (
-            <div className="mt-3 rounded-xl border border-[#222834] bg-[#0F1218] px-3 py-2.5 flex items-center justify-between gap-3">
-              <div className="text-xs text-muted-foreground">
-                Snake order <span className="text-white font-mono font-black ml-1">A → B → B → A</span>
-              </div>
-              <span className="text-[9px] uppercase tracking-widest text-[#D5A33A]">
-                Best for 3v3 / 4v4
-              </span>
-            </div>
-          )}
-        </section>
-      )}
-
-      </div>
-
-      {game && matchMode && (
-        <section className="m8-panel rounded-[22px] p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-black text-sm">3</div>
-              <div>
-                <div className="brand-kicker">Lobby</div>
-                <h3 className="font-display text-xl font-black">Select players</h3>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {inferredFormat && (
-                <span className="m8-pill text-emerald-400 border-emerald-500/25">
-                  {inferredFormat}
-                </span>
-              )}
-              <span className="font-mono font-black text-[#D5A33A]">{selectedCount}/8</span>
-            </div>
-          </div>
-
-          <div className="rounded-xl bg-[#0F1218] border border-[#222834] px-3 py-2 mb-2 text-[11px] text-muted-foreground flex items-center justify-between gap-3">
-            <span>
-              {validLobby
-                ? `${inferredFormat} detected automatically. Add more players to move to the next format.`
-                : nextSize
-                  ? `Select ${nextSize - selectedCount} more player${nextSize - selectedCount === 1 ? "" : "s"} for ${formatForCount(nextSize)}.`
-                  : "Maximum lobby size reached."}
-            </span>
-            <UsersRound size={16} className="shrink-0" />
-          </div>
-
-          <div className="relative mb-2">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search players..."
-              className="pl-9 bg-[#0F1218] border-[#222834] rounded-xl"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-1.5 max-h-[300px] overflow-y-auto pr-1">
-            {filtered.map((player) => {
-              const active = selected.includes(player.id);
-              return (
-                <button
-                  type="button"
-                  key={player.id}
-                  onClick={() => togglePlayer(player.id)}
-                  className={`flex items-center gap-2.5 rounded-xl border px-2.5 py-2 text-left transition-all ${
-                    active
-                      ? "bg-white/[0.05] border-[#4A5362]"
-                      : "bg-[#0F1218] border-[#222834] hover:border-[#343B48]"
-                  } ${merdaSurfaceClass(player.merdaCount)}`}
-                >
-                  <span className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${
-                    active ? "bg-magma border-magma" : "border-[#343B48]"
-                  }`}>
-                    {active && <Check size={13} />}
-                  </span>
-                  <PlayerAvatar
-                    name={player.name}
-                    elo={player.currentElo}
-                    size={30}
-                    avatarUrl={playerAvatars[player.id]}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="font-semibold truncate flex items-center gap-2">
-                      <span className="truncate">{player.name}</span>
-                      <MerdaBadge count={player.merdaCount} compact />
-                      {onlinePlayerIds.has(String(player.id)) && (
-                        <span
-                          className="w-2 h-2 rounded-full bg-emerald-400 shrink-0"
-                          title="Online"
-                          aria-label="Online"
-                        />
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {player.currentElo} Elo
-                      {onlinePlayerIds.has(String(player.id)) ? " · Online" : ""}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {teamMethod === "manual" && validLobby && (
-            <div className="mt-4 pt-4 border-t border-[#222834]">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <div>
-                  <div className="brand-kicker mb-1">Manual split</div>
-                  <div className="text-sm font-bold">Assign {perTeam} players to each team</div>
-                </div>
-                <div className="font-mono text-xs text-muted-foreground">
-                  A {manualA.length}/{perTeam} · B {manualB.length}/{perTeam}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {selected.map((id) => {
-                  const player = contextualPlayerMap[id];
-                  if (!player) return null;
-                  const inA = manualA.includes(id);
-                  const inB = manualB.includes(id);
-
-                  return (
-                    <div key={id} className="flex items-center gap-3 rounded-xl bg-[#0F1218] border border-[#222834] p-2.5">
-                      <PlayerAvatar
-                        name={player.name}
-                        elo={player.currentElo}
-                        size={32}
-                        avatarUrl={playerAvatars[player.id]}
-                      />
-                      <span className="font-semibold text-sm truncate flex-1">{player.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => assignManual(id, "A")}
-                        className={`w-9 h-9 rounded-lg border text-xs font-black ${
-                          inA
-                            ? "bg-magma border-magma text-white"
-                            : "border-[#343B48] text-muted-foreground"
-                        }`}
-                      >
-                        A
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => assignManual(id, "B")}
-                        className={`w-9 h-9 rounded-lg border text-xs font-black ${
-                          inB
-                            ? "bg-[#65D5D3] border-[#65D5D3] text-black"
-                            : "border-[#343B48] text-muted-foreground"
-                        }`}
-                      >
-                        B
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {teamMethod === "draft" && validLobby && (
-            <div className="mt-4 pt-4 border-t border-[#222834]">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
-                <div>
-                  <div className="brand-kicker mb-1">Captain Draft</div>
-                  <div className="text-sm font-bold">
-                    {draftStarted ? "Draft the teams" : "Choose the two draft captains"}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    disabled={draftStarted}
-                    onClick={() => changeDraftCaptainMode("auto")}
-                    className={`h-8 px-3 rounded-lg border text-[10px] font-black ${
-                      draftCaptainMode === "auto"
-                        ? "bg-white text-black border-white"
-                        : "bg-[#151923] border-[#2A303B] text-[#AAB1BE]"
-                    } disabled:opacity-40`}
-                  >
-                    Auto Captains
-                  </button>
-                  <button
-                    type="button"
-                    disabled={draftStarted}
-                    onClick={() => changeDraftCaptainMode("manual")}
-                    className={`h-8 px-3 rounded-lg border text-[10px] font-black ${
-                      draftCaptainMode === "manual"
-                        ? "bg-white text-black border-white"
-                        : "bg-[#151923] border-[#2A303B] text-[#AAB1BE]"
-                    } disabled:opacity-40`}
-                  >
-                    Manual
-                  </button>
-                </div>
-              </div>
-
-              {!draftStarted ? (
-                <>
-                  {draftCaptainMode === "auto" ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {[
-                        ["A", autoDraftCaptains[0]],
-                        ["B", autoDraftCaptains[1]],
-                      ].map(([side, captain]) => (
-                        <div
-                          key={side}
-                          className="rounded-xl border border-[#222834] bg-[#0F1218] p-3 flex items-center gap-3"
-                        >
-                          <span className={`w-8 h-8 rounded-lg border inline-flex items-center justify-center font-black text-xs ${
-                            side === "A"
-                              ? "border-magma/25 bg-magma/[0.06] text-magma"
-                              : "border-[#65D5D3]/25 bg-[#65D5D3]/[0.05] text-[#65D5D3]"
-                          }`}>
-                            {side}
-                          </span>
-                          {captain ? (
-                            <>
-                              <PlayerAvatar
-                                name={captain.name}
-                                elo={captain.currentElo}
-                                size={34}
-                                avatarUrl={playerAvatars[captain.id]}
-                              />
-                              <div className="min-w-0 flex-1">
-                                <div className="font-semibold text-sm truncate flex items-center gap-1.5">
-                                  <Crown size={12} className="text-[#D5A33A]" />
-                                  {captain.name}
-                                </div>
-                                <div className="text-[10px] text-muted-foreground mt-0.5">
-                                  {captain.currentElo} Elo · auto selected
-                                </div>
-                              </div>
-                            </>
-                          ) : (
-                            <div className="text-xs text-muted-foreground">
-                              Select the full lobby first.
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {[
-                        ["A", draftCaptainA, setDraftCaptainA, draftCaptainB],
-                        ["B", draftCaptainB, setDraftCaptainB, draftCaptainA],
-                      ].map(([side, value, setter, other]) => (
-                        <label
-                          key={side}
-                          className="rounded-xl border border-[#222834] bg-[#0F1218] p-3"
-                        >
-                          <div className="text-[9px] uppercase tracking-widest text-[#697181] mb-2">
-                            {side === "A" ? "Alpha" : "Bravo"} Draft Captain
-                          </div>
-                          <select
-                            value={value}
-                            onChange={(event) => {
-                              setter(event.target.value);
-                              clearDraftProgress();
-                              setResult(null);
-                            }}
-                            className="h-10 w-full rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm"
-                          >
-                            <option value="">Choose captain</option>
-                            {selected.map((id) => {
-                              const player = contextualPlayerMap[id];
-                              if (!player || id === other) return null;
-                              return (
-                                <option key={id} value={id}>
-                                  {player.name} · {player.currentElo} Elo
-                                </option>
-                              );
-                            })}
-                          </select>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-
-                  <Button
-                    type="button"
-                    onClick={startCaptainDraft}
-                    disabled={!resolvedDraftCaptainA || !resolvedDraftCaptainB}
-                    className="w-full h-11 mt-3 bg-[#D5A33A] hover:bg-[#e1b34b] text-black font-black rounded-xl"
-                  >
-                    <Crown size={15} className="mr-2" />
-                    Start Snake Draft
-                  </Button>
-                </>
-              ) : (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_48px_minmax(0,1fr)] gap-3 items-stretch">
-
-                    <div
-                      className={`min-w-0 rounded-xl border p-3 ${
-                        currentDraftSide === "A"
-                          ? "border-magma/35 bg-magma/[0.04]"
-                          : "border-[#222834] bg-[#0F1218]"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="text-[10px] uppercase tracking-widest font-black text-magma">
-                          Alpha
-                        </span>
-                        <span className="font-mono text-[10px] text-muted-foreground">
-                          {draftTeamA.length}/{perTeam}
-                        </span>
-                      </div>
-                      <div className="space-y-1.5">
-                        {draftTeamA.map((id) => {
-                          const player = contextualPlayerMap[id];
-                          return (
-                            <div
-                              key={id}
-                              className="h-10 min-w-0 px-2 rounded-lg border border-[#202631] bg-[#12161D] flex items-center gap-2"
-                            >
-                              <PlayerAvatar
-                                name={player?.name || "Player"}
-                                elo={player?.currentElo || 1000}
-                                size={26}
-                                avatarUrl={playerAvatars[id]}
-                              />
-                              <span className="text-xs font-semibold truncate flex-1 min-w-0">
-                                {player?.name || "Player"}
-                              </span>
-                              {id === resolvedDraftCaptainA && (
-                                <Crown size={11} className="text-[#D5A33A] shrink-0" />
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="hidden lg:flex items-center justify-center">
-                      <div className="w-10 h-10 rounded-full border border-[#2A303B] bg-[#0F1218] flex items-center justify-center font-display font-black text-xs text-muted-foreground">
-                        VS
-                      </div>
-                    </div>
-
-
-                    <div
-                      className={`min-w-0 rounded-xl border p-3 ${
-                        currentDraftSide === "B"
-                          ? "border-[#65D5D3]/35 bg-[#65D5D3]/[0.035]"
-                          : "border-[#222834] bg-[#0F1218]"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="text-[10px] uppercase tracking-widest font-black text-[#65D5D3]">
-                          Bravo
-                        </span>
-                        <span className="font-mono text-[10px] text-muted-foreground">
-                          {draftTeamB.length}/{perTeam}
-                        </span>
-                      </div>
-                      <div className="space-y-1.5">
-                        {draftTeamB.map((id) => {
-                          const player = contextualPlayerMap[id];
-                          return (
-                            <div
-                              key={id}
-                              className="h-10 min-w-0 px-2 rounded-lg border border-[#202631] bg-[#12161D] flex items-center gap-2"
-                            >
-                              <PlayerAvatar
-                                name={player?.name || "Player"}
-                                elo={player?.currentElo || 1000}
-                                size={26}
-                                avatarUrl={playerAvatars[id]}
-                              />
-                              <span className="text-xs font-semibold truncate flex-1 min-w-0">
-                                {player?.name || "Player"}
-                              </span>
-                              {id === resolvedDraftCaptainB && (
-                                <Crown size={11} className="text-[#D5A33A] shrink-0" />
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  {!draftComplete && (
-                    <>
-                      <div className={`rounded-xl border px-3 py-2.5 flex items-center justify-between gap-3 ${
-                        currentDraftSide === "A"
-                          ? "border-magma/25 bg-magma/[0.04]"
-                          : "border-[#65D5D3]/25 bg-[#65D5D3]/[0.035]"
-                      }`}>
-                        <div>
-                          <div className="text-[9px] uppercase tracking-widest text-[#697181]">
-                            Pick {draftPickIndex + 1}
-                          </div>
-                          <div className="text-sm font-black mt-0.5">
-                            {currentDraftSide === "A" ? "Alpha" : "Bravo"} picks now
-                          </div>
-                        </div>
-                        <div className="font-mono text-[10px] text-muted-foreground">
-                          A → B → B → A
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                        {draftAvailable.map((id) => {
-                          const player = contextualPlayerMap[id];
-                          if (!player) return null;
-                          return (
-                            <button
-                              key={id}
-                              type="button"
-                              onClick={() => pickDraftPlayer(id)}
-                              className="rounded-xl border border-[#222834] bg-[#0F1218] p-2.5 flex items-center gap-2.5 text-left hover:border-[#3A424F] transition-all"
-                            >
-                              <PlayerAvatar
-                                name={player.name}
-                                elo={player.currentElo}
-                                size={30}
-                                avatarUrl={playerAvatars[id]}
-                              />
-                              <div className="min-w-0 flex-1">
-                                <div className="font-semibold text-xs truncate">
-                                  {player.name}
-                                </div>
-                                <div className="font-mono text-[10px] text-muted-foreground mt-0.5">
-                                  {player.currentElo} Elo
-                                </div>
-                              </div>
-                              <span className="text-[10px] font-black text-[#D5A33A]">
-                                PICK
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={clearDraftProgress}
-                    className="h-9 px-3 rounded-lg border border-[#2A303B] bg-[#151923] text-[10px] font-bold text-muted-foreground hover:text-white"
-                  >
-                    <RotateCcw size={12} className="inline mr-1.5" />
-                    Restart Draft
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {teamMethod !== "draft" && (
-            <Button
-              onClick={generateTeams}
-              disabled={
-                !validLobby ||
-                (teamMethod === "manual" && (manualA.length !== perTeam || manualB.length !== perTeam))
-              }
-              className="w-full h-12 mt-4 bg-magma hover:bg-[#ff3c4c] font-black rounded-xl"
-            >
-              <Swords size={17} className="mr-2" />
-              {validLobby
-                ? teamMethod === "auto"
-                  ? `Create ${inferredFormat} · ${autoPriority === "elo" ? "Elo" : autoPriority === "chemistry" ? "Chemistry" : "Mixed"}`
-                  : `Create ${inferredFormat} Teams`
-                : "Select 4, 6 or 8 players"}
-            </Button>
-          )}
-        </section>
-      )}
-
-      {result && (
-        <section className="m8-panel rounded-[22px] p-4">
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3 mb-3">
-            <div>
-              <div className="brand-kicker mb-1">Ready</div>
-              <h3 className="font-display text-2xl font-black">Alpha vs Bravo</h3>
-              <p className="text-xs text-muted-foreground mt-1">
-                Teams ready. Review balance, Elo and chemistry. BO3 maps are generated only after confirmation.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 w-full lg:w-auto lg:min-w-[620px]">
-              <Metric label="Balance" value={`${result.balanceScore}%`} tone="text-emerald-400" />
-              <Metric label="Alpha Elo" value={averageElo(result.teamA)} />
-              <Metric label="Bravo Elo" value={averageElo(result.teamB)} />
-              <Metric label="Alpha Chem" value={`${result.chemistryA.score}%`} />
-              <Metric label="Bravo Chem" value={`${result.chemistryB.score}%`} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-3 lg:items-center">
-            <div className="rounded-2xl bg-magma/[0.04] border border-magma/15 p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="text-xs uppercase tracking-widest text-magma font-black">Alpha</div>
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {result?.draftCaptains?.A
-                    ? `Draft Captain · ${contextualPlayerMap[result.draftCaptains.A]?.name || "Player"}`
-                    : captainSide === "A" && matchCaptain
-                      ? `Captain · ${matchCaptain.name}`
-                      : ""}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {result.teamA.map((player) => (
-                  <div key={player.id} className={`flex items-center gap-3 rounded-xl bg-[#0F1218] border border-[#1D222C] p-3 ${merdaSurfaceClass(player.merdaCount)}`}>
-                    <PlayerAvatar name={player.name} elo={player.currentElo} size={36} avatarUrl={playerAvatars[player.id]} />
-                    <div className="font-semibold truncate flex-1 flex items-center gap-2">
-                      <span className="truncate">{player.name}</span>
-                      <MerdaBadge count={player.merdaCount} compact />
-                      {result?.draftCaptains?.A === player.id && (
-                        <span className="text-[9px] uppercase tracking-wider text-[#D5A33A] inline-flex items-center gap-1">
-                          <Crown size={11} /> Draft
-                        </span>
-                      )}
-                      {player.id === matchCaptainId && (
-                        <span className="text-[9px] uppercase tracking-wider text-emerald-400">
-                          Creator
-                        </span>
-                      )}
-                    </div>
-                    <span className="font-mono text-xs text-muted-foreground">{player.currentElo}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="hidden lg:flex w-12 h-12 rounded-full border border-[#2A303B] bg-[#0F1218] items-center justify-center font-display font-black text-muted-foreground">
-              VS
-            </div>
-
-            <div className="rounded-2xl bg-[#65D5D3]/[0.035] border border-[#65D5D3]/15 p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="text-xs uppercase tracking-widest text-[#65D5D3] font-black">Bravo</div>
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {result?.draftCaptains?.B
-                    ? `Draft Captain · ${contextualPlayerMap[result.draftCaptains.B]?.name || "Player"}`
-                    : captainSide === "B" && matchCaptain
-                      ? `Captain · ${matchCaptain.name}`
-                      : ""}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {result.teamB.map((player) => (
-                  <div key={player.id} className={`flex items-center gap-3 rounded-xl bg-[#0F1218] border border-[#1D222C] p-3 ${merdaSurfaceClass(player.merdaCount)}`}>
-                    <PlayerAvatar name={player.name} elo={player.currentElo} size={36} avatarUrl={playerAvatars[player.id]} />
-                    <div className="font-semibold truncate flex-1 flex items-center gap-2">
-                      <span className="truncate">{player.name}</span>
-                      <MerdaBadge count={player.merdaCount} compact />
-                      {result?.draftCaptains?.B === player.id && (
-                        <span className="text-[9px] uppercase tracking-wider text-[#D5A33A] inline-flex items-center gap-1">
-                          <Crown size={11} /> Draft
-                        </span>
-                      )}
-                      {player.id === matchCaptainId && (
-                        <span className="text-[9px] uppercase tracking-wider text-emerald-400">
-                          Creator
-                        </span>
-                      )}
-                    </div>
-                    <span className="font-mono text-xs text-muted-foreground">{player.currentElo}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <details className="mt-4 rounded-2xl border border-[#222834] bg-[#0B0F15] overflow-hidden group">
-            <summary className="list-none cursor-pointer px-4 py-3 flex items-center justify-between gap-3 hover:bg-white/[0.025] transition-colors">
-              <div>
-                <div className="text-[10px] uppercase tracking-[0.16em] text-[#697181]">Advanced</div>
-                <div className="font-display font-black text-sm">Team Intel · Chemistry & Rivalries</div>
-              </div>
-              <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#697181]">
-                <span className="hidden sm:inline">Open analysis</span>
-                <span className="w-7 h-7 rounded-lg border border-[#2A303B] bg-[#111720] inline-flex items-center justify-center group-open:rotate-180 transition-transform">⌄</span>
-              </div>
-            </summary>
-
-            <div className="border-t border-[#1D222C] p-4 space-y-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2">
-                <Metric label="Lobby Quality" value={String(result.lobbyQuality ?? result.balanceScore) + "%"} tone="text-emerald-400" />
-                <Metric label="Balance" value={String(result.balanceScore) + "%"} />
-                <Metric label="Chemistry" value={String(result.chemistryScore) + "%"} />
-                <Metric label="Freshness" value={String(result.freshnessScore) + "%"} />
-                <Metric label="Avg Elo Gap" value={teamIntel?.avgEloGap ?? 0} />
-              </div>
-
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-                {[
-                  ["Alpha", result.teamA, result.chemistryA, teamIntel?.recordA, "text-magma"],
-                  ["Bravo", result.teamB, result.chemistryB, teamIntel?.recordB, "text-[#65D5D3]"],
-                ].map(([label, team, chemistry, record, tone]) => (
-                  <div key={label} className="rounded-xl border border-[#222834] bg-[#0F1218] p-3.5">
-                    <div className="flex items-center justify-between gap-3 mb-3">
-                      <div className={"text-[11px] uppercase tracking-widest font-black " + tone}>{label} chemistry</div>
-                      <div className="text-[10px] text-muted-foreground">
-                        Exact lineup · {record?.played ? String(record.wins) + "W " + String(record.losses) + "L" : "No previous matches"}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      {(chemistry?.pairs || []).slice(0, 4).map((pair) => (
-                        <div key={label + "-" + pair.a.id + "-" + pair.b.id} className="flex items-center gap-2 text-xs">
-                          <span className="min-w-0 flex-1 truncate">{pair.a.name} + {pair.b.name}</span>
-                          <span className="text-[10px] text-muted-foreground">{pair.matchesTogether} together</span>
-                          <span className="font-mono font-black">{pair.score}%</span>
-                        </div>
-                      ))}
-                      {!chemistry?.pairs?.length && (
-                        <div className="text-xs text-muted-foreground">Not enough duo data yet.</div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="rounded-xl border border-[#2A2520] bg-[#120F0D] p-3.5">
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <div>
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-[#8E7662]">Rivalry Heat</div>
-                    <div className="font-display font-black text-sm">Cross-team history</div>
-                  </div>
-                  <span className="text-[10px] text-muted-foreground">{teamIntel?.rivalries?.length || 0} active rivalries</span>
-                </div>
-
-                {teamIntel?.rivalries?.length ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {teamIntel.rivalries.map((row) => {
-                      const left = contextualPlayerMap[row.playerAId];
-                      const right = contextualPlayerMap[row.playerBId];
-                      return (
-                        <div key={row.key} className="rounded-lg border border-[#2B251F] bg-black/10 px-3 py-2.5">
-                          <div className="flex items-center justify-between gap-2 text-xs">
-                            <span className="font-semibold truncate">{left?.name || "Player"} vs {right?.name || "Player"}</span>
-                            <span className="font-mono font-black text-[#D5A33A]">{row.meetings}x</span>
-                          </div>
-                          <div className="text-[10px] text-muted-foreground mt-1">
-                            H2H {row.playerAWins}-{row.playerBWins}
-                            {row.currentStreak > 1 ? " · streak " + row.currentStreak : ""}
-                            {row.moneyVolume > 0 ? " · €" + Number(row.moneyVolume).toFixed(0) + " volume" : ""}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-xs text-muted-foreground">No meaningful cross-team rivalry history yet.</div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {(result.why || []).map((reason) => (
-                  <div key={reason} className="rounded-lg border border-[#202631] bg-[#0F1218] px-3 py-2 text-[11px] text-muted-foreground">
-                    {reason}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </details>
-
-          <div className="mt-5">
-            <Button
-              onClick={() => void confirmMatch()}
-              disabled={!canConfirm || confirmBusy}
-              className="w-full h-11 bg-magma hover:bg-[#ff3c4c] text-white font-semibold"
-              title={canConfirm ? "" : !mapPoolConfigured ? "MW4 competitive map pool is not configured yet" : "Only the Mucho8s creator or Admin can confirm"}
-            >
-              <Check size={16} className="mr-2" />
-              {confirmBusy ? "Confirming..." : "Confirm Mucho8s"}
-            </Button>
-          </div>
-
-          {!canConfirm && (
-            <div className="text-[11px] text-muted-foreground text-center mt-2">
-              {!mapPoolConfigured
-                ? "Add the MW4 competitive map pool before confirming this BO3."
-                : "Mucho8s confirmation is limited to the creator or Admin."}
-            </div>
-          )}
-        </section>
-      )}
-
     </div>
   );
 }
