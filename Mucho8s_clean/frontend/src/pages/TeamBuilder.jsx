@@ -114,6 +114,8 @@ export default function TeamBuilder() {
     challenges,
     playerAvatars,
     discordPlayer,
+    discordSession,
+    signInWithDiscord,
     dashboardData,
     isAdmin,
     createLiveMatch,
@@ -622,6 +624,52 @@ export default function TeamBuilder() {
       draftTeamsByPriority(selectedPlayers, context.matches, autoPriority)
     );
   };
+
+  if (!isAdmin && !discordSession) {
+    return (
+      <div className="m8-page-stack gap-3">
+        <section className="m8-panel rounded-[22px] p-8 sm:p-10 max-w-2xl mx-auto w-full text-center">
+          <div className="w-14 h-14 rounded-2xl border border-magma/25 bg-magma/[0.06] flex items-center justify-center mx-auto">
+            <Gamepad2 size={25} className="text-magma" />
+          </div>
+          <div className="brand-kicker mt-5 mb-1 text-magma">Play · Mucho8s</div>
+          <h1 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.035em]">
+            Connect Discord to play
+          </h1>
+          <p className="text-sm text-muted-foreground mt-2 max-w-lg mx-auto">
+            You can browse Mucho8s as a guest, but creating a live match requires a Discord account linked to an active player.
+          </p>
+          <Button
+            type="button"
+            onClick={() => void signInWithDiscord()}
+            className="mt-6 h-11 px-6 bg-magma hover:bg-[#ff3c4c] text-white font-black rounded-xl"
+            data-testid="team-builder-discord-gate"
+          >
+            CONNECT DISCORD
+          </Button>
+        </section>
+      </div>
+    );
+  }
+
+  if (!isAdmin && discordSession && !discordPlayer) {
+    return (
+      <div className="m8-page-stack gap-3">
+        <section className="m8-panel rounded-[22px] p-8 sm:p-10 max-w-2xl mx-auto w-full text-center">
+          <div className="w-14 h-14 rounded-2xl border border-[#D5A33A]/25 bg-[#D5A33A]/[0.06] flex items-center justify-center mx-auto">
+            <UsersRound size={25} className="text-[#D5A33A]" />
+          </div>
+          <div className="brand-kicker mt-5 mb-1 text-[#D5A33A]">Discord connected</div>
+          <h1 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.035em]">
+            Link your player to play
+          </h1>
+          <p className="text-sm text-muted-foreground mt-2 max-w-lg mx-auto">
+            Complete the player-link request shown on screen. Mucho8s unlocks as soon as your Discord account is linked to an active player.
+          </p>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="m8-page-stack gap-3">
