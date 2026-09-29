@@ -306,13 +306,39 @@ export default function AdminPanel() {
     [discordAccounts]
   );
 
+  const playerSetupStats = useMemo(() => {
+    const stats = {
+      all: players.length,
+      complete: 0,
+      missingDiscord: 0,
+      missingPayment: 0,
+      pending: pendingOrUnlinkedAccounts.filter((account) => account.player_request_status === "pending").length,
+    };
+
+    players.forEach((player) => {
+      const account = playerAccountByPlayerId.get(String(player.id));
+      if (!account) {
+        stats.missingDiscord += 1;
+        return;
+      }
+
+      const hasPayPal = Boolean(String(account?.paypal_url || "").trim());
+      const hasRevolut = Boolean(String(account?.revolut_url || "").trim());
+
+      if (hasPayPal || hasRevolut) stats.complete += 1;
+      else stats.missingPayment += 1;
+    });
+
+    return stats;
+  }, [players, playerAccountByPlayerId, pendingOrUnlinkedAccounts]);
+
   const filteredAdminPlayers = useMemo(() => {
     return players.filter((player) => {
       const account = playerAccountByPlayerId.get(String(player.id));
       const hasPayPal = Boolean(String(account?.paypal_url || "").trim());
       const hasRevolut = Boolean(String(account?.revolut_url || "").trim());
 
-      if (playerAdminFilter === "linked") return Boolean(account);
+      if (playerAdminFilter === "complete") return Boolean(account) && (hasPayPal || hasRevolut);
       if (playerAdminFilter === "unlinked") return !account;
       if (playerAdminFilter === "no-payment") return Boolean(account) && !hasPayPal && !hasRevolut;
       if (playerAdminFilter === "pending") return false;
@@ -1959,14 +1985,11 @@ export default function AdminPanel() {
 
           <div className="flex flex-wrap items-center gap-2 mb-4">
             {[
-              ["all", "All", players.length],
-              ["linked", "Discord linked", players.filter((p) => playerAccountByPlayerId.has(String(p.id))).length],
-              ["unlinked", "No Discord", players.filter((p) => !playerAccountByPlayerId.has(String(p.id))).length],
-              ["pending", "Pending requests", pendingOrUnlinkedAccounts.filter((a) => a.player_request_status === "pending").length],
-              ["no-payment", "No payment", players.filter((p) => {
-                const a = playerAccountByPlayerId.get(String(p.id));
-                return a && !String(a.paypal_url || "").trim() && !String(a.revolut_url || "").trim();
-              }).length],
+              ["all", "All", playerSetupStats.all],
+              ["complete", "Complete", playerSetupStats.complete],
+              ["unlinked", "Missing Discord", playerSetupStats.missingDiscord],
+              ["no-payment", "Missing payment", playerSetupStats.missingPayment],
+              ["pending", "Pending requests", playerSetupStats.pending],
             ].map(([key, label, count]) => (
               <button
                 key={key}
