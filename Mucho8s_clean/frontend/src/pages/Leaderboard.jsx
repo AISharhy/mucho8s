@@ -71,13 +71,17 @@ export default function Leaderboard() {
       winnerIds.forEach((playerId) => {
         if (!playerId) return;
 
-        const pairing = pairings.find(
-          (pair) =>
-            pair?.playerAId === playerId ||
-            pair?.playerBId === playerId
-        );
+        const amount = pairings
+          .filter(
+            (pair) =>
+              pair?.playerAId === playerId ||
+              pair?.playerBId === playerId
+          )
+          .reduce(
+            (sum, pair) => sum + Math.max(0, Number(pair?.amount) || 0),
+            0
+          );
 
-        const amount = Math.max(0, Number(pairing?.amount) || 0);
         if (amount > 0) ensure(playerId).mucho8sWon += amount;
       });
     });
