@@ -13,18 +13,67 @@ import {
 } from "@/lib/chemistry";
 import { buildRivalries } from "@/lib/rivalries";
 import {
+  ArrowLeft,
+  ArrowRight,
   Check,
   Crown,
   Gamepad2,
+  MapPinned,
   RotateCcw,
   Scale,
   Search,
+  Shuffle,
   Swords,
   UsersRound,
 } from "lucide-react";
 import { toast } from "sonner";
 
 const MATCH_MODES = ["Hardpoint", "Search & Destroy"];
+
+const COMPETITIVE_MAP_POOLS = {
+  BO7: {
+    "Search & Destroy": ["Den", "Frequency", "Gridlock", "Raid", "Scar", "Standoff", "Hacienda"],
+    Hardpoint: ["Colossus", "Den", "Gridlock", "Frequency", "Scar", "Hacienda"],
+  },
+  BO6: {
+    "Search & Destroy": ["Protocol", "Rewind", "Skyline", "Vault", "Hacienda", "Firing Range", "Fringe"],
+    Hardpoint: ["Hacienda", "Protocol", "Red Card", "Skyline", "Vault"],
+  },
+  MW3: {
+    "Search & Destroy": ["Highrise", "Invasion", "Karachi", "Rio", "6 Star", "Scrapyard"],
+    Hardpoint: ["Sub Base", "Vista", "6 Star", "Karachi", "Rio"],
+  },
+  VG: {
+    "Search & Destroy": ["Tuscan", "Berlin", "Bocage", "USS Texas", "Demyansk"],
+    Hardpoint: ["Tuscan", "Gavutu", "Berlin", "Bocage"],
+  },
+  CW: {
+    "Search & Destroy": ["Checkmate", "Moscow", "Raid", "Express", "Standoff", "Miami"],
+    Hardpoint: ["Apocalypse", "Checkmate", "Garrison", "Moscow", "Raid"],
+  },
+  WW2: {
+    Hardpoint: ["Ardennes Forest", "Gibraltar", "London Docks", "Sainte Marie du Mont"],
+    "Search & Destroy": ["Ardennes Forest", "London Docks", "Sainte Marie du Mont", "USS Texas"],
+  },
+  BO2: {
+    "Search & Destroy": ["Cargo", "Express", "Raid", "Slums", "Standoff", "Meltdown"],
+    Hardpoint: ["Raid", "Standoff", "Slums", "Yemen"],
+  },
+};
+
+const competitiveMapPool = (game, mode, format = "") => {
+  let pool = [...(COMPETITIVE_MAP_POOLS?.[game]?.[mode] || [])];
+
+  if (game === "MW3" && mode === "Search & Destroy" && format !== "2v2") {
+    pool = pool.filter((map) => map !== "Scrapyard");
+  }
+  if (game === "CW" && mode === "Search & Destroy" && format === "2v2") {
+    pool = pool.filter((map) => map !== "Miami");
+  }
+
+  return [...new Set(pool)];
+};
+
 const VALID_LOBBY_SIZES = [4, 6, 8];
 const SNAKE_DRAFT_ORDER = ["A", "B", "B", "A"];
 
@@ -70,9 +119,12 @@ export default function TeamBuilder() {
     createLiveMatch,
   } = useData();
 
+  const [wizardStep, setWizardStep] = useState(1);
   const [game, setGame] = useState("");
   const [matchMode, setMatchMode] = useState("");
   const [bestOf, setBestOf] = useState(3);
+  const [mapMode, setMapMode] = useState("random");
+  const [manualMaps, setManualMaps] = useState([]);
   const [teamMethod, setTeamMethod] = useState("auto");
   const [autoPriority, setAutoPriority] = useState("elo");
   const [draftCaptainMode, setDraftCaptainMode] = useState("auto");
@@ -94,6 +146,20 @@ export default function TeamBuilder() {
   const validLobby = VALID_LOBBY_SIZES.includes(selectedCount);
   const perTeam = validLobby ? selectedCount / 2 : 0;
   const nextSize = nextLobbySize(selectedCount);
+  const mapPool = useMemo(
+    () => competitiveMapPool(game, matchMode, inferredFormat || "4v4"),
+    [game, matchMode, inferredFormat]
+  );
+  const mapPoolConfigured = mapPool.length >= bestOf;
+  const manualMapSelectionValid =
+    mapMode !== "manual" ||
+    (
+      manualMaps.length === bestOf &&
+      manualMaps.every(Boolean) &&
+      new Set(manualMaps).size === bestOf &&
+      manualMaps.every((map) => mapPool.includes(map))
+    );
+  const setupValid = Boolean(game && matchMode && mapPoolConfigured && manualMapSelectionValid);
 
   const context = useMemo(
     () => computeContextStats(matches, { game: game || "ALL", mode: matchMode || "ALL" }),
@@ -190,8 +256,12 @@ export default function TeamBuilder() {
     : result?.teamB?.some((player) => player.id === matchCaptainId)
       ? "B"
       : "";
-  const mapPoolConfigured = game !== "MW4";
-  const canConfirm = Boolean(result && (isAdmin || matchCaptainId) && mapPoolConfigured);
+  const canConfirm = Boolean(
+    result &&
+    (isAdmin || matchCaptainId) &&
+    mapPoolConfigured &&
+    manualMapSelectionValid
+  );
 
   const teamIntel = useMemo(() => {
     if (!result) return null;
@@ -266,12 +336,50 @@ export default function TeamBuilder() {
   const changeGame = (nextGame) => {
     setGame(nextGame);
     setMatchMode("");
+    setManualMaps([]);
     resetLobby({ keepGame: true });
   };
 
   const changeMatchMode = (nextMode) => {
     setMatchMode(nextMode);
+    setManualMaps([]);
     resetLobby({ keepGame: true });
+  };
+
+  const changeBestOf = (value) => {
+    const next = Number(value) === 5 ? 5 : 3;
+    setBestOf(next);
+    setManualMaps((prev) => prev.slice(0, next));
+    setResult(null);
+  };
+
+  const changeMapMode = (value) => {
+    const next = value === "manual" ? "manual" : "random";
+    setMapMode(next);
+    if (next === "random") setManualMaps([]);
+    setResult(null);
+  };
+
+  const changeManualMap = (index, value) => {
+    setManualMaps((prev) => {
+      const next = Array.from({ length: bestOf }, (_, slot) => prev[slot] || "");
+      next[index] = value;
+      return next;
+    });
+    setResult(null);
+  };
+
+  const startOver = () => {
+    setWizardStep(1);
+    setGame("");
+    setMatchMode("");
+    setBestOf(3);
+    setMapMode("random");
+    setManualMaps([]);
+    setTeamMethod("auto");
+    setAutoPriority("elo");
+    setDraftCaptainMode("auto");
+    resetLobby({ keepGame: false });
   };
 
   const changeTeamMethod = (nextMethod) => {
@@ -417,9 +525,10 @@ export default function TeamBuilder() {
     }
 
     setResult(draft);
+    setWizardStep(4);
 
     toast.success(
-      `${formatForCount(draft.teamA.length + draft.teamB.length)} teams ready · confirm the match to go live`
+      `${formatForCount(draft.teamA.length + draft.teamB.length)} teams ready · review and confirm`
     );
   };
 
@@ -446,13 +555,18 @@ export default function TeamBuilder() {
       mode: matchMode,
       format: formatForCount(result.teamA.length + result.teamB.length),
       bestOf,
+      maps: mapMode === "manual" ? manualMaps : undefined,
       pairings,
     });
     setConfirmBusy(false);
 
     if (!created) return;
 
-    toast.success(`Mucho8s confirmed — BO${bestOf} maps generated`);
+    toast.success(
+      mapMode === "manual"
+        ? `Mucho8s confirmed — manual BO${bestOf} rotation locked`
+        : `Mucho8s confirmed — random BO${bestOf} maps generated`
+    );
     navigate(`/matches/live/${created.id}`);
   };
 
