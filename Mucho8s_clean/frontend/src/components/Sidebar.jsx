@@ -12,7 +12,6 @@ import {
   LogOut,
   Bell,
   Swords,
-  Flame,
   BookOpen,
   Landmark,
   Newspaper,
