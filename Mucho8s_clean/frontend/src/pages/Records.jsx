@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar } from "@/components/shared";
+import { getSeasonAwards } from "@/lib/seasonAwards";
 
 const pairKey = (a, b) => [String(a), String(b)].sort().join("::");
 
@@ -81,7 +82,7 @@ const RecordCard = ({ icon: Icon, label, value, detail, player, avatarUrl, to, t
 );
 
 export default function Records() {
-  const { players, matches, competitionData, playerMap, playerAvatars } = useData();
+  const { players, matches, competitionData, playerMap, playerAvatars, publicChallenges } = useData();
   const archives = Array.isArray(competitionData?.archives) ? competitionData.archives : [];
 
   const data = useMemo(() => {
@@ -121,7 +122,7 @@ export default function Records() {
     const top = (field) => [...leaders].sort((a, b) => Number(b[field] || 0) - Number(a[field] || 0))[0] || null;
 
     const awards = archives.flatMap((season) =>
-      (Array.isArray(season?.awards) ? season.awards : []).map((award) => ({
+      getSeasonAwards(season, publicChallenges).map((award) => ({
         ...award,
         seasonNumber: Number(award.seasonNumber ?? season.season_number ?? 0),
         playerIds: Array.isArray(award.playerIds) ? award.playerIds.map(String) : [],
@@ -168,7 +169,7 @@ export default function Records() {
       rivalry,
       archivedSeasons: archives.length,
     };
-  }, [archives, players, matches, playerMap]);
+  }, [archives, players, matches, playerMap, publicChallenges]);
 
   const resolve = (id) => data.lookup?.[String(id)] || null;
   const linkFor = (id) => playerMap?.[String(id)] ? `/players/${id}` : "/bacheca/records";
