@@ -72,6 +72,7 @@ export default function TeamBuilder() {
 
   const [game, setGame] = useState("");
   const [matchMode, setMatchMode] = useState("");
+  const [bestOf, setBestOf] = useState(3);
   const [teamMethod, setTeamMethod] = useState("auto");
   const [autoPriority, setAutoPriority] = useState("elo");
   const [draftCaptainMode, setDraftCaptainMode] = useState("auto");
@@ -444,13 +445,14 @@ export default function TeamBuilder() {
       game,
       mode: matchMode,
       format: formatForCount(result.teamA.length + result.teamB.length),
+      bestOf,
       pairings,
     });
     setConfirmBusy(false);
 
     if (!created) return;
 
-    toast.success("Mucho8s confirmed — BO3 maps generated");
+    toast.success(`Mucho8s confirmed — BO${bestOf} maps generated`);
     navigate(`/matches/live/${created.id}`);
   };
 
@@ -560,9 +562,41 @@ export default function TeamBuilder() {
                 </button>
               ))}
             </div>
+
+            {matchMode && (
+              <div className="mt-3">
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
+                  Series
+                </div>
+                <div className="grid grid-cols-2 gap-2 max-w-sm" data-testid="team-builder-best-of">
+                  {[3, 5].map((value) => (
+                    <button
+                      type="button"
+                      key={value}
+                      aria-pressed={bestOf === value}
+                      onClick={() => {
+                        setBestOf(value);
+                        setResult(null);
+                      }}
+                      className={`h-10 rounded-lg border text-xs font-black transition-all ${
+                        bestOf === value
+                          ? "bg-[#9146FF] text-white border-[#A96DFF] shadow-[0_0_20px_rgba(145,70,255,0.16)]"
+                          : "bg-[#0F1218] border-[#2B2537] text-[#B9A5D2] hover:border-[#6D4A91] hover:text-white"
+                      }`}
+                    >
+                      BO{value}
+                    </button>
+                  ))}
+                </div>
+                <div className="text-[10px] text-[#697181] mt-1.5">
+                  {bestOf === 5 ? "First to 3 maps" : "First to 2 maps"} · maps are generated automatically.
+                </div>
+              </div>
+            )}
+
             {game === "MW4" && (
               <div className="mt-3 rounded-xl border border-orange-500/20 bg-orange-500/[0.04] px-3 py-2.5 text-[11px] text-orange-300">
-                MW4 BO3 map pool is not configured yet. Teams can still be prepared, but the match cannot go live until its competitive maps are added.
+                MW4 BO{bestOf} map pool is not configured yet. Teams can still be prepared, but the match cannot go live until its competitive maps are added.
               </div>
             )}
           </div>
