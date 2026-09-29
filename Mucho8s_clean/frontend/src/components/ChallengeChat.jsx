@@ -76,7 +76,7 @@ export default function ChallengeChat({ challengeId }) {
 
   return (
     <div
-      className="m8-panel rounded-xl overflow-hidden border-[#242A35]"
+      className="fixed bottom-4 right-4 z-[80] w-[min(360px,calc(100vw-24px))] m8-panel rounded-xl overflow-hidden border-[#242A35] shadow-2xl"
       data-testid="challenge-chat"
     >
       <button
