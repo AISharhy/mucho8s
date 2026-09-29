@@ -462,7 +462,7 @@ export const RecordMatchDialog = ({
               <div>
                 <div className="text-sm font-bold">Money Chall Pairings</div>
                 <div className="text-[11px] text-muted-foreground">
-                  Choose who each player was playing against. The stake is already prefilled from the room.
+                  Choose who each player was playing against and adjust the stake if needed.
                 </div>
               </div>
             </div>
@@ -496,27 +496,16 @@ export const RecordMatchDialog = ({
                     </select>
 
                     <div className="relative col-span-2 sm:col-span-1">
-                      {liveMatchId ? (
-                        <div
-                          className="h-9 rounded-lg bg-[#0F1218] border border-emerald-500/20 px-2.5 flex items-center justify-end font-mono text-xs font-black text-emerald-400"
-                          aria-label={`Locked stake for ${alpha?.name || "Alpha"}`}
-                        >
-                          €{Number(String(pair.amount).replace(",", ".") || 0).toFixed(2)}
-                        </div>
-                      ) : (
-                        <>
-                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">€</span>
-                          <Input
-                            type="number"
-                            min="0.5"
-                            step="0.5"
-                            value={pair.amount}
-                            onChange={(event) => updateMoneyPairing(pair.playerAId, "amount", event.target.value)}
-                            className="h-9 pl-6 bg-[#0F1218] border-[#2A303B] text-xs"
-                            aria-label={`Amount for ${alpha?.name || "Alpha"} vs ${bravo?.name || "Bravo"}`}
-                          />
-                        </>
-                      )}
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">€</span>
+                      <Input
+                        type="number"
+                        min="0.5"
+                        step="0.5"
+                        value={pair.amount}
+                        onChange={(event) => updateMoneyPairing(pair.playerAId, "amount", event.target.value)}
+                        className="h-9 pl-6 bg-[#0F1218] border-[#2A303B] text-xs"
+                        aria-label={`Amount for ${alpha?.name || "Alpha"} vs ${bravo?.name || "Bravo"}`}
+                      />
                     </div>
 
                   </div>
