@@ -280,8 +280,8 @@ export default function MatchRoom() {
     const amount = Math.max(0, Number(pair?.amount) || 0);
     const alphaId = String(pair?.playerAId || "");
     const bravoId = String(pair?.playerBId || "");
-    if (alphaId) acc[alphaId] = amount;
-    if (bravoId) acc[bravoId] = amount;
+    if (alphaId) acc[alphaId] = Math.max(0, Number(acc[alphaId] || 0)) + amount;
+    if (bravoId) acc[bravoId] = Math.max(0, Number(acc[bravoId] || 0)) + amount;
     return acc;
   }, {});
 
