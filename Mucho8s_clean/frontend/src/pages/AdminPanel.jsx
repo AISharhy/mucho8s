@@ -49,6 +49,7 @@ export default function AdminPanel() {
     approveDiscordPlayerRequest,
     rejectDiscordPlayerRequest,
     linkDiscordAccount,
+    updateDiscordAccountAdmin,
     listAdminChallenges,
     adminUpdateChallenge,
     adminDeleteChallenge,
@@ -71,7 +72,7 @@ export default function AdminPanel() {
   } = useData();
   const [newName, setNewName] = useState("");
   const [newElo, setNewElo] = useState(500);
-  const [editing, setEditing] = useState({}); // id -> { name, elo }
+  const [editing, setEditing] = useState({}); // id -> full admin player draft
   const [histOpen, setHistOpen] = useState(false);
   const [newLiveOpen, setNewLiveOpen] = useState(false);
   const [discordWebhook, setDiscordWebhook] = useState("");
@@ -382,20 +383,87 @@ export default function AdminPanel() {
     setNewElo(configuredStartingElo);
   };
 
-  const savePlayer = async (id) => {
-    const draft = editing[id];
-    if (!draft?.name?.trim()) return toast.error("Nickname cannot be empty");
-    const ok = await editPlayer(id, {
-      name: draft.name.trim(),
-      currentElo: Number(draft.elo),
-    });
-    if (!ok) return;
+  const updatePlayerDraft = (id, field, value) => {
+    setEditing((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], [field]: value },
+    }));
+  };
+
+  const openPlayerEditor = (player, account) => {
+    const fallbackStartingElo = Number(competitionData?.current?.starting_elo ?? 500);
+    const startingElo = Number(player?.eloHistory?.[0]?.elo ?? fallbackStartingElo);
+
+    setEditing((prev) => ({
+      ...prev,
+      [player.id]: {
+        name: player.name,
+        elo: player.currentElo,
+        startingElo,
+        peakElo: player.peakElo ?? player.currentElo,
+        wins: player.wins ?? 0,
+        losses: player.losses ?? 0,
+        avgPlacement: player.avgPlacement ?? 0,
+        currentStreak: player.currentStreak ?? 0,
+        mvpCount: player.mvpCount ?? 0,
+        merdaCount: player.merdaCount ?? 0,
+        accountId: account?.id || "",
+        paypalUrl: account?.paypal_url || "",
+        revolutUrl: account?.revolut_url || "",
+        twitchChannel: account?.twitch_channel || "",
+      },
+    }));
+  };
+
+  const closePlayerEditor = (id) => {
     setEditing((prev) => {
       const next = { ...prev };
       delete next[id];
       return next;
     });
-    toast.success("Player updated");
+  };
+
+  const savePlayer = async (id) => {
+    const draft = editing[id];
+    if (!draft?.name?.trim()) return toast.error("Nickname cannot be empty");
+
+    const ok = await editPlayer(id, {
+      name: draft.name.trim(),
+      currentElo: Number(draft.elo),
+      startingElo: Number(draft.startingElo),
+      peakElo: Number(draft.peakElo),
+      wins: Number(draft.wins),
+      losses: Number(draft.losses),
+      avgPlacement: Number(draft.avgPlacement),
+      currentStreak: Number(draft.currentStreak),
+      mvpCount: Number(draft.mvpCount),
+      merdaCount: Number(draft.merdaCount),
+    });
+    if (!ok) return;
+
+    if (draft.accountId) {
+      setAccountBusyId(draft.accountId);
+      const updatedAccount = await updateDiscordAccountAdmin(draft.accountId, {
+        paypalUrl: draft.paypalUrl,
+        revolutUrl: draft.revolutUrl,
+        twitchChannel: draft.twitchChannel,
+      });
+      setAccountBusyId("");
+
+      if (!updatedAccount) {
+        toast.warning("Player stats saved, but account links were not updated");
+        return;
+      }
+
+      setDiscordAccounts((prev) =>
+        prev.map((account) =>
+          account.id === updatedAccount.id ? { ...account, ...updatedAccount } : account
+        )
+      );
+    }
+
+    closePlayerEditor(id);
+    toast.success("Player profile updated");
   };
 
   const handleImport = (e) => {
@@ -1947,7 +2015,7 @@ export default function AdminPanel() {
                 return (
                   <div
                     key={p.id}
-                    className="rounded-xl border border-[#202631] bg-[#0F1218] p-3"
+                    className={`rounded-xl border border-[#202631] bg-[#0F1218] p-3 ${isEditing ? "xl:col-span-2" : ""}`}
                     data-testid={`admin-player-${p.id}`}
                   >
                     <div className="flex items-start gap-3">
@@ -1955,35 +2023,196 @@ export default function AdminPanel() {
 
                       <div className="min-w-0 flex-1">
                         {isEditing ? (
-                          <div className="grid grid-cols-1 sm:grid-cols-[1fr_110px_auto] gap-2">
-                            <Input
-                              data-testid={`admin-edit-name-input-${p.id}`}
-                              value={editing[p.id].name}
-                              onChange={(e) => setEditing((prev) => ({
-                                ...prev,
-                                [p.id]: { ...prev[p.id], name: e.target.value },
-                              }))}
-                              className="h-9 bg-[#0B0D12] border-[#222834]"
-                              aria-label="Player nickname"
-                            />
-                            <Input
-                              data-testid={`admin-edit-elo-input-${p.id}`}
-                              type="number"
-                              value={editing[p.id].elo}
-                              onChange={(e) => setEditing((prev) => ({
-                                ...prev,
-                                [p.id]: { ...prev[p.id], elo: e.target.value },
-                              }))}
-                              className="h-9 bg-[#0B0D12] border-[#222834]"
-                              aria-label="Player Elo"
-                            />
-                            <Button
-                              onClick={() => savePlayer(p.id)}
-                              data-testid={`admin-save-player-${p.id}`}
-                              className="h-9 bg-emerald-500 hover:bg-emerald-600"
-                            >
-                              <Check size={15} className="mr-1" /> Save
-                            </Button>
+                          <div className="rounded-xl border border-[#252C38] bg-[#0B0D12] p-4 space-y-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                              <div>
+                                <div className="brand-kicker mb-1">Edit Player</div>
+                                <div className="font-display font-black text-base">{p.name}</div>
+                                <div className="text-[11px] text-muted-foreground mt-1">
+                                  Rank remains automatic from Elo. Wins + losses determine total matches.
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    const start = Number(competitionData?.current?.starting_elo ?? 500);
+                                    updatePlayerDraft(p.id, "elo", start);
+                                    updatePlayerDraft(p.id, "startingElo", start);
+                                    updatePlayerDraft(p.id, "peakElo", start);
+                                  }}
+                                  className="h-8 px-2.5 border border-[#2A303B] text-[10px] font-bold"
+                                >
+                                  Reset Elo
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    ["wins", "losses", "avgPlacement", "currentStreak", "mvpCount", "merdaCount"]
+                                      .forEach((field) => updatePlayerDraft(p.id, field, 0));
+                                  }}
+                                  className="h-8 px-2.5 border border-[#2A303B] text-[10px] font-bold"
+                                >
+                                  Reset Stats
+                                </Button>
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="text-[10px] font-black uppercase tracking-[0.12em] text-[#747E8D] mb-2">
+                                Account & Elo
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
+                                <div>
+                                  <Label className="text-[11px] text-muted-foreground">Nickname</Label>
+                                  <Input
+                                    data-testid={`admin-edit-name-input-${p.id}`}
+                                    value={editing[p.id].name}
+                                    onChange={(e) => updatePlayerDraft(p.id, "name", e.target.value)}
+                                    className="h-9 bg-[#11151C] border-[#252C38] mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-[11px] text-muted-foreground">Current Elo</Label>
+                                  <Input
+                                    data-testid={`admin-edit-elo-input-${p.id}`}
+                                    type="number"
+                                    value={editing[p.id].elo}
+                                    onChange={(e) => updatePlayerDraft(p.id, "elo", e.target.value)}
+                                    className="h-9 bg-[#11151C] border-[#252C38] mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-[11px] text-muted-foreground">Starting Elo</Label>
+                                  <Input
+                                    type="number"
+                                    value={editing[p.id].startingElo}
+                                    onChange={(e) => updatePlayerDraft(p.id, "startingElo", e.target.value)}
+                                    className="h-9 bg-[#11151C] border-[#252C38] mt-1"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-[11px] text-muted-foreground">Peak Elo</Label>
+                                  <Input
+                                    type="number"
+                                    value={editing[p.id].peakElo}
+                                    onChange={(e) => updatePlayerDraft(p.id, "peakElo", e.target.value)}
+                                    className="h-9 bg-[#11151C] border-[#252C38] mt-1"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="text-[10px] font-black uppercase tracking-[0.12em] text-[#747E8D] mb-2">
+                                Competitive Stats
+                              </div>
+                              <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-2">
+                                <div>
+                                  <Label className="text-[11px] text-muted-foreground">Wins</Label>
+                                  <Input type="number" min="0" value={editing[p.id].wins} onChange={(e) => updatePlayerDraft(p.id, "wins", e.target.value)} className="h-9 bg-[#11151C] border-[#252C38] mt-1" />
+                                </div>
+                                <div>
+                                  <Label className="text-[11px] text-muted-foreground">Losses</Label>
+                                  <Input type="number" min="0" value={editing[p.id].losses} onChange={(e) => updatePlayerDraft(p.id, "losses", e.target.value)} className="h-9 bg-[#11151C] border-[#252C38] mt-1" />
+                                </div>
+                                <div>
+                                  <Label className="text-[11px] text-muted-foreground">Matches</Label>
+                                  <Input
+                                    value={Math.max(0, Number(editing[p.id].wins || 0)) + Math.max(0, Number(editing[p.id].losses || 0))}
+                                    readOnly
+                                    className="h-9 bg-[#0D1016] border-[#202631] mt-1 text-muted-foreground"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-[11px] text-muted-foreground">Streak</Label>
+                                  <Input type="number" value={editing[p.id].currentStreak} onChange={(e) => updatePlayerDraft(p.id, "currentStreak", e.target.value)} className="h-9 bg-[#11151C] border-[#252C38] mt-1" />
+                                </div>
+                                <div>
+                                  <Label className="text-[11px] text-muted-foreground">MVP</Label>
+                                  <Input type="number" min="0" value={editing[p.id].mvpCount} onChange={(e) => updatePlayerDraft(p.id, "mvpCount", e.target.value)} className="h-9 bg-[#11151C] border-[#252C38] mt-1" />
+                                </div>
+                                <div>
+                                  <Label className="text-[11px] text-muted-foreground">💩 Count</Label>
+                                  <Input type="number" min="0" value={editing[p.id].merdaCount} onChange={(e) => updatePlayerDraft(p.id, "merdaCount", e.target.value)} className="h-9 bg-[#11151C] border-[#252C38] mt-1" />
+                                </div>
+                                <div>
+                                  <Label className="text-[11px] text-muted-foreground">Avg placement</Label>
+                                  <Input type="number" min="0" step="0.1" value={editing[p.id].avgPlacement} onChange={(e) => updatePlayerDraft(p.id, "avgPlacement", e.target.value)} className="h-9 bg-[#11151C] border-[#252C38] mt-1" />
+                                </div>
+                              </div>
+                            </div>
+
+                            {account ? (
+                              <div>
+                                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#747E8D] mb-2">
+                                  <WalletCards size={12} /> Discord & Payments
+                                </div>
+                                <div className="rounded-lg border border-[#252C38] bg-[#10141B] px-3 py-2 mb-2 flex items-center gap-2 text-xs">
+                                  <MessageCircle size={13} className="text-[#8E98FF]" />
+                                  <span className="text-[#C8CED8]">
+                                    {account.display_name || account.discord_username || "Discord linked"}
+                                  </span>
+                                  <span className="text-muted-foreground font-mono ml-auto">
+                                    {account.discord_username ? `@${account.discord_username}` : "linked"}
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                  <div>
+                                    <Label className="text-[11px] text-muted-foreground">PayPal</Label>
+                                    <Input
+                                      value={editing[p.id].paypalUrl}
+                                      onChange={(e) => updatePlayerDraft(p.id, "paypalUrl", e.target.value)}
+                                      placeholder="paypal.me/name"
+                                      className="h-9 bg-[#11151C] border-[#252C38] mt-1"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-[11px] text-muted-foreground">Revolut</Label>
+                                    <Input
+                                      value={editing[p.id].revolutUrl}
+                                      onChange={(e) => updatePlayerDraft(p.id, "revolutUrl", e.target.value)}
+                                      placeholder="revolut.me/name"
+                                      className="h-9 bg-[#11151C] border-[#252C38] mt-1"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-[11px] text-muted-foreground">Twitch</Label>
+                                    <Input
+                                      value={editing[p.id].twitchChannel}
+                                      onChange={(e) => updatePlayerDraft(p.id, "twitchChannel", e.target.value)}
+                                      placeholder="@channel"
+                                      className="h-9 bg-[#11151C] border-[#252C38] mt-1"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="rounded-lg border border-dashed border-[#2A303B] bg-[#10141B] px-3 py-3 text-xs text-muted-foreground">
+                                No Discord account is linked to this player. Link one from the account controls before editing payment details.
+                              </div>
+                            )}
+
+                            <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => closePlayerEditor(p.id)}
+                                className="h-9 border border-[#2A303B]"
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                onClick={() => savePlayer(p.id)}
+                                disabled={Boolean(accountBusyId && accountBusyId === editing[p.id].accountId)}
+                                data-testid={`admin-save-player-${p.id}`}
+                                className="h-9 bg-emerald-500 hover:bg-emerald-600 text-white font-black"
+                              >
+                                <Check size={15} className="mr-1" /> Save Changes
+                              </Button>
+                            </div>
                           </div>
                         ) : (
                           <>
@@ -2009,7 +2238,7 @@ export default function AdminPanel() {
                           </>
                         )}
 
-                        {account && (
+                        {account && !isEditing && (
                           <div className="flex flex-wrap items-center gap-1.5 mt-2">
                             <select
                               value={accountLinkDrafts[account.id] || ""}
@@ -2054,10 +2283,7 @@ export default function AdminPanel() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            onClick={() => setEditing((prev) => ({
-                              ...prev,
-                              [p.id]: { name: p.name, elo: p.currentElo },
-                            }))}
+                            onClick={() => openPlayerEditor(p, account)}
                             data-testid={`admin-edit-player-btn-${p.id}`}
                             className="h-9 w-9"
                           >
