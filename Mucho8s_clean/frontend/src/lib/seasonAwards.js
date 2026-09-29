@@ -18,7 +18,10 @@ export const buildSeasonAwardsFromArchive = (season, publicChallenges = []) => {
   const seasonNumber = Number(season?.season_number ?? 0);
   const startingElo = Number(season?.starting_elo ?? 500);
   const playerMap = Object.fromEntries(players.filter((p) => p?.id).map((p) => [String(p.id), p]));
-  const active = players.filter((p) => Number(p?.totalMatches || 0) > 0);
+  const active = players.filter((p) =>
+    Number(p?.totalMatches || 0) > 0 ||
+    Math.round(Number(p?.currentElo || startingElo)) !== Math.round(startingElo)
+  );
   const result = [];
 
   const add = (data) => {
