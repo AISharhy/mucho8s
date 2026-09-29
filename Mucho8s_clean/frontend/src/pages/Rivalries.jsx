@@ -98,7 +98,7 @@ export default function Rivalries() {
       <section className="m8-panel rounded-[22px] p-5 sm:p-6">
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div>
-            <div className="brand-kicker mb-1">Competition</div>
+            <div className="brand-kicker mb-1">Bacheca · Head-to-Head</div>
             <h1 className="font-display text-3xl sm:text-4xl font-black tracking-[-0.04em]">
               Rivalries
             </h1>
@@ -298,7 +298,7 @@ export default function Rivalries() {
                 </div>
 
                 <Link
-                  to={`/rivalries/${row.playerAId}/${row.playerBId}`}
+                  to={`/bacheca/rivalries/${row.playerAId}/${row.playerBId}`}
                   className="mt-4 h-10 rounded-xl border border-[#2A303B] bg-[#0F1218] hover:bg-[#151A22] hover:border-[#394150] flex items-center justify-center gap-2 text-xs font-bold transition-all"
                 >
                   <Swords size={14} className="text-[#D5A33A]" />
