@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { Sidebar, MobileNav } from "@/components/Sidebar";
 import ChallengeCenter from "@/components/ChallengeCenter";
 import CompetitiveEventFX from "@/components/CompetitiveEventFX";
+import SeasonAwardReveal from "@/components/SeasonAwardReveal";
 import { PageSkeleton } from "@/components/ProductState";
 import { PlayerAvatar, EloBadge } from "@/components/shared";
 import ModeBadge from "@/components/ModeBadge";
@@ -52,7 +53,7 @@ const TOP_NAV = [
   { to: "/matches", label: "Matches" },
   { to: "/ranking", label: "Leaderboard" },
   { to: "/rank-guide", label: "Guide" },
-  { to: "/rivalries", label: "Rivalries" },
+  { to: "/bacheca", label: "Bacheca" },
   { to: "/news", label: "News" },
 ];
 
@@ -65,7 +66,11 @@ const TITLES = {
   "/draft": "Team Builder",
   "/matches": "Matches",
   "/ranking": "Ranking",
-  "/rivalries": "Rivalries",
+  "/bacheca": "Bacheca",
+  "/bacheca/hall-of-fame": "Hall of Fame",
+  "/bacheca/rivalries": "Rivalries",
+  "/bacheca/records": "Records",
+  "/rivalries": "Bacheca",
   "/leaderboard": "Ranking",
   "/statistics": "Ranking",
   "/rank-guide": "Guide",
@@ -493,9 +498,11 @@ export const Layout = () => {
     TITLES[loc.pathname] ||
     (loc.pathname.startsWith("/matches/live/")
       ? "Match Room"
-      : loc.pathname.startsWith("/rivalries/")
+      : loc.pathname.startsWith("/bacheca/rivalries/") || loc.pathname.startsWith("/rivalries/")
         ? "Rivalry"
-        : loc.pathname.startsWith("/players/")
+        : loc.pathname.startsWith("/bacheca")
+          ? "Bacheca"
+          : loc.pathname.startsWith("/players/")
           ? "Player Profile"
           : loc.pathname.startsWith("/challenges/")
             ? "Mucho1v1"
@@ -526,6 +533,7 @@ export const Layout = () => {
     <div className="min-h-screen bg-[#0B0D12]">
       <ChallengeCenter />
       <CompetitiveEventFX />
+      <SeasonAwardReveal />
 
       {needsPlayerOnboarding && (
         <div className="m8-discord-onboarding" data-testid="discord-player-onboarding">
