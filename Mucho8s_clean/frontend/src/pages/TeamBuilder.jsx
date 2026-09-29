@@ -524,11 +524,31 @@ export default function TeamBuilder() {
       return;
     }
 
+    const finalFormat = formatForCount(draft.teamA.length + draft.teamB.length);
+    const finalPool = competitiveMapPool(game, matchMode, finalFormat);
+    if (finalPool.length < bestOf) {
+      toast.error(`No BO${bestOf} competitive map pool is available for this setup`);
+      setWizardStep(1);
+      return;
+    }
+    if (
+      mapMode === "manual" &&
+      (
+        manualMaps.length !== bestOf ||
+        new Set(manualMaps).size !== bestOf ||
+        manualMaps.some((map) => !finalPool.includes(map))
+      )
+    ) {
+      toast.error("One or more manual maps are not valid for the selected lobby format");
+      setWizardStep(1);
+      return;
+    }
+
     setResult(draft);
     setWizardStep(4);
 
     toast.success(
-      `${formatForCount(draft.teamA.length + draft.teamB.length)} teams ready · review and confirm`
+      `${finalFormat} teams ready · review and confirm`
     );
   };
 
