@@ -872,7 +872,7 @@ Deno.serve(async (req: Request) => {
           teamA.includes(pair.playerAId) &&
           teamB.includes(pair.playerBId) &&
           Number.isFinite(pair.amount) &&
-          pair.amount > 0 &&
+          pair.amount >= 0 &&
           SUPPORTED_MATCH_PLATFORMS.has(pair.platform)
         );
       const creatorPlayerId = String(account?.player_id || "").trim();
@@ -1199,7 +1199,7 @@ Deno.serve(async (req: Request) => {
 
       for (const pair of pairings) {
         const validPlayers = teamA.includes(pair.playerAId) && teamB.includes(pair.playerBId);
-        const validAmount = Number.isFinite(pair.amount) && pair.amount > 0;
+        const validAmount = Number.isFinite(pair.amount) && pair.amount >= 0;
         const validPlatform = SUPPORTED_MATCH_PLATFORMS.has(pair.platform);
 
         if (!validPlayers || !validAmount || !validPlatform) {
