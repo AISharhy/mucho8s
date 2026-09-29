@@ -83,6 +83,19 @@ const normalizeMatch = (m) => ({
   game: m?.game || "",
   eloChanges: m?.eloChanges && typeof m.eloChanges === "object" ? m.eloChanges : {},
   pairings: Array.isArray(m?.pairings) ? m.pairings : [],
+  upsetApplied: Boolean(m?.upsetApplied),
+  upsetEloDifference: Math.max(0, Number(m?.upsetEloDifference) || 0),
+  upsetWinnerBonus: Math.max(0, Number(m?.upsetWinnerBonus) || 0),
+  upsetLoserPenalty: Math.max(0, Number(m?.upsetLoserPenalty) || 0),
+  teamAverageEloA: Number(m?.teamAverageEloA) || 0,
+  teamAverageEloB: Number(m?.teamAverageEloB) || 0,
+  mvpBountyBonus: Math.max(0, Number(m?.mvpBountyBonus) || 0),
+  mvpBountyStoppedIds: Array.isArray(m?.mvpBountyStoppedIds) ? m.mvpBountyStoppedIds : [],
+  mvpBountyRecipientIds: Array.isArray(m?.mvpBountyRecipientIds) ? m.mvpBountyRecipientIds : [],
+  trophyUnlockEvents:
+    m?.trophyUnlockEvents && typeof m.trophyUnlockEvents === "object"
+      ? m.trophyUnlockEvents
+      : {},
   season: Math.max(1, Number(m?.season) || 1),
   resultStatus: m?.resultStatus || (m?.locked ? "locked" : ""),
   locked: Boolean(m?.locked),
