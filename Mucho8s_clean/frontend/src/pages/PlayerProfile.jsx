@@ -5,6 +5,7 @@ import { winRate, tierOf } from "@/lib/elo";
 import { duoChemistry } from "@/lib/chemistry";
 import { analyzeBountyHistory, buildBountyAchievementCatalog } from "@/lib/bountyAchievements";
 import { buildPlayerRivalries } from "@/lib/rivalries";
+import { getSeasonAwards } from "@/lib/seasonAwards";
 import {
   TROPHY8S_RULES,
   MAX_TROPHY_LEVEL,
@@ -821,7 +822,7 @@ export default function PlayerProfile() {
     const archives = Array.isArray(competitionData?.archives) ? competitionData.archives : [];
     return archives
       .flatMap((season) =>
-        (Array.isArray(season?.awards) ? season.awards : []).map((award, index) => ({
+        getSeasonAwards(season, publicChallenges).map((award, index) => ({
           ...award,
           key: `${season.season_number}:${award.id || index}`,
           seasonNumber: Number(award.seasonNumber ?? season.season_number ?? 0),
@@ -831,7 +832,7 @@ export default function PlayerProfile() {
       )
       .filter((award) => award.playerIds.includes(String(id)))
       .sort((a, b) => Number(b.seasonNumber || 0) - Number(a.seasonNumber || 0));
-  }, [competitionData?.archives, id]);
+  }, [competitionData?.archives, id, publicChallenges]);
 
   const generalTrophyCount = useMemo(
     () =>
