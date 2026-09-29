@@ -65,7 +65,7 @@ export default function RivalryDetail() {
             These players do not have enough verified history yet.
           </p>
           <Link
-            to="/rivalries"
+            to="/bacheca/rivalries"
             className="mt-5 inline-flex h-10 px-4 rounded-xl bg-white text-black items-center justify-center font-bold text-sm"
           >
             Back to Rivalries
@@ -103,7 +103,7 @@ export default function RivalryDetail() {
     <div className="m8-page-stack">
       <section className="m8-panel rounded-[22px] p-5 sm:p-6">
         <Link
-          to="/rivalries"
+          to="/bacheca/rivalries"
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-white"
         >
           <ArrowLeft size={14} /> Rivalries
