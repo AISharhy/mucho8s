@@ -68,6 +68,419 @@ const resetPlayer = (player: any, startingElo = 500) => {
   };
 };
 
+const pairKey = (a: string, b: string) => [String(a), String(b)].sort().join("::");
+
+const buildSeasonAwards = ({
+  players,
+  matches,
+  challenges,
+  startingElo,
+  seasonNumber,
+  seasonName,
+}: {
+  players: any[];
+  matches: any[];
+  challenges: any[];
+  startingElo: number;
+  seasonNumber: number;
+  seasonName: string;
+}) => {
+  const playerById = Object.fromEntries(
+    (players || [])
+      .filter((player: any) => player?.id)
+      .map((player: any) => [String(player.id), player])
+  );
+
+  const directChallenges = (challenges || []).filter((challenge: any) => {
+    const source = String(challenge?.source || "").toLowerCase();
+    return (
+      challenge?.status === "completed" &&
+      challenge?.reported_winner_player_id &&
+      !["match_pairing", "balancer_pairing"].includes(source)
+    );
+  });
+
+  const competitiveIds = new Set<string>();
+  (matches || []).forEach((match: any) => {
+    [...(Array.isArray(match?.teamA) ? match.teamA : []), ...(Array.isArray(match?.teamB) ? match.teamB : [])]
+      .map(String)
+      .forEach((id) => competitiveIds.add(id));
+  });
+  directChallenges.forEach((challenge: any) => {
+    if (challenge?.challenger_player_id) competitiveIds.add(String(challenge.challenger_player_id));
+    if (challenge?.challenged_player_id) competitiveIds.add(String(challenge.challenged_player_id));
+  });
+
+  const activePlayers = Object.values(playerById).filter((player: any) =>
+    competitiveIds.has(String(player.id)) || Number(player?.totalMatches || 0) > 0
+  );
+
+  const awards: any[] = [];
+  const addAward = ({
+    id,
+    title,
+    emoji,
+    rarity = "rare",
+    category = "Performance",
+    playerIds = [],
+    detail = "",
+    value = "",
+  }: any) => {
+    const cleanIds = [...new Set((playerIds || []).map(String).filter((id: string) => Boolean(playerById[id])))];
+    if (!cleanIds.length) return;
+    awards.push({
+      id,
+      title,
+      emoji,
+      rarity,
+      category,
+      playerIds: cleanIds,
+      detail,
+      value,
+      seasonNumber,
+      seasonName,
+    });
+  };
+
+  if (!activePlayers.length) return awards;
+
+  const standings = [...activePlayers].sort((a: any, b: any) => {
+    const eloDiff = Number(b?.currentElo || 0) - Number(a?.currentElo || 0);
+    if (eloDiff) return eloDiff;
+    const winsDiff = Number(b?.wins || 0) - Number(a?.wins || 0);
+    if (winsDiff) return winsDiff;
+    return String(a?.name || "").localeCompare(String(b?.name || ""));
+  });
+
+  if (standings[0]) {
+    addAward({
+      id: "season-champion",
+      title: "Season Champion",
+      emoji: "🏆",
+      rarity: "legendary",
+      category: "Podium",
+      playerIds: [standings[0].id],
+      detail: `Finished #1 in ${seasonName}`,
+      value: `${Math.round(Number(standings[0].currentElo || 0))} Elo`,
+    });
+  }
+  if (standings[1]) {
+    addAward({
+      id: "runner-up",
+      title: "Runner-Up",
+      emoji: "🥈",
+      rarity: "epic",
+      category: "Podium",
+      playerIds: [standings[1].id],
+      detail: `Finished #2 in ${seasonName}`,
+      value: `${Math.round(Number(standings[1].currentElo || 0))} Elo`,
+    });
+  }
+  if (standings[2]) {
+    addAward({
+      id: "podium-finish",
+      title: "Podium Finish",
+      emoji: "🥉",
+      rarity: "epic",
+      category: "Podium",
+      playerIds: [standings[2].id],
+      detail: `Finished #3 in ${seasonName}`,
+      value: `${Math.round(Number(standings[2].currentElo || 0))} Elo`,
+    });
+  }
+
+  const highestPeak = [...activePlayers].sort(
+    (a: any, b: any) => Number(b?.peakElo || b?.currentElo || 0) - Number(a?.peakElo || a?.currentElo || 0)
+  )[0];
+  if (highestPeak) {
+    addAward({
+      id: "highest-peak",
+      title: "Highest Peak",
+      emoji: "👑",
+      rarity: "epic",
+      category: "Performance",
+      playerIds: [highestPeak.id],
+      detail: "Highest Elo reached during the season",
+      value: `${Math.round(Number(highestPeak.peakElo || highestPeak.currentElo || 0))} Elo`,
+    });
+  }
+
+  const appearances = new Map<string, number>();
+  const addAppearance = (id: unknown) => {
+    const key = String(id || "");
+    if (!key) return;
+    appearances.set(key, Number(appearances.get(key) || 0) + 1);
+  };
+  (matches || []).forEach((match: any) => {
+    (Array.isArray(match?.teamA) ? match.teamA : []).forEach(addAppearance);
+    (Array.isArray(match?.teamB) ? match.teamB : []).forEach(addAppearance);
+  });
+  directChallenges.forEach((challenge: any) => {
+    addAppearance(challenge.challenger_player_id);
+    addAppearance(challenge.challenged_player_id);
+  });
+  const mostActive = [...appearances.entries()].sort((a, b) => b[1] - a[1])[0];
+  if (mostActive?.[1] > 0) {
+    addAward({
+      id: "most-active",
+      title: "Most Active",
+      emoji: "⚔️",
+      category: "Performance",
+      playerIds: [mostActive[0]],
+      detail: "Most competitive appearances across Mucho8s and Mucho1v1",
+      value: `${mostActive[1]} matches`,
+    });
+  }
+
+  const currentStreak = new Map<string, number>();
+  const maxStreak = new Map<string, number>();
+  [...(matches || [])]
+    .filter(Boolean)
+    .sort((a: any, b: any) => new Date(a?.date || 0).getTime() - new Date(b?.date || 0).getTime())
+    .forEach((match: any) => {
+      const teamA = (Array.isArray(match?.teamA) ? match.teamA : []).map(String);
+      const teamB = (Array.isArray(match?.teamB) ? match.teamB : []).map(String);
+      const winners = match?.winner === "B" ? teamB : teamA;
+      const losers = match?.winner === "B" ? teamA : teamB;
+      winners.forEach((id: string) => {
+        const next = Number(currentStreak.get(id) || 0) + 1;
+        currentStreak.set(id, next);
+        maxStreak.set(id, Math.max(Number(maxStreak.get(id) || 0), next));
+      });
+      losers.forEach((id: string) => currentStreak.set(id, 0));
+    });
+  const longestStreak = [...maxStreak.entries()].sort((a, b) => b[1] - a[1])[0];
+  if (longestStreak?.[1] > 1) {
+    addAward({
+      id: "longest-win-streak",
+      title: "Longest Win Streak",
+      emoji: "🔥",
+      rarity: longestStreak[1] >= 8 ? "epic" : "rare",
+      category: "Performance",
+      playerIds: [longestStreak[0]],
+      detail: "Longest Mucho8s winning run of the season",
+      value: `W${longestStreak[1]}`,
+    });
+  }
+
+  const mvpCount = new Map<string, number>();
+  const upsetWins = new Map<string, number>();
+  const clearedMerda = new Map<string, number>();
+  (matches || []).forEach((match: any) => {
+    (Array.isArray(match?.mvpIds) ? match.mvpIds : match?.mvpId ? [match.mvpId] : [])
+      .map(String)
+      .forEach((id: string) => mvpCount.set(id, Number(mvpCount.get(id) || 0) + 1));
+
+    (Array.isArray(match?.merdaClearedIds) ? match.merdaClearedIds : [])
+      .map(String)
+      .forEach((id: string) => clearedMerda.set(id, Number(clearedMerda.get(id) || 0) + 1));
+
+    if (match?.upsetApplied === true) {
+      const winners = match?.winner === "B"
+        ? (Array.isArray(match?.teamB) ? match.teamB : [])
+        : (Array.isArray(match?.teamA) ? match.teamA : []);
+      winners.map(String).forEach((id: string) =>
+        upsetWins.set(id, Number(upsetWins.get(id) || 0) + 1)
+      );
+    }
+  });
+
+  const mvpLeader = [...mvpCount.entries()].sort((a, b) => b[1] - a[1])[0];
+  if (mvpLeader?.[1] > 0) {
+    addAward({
+      id: "mvp-hunter",
+      title: "MVP Hunter",
+      emoji: "🎯",
+      category: "Performance",
+      playerIds: [mvpLeader[0]],
+      detail: "Most automatic MVP awards",
+      value: `${mvpLeader[1]} MVP`,
+    });
+  }
+
+  const upsetLeader = [...upsetWins.entries()].sort((a, b) => b[1] - a[1])[0];
+  if (upsetLeader?.[1] > 0) {
+    addAward({
+      id: "upset-king",
+      title: "Upset King",
+      emoji: "🧨",
+      category: "Performance",
+      playerIds: [upsetLeader[0]],
+      detail: "Most wins as the lower-rated side",
+      value: `${upsetLeader[1]} upsets`,
+    });
+  }
+
+  const survivor = [...clearedMerda.entries()].sort((a, b) => b[1] - a[1])[0];
+  if (survivor?.[1] > 0) {
+    addAward({
+      id: "the-survivor",
+      title: "The Survivor",
+      emoji: "💩",
+      category: "Special",
+      playerIds: [survivor[0]],
+      detail: "Cleared the most MERDA during the season",
+      value: `${survivor[1]} cleared`,
+    });
+  }
+
+  const improved = [...activePlayers]
+    .map((player: any) => ({
+      id: String(player.id),
+      delta: Math.round(Number(player?.currentElo || startingElo) - Number(startingElo || 500)),
+    }))
+    .sort((a, b) => b.delta - a.delta)[0];
+  if (improved && improved.delta > 0) {
+    addAward({
+      id: "most-improved",
+      title: "Most Improved",
+      emoji: "📈",
+      rarity: improved.delta >= 250 ? "epic" : "rare",
+      category: "Performance",
+      playerIds: [improved.id],
+      detail: "Biggest Elo gain from the season starting Elo",
+      value: `+${improved.delta} Elo`,
+    });
+  }
+
+  const moneyNet = new Map<string, number>();
+  (challenges || [])
+    .filter((challenge: any) => challenge?.status === "completed" && challenge?.reported_winner_player_id)
+    .forEach((challenge: any) => {
+      const challenger = String(challenge?.challenger_player_id || "");
+      const challenged = String(challenge?.challenged_player_id || "");
+      const winner = String(challenge?.reported_winner_player_id || "");
+      if (!challenger || !challenged || !winner) return;
+      const loser = winner === challenger ? challenged : challenger;
+      const amount = Math.max(0, Number(challenge?.amount_cents || 0) / 100);
+      moneyNet.set(winner, Number(moneyNet.get(winner) || 0) + amount);
+      moneyNet.set(loser, Number(moneyNet.get(loser) || 0) - amount);
+    });
+  const moneyLeader = [...moneyNet.entries()].sort((a, b) => b[1] - a[1])[0];
+  if (moneyLeader && moneyLeader[1] > 0) {
+    addAward({
+      id: "money-king",
+      title: "Money King",
+      emoji: "💰",
+      rarity: "epic",
+      category: "Money",
+      playerIds: [moneyLeader[0]],
+      detail: "Best verified net result in money matchups",
+      value: `+€${moneyLeader[1].toFixed(2)}`,
+    });
+  }
+
+  const duoStats = new Map<string, { a: string; b: string; games: number; wins: number }>();
+  (matches || []).forEach((match: any) => {
+    const teamA = (Array.isArray(match?.teamA) ? match.teamA : []).map(String);
+    const teamB = (Array.isArray(match?.teamB) ? match.teamB : []).map(String);
+    const winnerSide = match?.winner === "B" ? "B" : "A";
+
+    const updateTeam = (team: string[], won: boolean) => {
+      for (let i = 0; i < team.length; i += 1) {
+        for (let j = i + 1; j < team.length; j += 1) {
+          const key = pairKey(team[i], team[j]);
+          const [a, b] = [team[i], team[j]].sort();
+          const row = duoStats.get(key) || { a, b, games: 0, wins: 0 };
+          row.games += 1;
+          if (won) row.wins += 1;
+          duoStats.set(key, row);
+        }
+      }
+    };
+
+    updateTeam(teamA, winnerSide === "A");
+    updateTeam(teamB, winnerSide === "B");
+  });
+  const bestDuo = [...duoStats.values()]
+    .filter((row) => row.games >= 3)
+    .sort((left, right) => {
+      const leftRate = left.wins / Math.max(1, left.games);
+      const rightRate = right.wins / Math.max(1, right.games);
+      if (rightRate !== leftRate) return rightRate - leftRate;
+      return right.games - left.games;
+    })[0];
+  if (bestDuo) {
+    addAward({
+      id: "best-chemistry",
+      title: "Best Chemistry",
+      emoji: "🤝",
+      category: "Duo",
+      playerIds: [bestDuo.a, bestDuo.b],
+      detail: "Best-performing duo with at least 3 matches together",
+      value: `${bestDuo.wins}-${bestDuo.games - bestDuo.wins}`,
+    });
+  }
+
+  const rivalryStats = new Map<string, {
+    a: string;
+    b: string;
+    meetings: number;
+    aWins: number;
+    bWins: number;
+    money: number;
+  }>();
+  const touchRivalry = (aRaw: unknown, bRaw: unknown, winnerRaw: unknown, amount = 0) => {
+    const a0 = String(aRaw || "");
+    const b0 = String(bRaw || "");
+    const winner = String(winnerRaw || "");
+    if (!a0 || !b0 || a0 === b0 || !winner) return;
+    const [a, b] = [a0, b0].sort();
+    const key = pairKey(a, b);
+    const row = rivalryStats.get(key) || { a, b, meetings: 0, aWins: 0, bWins: 0, money: 0 };
+    row.meetings += 1;
+    if (winner === a) row.aWins += 1;
+    if (winner === b) row.bWins += 1;
+    row.money += Math.max(0, Number(amount || 0));
+    rivalryStats.set(key, row);
+  };
+
+  (matches || []).forEach((match: any) => {
+    const teamA = (Array.isArray(match?.teamA) ? match.teamA : []).map(String);
+    const teamB = (Array.isArray(match?.teamB) ? match.teamB : []).map(String);
+    const winners = new Set(match?.winner === "B" ? teamB : teamA);
+    const pairingAmounts = Object.fromEntries(
+      (Array.isArray(match?.pairings) ? match.pairings : [])
+        .map((pair: any) => [pairKey(pair?.playerAId, pair?.playerBId), Number(pair?.amount || 0)])
+    );
+    teamA.forEach((left: string) => teamB.forEach((right: string) => {
+      touchRivalry(left, right, winners.has(left) ? left : right, pairingAmounts[pairKey(left, right)] || 0);
+    }));
+  });
+  directChallenges.forEach((challenge: any) => {
+    touchRivalry(
+      challenge.challenger_player_id,
+      challenge.challenged_player_id,
+      challenge.reported_winner_player_id,
+      Number(challenge.amount_cents || 0) / 100,
+    );
+  });
+
+  const rivalry = [...rivalryStats.values()]
+    .filter((row) => row.meetings >= 2)
+    .sort((left, right) => {
+      if (right.meetings !== left.meetings) return right.meetings - left.meetings;
+      const leftDiff = Math.abs(left.aWins - left.bWins);
+      const rightDiff = Math.abs(right.aWins - right.bWins);
+      if (leftDiff !== rightDiff) return leftDiff - rightDiff;
+      return right.money - left.money;
+    })[0];
+  if (rivalry) {
+    addAward({
+      id: "rivalry-of-season",
+      title: "Rivalry of the Season",
+      emoji: "⚡",
+      rarity: "epic",
+      category: "Rivalry",
+      playerIds: [rivalry.a, rivalry.b],
+      detail: "The season's most active head-to-head battle",
+      value: `${rivalry.aWins}-${rivalry.bWins} · ${rivalry.meetings} meetings`,
+    });
+  }
+
+  return awards;
+};
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (!["GET", "POST"].includes(req.method)) return json({ error: "Method not allowed" }, 405);
@@ -89,7 +502,7 @@ Deno.serve(async (req: Request) => {
           .maybeSingle(),
         supabase
           .from("season_archives")
-          .select("season_number,season_name,started_at,ended_at,players,matches,challenge_stats")
+          .select("season_number,season_name,started_at,ended_at,players,matches,challenge_stats,awards")
           .order("season_number", { ascending: false })
           .limit(20),
       ]);
@@ -354,7 +767,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: challengeRows, error: challengeError } = await supabase
       .from("player_challenges")
-      .select("amount_cents,payment_received_at,reported_winner_player_id,status")
+      .select("id,challenger_player_id,challenged_player_id,amount_cents,payment_received_at,reported_winner_player_id,status,verified_at,source,created_at")
       .eq("season_number", currentSeason);
 
     if (challengeError) throw challengeError;
@@ -362,6 +775,14 @@ Deno.serve(async (req: Request) => {
     const completed = (challengeRows || []).filter((row: any) => row.status === "completed");
     const settled = completed.filter((row: any) => row.payment_received_at);
     const volumeCents = settled.reduce((sum: number, row: any) => sum + Number(row.amount_cents || 0), 0);
+    const awards = buildSeasonAwards({
+      players,
+      matches,
+      challenges: challengeRows || [],
+      startingElo,
+      seasonNumber: currentSeason,
+      seasonName: currentName,
+    });
 
     const { error: archiveError } = await supabase
       .from("season_archives")
@@ -377,6 +798,7 @@ Deno.serve(async (req: Request) => {
           settled: settled.length,
           volume_cents: volumeCents,
         },
+        awards,
       }, { onConflict: "season_number" });
 
     if (archiveError) throw archiveError;
