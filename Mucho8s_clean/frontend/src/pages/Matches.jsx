@@ -70,10 +70,13 @@ const TeamList = ({
       if (!p) return null;
 
       const baseDelta = Number(eloChanges?.[id] ?? 0);
-      const pairing = (Array.isArray(pairings) ? pairings : []).find(
+      const playerPairings = (Array.isArray(pairings) ? pairings : []).filter(
         (item) => item?.playerAId === id || item?.playerBId === id
       );
-      const stakeValue = Math.max(0, Math.round(Number(pairing?.amount) || 0));
+      const stakeValue = playerPairings.reduce(
+        (sum, item) => sum + Math.max(0, Number(item?.amount) || 0),
+        0
+      );
       const stakeDelta = baseDelta === 0 ? 0 : (isWinner ? stakeValue : -stakeValue);
       const delta = baseDelta + stakeDelta;
 
