@@ -919,6 +919,26 @@ export const DataProvider = ({ children }) => {
     return data.account;
   }, [accountRequest, discordAccount, fetchDashboardData, fetchPlayerAvatars, fetchState]);
 
+  const updateDiscordAccountAdmin = useCallback(async (
+    accountId,
+    { paypalUrl = "", revolutUrl = "", twitchChannel = "" } = {},
+  ) => {
+    const data = await accountRequest({
+      action: "admin-update",
+      accountId,
+      paypalUrl,
+      revolutUrl,
+      twitchChannel,
+    });
+    if (!data?.account) return null;
+
+    if (discordAccount?.id === accountId) {
+      setDiscordAccount(data.account);
+    }
+
+    return data.account;
+  }, [accountRequest, discordAccount]);
+
   const challengeRequest = useCallback(async (payload, { silent = false } = {}) => {
     if (!HAS_SUPABASE || !discordSession?.access_token) {
       if (!silent) toast.error("Login with Discord first");
@@ -2089,28 +2109,68 @@ export const DataProvider = ({ children }) => {
     return persistWholeState(next, matches);
   }, [players, matches, backendWrite, persistWholeState]);
 
-  const editPlayer = useCallback(async (id, { name, currentElo }) => {
-    const cleanName = String(name || "").trim();
+  const editPlayer = useCallback(async (id, draft = {}) => {
+    const cleanName = String(draft?.name || "").trim();
     if (!cleanName) return false;
-    const elo = Math.max(MIN_ELO, Math.round(Number(currentElo) || BASE_ELO));
-
-    if (STORAGE_MODE === "backend") {
-      const okName = await backendWrite(`/players/${id}/name`, { method: "PUT", body: { name: cleanName } });
-      if (!okName) return false;
-      return backendWrite(`/players/${id}/elo`, { method: "PUT", body: { currentElo: elo } });
-    }
 
     const next = clonePlayers(players);
     const p = next.find((x) => x.id === id);
     if (!p) return false;
+
+    const currentElo = Math.max(MIN_ELO, Math.round(Number(draft?.currentElo) || BASE_ELO));
+    const startingElo = Math.max(
+      MIN_ELO,
+      Math.round(Number(draft?.startingElo) || Number(p.eloHistory?.[0]?.elo) || BASE_ELO),
+    );
+    const peakElo = Math.max(
+      currentElo,
+      Math.round(Number(draft?.peakElo) || Number(p.peakElo) || currentElo),
+    );
+    const wins = Math.max(0, Math.round(Number(draft?.wins) || 0));
+    const losses = Math.max(0, Math.round(Number(draft?.losses) || 0));
+    const avgPlacement = Math.max(0, Number(draft?.avgPlacement) || 0);
+    const currentStreak = Math.trunc(Number(draft?.currentStreak) || 0);
+    const mvpCount = Math.max(0, Math.round(Number(draft?.mvpCount) || 0));
+    const merdaCount = Math.max(0, Math.round(Number(draft?.merdaCount) || 0));
+
+    const history = Array.isArray(p.eloHistory) && p.eloHistory.length
+      ? [...p.eloHistory]
+      : [{ match: 0, elo: startingElo }];
+    history[0] = { ...history[0], match: 0, elo: startingElo };
+    const lastHistoryElo = Number(history[history.length - 1]?.elo);
+    if (lastHistoryElo !== currentElo) {
+      history.push({ match: wins + losses, elo: currentElo });
+    }
+
     p.name = cleanName;
-    p.currentElo = elo;
-    p.peakElo = Math.max(p.peakElo, elo);
-    p.eloHistory = [...(p.eloHistory || []), { match: p.eloHistory?.length || 0, elo }];
+    p.currentElo = currentElo;
+    p.peakElo = peakElo;
+    p.wins = wins;
+    p.losses = losses;
+    p.totalMatches = wins + losses;
+    p.avgPlacement = avgPlacement;
+    p.currentStreak = currentStreak;
+    p.mvpCount = mvpCount;
+    p.merdaCount = merdaCount;
+    p.eloHistory = history;
+
     const ok = await persistWholeState(next, matches);
-    if (ok) void logAdminAction("player.update", "player", id, { name: cleanName, elo });
+    if (ok) {
+      void logAdminAction("player.update", "player", id, {
+        name: cleanName,
+        currentElo,
+        startingElo,
+        peakElo,
+        wins,
+        losses,
+        totalMatches: wins + losses,
+        currentStreak,
+        mvpCount,
+        merdaCount,
+      });
+    }
     return ok;
-  }, [players, matches, backendWrite, persistWholeState, logAdminAction]);
+  }, [players, matches, persistWholeState, logAdminAction]);
 
   const resetStats = useCallback(async () => {
     if (STORAGE_MODE === "backend") return backendWrite("/reset-stats");
@@ -2359,6 +2419,7 @@ export const DataProvider = ({ children }) => {
     rejectDiscordPlayerRequest,
     listDiscordAccounts,
     linkDiscordAccount,
+    updateDiscordAccountAdmin,
     listAdminAccess,
     updateAdminAccess,
     setAdmin,
