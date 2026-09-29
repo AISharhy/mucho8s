@@ -195,6 +195,7 @@ export default function PlayerProfile() {
     saveMyChallengeLinks,
     challenges,
     publicChallenges,
+    competitionData,
     createChallenge,
   } = useData();
 
@@ -815,6 +816,22 @@ export default function PlayerProfile() {
 
     return awards;
   }, [player, trophyChallenges]);
+
+  const seasonHallCards = useMemo(() => {
+    const archives = Array.isArray(competitionData?.archives) ? competitionData.archives : [];
+    return archives
+      .flatMap((season) =>
+        (Array.isArray(season?.awards) ? season.awards : []).map((award, index) => ({
+          ...award,
+          key: `${season.season_number}:${award.id || index}`,
+          seasonNumber: Number(award.seasonNumber ?? season.season_number ?? 0),
+          seasonName: award.seasonName || season.season_name || `Season ${season.season_number}`,
+          playerIds: Array.isArray(award.playerIds) ? award.playerIds.map(String) : [],
+        }))
+      )
+      .filter((award) => award.playerIds.includes(String(id)))
+      .sort((a, b) => Number(b.seasonNumber || 0) - Number(a.seasonNumber || 0));
+  }, [competitionData?.archives, id]);
 
   const generalTrophyCount = useMemo(
     () =>
@@ -1987,6 +2004,55 @@ export default function PlayerProfile() {
             </div>
           </div>
         </>
+      )}
+
+      {profileTab === "achievements" && seasonHallCards.length > 0 && (
+        <div className="m8-panel rounded-[22px] p-4 sm:p-5 order-4" data-testid="season-hall-cards">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div>
+              <div className="brand-kicker mb-1 text-[#D5A33A]">Hall of Fame</div>
+              <h3 className="font-display font-black text-xl tracking-[-0.02em]">Season Award Cards</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Permanent cards earned at the end of archived seasons.
+              </p>
+            </div>
+            <Link
+              to="/bacheca/hall-of-fame"
+              className="h-9 px-3 rounded-xl border border-[#D5A33A]/20 bg-[#D5A33A]/[0.05] text-[#D5A33A] inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
+            >
+              <Award size={13} />
+              Hall of Fame
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+            {seasonHallCards.slice(0, 6).map((card) => (
+              <div
+                key={card.key}
+                className="rounded-2xl border border-[#2A303B] bg-[linear-gradient(145deg,rgba(213,163,58,.065),rgba(15,18,24,.98)_48%)] p-4 relative overflow-hidden"
+              >
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#D5A33A]/70 to-transparent" />
+                <div className="flex items-start justify-between gap-3">
+                  <div className="w-11 h-11 rounded-xl border border-white/10 bg-black/20 flex items-center justify-center text-2xl">
+                    {card.emoji || "🏆"}
+                  </div>
+                  <span className="text-[9px] uppercase tracking-widest text-[#697181]">
+                    {card.seasonName}
+                  </span>
+                </div>
+                <div className="font-display font-black mt-3">{card.title}</div>
+                <div className="font-mono text-xs font-black text-[#D5A33A] mt-1">{card.value || "Award"}</div>
+                <div className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{card.detail}</div>
+              </div>
+            ))}
+          </div>
+
+          {seasonHallCards.length > 6 && (
+            <div className="text-[10px] text-muted-foreground text-center mt-3">
+              +{seasonHallCards.length - 6} more card{seasonHallCards.length - 6 === 1 ? "" : "s"} in Hall of Fame
+            </div>
+          )}
+        </div>
       )}
 
       {profileTab === "achievements" && nextTrophyChallenges.length > 0 && (
