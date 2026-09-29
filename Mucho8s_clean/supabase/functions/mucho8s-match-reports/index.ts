@@ -881,7 +881,26 @@ Deno.serve(async (req: Request) => {
       const mode = String(body?.mode || "").trim();
       const format = String(body?.format || "").trim();
       const bestOf = Number(body?.bestOf) === 5 ? 5 : 3;
-      const seriesMaps = drawSeriesMaps(game, mode, format, bestOf);
+      const pool = competitiveMapPool(game, mode, format);
+      const requestedMaps = Array.isArray(body?.maps)
+        ? body.maps.map((map: unknown) => String(map || "").trim()).filter(Boolean)
+        : [];
+
+      let seriesMaps: string[] = [];
+      if (requestedMaps.length) {
+        const uniqueMaps = [...new Set(requestedMaps)];
+        const validManualRotation =
+          requestedMaps.length === bestOf &&
+          uniqueMaps.length === bestOf &&
+          requestedMaps.every((map) => pool.includes(map));
+
+        if (!validManualRotation) {
+          return json({ error: "Manual map rotation is invalid for this game/mode/format" }, 400);
+        }
+        seriesMaps = requestedMaps;
+      } else {
+        seriesMaps = drawSeriesMaps(game, mode, format, bestOf);
+      }
 
       if (teamA.length < 2 || teamA.length > 4 || teamA.length !== teamB.length) {
         return json({ error: "Teams must contain the same number of players (2-4)" }, 400);
