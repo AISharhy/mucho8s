@@ -9,7 +9,7 @@ import ModeBadge from "@/components/ModeBadge";
 import { GAMES } from "@/lib/demoData";
 
 const MATCH_MODES = ["Hardpoint", "Search & Destroy"];
-import { ArrowRightLeft, Crown, RotateCcw, Search, WalletCards, Trophy } from "lucide-react";
+import { ArrowRightLeft, Crown, Plus, RotateCcw, Search, Trash2, WalletCards, Trophy } from "lucide-react";
 import { toast } from "sonner";
 
 export const RecordMatchDialog = ({
@@ -39,6 +39,7 @@ export const RecordMatchDialog = ({
   const [query, setQuery] = useState("");
   const [moneySettings, setMoneySettings] = useState({});
   const [pairingOrder, setPairingOrder] = useState([]);
+  const [extraPairings, setExtraPairings] = useState([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -61,20 +62,41 @@ export const RecordMatchDialog = ({
 
     const nextMoney = {};
     const nextPairingOrder = [];
-    (Array.isArray(source?.pairings) ? source.pairings : []).forEach((pair) => {
+    const nextExtraPairings = [];
+    const usedA = new Set();
+    const usedB = new Set();
+
+    (Array.isArray(source?.pairings) ? source.pairings : []).forEach((pair, index) => {
       const playerAId = String(pair?.playerAId || "").trim();
       const playerBId = String(pair?.playerBId || "").trim();
       if (!playerAId || !playerBId) return;
-      nextPairingOrder.push({ playerAId, playerBId });
-      nextMoney[playerAId] = {
+
+      const normalized = {
+        id: `extra-${index}-${playerAId}-${playerBId}`,
+        playerAId,
+        playerBId,
         amount: String(Number(pair?.amount || 5)),
         platform: ["paypal", "revolut"].includes(String(pair?.platform || "").toLowerCase())
           ? String(pair.platform).toLowerCase()
           : "paypal",
       };
+
+      if (!usedA.has(playerAId) && !usedB.has(playerBId)) {
+        usedA.add(playerAId);
+        usedB.add(playerBId);
+        nextPairingOrder.push({ playerAId, playerBId });
+        nextMoney[playerAId] = {
+          amount: normalized.amount,
+          platform: normalized.platform,
+        };
+      } else {
+        nextExtraPairings.push(normalized);
+      }
     });
+
     setPairingOrder(nextPairingOrder);
     setMoneySettings(nextMoney);
+    setExtraPairings(nextExtraPairings);
   }, [open, editData?.id, liveMatchId, defaultGame, defaultMode]);
 
   const teamA = Object.keys(assign).filter((id) => assign[id] === "A");
@@ -144,18 +166,80 @@ export const RecordMatchDialog = ({
     });
   };
 
-  const submittedPairings = moneyPairings.map((pair) => ({
+  const addExtraPairing = () => {
+    if (!teamA.length || !teamB.length) return;
+
+    const existingKeys = new Set([
+      ...moneyPairings.map((pair) => `${pair.playerAId}:${pair.playerBId}`),
+      ...extraPairings.map((pair) => `${pair.playerAId}:${pair.playerBId}`),
+    ]);
+
+    let playerAId = teamA[0];
+    let playerBId = teamB[0];
+    let found = false;
+
+    for (const alphaId of teamA) {
+      for (const bravoId of teamB) {
+        if (!existingKeys.has(`${alphaId}:${bravoId}`)) {
+          playerAId = alphaId;
+          playerBId = bravoId;
+          found = true;
+          break;
+        }
+      }
+      if (found) break;
+    }
+
+    if (!found) {
+      toast.error("All cross-team Chall combinations are already in this match");
+      return;
+    }
+
+    setExtraPairings((prev) => [
+      ...prev,
+      {
+        id: `extra-${Date.now()}-${prev.length}`,
+        playerAId,
+        playerBId,
+        amount: "5",
+        platform: "paypal",
+      },
+    ]);
+  };
+
+  const updateExtraPairing = (id, field, value) => {
+    setExtraPairings((prev) =>
+      prev.map((pair) => (pair.id === id ? { ...pair, [field]: value } : pair))
+    );
+  };
+
+  const removeExtraPairing = (id) => {
+    setExtraPairings((prev) => prev.filter((pair) => pair.id !== id));
+  };
+
+  const submittedPairings = [
+    ...moneyPairings,
+    ...extraPairings,
+  ].map((pair) => ({
     playerAId: pair.playerAId,
     playerBId: pair.playerBId,
     amount: Number(String(pair.amount).replace(",", ".")),
     platform: pair.platform,
   }));
 
+  const primaryPairingsValid =
+    moneyPairings.length === teamA.length &&
+    moneyPairings.length === teamB.length &&
+    new Set(moneyPairings.map((pair) => pair.playerAId)).size === teamA.length &&
+    new Set(moneyPairings.map((pair) => pair.playerBId)).size === teamB.length;
+
+  const pairingKeys = submittedPairings.map(
+    (pair) => `${pair.playerAId}:${pair.playerBId}`
+  );
+
   const moneyValid =
-    submittedPairings.length === teamA.length &&
-    submittedPairings.length === teamB.length &&
-    new Set(submittedPairings.map((pair) => pair.playerAId)).size === teamA.length &&
-    new Set(submittedPairings.map((pair) => pair.playerBId)).size === teamB.length &&
+    primaryPairingsValid &&
+    new Set(pairingKeys).size === pairingKeys.length &&
     submittedPairings.every(
       (pair) =>
         teamA.includes(pair.playerAId) &&
@@ -457,14 +541,25 @@ export const RecordMatchDialog = ({
           )}
 
           <div className="rounded-2xl bg-[#0F1218] border border-[#222834] p-4" data-testid="match-money-settings">
-            <div className="flex items-center gap-2 mb-3">
-              <WalletCards size={16} className="text-emerald-400" />
-              <div>
-                <div className="text-sm font-bold">Money Chall Pairings</div>
-                <div className="text-[11px] text-muted-foreground">
-                  Choose who each player was playing against and adjust the stake if needed.
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <WalletCards size={16} className="text-emerald-400 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-sm font-bold">Money Chall Pairings</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Base pairings + optional extra Challs against another opponent.
+                  </div>
                 </div>
               </div>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={addExtraPairing}
+                disabled={!teamA.length || !teamB.length}
+                className="h-8 px-2.5 rounded-lg border border-emerald-500/25 bg-emerald-500/[0.06] text-emerald-400 hover:bg-emerald-500/[0.12] hover:text-emerald-300 text-[10px] font-black shrink-0"
+              >
+                <Plus size={13} className="mr-1" /> Add Chall
+              </Button>
             </div>
 
             <div className="space-y-2">
@@ -512,6 +607,76 @@ export const RecordMatchDialog = ({
                 );
               })}
             </div>
+
+            {extraPairings.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-[#242A35]">
+                <div className="text-[9px] uppercase tracking-[0.16em] text-emerald-400 font-black mb-2">
+                  Extra Challs
+                </div>
+                <div className="space-y-2">
+                  {extraPairings.map((pair, index) => {
+                    const alpha = players.find((player) => player.id === pair.playerAId);
+                    const bravo = players.find((player) => player.id === pair.playerBId);
+
+                    return (
+                      <div
+                        key={pair.id}
+                        className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_100px_36px] gap-2 items-center rounded-xl bg-emerald-500/[0.035] border border-emerald-500/15 p-2.5"
+                      >
+                        <select
+                          value={pair.playerAId}
+                          onChange={(event) => updateExtraPairing(pair.id, "playerAId", event.target.value)}
+                          className="h-9 rounded-lg bg-[#0F1218] border border-[#2A303B] px-2 text-xs font-semibold min-w-0"
+                          aria-label={`Extra Chall alpha player ${index + 1}`}
+                        >
+                          {teamA.map((id) => {
+                            const player = players.find((item) => item.id === id);
+                            return <option key={id} value={id}>{player?.name || "Alpha"}</option>;
+                          })}
+                        </select>
+
+                        <ArrowRightLeft size={13} className="text-emerald-400" />
+
+                        <select
+                          value={pair.playerBId}
+                          onChange={(event) => updateExtraPairing(pair.id, "playerBId", event.target.value)}
+                          className="h-9 rounded-lg bg-[#0F1218] border border-[#2A303B] px-2 text-xs font-semibold min-w-0"
+                          aria-label={`Extra Chall bravo player ${index + 1}`}
+                        >
+                          {teamB.map((id) => {
+                            const player = players.find((item) => item.id === id);
+                            return <option key={id} value={id}>{player?.name || "Bravo"}</option>;
+                          })}
+                        </select>
+
+                        <div className="relative col-span-2 sm:col-span-1">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">€</span>
+                          <Input
+                            type="number"
+                            min="0.5"
+                            step="0.5"
+                            value={pair.amount}
+                            onChange={(event) => updateExtraPairing(pair.id, "amount", event.target.value)}
+                            className="h-9 pl-6 bg-[#0F1218] border-[#2A303B] text-xs"
+                            aria-label={`Extra Chall amount for ${alpha?.name || "Alpha"} vs ${bravo?.name || "Bravo"}`}
+                          />
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => removeExtraPairing(pair.id)}
+                          className="h-9 w-9 p-0 rounded-lg border border-red-500/20 bg-red-500/[0.04] text-red-400 hover:bg-red-500/[0.10] hover:text-red-300 col-span-1"
+                          aria-label={`Remove extra Chall ${index + 1}`}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {moneyPairings.length === 0 && (
               <div className="text-xs text-muted-foreground text-center py-2">
