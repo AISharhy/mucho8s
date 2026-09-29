@@ -1,1 +1,65 @@
 .App { min-height: 100vh; }
+
+
+.m8-season-reveal {
+  position: fixed;
+  inset: 0;
+  z-index: 220;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(213, 163, 58, 0.12), transparent 34%),
+    radial-gradient(circle at 18% 72%, rgba(255, 42, 59, 0.08), transparent 30%),
+    rgba(6, 8, 12, 0.96);
+  backdrop-filter: blur(18px);
+  animation: m8-season-fade 320ms ease-out both;
+}
+
+.m8-season-reveal-noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.28;
+  background-image:
+    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.014) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(circle at center, black, transparent 78%);
+}
+
+.m8-season-reveal-card {
+  animation: m8-season-card-in 520ms cubic-bezier(.2,.8,.2,1) both;
+  transform-origin: center;
+}
+
+@keyframes m8-season-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes m8-season-card-in {
+  0% {
+    opacity: 0;
+    transform: perspective(1000px) rotateY(-10deg) scale(.9) translateY(26px);
+    filter: blur(5px);
+  }
+  70% {
+    opacity: 1;
+    transform: perspective(1000px) rotateY(1deg) scale(1.02) translateY(0);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1000px) rotateY(0) scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m8-season-reveal,
+  .m8-season-reveal-card {
+    animation: none !important;
+  }
+}
