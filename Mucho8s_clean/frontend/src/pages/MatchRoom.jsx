@@ -249,8 +249,8 @@ export default function MatchRoom() {
 
   const teamA = Array.isArray(match.team_a) ? match.team_a : [];
   const teamB = Array.isArray(match.team_b) ? match.team_b : [];
-  const seriesMaps = Array.isArray(match.maps) ? match.maps.filter(Boolean).slice(0, 5) : [];
-  const seriesBestOf = seriesMaps.length >= 5 ? 5 : 3;
+  const seriesMaps = Array.isArray(match.maps) ? match.maps.filter(Boolean).slice(0, 7) : [];
+  const seriesBestOf = seriesMaps.length >= 7 ? 7 : seriesMaps.length >= 5 ? 5 : 3;
   const captainId = String(match.captain_player_id || "");
   const isCaptain =
     Boolean(discordPlayer?.id) &&
@@ -416,7 +416,7 @@ export default function MatchRoom() {
         </div>
       </section>
 
-      {[3, 5].includes(seriesMaps.length) && (
+      {[3, 5, 7].includes(seriesMaps.length) && (
         <section className="m8-panel rounded-[22px] p-3">
           <div className="flex items-center justify-between gap-3 mb-2">
             <div>
@@ -425,7 +425,7 @@ export default function MatchRoom() {
             </div>
             <span className="m8-pill">Best of {seriesBestOf}</span>
           </div>
-          <div className={seriesBestOf === 5 ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2" : "grid grid-cols-1 sm:grid-cols-3 gap-2"}>
+          <div className={seriesBestOf >= 5 ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2" : "grid grid-cols-1 sm:grid-cols-3 gap-2"}>
             {seriesMaps.map((mapName, index) => (
               <MapPreviewCard
                 key={mapName + "-" + index}
