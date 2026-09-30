@@ -116,6 +116,7 @@ export default function HallOfFame() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [selectedAward, setSelectedAward] = useState(null);
+  const [selectedRecap, setSelectedRecap] = useState(null);
 
   const archivedPlayers = useMemo(() => archivePlayerLookup(archives), [archives]);
   const playerLookup = useMemo(
@@ -123,6 +124,71 @@ export default function HallOfFame() {
     [archivedPlayers, playerMap]
   );
   const awards = useMemo(() => normalizeAwards(archives, publicChallenges), [archives, publicChallenges]);
+
+  const seasonRecaps = useMemo(() => archives.flatMap((season) => {
+    const seasonPlayers = Array.isArray(season?.players) ? season.players : [];
+    const seasonMatches = Array.isArray(season?.matches) ? season.matches : [];
+    const seasonNumber = Number(season?.season_number || 0);
+    return seasonPlayers
+      .filter((player) => Number(player?.totalMatches || 0) > 0)
+      .map((player) => {
+        const id = String(player.id);
+        const personalMatches = seasonMatches.filter((match) =>
+          [...(match?.teamA || []), ...(match?.teamB || [])].map(String).includes(id)
+        );
+        let currentStreak = 0;
+        let bestStreak = 0;
+        const mapStats = new Map();
+        const opponents = new Map();
+        personalMatches
+          .slice()
+          .sort((a, b) => new Date(a?.date || 0) - new Date(b?.date || 0))
+          .forEach((match) => {
+            const onA = (match?.teamA || []).map(String).includes(id);
+            const won = (onA && match?.winner === "A") || (!onA && match?.winner === "B");
+            currentStreak = won ? currentStreak + 1 : 0;
+            bestStreak = Math.max(bestStreak, currentStreak);
+            const enemyIds = (onA ? match?.teamB : match?.teamA || []).map(String);
+            enemyIds.forEach((enemyId) => {
+              const row = opponents.get(enemyId) || { id: enemyId, games: 0, losses: 0 };
+              row.games += 1;
+              if (!won) row.losses += 1;
+              opponents.set(enemyId, row);
+            });
+            (Array.isArray(match?.mapResults) ? match.mapResults : []).forEach((row) => {
+              if (!row?.map || !["A", "B"].includes(row?.winner)) return;
+              const stat = mapStats.get(row.map) || { map: row.map, wins: 0, losses: 0 };
+              const mapWon = (onA && row.winner === "A") || (!onA && row.winner === "B");
+              if (mapWon) stat.wins += 1; else stat.losses += 1;
+              mapStats.set(row.map, stat);
+            });
+          });
+        const bestMap = [...mapStats.values()]
+          .filter((row) => row.wins + row.losses > 0)
+          .sort((a, b) => (b.wins / (b.wins + b.losses)) - (a.wins / (a.wins + a.losses)) || (b.wins + b.losses) - (a.wins + a.losses))[0] || null;
+        const nemesis = [...opponents.values()]
+          .filter((row) => row.games >= 2)
+          .sort((a, b) => b.losses - a.losses || b.games - a.games)[0] || null;
+        return {
+          key: `${seasonNumber}:${id}`,
+          seasonNumber,
+          seasonName: season?.season_name || `Season ${seasonNumber}`,
+          player,
+          wins: Number(player?.wins || personalMatches.filter((match) => {
+            const onA = (match?.teamA || []).map(String).includes(id);
+            return (onA && match?.winner === "A") || (!onA && match?.winner === "B");
+          }).length),
+          losses: Number(player?.losses || 0),
+          finalElo: Math.round(Number(player?.currentElo || 0)),
+          peakElo: Math.round(Number(player?.peakElo || player?.currentElo || 0)),
+          bestStreak,
+          mvp: Number(player?.mvpCount || 0),
+          merda: Number(player?.merdaCount || 0),
+          bestMap,
+          nemesis,
+        };
+      });
+  }), [archives]);
 
   const categories = useMemo(
     () => [...new Set(awards.map((award) => award.category).filter(Boolean))].sort(),
@@ -241,6 +307,34 @@ export default function HallOfFame() {
         </section>
       )}
 
+      {seasonRecaps.length > 0 && (
+        <section className="m8-panel rounded-[22px] p-4">
+          <div className="flex items-end justify-between gap-3 mb-3">
+            <div>
+              <div className="brand-kicker mb-1">Season Recap</div>
+              <h3 className="font-display text-xl font-black">Player season cards</h3>
+            </div>
+            <span className="text-[10px] text-muted-foreground">Permanent archive</span>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-1">
+            {seasonRecaps.slice().sort((a,b) => b.seasonNumber-a.seasonNumber || b.finalElo-a.finalElo).map((recap) => (
+              <button key={recap.key} type="button" onClick={() => setSelectedRecap(recap)} className="shrink-0 w-[230px] rounded-[20px] border border-[#D5A33A]/25 bg-[linear-gradient(145deg,rgba(213,163,58,.10),rgba(13,17,23,.98)_55%)] p-4 text-left hover:border-[#D5A33A]/50 transition-all">
+                <div className="text-[9px] uppercase tracking-[0.17em] text-[#D5A33A]">{recap.seasonName}</div>
+                <div className="mt-4 flex items-center gap-3">
+                  <PlayerAvatar name={recap.player.name} elo={recap.finalElo} size={46} avatarUrl={playerAvatars?.[recap.player.id]} />
+                  <div className="min-w-0"><div className="font-display font-black truncate">{recap.player.name}</div><div className="font-mono text-[10px] text-muted-foreground">{recap.finalElo} Elo</div></div>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5 mt-4 text-center">
+                  <div className="rounded-lg bg-black/20 p-2"><div className="font-mono text-xs font-black">{recap.wins}-{recap.losses}</div><div className="text-[8px] text-muted-foreground">W-L</div></div>
+                  <div className="rounded-lg bg-black/20 p-2"><div className="font-mono text-xs font-black">{recap.peakElo}</div><div className="text-[8px] text-muted-foreground">PEAK</div></div>
+                  <div className="rounded-lg bg-black/20 p-2"><div className="font-mono text-xs font-black">W{recap.bestStreak}</div><div className="text-[8px] text-muted-foreground">STREAK</div></div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
       {awards.length > 0 ? (
         <>
           <section className="m8-panel rounded-[22px] p-4">
@@ -335,6 +429,34 @@ export default function HallOfFame() {
           </div>
         </section>
       )}
+
+      <Dialog open={Boolean(selectedRecap)} onOpenChange={(open) => !open && setSelectedRecap(null)}>
+        <DialogContent className="bg-[#090C11] border-[#D5A33A]/30 sm:max-w-2xl rounded-[28px] overflow-hidden">
+          {selectedRecap && (
+            <div className="relative">
+              <div className="text-center">
+                <div className="text-[10px] uppercase tracking-[0.24em] text-[#D5A33A]">{selectedRecap.seasonName} · Season Recap</div>
+                <div className="mt-5 flex justify-center"><PlayerAvatar name={selectedRecap.player.name} elo={selectedRecap.finalElo} size={84} avatarUrl={playerAvatars?.[selectedRecap.player.id]} /></div>
+                <h2 className="font-display text-3xl font-black mt-3">{selectedRecap.player.name}</h2>
+                <div className="font-mono text-sm text-[#D5A33A] mt-1">{selectedRecap.finalElo} FINAL ELO · {selectedRecap.peakElo} PEAK</div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-6">
+                {[
+                  ["Record", `${selectedRecap.wins}-${selectedRecap.losses}`],
+                  ["Best Streak", `W${selectedRecap.bestStreak}`],
+                  ["MVP", selectedRecap.mvp],
+                  ["💩", selectedRecap.merda],
+                  ["Best Map", selectedRecap.bestMap ? `${selectedRecap.bestMap.map} · ${Math.round(selectedRecap.bestMap.wins / (selectedRecap.bestMap.wins + selectedRecap.bestMap.losses) * 100)}%` : "—"],
+                  ["Nemesis", selectedRecap.nemesis ? (playerLookup[selectedRecap.nemesis.id]?.name || "Player") : "—"],
+                  ["Final Elo", selectedRecap.finalElo],
+                  ["Peak Elo", selectedRecap.peakElo],
+                ].map(([label,value]) => <div key={label} className="rounded-xl border border-[#222834] bg-[#0F1218] p-3 text-center"><div className="font-mono text-sm font-black">{value}</div><div className="text-[8px] uppercase tracking-wider text-muted-foreground mt-1">{label}</div></div>)}
+              </div>
+              <div className="text-center text-[9px] uppercase tracking-[0.2em] text-[#697181] mt-6">Mucho · Hall of Fame</div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={Boolean(selectedAward)} onOpenChange={(open) => !open && setSelectedAward(null)}>
         <DialogContent className="bg-[#0D1117] border-[#2A303B] sm:max-w-lg rounded-[24px] overflow-hidden">
