@@ -54,6 +54,7 @@ import {
 } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer, Tooltip, YAxis, XAxis, CartesianGrid } from "recharts";
 import { toast } from "sonner";
+import { AnimatePresence, motion } from "framer-motion";
 
 const TROPHY_FAMILY_STYLES = {
   General: {
@@ -1179,39 +1180,132 @@ export default function PlayerProfile() {
       <MerdaRainOverlay count={merdaCountValue} visible={showMerdaIntro} />
       <CleanAgainOverlay visible={showCleanAgain} />
 
-      {rankTransition && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden bg-[#05070b]/95 backdrop-blur-xl" role="dialog" aria-modal="true" aria-label="Rank transition">
-          <div className="absolute inset-0 opacity-40" style={{ background: `radial-gradient(circle at 50% 45%, ${rankTransition.tier.color}55 0%, transparent 42%)` }} />
-          <div className="absolute inset-0 m8-rank-transition-grid" />
-          <div className={`relative z-10 flex w-full max-w-3xl flex-col items-center px-6 text-center ${rankTransition.direction === "up" ? "m8-rank-transition-up" : "m8-rank-transition-down"}`}>
-            <div className="mb-5 text-[11px] font-black uppercase tracking-[0.45em] text-white/45">Mucho Ranked</div>
-            <div className="mb-2 text-sm font-black uppercase tracking-[0.32em]" style={{ color: rankTransition.direction === "up" ? rankTransition.tier.color : "#ef6b73" }}>
-              {rankTransition.direction === "up" ? "Rank Up" : "Rank Down"}
+      <AnimatePresence>
+        {rankTransition && (
+          <motion.div
+            className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden bg-[#05070b]/95 backdrop-blur-xl"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Rank transition"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 1.04 }}
+            transition={{ duration: 0.28 }}
+          >
+            <motion.div
+              className="absolute inset-0"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.7, 0.35] }}
+              transition={{ duration: 1.1, times: [0, 0.35, 1] }}
+              style={{ background: `radial-gradient(circle at 50% 45%, ${rankTransition.tier.color}66 0%, transparent 46%)` }}
+            />
+            <div className="absolute inset-0 m8-rank-transition-grid" />
+
+            {Array.from({ length: 24 }, (_, index) => {
+              const angle = (index / 24) * Math.PI * 2;
+              const distance = 170 + (index % 5) * 26;
+              return (
+                <motion.span
+                  key={index}
+                  className="absolute left-1/2 top-1/2 h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: rankTransition.tier.color, boxShadow: `0 0 12px ${rankTransition.tier.color}` }}
+                  initial={{ x: 0, y: 0, scale: 0, opacity: 0 }}
+                  animate={{
+                    x: Math.cos(angle) * distance,
+                    y: Math.sin(angle) * distance,
+                    scale: [0, 1.5, 0],
+                    opacity: [0, 1, 0],
+                  }}
+                  transition={{ delay: 0.62 + (index % 4) * 0.035, duration: 0.9, ease: "easeOut" }}
+                />
+              );
+            })}
+
+            <motion.div
+              className="absolute inset-0 bg-white pointer-events-none"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0, 0.8, 0] }}
+              transition={{ duration: 1.05, times: [0, 0.56, 0.62, 1] }}
+            />
+
+            <div className="relative z-10 flex w-full max-w-3xl flex-col items-center px-6 text-center">
+              <motion.div
+                className="mb-5 text-[11px] font-black uppercase tracking-[0.45em] text-white/45"
+                initial={{ opacity: 0, y: -12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+              >
+                Mucho Ranked
+              </motion.div>
+
+              <motion.div
+                className="mb-2 text-sm font-black uppercase tracking-[0.32em]"
+                style={{ color: rankTransition.direction === "up" ? rankTransition.tier.color : "#ef6b73" }}
+                initial={{ opacity: 0, letterSpacing: "0.6em" }}
+                animate={{ opacity: 1, letterSpacing: "0.32em" }}
+                transition={{ delay: 0.28, duration: 0.5 }}
+              >
+                {rankTransition.direction === "up" ? "Rank Up" : "Rank Down"}
+              </motion.div>
+
+              <div className="relative my-6 flex h-64 w-64 items-center justify-center">
+                <motion.div
+                  className="absolute inset-0 rounded-full"
+                  style={{ boxShadow: `0 0 100px ${rankTransition.tier.color}66` }}
+                  initial={{ scale: 0.35, opacity: 0 }}
+                  animate={{ scale: [0.35, 1.45, 1], opacity: [0, 0.9, 0.35] }}
+                  transition={{ delay: 0.42, duration: 1, ease: [0.16, 1, 0.3, 1] }}
+                />
+                <motion.div
+                  initial={{ scale: 0.18, rotate: rankTransition.direction === "up" ? -18 : 12, opacity: 0, filter: "blur(18px)" }}
+                  animate={{
+                    scale: [0.18, 1.28, 0.96, 1],
+                    rotate: [rankTransition.direction === "up" ? -18 : 12, 4, -2, 0],
+                    opacity: 1,
+                    filter: "blur(0px)",
+                  }}
+                  transition={{ delay: 0.48, duration: 1.05, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <RankArtwork elo={rankTransition.elo} size="xl" />
+                </motion.div>
+              </div>
+
+              <motion.div
+                className="text-5xl font-black uppercase tracking-tight text-white sm:text-7xl"
+                initial={{ opacity: 0, y: 28, scale: 0.92 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ delay: 1.05, duration: 0.48, ease: "easeOut" }}
+              >
+                {rankTransition.to}
+              </motion.div>
+              <motion.div
+                className="mt-3 font-mono text-sm font-bold tracking-[0.24em] text-white/55"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.28 }}
+              >
+                {rankTransition.elo} ELO
+              </motion.div>
+              <motion.div
+                className="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-white/35"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.4 }}
+              >
+                {rankTransition.from} → {rankTransition.to}
+              </motion.div>
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.55 }}>
+                <Button onClick={() => setRankTransition(null)} className="mt-9 min-w-44 rounded-xl bg-white text-black hover:bg-white/90 font-black uppercase tracking-[0.18em]">
+                  Continue
+                </Button>
+              </motion.div>
             </div>
-            <div className="relative my-6 flex h-64 w-64 items-center justify-center">
-              <div className="absolute inset-0 rounded-full m8-rank-transition-pulse" style={{ boxShadow: `0 0 90px ${rankTransition.tier.color}55` }} />
-              <RankArtwork elo={rankTransition.elo} size="xl" />
-            </div>
-            <div className="text-5xl font-black uppercase tracking-tight text-white sm:text-7xl">{rankTransition.to}</div>
-            <div className="mt-3 font-mono text-sm font-bold tracking-[0.24em] text-white/55">{rankTransition.elo} ELO</div>
-            <div className="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-white/35">
-              {rankTransition.from} → {rankTransition.to}
-            </div>
-            <Button onClick={() => setRankTransition(null)} className="mt-9 min-w-44 rounded-xl bg-white text-black hover:bg-white/90 font-black uppercase tracking-[0.18em]">
-              Continue
-            </Button>
-          </div>
-          <style>{`
-            .m8-rank-transition-grid { background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px); background-size: 44px 44px; mask-image: radial-gradient(circle, black 15%, transparent 72%); }
-            .m8-rank-transition-up { animation: m8RankReveal .72s cubic-bezier(.16,1,.3,1) both; }
-            .m8-rank-transition-down { animation: m8RankDrop .72s cubic-bezier(.16,1,.3,1) both; }
-            .m8-rank-transition-pulse { animation: m8RankPulse 1.45s ease-out infinite; }
-            @keyframes m8RankReveal { 0% { opacity:0; transform:scale(.72); filter:blur(18px); } 55% { opacity:1; transform:scale(1.055); filter:blur(0); } 100% { transform:scale(1); } }
-            @keyframes m8RankDrop { 0% { opacity:0; transform:translateY(-30px) scale(1.08); filter:blur(12px); } 60% { opacity:1; transform:translateY(8px) scale(.97); filter:blur(0); } 100% { transform:none; } }
-            @keyframes m8RankPulse { 0% { transform:scale(.7); opacity:.8; } 100% { transform:scale(1.35); opacity:0; } }
-          `}</style>
-        </div>
-      )}
+            <style>{`
+              .m8-rank-transition-grid { background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px); background-size: 44px 44px; mask-image: radial-gradient(circle, black 15%, transparent 72%); }
+            `}</style>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <Link to="/players" className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-white self-start m8-pill order-0">
         <ArrowLeft size={16} /> Back to players
