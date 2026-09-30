@@ -551,9 +551,20 @@ export default function Play() {
               <span className="m8-pill">History</span>
             </div>
 
-            <div className="m8-play-tourney-soon">
-              <span>Coming Soon</span>
-            </div>
+            {isAdmin ? (
+              <button
+                type="button"
+                onClick={() => navigate("/tourney")}
+                className="m8-play-tourney-soon group cursor-pointer hover:border-[#D5A33A]/45 hover:bg-[#D5A33A]/[0.07] transition-all"
+                data-testid="open-muchotourney-admin"
+              >
+                <span className="text-[#D5A33A] group-hover:text-white transition-colors">OPEN ADMIN TEST</span>
+              </button>
+            ) : (
+              <div className="m8-play-tourney-soon">
+                <span>Coming Soon</span>
+              </div>
+            )}
           </div>
         </div>
       </section>
