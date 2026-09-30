@@ -267,8 +267,8 @@ export default function MatchRoom() {
       : teamA.map((playerAId, index) => ({
           playerAId,
           playerBId: teamB[index] || "",
-          amount: 5,
-          platform: "paypal",
+          amount: 0,
+          platform: "free",
         }));
 
   const totalStake = pairings.reduce(
