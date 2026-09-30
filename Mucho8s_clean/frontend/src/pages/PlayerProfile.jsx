@@ -1622,7 +1622,7 @@ export default function PlayerProfile() {
                 tone: "text-[#D5A33A]",
               },
               {
-                label: "Winnings",
+                label: "Earnings",
                 value: `€${(
                   Number(mucho8sInsights.wonValue || 0) +
                   Number(challengeStats.wonValue || 0)
@@ -1922,7 +1922,7 @@ export default function PlayerProfile() {
                     ["General Trophies", generalTrophyCount],
                     ["MVP Trophy", Number(player.mvpCount || 0)],
                     ["Best Win Streak", mucho8sInsights.bestWinStreak ? `${mucho8sInsights.bestWinStreak}W` : "—"],
-                    ["Total Winnings", `€${(Number(mucho8sInsights.wonValue || 0) + Number(challengeStats.wonValue || 0)).toFixed(0)}`],
+                    ["Total Earnings", `€${(Number(mucho8sInsights.wonValue || 0) + Number(challengeStats.wonValue || 0)).toFixed(0)}`],
                   ].map(([label, value]) => (
                     <div key={label} className="m8-profile-detail-stat">
                       <span>{label}</span>
@@ -2595,7 +2595,7 @@ export default function PlayerProfile() {
               <div className="font-display text-xl font-black mt-1">{historySummary.winRate}%</div>
             </div>
             <div className="m8-stat-card">
-              <div className="brand-kicker">Winnings</div>
+              <div className="brand-kicker">Earnings</div>
               <div className="font-display text-xl font-black mt-1 text-emerald-400">
                 €{Number(historySummary.winnings || 0).toFixed(0)}
               </div>
@@ -2749,7 +2749,7 @@ export default function PlayerProfile() {
                 <h3 className="font-display font-bold text-lg">My Mucho1v1</h3>
               </div>
               <div className="text-right">
-                <div className="text-[9px] uppercase tracking-widest text-[#697181]">Mucho1v1 Winnings</div>
+                <div className="text-[9px] uppercase tracking-widest text-[#697181]">Mucho1v1 Earnings</div>
                 <div className="font-mono font-black text-emerald-400 mt-0.5">
                   €{Number(challengeStats.wonValue || 0).toFixed(2)}
                 </div>
