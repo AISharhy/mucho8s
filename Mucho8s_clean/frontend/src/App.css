@@ -63,3 +63,44 @@
     animation: none !important;
   }
 }
+
+
+/* Rank System — per-rank reveal FX */
+.rank-detail-modal{isolation:isolate;animation:m8RankCardIn .38s cubic-bezier(.16,1,.3,1) both}
+.rank-detail-modal::before,.rank-detail-modal::after{content:"";position:absolute;pointer-events:none;z-index:0}
+.rank-detail-modal::before{inset:-35%;background:conic-gradient(from 180deg,transparent 0 34%,var(--rank-fx,rgba(255,255,255,.08)) 42%,transparent 50% 100%);opacity:.32;animation:m8RankSweep 1.8s ease-out both}
+.rank-detail-modal::after{inset:0;border-radius:inherit;box-shadow:inset 0 0 42px var(--rank-fx,transparent);opacity:.22}
+.rank-detail-emblem{position:relative;animation:m8EmblemPop .55s cubic-bezier(.16,1,.3,1) both}
+.rank-detail-progress{transform-origin:left;animation:m8RankProgress .9s .18s cubic-bezier(.2,.8,.2,1) both}
+.rank-detail-iron{--rank-fx:rgba(148,160,177,.28);animation-name:m8IronHit}
+.rank-detail-bronze{--rank-fx:rgba(225,139,85,.35)}
+.rank-detail-silver{--rank-fx:rgba(214,222,232,.38)}
+.rank-detail-gold{--rank-fx:rgba(255,208,90,.42)}
+.rank-detail-platinum{--rank-fx:rgba(95,226,216,.42)}
+.rank-detail-diamond{--rank-fx:rgba(155,153,255,.52)}
+.rank-detail-masters{--rank-fx:rgba(255,79,104,.55);animation-name:m8MastersImpact}
+.rank-detail-emblem-bronze{animation-name:m8Forge}
+.rank-detail-emblem-silver{animation-name:m8Chrome}
+.rank-detail-emblem-gold{animation-name:m8GoldSpin}
+.rank-detail-emblem-platinum{animation-name:m8Energy}
+.rank-detail-emblem-diamond{animation-name:m8Crystal}
+.rank-detail-emblem-masters{animation-name:m8MasterPulse;animation-duration:.8s}
+.rank-detail-diamond::before{background:conic-gradient(from 20deg,transparent,#9b99ff22,#72eaff55,#ff8ff733,transparent 45%);animation:m8Prism 2.4s linear infinite}
+.rank-detail-masters::after{animation:m8Aura 1.5s ease-in-out infinite alternate;opacity:.55}
+.rank-pyramid-step:hover .rank-pyramid-tier{transform:translateY(-2px);filter:brightness(1.08)}
+.rank-pyramid-step:active .rank-pyramid-icon{transform:scale(1.08)}
+@keyframes m8RankCardIn{from{opacity:0;transform:translateY(18px) scale(.92)}to{opacity:1;transform:none}}
+@keyframes m8IronHit{0%{opacity:0;transform:scale(.94) translateY(-8px)}55%{transform:scale(1.015) translateY(2px)}70%{transform:translateX(-2px)}82%{transform:translateX(2px)}100%{opacity:1;transform:none}}
+@keyframes m8MastersImpact{0%{opacity:0;transform:scale(.72);filter:brightness(2)}58%{opacity:1;transform:scale(1.035)}100%{transform:scale(1);filter:none}}
+@keyframes m8EmblemPop{0%{opacity:0;transform:scale(.45) translateY(16px)}70%{opacity:1;transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes m8Forge{0%{opacity:0;transform:scale(.6);filter:brightness(3) saturate(.4)}55%{opacity:1;filter:brightness(1.8)}100%{transform:scale(1);filter:none}}
+@keyframes m8Chrome{0%{opacity:0;transform:translateX(-20px);filter:brightness(2.5)}100%{opacity:1;transform:none;filter:none}}
+@keyframes m8GoldSpin{0%{opacity:0;transform:perspective(500px) rotateY(-70deg) scale(.65)}70%{opacity:1;transform:perspective(500px) rotateY(8deg) scale(1.08)}100%{transform:none}}
+@keyframes m8Energy{0%{opacity:0;transform:scale(.2);filter:blur(8px) brightness(3)}60%{opacity:1;transform:scale(1.12);filter:blur(0) brightness(1.7)}100%{transform:scale(1);filter:none}}
+@keyframes m8Crystal{0%{opacity:0;transform:scale(.25) rotate(-18deg);filter:blur(7px) brightness(3)}65%{opacity:1;transform:scale(1.14) rotate(3deg);filter:blur(0) brightness(1.8)}100%{transform:none;filter:none}}
+@keyframes m8MasterPulse{0%{opacity:0;transform:scale(.25);filter:brightness(4)}48%{opacity:1;transform:scale(1.22);filter:brightness(2)}70%{transform:scale(.94)}100%{transform:scale(1);filter:none}}
+@keyframes m8RankSweep{0%{transform:rotate(-35deg);opacity:0}35%{opacity:.55}100%{transform:rotate(75deg);opacity:0}}
+@keyframes m8Prism{to{transform:rotate(360deg)}}
+@keyframes m8Aura{from{box-shadow:inset 0 0 25px rgba(255,79,104,.22),0 0 10px rgba(255,79,104,.1)}to{box-shadow:inset 0 0 65px rgba(255,79,104,.35),0 0 45px rgba(255,79,104,.28)}}
+@keyframes m8RankProgress{from{transform:scaleX(0);filter:brightness(2)}to{transform:scaleX(1);filter:none}}
+@media (prefers-reduced-motion:reduce){.rank-detail-modal,.rank-detail-modal::before,.rank-detail-modal::after,.rank-detail-emblem,.rank-detail-progress{animation:none!important}.rank-pyramid-step *{transition:none!important}}
