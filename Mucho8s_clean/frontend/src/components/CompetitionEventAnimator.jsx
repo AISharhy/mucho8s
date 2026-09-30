@@ -6,6 +6,15 @@ import { RankArtwork } from "@/components/shared";
 
 const family = (elo) => String(tierOf(elo)?.id || "iron").split("-")[0];
 const rankOrder = ["iron", "bronze", "silver", "gold", "platinum", "diamond", "masters"];
+const MEDIA_STORAGE_KEY = "mucho8s-media-lab-v1";
+const readMediaConfig = (type) => {
+  try {
+    const all = JSON.parse(window.localStorage.getItem(MEDIA_STORAGE_KEY) || "{}");
+    return all?.[type] || null;
+  } catch {
+    return null;
+  }
+};
 
 const playerName = (playerMap, id) => playerMap?.[id]?.name || "Opponent";
 
@@ -207,9 +216,14 @@ export default function CompetitionEventAnimator() {
 
   useEffect(() => {
     if (!active) return undefined;
+    const media = active.media || readMediaConfig(active.type);
     playEventSound(active.type);
     const premium = ["season", "placement", "rank-up", "rank-down", "trophy"].includes(active.type);
-    const timer = window.setTimeout(() => setActive(null), premium ? 4300 : 2600);
+    const configuredDuration = Number(media?.duration);
+    const duration = Number.isFinite(configuredDuration) && configuredDuration >= 800
+      ? configuredDuration
+      : premium ? 4300 : 2600;
+    const timer = window.setTimeout(() => setActive(null), duration);
     return () => window.clearTimeout(timer);
   }, [active]);
 
@@ -218,6 +232,8 @@ export default function CompetitionEventAnimator() {
   const isRank = ["rank-up", "rank-down", "placement"].includes(active.type);
   const rankTier = isRank ? tierOf(active.elo) : null;
   const [title, subtitle] = eventCopy(active);
+  const media = active.media || readMediaConfig(active.type);
+  const vfxName = media?.vfx || "";
   const special = ["match-found","streak","defense","promotion","revenge","king","money","rivalry","mastery","record","shutdown"].includes(active.type);
 
   if (special) {
@@ -264,6 +280,7 @@ export default function CompetitionEventAnimator() {
     <AnimatePresence>
       <motion.div
         className="fixed inset-0 z-[150] flex items-center justify-center overflow-hidden bg-[#05070b]/95 backdrop-blur-xl"
+        data-media-vfx={vfxName || undefined}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
