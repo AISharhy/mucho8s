@@ -9,6 +9,7 @@ import { PlayerAvatar, EloBadge } from "@/components/shared";
 import ModeBadge from "@/components/ModeBadge";
 import { AlertTriangle, Bell, CheckCheck, Swords, Trophy, ShieldAlert, WalletCards, X, Shield, Gamepad2, Search, ChevronDown, LogOut, MessageCircle, UserCircle, Twitch } from "lucide-react";
 import { useData } from "@/context/DataContext";
+import { fetchTourney, subscribeTourney } from "@/lib/tourneyLive";
 
 class PageErrorBoundary extends Component {
   constructor(props) {
@@ -115,9 +116,9 @@ export const Layout = () => {
   const [submittingPlayerRequest, setSubmittingPlayerRequest] = useState(false);
   const [markingAllRead, setMarkingAllRead] = useState(false);
   const [seenModeNotificationKeys, setSeenModeNotificationKeys] = useState(() => new Set());
-  const [liveTourney, setLiveTourney] = useState(() => { try { const row=JSON.parse(localStorage.getItem("mucho8s-tourney-admin-v1")||"null"); return ["live","completed"].includes(row?.status)?row:null; } catch { return null; } });
+  const [liveTourney, setLiveTourney] = useState(null);
 
-  useEffect(() => { const sync=()=>{try{const row=JSON.parse(localStorage.getItem("mucho8s-tourney-admin-v1")||"null");setLiveTourney(["live","completed"].includes(row?.status)?row:null)}catch{setLiveTourney(null)}}; window.addEventListener("storage",sync); window.addEventListener("mucho:tourney-update",sync); return()=>{window.removeEventListener("storage",sync);window.removeEventListener("mucho:tourney-update",sync)}; }, []);
+  useEffect(() => { let alive=true; const apply=row=>{if(alive)setLiveTourney(["live","completed"].includes(row?.status)?row:null)}; fetchTourney().then(apply); const off=subscribeTourney(apply); return()=>{alive=false;off()}; }, []);
 
   useEffect(() => {
     setAccountOpen(false);
