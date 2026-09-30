@@ -129,7 +129,11 @@ export default function Leaderboard() {
   const rows = useMemo(
     () =>
       (players || [])
-        .filter((player) => Number(player.totalMatches || 0) >= leaderboardMinMatches)
+        .filter((player) => {
+          const placementRequired = Math.max(0, Number(player.placementRequired || 0));
+          const placementComplete = placementRequired === 0 || player.placementComplete === true;
+          return placementComplete && Number(player.totalMatches || 0) >= leaderboardMinMatches;
+        })
         .map((player) => {
           const moneyByMode = modeMoneyById.get(player.id) || {
             mucho8sWon: 0,
@@ -268,7 +272,7 @@ export default function Leaderboard() {
             </h3>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Players appear after meeting the current competition match requirement. Elo, record, streak and all-time verified earnings update from there.
+            Players enter the leaderboard only after completing their season placements. Season 2 requires 3 placements for everyone; from Season 3 onward returning ranked players need 1, while new players need 3.
           </p>
         </div>
 
