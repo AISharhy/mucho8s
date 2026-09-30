@@ -248,6 +248,16 @@ const MenuContent = ({ onNavigate, mobile = false }) => {
         )}
 
         {admin && (
+          <NavLink
+            to="/tourney"
+            onClick={onNavigate}
+            className="mt-2 h-10 px-3 rounded-xl border border-[#D5A33A]/25 bg-[#D5A33A]/[0.06] text-[#D5A33A] hover:bg-[#D5A33A]/[0.1] flex items-center gap-2 text-xs font-black"
+          >
+            <Trophy size={15} /> MuchoTourney
+          </NavLink>
+        )}
+
+        {admin && (
           <div className="flex items-center gap-2 px-1 mt-2">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             <span className="text-[10px] text-muted-foreground" data-testid="sidebar-signed-as">
