@@ -79,6 +79,7 @@ const TITLES = {
   "/challenges": "Mucho1v1",
   "/challenge-ranking": "Mucho1v1 Ranking",
   "/live": "Live",
+  "/tourney/live": "MuchoTourney Live",
 };
 
 export const Layout = () => {
@@ -114,6 +115,9 @@ export const Layout = () => {
   const [submittingPlayerRequest, setSubmittingPlayerRequest] = useState(false);
   const [markingAllRead, setMarkingAllRead] = useState(false);
   const [seenModeNotificationKeys, setSeenModeNotificationKeys] = useState(() => new Set());
+  const [liveTourney, setLiveTourney] = useState(() => { try { const row=JSON.parse(localStorage.getItem("mucho8s-tourney-admin-v1")||"null"); return ["live","completed"].includes(row?.status)?row:null; } catch { return null; } });
+
+  useEffect(() => { const sync=()=>{try{const row=JSON.parse(localStorage.getItem("mucho8s-tourney-admin-v1")||"null");setLiveTourney(["live","completed"].includes(row?.status)?row:null)}catch{setLiveTourney(null)}}; window.addEventListener("storage",sync); window.addEventListener("mucho:tourney-update",sync); return()=>{window.removeEventListener("storage",sync);window.removeEventListener("mucho:tourney-update",sync)}; }, []);
 
   useEffect(() => {
     setAccountOpen(false);
@@ -771,6 +775,19 @@ export const Layout = () => {
                 {item.label}
               </NavLink>
             ))}
+
+            {liveTourney && (
+              <NavLink
+                to="/tourney/live"
+                className={({ isActive }) => `h-8 px-3 rounded-lg border inline-flex items-center gap-1.5 text-[10px] font-black tracking-[.05em] transition-all ${isActive ? "border-[#F3C64F] bg-[#D5A33A]/20 text-[#FFE18A]" : "border-[#D5A33A]/35 bg-[#D5A33A]/10 text-[#E9BE55] hover:bg-[#D5A33A]/16"}`}
+                title={`${liveTourney.name} · live tournament`}
+                data-testid="header-live-muchotourney"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-[#F3C64F] animate-pulse" />
+                <Trophy size={12} />
+                <span>MuchoTourney</span>
+              </NavLink>
+            )}
 
             {twitchLivePlayers.length > 0 && (
               <Link
