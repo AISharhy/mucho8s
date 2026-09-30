@@ -9,6 +9,54 @@ const rankOrder = ["iron", "bronze", "silver", "gold", "platinum", "diamond", "m
 
 const playerName = (playerMap, id) => playerMap?.[id]?.name || "Opponent";
 
+const playEventSound = (type) => {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const now = ctx.currentTime;
+    const master = ctx.createGain();
+    master.gain.setValueAtTime(0.0001, now);
+    master.gain.exponentialRampToValueAtTime(0.16, now + 0.02);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + 1.65);
+    master.connect(ctx.destination);
+
+    const tone = (freq, at, duration, wave = "sine", gain = 0.28, endFreq = null) => {
+      const osc = ctx.createOscillator();
+      const amp = ctx.createGain();
+      osc.type = wave;
+      osc.frequency.setValueAtTime(freq, now + at);
+      if (endFreq) osc.frequency.exponentialRampToValueAtTime(endFreq, now + at + duration);
+      amp.gain.setValueAtTime(0.0001, now + at);
+      amp.gain.exponentialRampToValueAtTime(gain, now + at + 0.015);
+      amp.gain.exponentialRampToValueAtTime(0.0001, now + at + duration);
+      osc.connect(amp); amp.connect(master);
+      osc.start(now + at); osc.stop(now + at + duration + 0.03);
+    };
+
+    if (["rank-up", "placement"].includes(type)) {
+      tone(220, 0, .42, "sawtooth", .18, 440); tone(440, .34, .48, "sine", .3, 880); tone(880, .72, .55, "triangle", .24, 1320);
+    } else if (type === "rank-down") {
+      tone(420, 0, .5, "sawtooth", .2, 180); tone(180, .38, .75, "triangle", .28, 80);
+    } else if (type === "season") {
+      tone(110, 0, 1.3, "sine", .32, 220); tone(330, .5, 1, "triangle", .18, 660);
+    } else if (type === "trophy") {
+      tone(660, 0, .18, "square", .12); tone(990, .16, .25, "triangle", .22); tone(1320, .38, .6, "sine", .2);
+    } else if (type === "bounty") {
+      tone(130, 0, .22, "square", .25, 90); tone(740, .2, .28, "sawtooth", .18, 370);
+    } else if (type === "nemesis") {
+      tone(95, 0, .6, "sawtooth", .25, 55); tone(520, .38, .55, "triangle", .2, 260);
+    } else if (type === "mvp") {
+      tone(520, 0, .18, "triangle", .18); tone(780, .14, .28, "triangle", .22); tone(1040, .3, .35, "sine", .2);
+    } else if (type === "upset") {
+      tone(180, 0, .18, "square", .2, 120); tone(620, .15, .35, "sawtooth", .18, 900);
+    } else if (type === "merda") {
+      tone(150, 0, .45, "sawtooth", .22, 55); tone(72, .28, .65, "square", .18, 42);
+    }
+    window.setTimeout(() => ctx.close().catch(() => {}), 1900);
+  } catch {}
+};
+
 const eventCopy = (event) => {
   const map = {
     mvp: ["MVP ACQUIRED", "Three-win pressure converted."],
@@ -18,6 +66,7 @@ const eventCopy = (event) => {
     nemesis: ["NEMESIS DEFEATED", "A bad matchup has been broken."],
     placement: ["RANK REVEALED", "Placements complete."],
     season: ["NEW SEASON", "The climb starts again."],
+    trophy: ["TROPHY UNLOCKED", "Added permanently to your collection."],
   };
   return map[event?.type] || ["MUCHO EVENT", ""];
 };
@@ -135,7 +184,9 @@ export default function CompetitionEventAnimator() {
 
   useEffect(() => {
     if (!active) return undefined;
-    const timer = window.setTimeout(() => setActive(null), active.type === "season" ? 4200 : 3300);
+    playEventSound(active.type);
+    const premium = ["season", "placement", "rank-up", "rank-down", "trophy"].includes(active.type);
+    const timer = window.setTimeout(() => setActive(null), premium ? 4300 : 2600);
     return () => window.clearTimeout(timer);
   }, [active]);
 
@@ -196,11 +247,12 @@ export default function CompetitionEventAnimator() {
             </motion.div>
           )}
 
-          {active.type === "mvp" && <div className="mb-5 text-8xl">🏆</div>}
-          {active.type === "merda" && <div className="mb-5 text-8xl">💩</div>}
-          {active.type === "bounty" && <div className="mb-5 text-8xl">🎯</div>}
-          {active.type === "upset" && <div className="mb-5 text-8xl">⚔️</div>}
-          {active.type === "nemesis" && <div className="mb-5 text-8xl">☠️</div>}
+          {active.type === "mvp" && <motion.div className="mb-5 text-8xl" animate={{ y: [30,-12,0], scale: [0.5,1.2,1] }} transition={{ duration: .65 }}>🏆</motion.div>}
+          {active.type === "merda" && <motion.div className="mb-5 text-8xl" animate={{ y: [-160,18,0], rotate: [0,420,360], scale: [.4,1.4,1] }} transition={{ duration: .9, ease: "easeOut" }}>💩</motion.div>}
+          {active.type === "bounty" && <motion.div className="mb-5 text-8xl" animate={{ scale: [2.2,.75,1], rotate: [18,-5,0] }} transition={{ duration: .55 }}>🎯</motion.div>}
+          {active.type === "upset" && <motion.div className="mb-5 text-8xl" animate={{ x: [-80,15,0], rotate: [-25,8,0] }} transition={{ duration: .55 }}>⚔️</motion.div>}
+          {active.type === "nemesis" && <motion.div className="mb-5 text-8xl" animate={{ rotate: [0,-8,8,0], scale: [0.5,1.25,1] }}>☠️</motion.div>}
+          {active.type === "trophy" && <motion.div className="mb-5 text-8xl" animate={{ rotateY: [90,0,360], scale: [0.4,1.25,1] }} transition={{ duration: 1.1 }}>🏆</motion.div>}
           {active.type === "season" && <div className="mb-4 text-sm font-black uppercase tracking-[.55em] text-white/45">MUCHO RANKED</div>}
 
           <motion.div className="text-xs font-black uppercase tracking-[.38em] text-white/45">
