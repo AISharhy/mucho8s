@@ -82,16 +82,14 @@ const competitiveMapPool = (game, mode, format = "") => {
 const mixRotationModes = (bestOf, startMode = "Hardpoint") => {
   const first = startMode === "Search & Destroy" ? "Search & Destroy" : "Hardpoint";
   const second = first === "Hardpoint" ? "Search & Destroy" : "Hardpoint";
-  return Number(bestOf) === 5
-    ? [first, second, first, second, first]
-    : [first, second, first];
+  return Array.from({length: [3,5,7].includes(Number(bestOf)) ? Number(bestOf) : 3}, (_, index) => index % 2 ? second : first);
 };
 
 const buildRandomRotation = (game, mode, format, bestOf, mixStartMode = "Hardpoint") => {
-  const count = Number(bestOf) === 5 ? 5 : 3;
+  const count = [3,5,7].includes(Number(bestOf)) ? Number(bestOf) : 3;
   if (mode !== "CDL Mix") {
     const pool = competitiveMapPool(game, mode, format);
-    return [...pool].sort(() => Math.random() - 0.5).slice(0, count);
+    return Array.from({length:count}, (_, index) => [...pool].sort(() => Math.random() - 0.5)[index % pool.length]).filter(Boolean);
   }
 
   const used = new Set();
@@ -185,14 +183,14 @@ export default function TeamBuilder() {
     () => competitiveMapPool(game, matchMode, inferredFormat || "4v4"),
     [game, matchMode, inferredFormat]
   );
-  const mapPoolConfigured = mapPool.length >= bestOf;
+  const mapPoolConfigured = mapPool.length > 0 && (matchMode !== "CDL Mix" || ["Hardpoint","Search & Destroy"].every(mode => competitiveMapPool(game, mode, inferredFormat || "4v4").length > 0));
   const manualMapSelectionValid =
     mapMode !== "manual" ||
     (
       manualMaps.length === bestOf &&
       manualMaps.every(Boolean) &&
-      new Set(manualMaps).size === bestOf &&
-      manualMaps.every((map) => mapPool.includes(map))
+      (bestOf === 7 || new Set(manualMaps).size === bestOf) &&
+      manualMaps.every((map,index) => (matchMode === "CDL Mix" ? competitiveMapPool(game, mixRotationModes(bestOf,mixStartMode)[index], inferredFormat || "4v4") : mapPool).includes(map))
     );
   const setupValid = Boolean(game && matchMode && mapPoolConfigured && manualMapSelectionValid);
 
@@ -382,7 +380,7 @@ export default function TeamBuilder() {
   };
 
   const changeBestOf = (value) => {
-    const next = Number(value) === 5 ? 5 : 3;
+    const next = [3,5,7].includes(Number(value)) ? Number(value) : 3;
     setBestOf(next);
     setManualMaps((prev) => prev.slice(0, next));
     setResult(null);
@@ -562,7 +560,7 @@ export default function TeamBuilder() {
 
     const finalFormat = formatForCount(draft.teamA.length + draft.teamB.length);
     const finalPool = competitiveMapPool(game, matchMode, finalFormat);
-    if (finalPool.length < bestOf) {
+    if (!finalPool.length || (matchMode === "CDL Mix" && !["Hardpoint","Search & Destroy"].every(mode => competitiveMapPool(game,mode,finalFormat).length))) {
       toast.error(`No BO${bestOf} competitive map pool is available for this setup`);
       setWizardStep(1);
       return;
@@ -571,8 +569,8 @@ export default function TeamBuilder() {
       mapMode === "manual" &&
       (
         manualMaps.length !== bestOf ||
-        new Set(manualMaps).size !== bestOf ||
-        manualMaps.some((map) => !finalPool.includes(map))
+        (bestOf !== 7 && new Set(manualMaps).size !== bestOf) ||
+        manualMaps.some((map,index) => !(matchMode === "CDL Mix" ? competitiveMapPool(game,mixRotationModes(bestOf,mixStartMode)[index],finalFormat) : finalPool).includes(map))
       )
     ) {
       toast.error("One or more manual maps are not valid for the selected lobby format");
@@ -852,6 +850,7 @@ export default function TeamBuilder() {
                 >
                   <option value={3}>BO3 · first to 2</option>
                   <option value={5}>BO5 · first to 3</option>
+                  <option value={7}>BO7 · first to 4</option>
                 </select>
               </label>
 
@@ -924,7 +923,7 @@ export default function TeamBuilder() {
                         >
                           <option value="">Choose map...</option>
                           {mapPool
-                            .filter((mapName) => !manualMaps.includes(mapName) || manualMaps[index] === mapName)
+                            .filter((mapName) => (bestOf === 7 || !manualMaps.includes(mapName) || manualMaps[index] === mapName) && (matchMode !== "CDL Mix" || competitiveMapPool(game,mixRotationModes(bestOf,mixStartMode)[index],inferredFormat || "4v4").includes(mapName)))
                             .map((mapName) => (
                               <option key={mapName} value={mapName}>{mapName}</option>
                             ))}
