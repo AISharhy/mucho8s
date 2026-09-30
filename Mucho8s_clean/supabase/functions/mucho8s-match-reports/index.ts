@@ -94,24 +94,87 @@ const competitiveMapPool = (game: string, mode: string, format: string) => {
   return [...new Set(pool)];
 };
 
+const secureRandom = () => {
+  const bytes = new Uint32Array(1);
+  crypto.getRandomValues(bytes);
+  return bytes[0] / 0x100000000;
+};
+
 const drawSeriesMaps = (
   game: string,
   mode: string,
   format: string,
   bestOf: number,
+  recentMatches: any[] = [],
 ) => {
   const seriesLength = bestOf === 5 ? 5 : 3;
   const pool = competitiveMapPool(game, mode, format);
   if (pool.length < seriesLength) return [];
 
-  const shuffled = [...pool];
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const bytes = new Uint32Array(1);
-    crypto.getRandomValues(bytes);
-    const randomIndex = bytes[0] % (index + 1);
-    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
+  // Random, but history-aware: maps that have not appeared recently get
+  // progressively more weight. Maps from the immediately previous matching
+  // series are strongly cooled down whenever alternatives exist.
+  const relevant = [...recentMatches]
+    .filter((match: any) =>
+      String(match?.game || "") === game &&
+      String(match?.mode || "") === mode
+    )
+    .sort((a: any, b: any) =>
+      new Date(b?.date || 0).getTime() - new Date(a?.date || 0).getTime()
+    )
+    .slice(0, 8);
+
+  const lastSeen = new Map<string, number>();
+  const usage = new Map<string, number>();
+  relevant.forEach((match: any, matchIndex: number) => {
+    const played = Array.isArray(match?.maps) && match.maps.length
+      ? match.maps.map(String)
+      : (match?.map ? [String(match.map)] : []);
+    [...new Set(played)].forEach((map) => {
+      usage.set(map, (usage.get(map) || 0) + 1);
+      if (!lastSeen.has(map)) lastSeen.set(map, matchIndex);
+    });
+  });
+
+  const previousMaps = new Set(
+    relevant.length
+      ? (Array.isArray(relevant[0]?.maps) && relevant[0].maps.length
+          ? relevant[0].maps.map(String)
+          : (relevant[0]?.map ? [String(relevant[0].map)] : []))
+      : []
+  );
+
+  const remaining = [...pool];
+  const picked: string[] = [];
+  while (picked.length < seriesLength && remaining.length) {
+    const alternativesOutsidePrevious =
+      remaining.filter((map) => !previousMaps.has(map)).length;
+    const weights = remaining.map((map) => {
+      const seenAgo = lastSeen.has(map) ? Number(lastSeen.get(map)) : relevant.length + 3;
+      const timesUsed = usage.get(map) || 0;
+      let weight = 1 + seenAgo * 2.5;
+      weight /= 1 + timesUsed * 0.75;
+      if (previousMaps.has(map) && alternativesOutsidePrevious >= (seriesLength - picked.length)) {
+        weight *= 0.04;
+      }
+      return Math.max(0.01, weight);
+    });
+
+    const total = weights.reduce((sum, value) => sum + value, 0);
+    let roll = secureRandom() * total;
+    let selectedIndex = remaining.length - 1;
+    for (let index = 0; index < remaining.length; index += 1) {
+      roll -= weights[index];
+      if (roll <= 0) {
+        selectedIndex = index;
+        break;
+      }
+    }
+    picked.push(remaining[selectedIndex]);
+    remaining.splice(selectedIndex, 1);
   }
-  return shuffled.slice(0, seriesLength);
+
+  return picked;
 };
 
 const expectedEloScore = (elo: number, opponentElo: number) =>
@@ -899,7 +962,19 @@ Deno.serve(async (req: Request) => {
         }
         seriesMaps = requestedMaps;
       } else {
-        seriesMaps = drawSeriesMaps(game, mode, format, bestOf);
+        const { data: mapHistoryState, error: mapHistoryError } = await supabase
+          .from("app_state")
+          .select("matches")
+          .eq("id", "main")
+          .maybeSingle();
+        if (mapHistoryError) throw mapHistoryError;
+        seriesMaps = drawSeriesMaps(
+          game,
+          mode,
+          format,
+          bestOf,
+          Array.isArray(mapHistoryState?.matches) ? mapHistoryState.matches : [],
+        );
       }
 
       if (teamA.length < 2 || teamA.length > 4 || teamA.length !== teamB.length) {
