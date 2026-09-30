@@ -51,7 +51,13 @@ const isAdmin = async (req: Request, supabase: any) => {
 };
 
 const resetPlayer = (player: any, startingElo = 500, nextSeason = 1) => {
-  const elo = Math.max(500, Math.round(Number(startingElo) || 500));
+  const baseElo = Math.max(500, Math.round(Number(startingElo) || 500));
+  const previousElo = Math.max(0, Math.round(Number(player?.currentElo) || baseElo));
+  // From Season 2 onward compress the previous rating 30% toward the season baseline.
+  // Example with 500 baseline: 600 -> 570, 800 -> 710, 1000 -> 850.
+  const elo = nextSeason >= 2
+    ? Math.max(500, Math.round(baseElo + (previousElo - baseElo) * 0.7))
+    : baseElo;
   const placementRequired =
     nextSeason === 2
       ? 3
