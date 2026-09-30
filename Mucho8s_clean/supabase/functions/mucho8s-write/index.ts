@@ -71,6 +71,84 @@ Deno.serve(async (req: Request) => {
     }
 
     const body = await req.json();
+    const action = String(body?.action || "").trim();
+
+    if (action === "update-player") {
+      const playerId = String(body?.playerId || "").trim();
+      const draft = body?.draft && typeof body.draft === "object" ? body.draft : null;
+      if (!playerId || !draft) {
+        return json({ error: "Player id and draft are required" }, 400);
+      }
+
+      const { data: state, error: stateError } = await supabase
+        .from("app_state")
+        .select("players,matches")
+        .eq("id", "main")
+        .maybeSingle();
+
+      if (stateError) throw stateError;
+      const players = Array.isArray(state?.players) ? state.players.map((player: any) => ({ ...player })) : [];
+      const matches = Array.isArray(state?.matches) ? state.matches : [];
+      const player = players.find((item: any) => String(item?.id || "") === playerId);
+      if (!player) return json({ error: "Player not found" }, 404);
+
+      const cleanName = String(draft?.name || player?.name || "").trim();
+      if (!cleanName) return json({ error: "Nickname cannot be empty" }, 400);
+
+      const currentElo = Math.max(500, Math.round(Number(draft?.currentElo ?? player?.currentElo ?? 500)));
+      const existingHistory = Array.isArray(player?.eloHistory) && player.eloHistory.length
+        ? player.eloHistory.map((row: any) => ({ ...row }))
+        : [{ match: 0, elo: currentElo }];
+      const startingElo = Math.max(
+        500,
+        Math.round(Number(draft?.startingElo ?? existingHistory?.[0]?.elo ?? currentElo)),
+      );
+      const peakElo = Math.max(
+        currentElo,
+        Math.round(Number(draft?.peakElo ?? player?.peakElo ?? currentElo)),
+      );
+      const wins = Math.max(0, Math.round(Number(draft?.wins ?? player?.wins ?? 0)));
+      const losses = Math.max(0, Math.round(Number(draft?.losses ?? player?.losses ?? 0)));
+      const avgPlacement = Math.max(0, Number(draft?.avgPlacement ?? player?.avgPlacement ?? 0));
+      const currentStreak = Math.trunc(Number(draft?.currentStreak ?? player?.currentStreak ?? 0));
+      const mvpCount = Math.max(0, Math.round(Number(draft?.mvpCount ?? player?.mvpCount ?? 0)));
+      const merdaCount = Math.max(0, Math.round(Number(draft?.merdaCount ?? player?.merdaCount ?? 0)));
+
+      existingHistory[0] = { ...existingHistory[0], match: 0, elo: startingElo };
+      const lastHistoryElo = Number(existingHistory[existingHistory.length - 1]?.elo);
+      if (lastHistoryElo !== currentElo) {
+        existingHistory.push({ match: wins + losses, elo: currentElo });
+      }
+
+      Object.assign(player, {
+        name: cleanName,
+        currentElo,
+        peakElo,
+        wins,
+        losses,
+        totalMatches: wins + losses,
+        avgPlacement,
+        currentStreak,
+        mvpCount,
+        merdaCount,
+        eloHistory: existingHistory,
+      });
+
+      const version = Date.now();
+      const { error: updateError } = await supabase
+        .from("app_state")
+        .upsert({
+          id: "main",
+          players,
+          matches,
+          version,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (updateError) throw updateError;
+      return json({ ok: true, player, version });
+    }
+
     if (!Array.isArray(body.players) || !Array.isArray(body.matches)) {
       return json({ error: "Invalid state payload" }, 400);
     }
