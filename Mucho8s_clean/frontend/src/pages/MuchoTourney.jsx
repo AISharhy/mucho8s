@@ -5,7 +5,8 @@ import { useData } from "@/context/DataContext";
 import { Crown, Plus, RotateCcw, Shuffle, Swords, Trophy, UsersRound, X } from "lucide-react";
 import { toast } from "sonner";
 
-const STORE = "mucho8s-tourney-admin-v1";
+export const TOURNEY_STORE = "mucho8s-tourney-admin-v1";
+const STORE = TOURNEY_STORE;
 const blank = { name:"MuchoTourney Test Cup", game:"BO7", format:"4v4", bestOf:5, finalBestOf:5, mode:"CDL Mix", startMode:"Hardpoint", seeding:"manual", teams:[], bracket:[], champion:null, status:"setup" };
 const load = () => { try { return {...blank,...JSON.parse(localStorage.getItem(STORE)||"{}")}; } catch { return blank; } };
 const roundsFor = n => n<=2?["Final"]:n<=4?["Semifinals","Final"]:["Quarterfinals","Semifinals","Final"];
@@ -21,7 +22,7 @@ export default function MuchoTourney(){
  const {isAdmin}=useData(); const [t,setT]=useState(load); const [teamName,setTeamName]=useState(""); const [fx,setFx]=useState(null);
  const fireFx=(type,data={})=>setFx({type,...data,key:Date.now()});
  useEffect(()=>{if(!fx)return;const id=setTimeout(()=>setFx(null),fx.type==="champion"?4200:2200);return()=>clearTimeout(id);},[fx]);
- const save=next=>{setT(next);localStorage.setItem(STORE,JSON.stringify(next));};
+ const save=next=>{setT(next);localStorage.setItem(STORE,JSON.stringify(next));window.dispatchEvent(new CustomEvent("mucho:tourney-update",{detail:next}));};
  const patch=p=>save({...t,...p});
  const addTeam=()=>{const name=teamName.trim();if(!name)return;if(t.teams.some(x=>x.name.toLowerCase()===name.toLowerCase()))return toast.error("Team already registered"); if(t.teams.length>=8)return toast.error("Maximum 8 teams in this test bracket"); save({...t,teams:[...t.teams,{id:crypto.randomUUID?.()||String(Date.now()),name,seed:t.teams.length+1}],bracket:[],champion:null,status:"setup"});setTeamName("");};
  const generate=()=>{if(t.teams.length<2)return toast.error("Add at least 2 teams");let teams=[...t.teams];if(t.seeding==="random")teams.sort(()=>Math.random()-.5); teams=teams.map((x,i)=>({...x,seed:i+1}));save({...t,teams,bracket:makeBracket(teams),champion:null,status:"live"});fireFx("bracket",{title:"BRACKET LOCKED",sub:`${teams.length} TEAMS · THE ROAD STARTS NOW`});toast.success("Bracket generated");};
