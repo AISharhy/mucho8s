@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-const MATCH_MODES = ["Hardpoint", "Search & Destroy"];
+const MATCH_MODES = ["Hardpoint", "Search & Destroy", "CDL Mix"];
 
 const COMPETITIVE_MAP_POOLS = {
   BO7: {
@@ -62,12 +62,17 @@ const COMPETITIVE_MAP_POOLS = {
 };
 
 const competitiveMapPool = (game, mode, format = "") => {
-  let pool = [...(COMPETITIVE_MAP_POOLS?.[game]?.[mode] || [])];
+  let pool = mode === "CDL Mix"
+    ? [
+        ...(COMPETITIVE_MAP_POOLS?.[game]?.Hardpoint || []),
+        ...(COMPETITIVE_MAP_POOLS?.[game]?.["Search & Destroy"] || []),
+      ]
+    : [...(COMPETITIVE_MAP_POOLS?.[game]?.[mode] || [])];
 
-  if (game === "MW3" && mode === "Search & Destroy" && format !== "2v2") {
+  if (game === "MW3" && ["Search & Destroy", "CDL Mix"].includes(mode) && format !== "2v2") {
     pool = pool.filter((map) => map !== "Scrapyard");
   }
-  if (game === "CW" && mode === "Search & Destroy" && format === "2v2") {
+  if (game === "CW" && ["Search & Destroy", "CDL Mix"].includes(mode) && format === "2v2") {
     pool = pool.filter((map) => map !== "Miami");
   }
 
