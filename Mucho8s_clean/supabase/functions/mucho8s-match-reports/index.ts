@@ -957,10 +957,13 @@ Deno.serve(async (req: Request) => {
         .filter((pair: any) =>
           teamA.includes(pair.playerAId) &&
           teamB.includes(pair.playerBId) &&
-          [pair.playerAId, pair.playerBId].includes(pair.payerPlayerId) &&
           Number.isFinite(pair.amount) &&
           pair.amount >= 0 &&
-          SUPPORTED_MATCH_PLATFORMS.has(pair.platform)
+          (
+            pair.amount === 0
+              ? ["free", "paypal", "revolut"].includes(pair.platform)
+              : SUPPORTED_MATCH_PLATFORMS.has(pair.platform)
+          )
         );
       const creatorPlayerId = String(account?.player_id || "").trim();
       const creatorInLobby = [...teamA, ...teamB].includes(creatorPlayerId);
@@ -1349,10 +1352,15 @@ Deno.serve(async (req: Request) => {
       for (const pair of pairings) {
         const validPlayers = teamA.includes(pair.playerAId) && teamB.includes(pair.playerBId);
         const validAmount = Number.isFinite(pair.amount) && pair.amount >= 0;
-        const validPlatform = SUPPORTED_MATCH_PLATFORMS.has(pair.platform);
+        const validPlatform =
+          pair.amount === 0
+            ? ["free", "paypal", "revolut"].includes(pair.platform)
+            : SUPPORTED_MATCH_PLATFORMS.has(pair.platform);
 
         if (!validPlayers || !validAmount || !validPlatform) {
-          return json({ error: "Each matchup must use a valid amount with PayPal or Revolut" }, 400);
+          return json({
+            error: "Each matchup must use a valid amount; paid Challs require PayPal or Revolut",
+          }, 400);
         }
 
         const pairingKey = `${pair.playerAId}:${pair.playerBId}`;
