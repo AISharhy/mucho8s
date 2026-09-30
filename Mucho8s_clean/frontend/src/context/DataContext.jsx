@@ -2211,7 +2211,56 @@ export const DataProvider = ({ children }) => {
     p.merdaCount = merdaCount;
     p.eloHistory = history;
 
-    const ok = await persistWholeState(next, matches);
+    let ok = false;
+
+    if (STORAGE_MODE === "supabase") {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/mucho8s-write`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_ANON_KEY,
+            "X-Admin-Session": admin?.sessionToken || "",
+          },
+          body: JSON.stringify({
+            action: "update-player",
+            playerId: id,
+            draft: {
+              name: cleanName,
+              currentElo,
+              startingElo,
+              peakElo,
+              wins,
+              losses,
+              avgPlacement,
+              currentStreak,
+              mvpCount,
+              merdaCount,
+            },
+          }),
+        });
+
+        if (res.status === 401) {
+          toast.error("Admin access required for this action");
+          return false;
+        }
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          toast.error(data?.error || "Player update failed");
+          return false;
+        }
+
+        versionRef.current = -1;
+        await fetchState();
+        ok = true;
+      } catch {
+        toast.error("Cloud database unavailable");
+        return false;
+      }
+    } else {
+      ok = await persistWholeState(next, matches);
+    }
+
     if (ok) {
       void logAdminAction("player.update", "player", id, {
         name: cleanName,
@@ -2227,7 +2276,7 @@ export const DataProvider = ({ children }) => {
       });
     }
     return ok;
-  }, [players, matches, persistWholeState, logAdminAction]);
+  }, [players, matches, admin?.sessionToken, fetchState, persistWholeState, logAdminAction]);
 
   const resetStats = useCallback(async () => {
     if (STORAGE_MODE === "backend") return backendWrite("/reset-stats");
