@@ -20,13 +20,28 @@ const makeBracket = teams => {
   return rounds;
 };
 export default function MuchoTourney(){
- const {isAdmin, admin}=useData(); const [t,setT]=useState(load); const [teamName,setTeamName]=useState(""); const [fx,setFx]=useState(null);
+ const {isAdmin, admin, players}=useData(); const [t,setT]=useState(load); const [teamName,setTeamName]=useState(""); const [fx,setFx]=useState(null); const [editingRoster,setEditingRoster]=useState(null);
  const fireFx=(type,data={})=>setFx({type,...data,key:Date.now()});
  useEffect(()=>{let alive=true;fetchTourney().then(remote=>{if(alive&&remote&&Object.keys(remote).length)setT({...blank,...remote})});const off=subscribeTourney(remote=>{if(remote)setT({...blank,...remote})});return()=>{alive=false;off()};},[]);
  useEffect(()=>{if(!fx)return;const id=setTimeout(()=>setFx(null),fx.type==="champion"?4200:2200);return()=>clearTimeout(id);},[fx]);
  const save=next=>{setT(next);localStorage.setItem(STORE,JSON.stringify(next));window.dispatchEvent(new CustomEvent("mucho:tourney-update",{detail:next}));if(admin?.sessionToken)saveTourney(next,admin.sessionToken).catch(err=>toast.error(err.message||"Live tournament sync failed"));};
  const patch=p=>save({...t,...p});
  const addTeam=()=>{const name=teamName.trim();if(!name)return;if(t.teams.some(x=>x.name.toLowerCase()===name.toLowerCase()))return toast.error("Team already registered"); if(t.teams.length>=8)return toast.error("Maximum 8 teams in this test bracket"); save({...t,teams:[...t.teams,{id:crypto.randomUUID?.()||String(Date.now()),name,seed:t.teams.length+1}],bracket:[],champion:null,status:"setup"});setTeamName("");};
+ const toggleRosterPlayer=(teamId,player)=>{
+   const teams=t.teams.map(team=>{
+     if(team.id!==teamId)return team;
+     const roster=Array.isArray(team.roster)?team.roster:[];
+     const exists=roster.some(x=>String(x.id)===String(player.id));
+     const max=Math.max(1,Number(t.format?.split("v")?.[0])||4);
+     if(!exists&&roster.length>=max){toast.error(`Roster ${t.format}: maximum ${max} players`);return team;}
+     return {...team,roster:exists?roster.filter(x=>String(x.id)!==String(player.id)):[...roster,{id:player.id,name:player.name}]};
+   });
+   // Keep bracket team snapshots in sync while a tournament is already live.
+   const byId=new Map(teams.map(x=>[x.id,x]));
+   const bracket=(t.bracket||[]).map(round=>round.map(match=>({...match,a:match.a?byId.get(match.a.id)||match.a:null,b:match.b?byId.get(match.b.id)||match.b:null})));
+   const champion=t.champion?byId.get(t.champion.id)||t.champion:null;
+   save({...t,teams,bracket,champion});
+ };
  const generate=()=>{if(t.teams.length<2)return toast.error("Add at least 2 teams");let teams=[...t.teams];if(t.seeding==="random")teams.sort(()=>Math.random()-.5); teams=teams.map((x,i)=>({...x,seed:i+1}));save({...t,teams,bracket:makeBracket(teams),champion:null,status:"live"});fireFx("bracket",{title:"BRACKET LOCKED",sub:`${teams.length} TEAMS · THE ROAD STARTS NOW`});toast.success("Bracket generated");};
  const report=(ri,mi,winner)=>{const br=t.bracket.map(r=>r.map(m=>({...m})));const m=br[ri][mi];m.winner=winner;m.scoreA=winner==="a"?Math.ceil((ri===br.length-1?t.finalBestOf:t.bestOf)/2):0;m.scoreB=winner==="b"?Math.ceil((ri===br.length-1?t.finalBestOf:t.bestOf)/2):0;const won=winner==="a"?m.a:m.b;if(ri<br.length-1){const next=br[ri+1][Math.floor(mi/2)]; if(mi%2===0)next.a=won;else next.b=won;next.winner=null;next.scoreA=0;next.scoreB=0;} const champion=ri===br.length-1?won:null;save({...t,bracket:br,champion:champion||t.champion,status:champion?"completed":"live"});
  if(champion) fireFx("champion",{title:"MUCHOTOURNEY CHAMPION",sub:won?.name||"CHAMPION"});
@@ -56,7 +71,7 @@ export default function MuchoTourney(){
   <section className="grid lg:grid-cols-[360px_1fr] gap-3">
    <div className="m8-panel rounded-[22px] p-5"><div className="flex items-center gap-2"><UsersRound size={17}/><h2 className="font-display font-black">Teams / Seeding</h2></div>
     <div className="flex gap-2 mt-4"><input value={teamName} onChange={e=>setTeamName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addTeam()} placeholder="Team name" className="h-10 min-w-0 flex-1 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm"/><button onClick={addTeam} className="w-10 h-10 rounded-xl bg-[#D5A33A] text-black flex items-center justify-center"><Plus size={16}/></button></div>
-    <div className="mt-3 space-y-2">{t.teams.map((team,i)=><div key={team.id} className="h-11 px-3 rounded-xl border border-[#252B36] bg-[#10151D] flex items-center gap-3"><span className="font-mono text-[#D5A33A] text-xs">#{i+1}</span><span className="font-bold text-sm flex-1 truncate">{team.name}</span><button onClick={()=>save({...t,teams:t.teams.filter(x=>x.id!==team.id),bracket:[],champion:null,status:"setup"})} className="text-[#697181] hover:text-red-400"><X size={14}/></button></div>)}</div>
+    <div className="mt-3 space-y-2">{t.teams.map((team,i)=><div key={team.id} className="rounded-xl border border-[#252B36] bg-[#10151D] overflow-hidden"><div className="h-11 px-3 flex items-center gap-3"><span className="font-mono text-[#D5A33A] text-xs">#{i+1}</span><span className="font-bold text-sm flex-1 truncate">{team.name}</span><button onClick={()=>setEditingRoster(editingRoster===team.id?null:team.id)} className="h-7 px-2 rounded-lg border border-[#D5A33A]/25 text-[#D5A33A] text-[9px] font-black">EDIT ROSTER · {(team.roster||[]).length}</button><button onClick={()=>save({...t,teams:t.teams.filter(x=>x.id!==team.id),bracket:[],champion:null,status:"setup"})} className="text-[#697181] hover:text-red-400"><X size={14}/></button></div>{editingRoster===team.id&&<div className="border-t border-[#252B36] p-3"><div className="text-[9px] text-[#697181] tracking-widest mb-2">SELECT {t.format} ROSTER</div><div className="max-h-48 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-1.5">{(players||[]).map(player=>{const active=(team.roster||[]).some(x=>String(x.id)===String(player.id));const usedBy=t.teams.find(x=>x.id!==team.id&&(x.roster||[]).some(r=>String(r.id)===String(player.id)));return <button key={player.id} disabled={!!usedBy&&!active} onClick={()=>toggleRosterPlayer(team.id,player)} className={`h-9 px-3 rounded-lg border text-left text-xs font-bold flex items-center justify-between ${active?"border-[#D5A33A] bg-[#D5A33A]/10 text-[#F4CE70]":"border-[#252B36] bg-[#0D1219]"} ${usedBy&&!active?"opacity-30 cursor-not-allowed":""}`}><span className="truncate">{player.name}</span><span className="text-[9px]">{active?"✓":usedBy?"IN TEAM":""}</span></button>})}</div><div className="text-[10px] text-muted-foreground mt-2">{(team.roster||[]).length}/{Math.max(1,Number(t.format?.split("v")?.[0])||4)} players selected</div></div>}</div>)}</div>
     <button onClick={generate} className="mt-4 w-full h-11 rounded-xl bg-magma text-white font-black flex items-center justify-center gap-2"><Shuffle size={15}/> Generate Bracket</button>
    </div>
    <div className="m8-panel rounded-[22px] p-5 overflow-x-auto"><div className="flex items-center justify-between"><h2 className="font-display font-black">Bracket</h2><span className="text-[10px] text-muted-foreground">Click winner to advance</span></div>
