@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Crown, Shield, Swords, Trophy, UsersRound } from "lucide-react";
+import { fetchTourney, subscribeTourney } from "@/lib/tourneyLive";
 const STORE="mucho8s-tourney-admin-v1";
 const read=()=>{try{return JSON.parse(localStorage.getItem(STORE)||"null")}catch{return null}};
 export default function TourneyLive(){
  const [t,setT]=useState(read);
- useEffect(()=>{const sync=()=>setT(read());window.addEventListener("storage",sync);window.addEventListener("mucho:tourney-update",sync);return()=>{window.removeEventListener("storage",sync);window.removeEventListener("mucho:tourney-update",sync)}},[]);
+ useEffect(()=>{let alive=true;fetchTourney().then(remote=>{if(alive&&remote)setT(remote)});const off=subscribeTourney(remote=>{if(remote)setT(remote)});return()=>{alive=false;off()};},[]);
  const rounds=useMemo(()=>t?.bracket||[],[t]);
  if(!t||!["live","completed"].includes(t.status)) return <section className="m8-panel rounded-[22px] min-h-[420px] flex flex-col items-center justify-center text-center p-8"><Trophy size={38} className="text-[#D5A33A] opacity-60"/><h1 className="font-display text-3xl font-black mt-4">MuchoTourney</h1><p className="text-sm text-muted-foreground mt-2">No tournament is live right now.</p></section>;
  return <div className="m8-page-stack gap-3 max-w-7xl mx-auto">
