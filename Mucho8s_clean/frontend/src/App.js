@@ -4,6 +4,7 @@ import { HashRouter, Routes, Route, Link, Navigate } from "react-router-dom";
 import { DataProvider } from "@/context/DataContext";
 import { Layout } from "@/components/Layout";
 import { Toaster } from "@/components/ui/sonner";
+import CompetitionEventAnimator from "@/components/CompetitionEventAnimator";
 import AnalyticsRouteTracker from "@/components/AnalyticsRouteTracker";
 import RiveStage from "@/components/RiveStage";
 import Dashboard from "@/pages/Dashboard";
@@ -104,6 +105,7 @@ function App() {
       <DataProvider>
         <HashRouter>
           <AnalyticsRouteTracker />
+          <CompetitionEventAnimator />
           <Routes>
             <Route element={<Layout />}>
               <Route index element={<Dashboard />} />
