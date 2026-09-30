@@ -555,7 +555,6 @@ export default function TeamBuilder() {
         playerBId,
         amount: 5,
         platform: "paypal",
-        payerPlayerId: playerAId,
       };
     });
     setMoneyPairings(draftPairings);
@@ -579,18 +578,16 @@ export default function TeamBuilder() {
       playerAId: pair.playerAId,
       playerBId: pair.playerBId,
       amount: Math.max(0, Number(pair.amount) || 0),
-      platform: Number(pair.amount) > 0 ? pair.platform : "paypal",
-      payerPlayerId: pair.payerPlayerId,
+      platform: Number(pair.amount) > 0 ? pair.platform : "free",
     }));
 
     const invalidMoneySetup = pairings.some((pair) =>
       !pair.playerAId ||
       !pair.playerBId ||
-      ![pair.playerAId, pair.playerBId].includes(pair.payerPlayerId) ||
       (pair.amount > 0 && !["paypal", "revolut"].includes(pair.platform))
     );
     if (!pairings.length || invalidMoneySetup) {
-      toast.error("Choose who pays and the payment setup before going live");
+      toast.error("Check the Money Chall setup before going live");
       return;
     }
 
@@ -1356,56 +1353,42 @@ export default function TeamBuilder() {
             </div>
 
             <div className="rounded-xl border border-[#2B303B] bg-[#10151D] p-3 mb-3">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <div>
-                  <div className="text-[10px] uppercase tracking-[0.16em] text-[#8B94A3]">Money Chall</div>
-                  <div className="text-xs font-black">Set payment before the match goes LIVE</div>
-                </div>
-                <span className="text-[9px] uppercase tracking-wider text-emerald-400">Pre-match</span>
-              </div>
+              <div className="mb-3 text-[10px] uppercase tracking-[0.16em] text-[#8B94A3]">Money Chall</div>
               <div className="space-y-2">
                 {moneyPairings.map((pair, index) => {
                   const playerA = contextualPlayerMap[pair.playerAId];
                   const playerB = contextualPlayerMap[pair.playerBId];
                   const free = Number(pair.amount) <= 0;
                   return (
-                    <div key={pair.playerAId + ":" + pair.playerBId} className="grid grid-cols-1 sm:grid-cols-[1fr_100px_130px_150px] gap-2 items-center rounded-lg border border-[#222834] bg-[#0C1118] p-2">
+                    <div key={pair.playerAId + ":" + pair.playerBId} className="grid grid-cols-1 sm:grid-cols-[1fr_100px_130px] gap-2 items-center rounded-lg border border-[#222834] bg-[#0C1118] p-2">
                       <div className="text-[11px] font-semibold truncate">
-                        {playerA?.name || "Alpha"} vs {playerB?.name || "Bravo"}
+                        {playerA?.name || "Alpha"} <span className="text-white/30">⚔</span> {playerB?.name || "Bravo"}
                       </div>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={pair.amount}
-                        onChange={(event) => setMoneyPairings((prev) => prev.map((row, rowIndex) => rowIndex === index ? { ...row, amount: event.target.value } : row))}
-                        className="h-9 bg-[#111720] border-[#2A303B]"
-                        aria-label="Amount"
-                      />
+                      <div className="relative">
+                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-white/35">€</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={pair.amount}
+                          onChange={(event) => setMoneyPairings((prev) => prev.map((row, rowIndex) => rowIndex === index ? { ...row, amount: event.target.value } : row))}
+                          className="h-9 bg-[#111720] border-[#2A303B] pl-7"
+                          aria-label="Money Chall amount"
+                        />
+                      </div>
                       <select
                         value={free ? "free" : pair.platform}
-                        onChange={(event) => setMoneyPairings((prev) => prev.map((row, rowIndex) => rowIndex === index ? (event.target.value === "free" ? { ...row, amount: 0 } : { ...row, platform: event.target.value, amount: Number(row.amount) > 0 ? row.amount : 5 }) : row))}
+                        onChange={(event) => setMoneyPairings((prev) => prev.map((row, rowIndex) => rowIndex === index ? (event.target.value === "free" ? { ...row, amount: 0, platform: "free" } : { ...row, platform: event.target.value, amount: Number(row.amount) > 0 ? row.amount : 5 }) : row))}
                         className="h-9 rounded-md border border-[#2A303B] bg-[#111720] px-2 text-xs"
+                        aria-label="Money Chall payment method"
                       >
                         <option value="free">Free</option>
                         <option value="paypal">PayPal</option>
                         <option value="revolut">Revolut</option>
                       </select>
-                      <select
-                        value={pair.payerPlayerId}
-                        onChange={(event) => setMoneyPairings((prev) => prev.map((row, rowIndex) => rowIndex === index ? { ...row, payerPlayerId: event.target.value } : row))}
-                        className="h-9 rounded-md border border-[#2A303B] bg-[#111720] px-2 text-xs"
-                        aria-label="Who pays"
-                      >
-                        <option value={pair.playerAId}>{playerA?.name || "Alpha"} pays</option>
-                        <option value={pair.playerBId}>{playerB?.name || "Bravo"} pays</option>
-                      </select>
                     </div>
                   );
                 })}
-              </div>
-              <div className="text-[10px] text-muted-foreground mt-2">
-                €0 marks the pairing as Free. The payer and payment method are locked into the live match when you confirm.
               </div>
             </div>
 
