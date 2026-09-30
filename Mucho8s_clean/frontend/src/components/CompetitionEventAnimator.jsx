@@ -52,6 +52,18 @@ const playEventSound = (type) => {
       tone(180, 0, .18, "square", .2, 120); tone(620, .15, .35, "sawtooth", .18, 900);
     } else if (type === "merda") {
       tone(150, 0, .45, "sawtooth", .22, 55); tone(72, .28, .65, "square", .18, 42);
+    } else if (["streak","king","promotion"].includes(type)) {
+      tone(240,0,.22,"sawtooth",.2,480); tone(480,.18,.28,"triangle",.22,960); tone(960,.42,.38,"sine",.18,1280);
+    } else if (["defense","shutdown"].includes(type)) {
+      tone(180,0,.22,"square",.22,120); tone(120,.26,.45,"sawtooth",.2,65);
+    } else if (type === "revenge") {
+      tone(90,0,.2,"square",.18,300); tone(680,.22,.32,"sawtooth",.2,340); tone(920,.48,.32,"triangle",.18);
+    } else if (type === "money") {
+      tone(880,0,.12,"sine",.18); tone(1175,.14,.12,"sine",.18); tone(1568,.3,.34,"triangle",.2);
+    } else if (["rivalry","match-found"].includes(type)) {
+      tone(75,0,.45,"sawtooth",.22,130); tone(520,.36,.2,"square",.16); tone(780,.56,.25,"triangle",.18);
+    } else if (["mastery","record"].includes(type)) {
+      tone(392,0,.18,"triangle",.16); tone(659,.18,.22,"triangle",.2); tone(988,.4,.4,"sine",.2);
     }
     window.setTimeout(() => ctx.close().catch(() => {}), 1900);
   } catch {}
@@ -67,6 +79,17 @@ const eventCopy = (event) => {
     placement: ["RANK REVEALED", "Placements complete."],
     season: ["NEW SEASON", "The climb starts again."],
     trophy: ["TROPHY UNLOCKED", "Added permanently to your collection."],
+    streak: ["WIN STREAK", "The lobby is heating up."],
+    defense: ["RANK DEFENSE", "Your rank is on the line."],
+    promotion: ["PROMOTION MATCH", "One step from the next rank."],
+    revenge: ["REVENGE COMPLETE", "Score settled."],
+    king: ["KING OF THE LOBBY", "Longest active streak."],
+    money: ["MONEY CHALL WON", "Payout secured."],
+    rivalry: ["RIVALRY HEATED", "This matchup just got personal."],
+    mastery: ["MAP MASTERY", "This map belongs to you."],
+    record: ["NEW PERSONAL RECORD", "A new benchmark."],
+    shutdown: ["STREAK ENDED", "Run terminated."],
+    "match-found": ["MATCH FOUND", "Prepare for battle."],
   };
   return map[event?.type] || ["MUCHO EVENT", ""];
 };
@@ -195,6 +218,47 @@ export default function CompetitionEventAnimator() {
   const isRank = ["rank-up", "rank-down", "placement"].includes(active.type);
   const rankTier = isRank ? tierOf(active.elo) : null;
   const [title, subtitle] = eventCopy(active);
+  const special = ["match-found","streak","defense","promotion","revenge","king","money","rivalry","mastery","record","shutdown"].includes(active.type);
+
+  if (special) {
+    const icons = { streak:"🔥", defense:"🛡️", promotion:"⬆️", revenge:"⚡", king:"👑", money:"💰", rivalry:"⚔️", mastery:"🗺️", record:"📈", shutdown:"💀" };
+    const accent = active.type === "defense" || active.type === "shutdown" ? "#ff3347" : active.type === "money" ? "#35d07f" : active.type === "mastery" ? "#56a8ff" : "#ffb020";
+    return (
+      <AnimatePresence>
+        <motion.div className="fixed inset-0 z-[150] overflow-hidden bg-[#05070b]/95 backdrop-blur-xl" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={()=>setActive(null)}>
+          {active.type === "match-found" ? (
+            <div className="absolute inset-0 flex">
+              <motion.div className="flex-1 bg-gradient-to-r from-[#17244a] to-[#0a0d14]" initial={{x:"-100%"}} animate={{x:0}} transition={{duration:.55,ease:[.16,1,.3,1]}} />
+              <motion.div className="flex-1 bg-gradient-to-l from-[#5a101b] to-[#0a0d14]" initial={{x:"100%"}} animate={{x:0}} transition={{duration:.55,ease:[.16,1,.3,1]}} />
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                <motion.div initial={{scale:2.5,opacity:0}} animate={{scale:1,opacity:1}} transition={{delay:.4,duration:.45}} className="text-xs font-black tracking-[.5em] text-white/50">MATCH FOUND</motion.div>
+                <div className="mt-8 flex items-center gap-8 sm:gap-16">
+                  <motion.div initial={{x:-120,opacity:0}} animate={{x:0,opacity:1}} transition={{delay:.55}} className="text-3xl sm:text-5xl font-black text-white">{active.teamA || "TEAM ALPHA"}</motion.div>
+                  <motion.div animate={{scale:[.5,1.5,1],rotate:[-20,8,0]}} transition={{delay:.7,duration:.5}} className="text-5xl">⚔️</motion.div>
+                  <motion.div initial={{x:120,opacity:0}} animate={{x:0,opacity:1}} transition={{delay:.55}} className="text-3xl sm:text-5xl font-black text-white">{active.teamB || "TEAM BRAVO"}</motion.div>
+                </div>
+                <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:1}} className="mt-8 font-mono text-sm font-bold tracking-[.18em] text-white/45">{active.meta || "BO5 • BLACK OPS 7 • MONEY CHALL €5"}</motion.div>
+              </div>
+            </div>
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <motion.div className="absolute inset-0" style={{background:`radial-gradient(circle at center, ${accent}38, transparent 48%)`}} animate={{scale:[.7,1.2,1],opacity:[0,1,.6]}} />
+              {active.type === "rivalry" && <motion.div className="absolute inset-y-0 left-1/2 w-px bg-white/20" initial={{scaleY:0}} animate={{scaleY:1}} transition={{duration:.6}} />}
+              {active.type === "money" && Array.from({length:18},(_,i)=><motion.span key={i} className="absolute text-2xl" initial={{y:-500,x:(i-9)*55,rotate:0}} animate={{y:500,rotate:360}} transition={{delay:i*.035,duration:1.5}}>€</motion.span>)}
+              <motion.div className="relative z-10 text-center px-6" initial={{opacity:0,scale:.65}} animate={{opacity:1,scale:1}} transition={{duration:.45}}>
+                <motion.div className="text-8xl" animate={active.type==="streak"?{scale:[.7,1.4,1],filter:["blur(8px)","blur(0px)","blur(0px)"]}:active.type==="revenge"?{x:[-12,10,-6,0],opacity:[0,1,.5,1]}:{scale:[.4,1.2,1]}} transition={{duration:.7}}>{icons[active.type]}</motion.div>
+                <motion.div className="mt-6 text-xs font-black tracking-[.4em]" style={{color:accent}} initial={{letterSpacing:".8em",opacity:0}} animate={{letterSpacing:".4em",opacity:1}}>{title}</motion.div>
+                <motion.h2 className="mt-3 text-5xl sm:text-7xl font-black uppercase text-white" initial={{y:35,opacity:0}} animate={{y:0,opacity:1}} transition={{delay:.28}}>
+                  {active.type==="streak" ? `${active.count || 5} WINS` : active.type==="money" ? `€${active.amount || 25}` : active.type==="mastery" ? (active.map || "RAID") : active.type==="record" ? (active.value || "NEW PEAK ELO") : active.type==="rivalry" ? (active.level || "HEATED") : title}
+                </motion.h2>
+                <div className="mt-3 text-sm font-semibold uppercase tracking-[.18em] text-white/40">{subtitle}</div>
+              </motion.div>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
 
   return (
     <AnimatePresence>
