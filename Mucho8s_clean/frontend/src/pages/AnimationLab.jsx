@@ -12,6 +12,17 @@ const tests = [
   { label: "Bounty Claimed", detail: { type: "bounty", bonus: 15 } },
   { label: "Giant Killer", detail: { type: "upset", bonus: 12 } },
   { label: "Nemesis Defeated", detail: { type: "nemesis", opponent: "Sysma" } },
+  { label: "Win Streak", detail: { type: "streak", count: 5 } },
+  { label: "Rank Defense", detail: { type: "defense" } },
+  { label: "Promotion Match", detail: { type: "promotion" } },
+  { label: "Revenge Complete", detail: { type: "revenge" } },
+  { label: "King of Lobby", detail: { type: "king" } },
+  { label: "Money Chall Won", detail: { type: "money", amount: 25 } },
+  { label: "Rivalry Heated", detail: { type: "rivalry", level: "HEATED" } },
+  { label: "Map Mastery", detail: { type: "mastery", map: "RAID" } },
+  { label: "Personal Record", detail: { type: "record", value: "NEW PEAK ELO" } },
+  { label: "Streak Ended", detail: { type: "shutdown" } },
+  { label: "Match Found / VS", detail: { type: "match-found", teamA: "TEAM ALPHA", teamB: "TEAM BRAVO", meta: "BO5 • BLACK OPS 7 • MONEY CHALL €5" } },
 ];
 
 export default function AnimationLab() {
