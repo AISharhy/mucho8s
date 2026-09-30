@@ -77,7 +77,7 @@ export const RecordMatchDialog = ({
         id: `extra-${index}-${playerAId}-${playerBId}`,
         playerAId,
         playerBId,
-        amount: String(Number(pair?.amount || 5)),
+        amount: String(Number(pair?.amount ?? 5)),
         platform: ["paypal", "revolut"].includes(String(pair?.platform || "").toLowerCase())
           ? String(pair.platform).toLowerCase()
           : "paypal",
@@ -222,12 +222,15 @@ export const RecordMatchDialog = ({
   const submittedPairings = [
     ...moneyPairings,
     ...extraPairings,
-  ].map((pair) => ({
-    playerAId: pair.playerAId,
-    playerBId: pair.playerBId,
-    amount: Number(String(pair.amount).replace(",", ".")),
-    platform: pair.platform,
-  }));
+  ].map((pair) => {
+    const amount = Number(String(pair.amount).replace(",", "."));
+    return {
+      playerAId: pair.playerAId,
+      playerBId: pair.playerBId,
+      amount,
+      platform: amount === 0 ? "free" : pair.platform,
+    };
+  });
 
   const primaryPairingsValid =
     moneyPairings.length === teamA.length &&
@@ -248,7 +251,7 @@ export const RecordMatchDialog = ({
         teamB.includes(pair.playerBId) &&
         Number.isFinite(pair.amount) &&
         pair.amount >= 0 &&
-        ["paypal", "revolut"].includes(pair.platform)
+        (pair.amount === 0 || ["paypal", "revolut"].includes(pair.platform))
     );
 
   const cycle = (id) => {
