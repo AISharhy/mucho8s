@@ -239,6 +239,7 @@ export default function PlayerProfile() {
   const [historyModeFilter, setHistoryModeFilter] = useState("all");
   const [showMerdaIntro, setShowMerdaIntro] = useState(false);
   const [showCleanAgain, setShowCleanAgain] = useState(false);
+  const [rankTransition, setRankTransition] = useState(null);
   const previousMerdaRef = useRef({ playerId: "", count: 0 });
   const merdaCountValue = Math.max(0, Number(player?.merdaCount || 0));
 
@@ -290,6 +291,38 @@ export default function PlayerProfile() {
     previousMerdaRef.current = { playerId: currentId, count: merdaCountValue };
     return undefined;
   }, [player?.id, merdaCountValue]);
+
+  useEffect(() => {
+    if (!player?.id || !isOwnProfile) return undefined;
+
+    const required = Math.max(0, Number(player.placementRequired || 0));
+    const placementComplete = required === 0 || player.placementComplete === true;
+    if (!placementComplete) return undefined;
+
+    const currentTier = tierOf(player.currentElo);
+    const currentFamily = String(currentTier.id || "").split("-")[0];
+    const seasonNumber = Number(competitionData?.season_number || competitionData?.seasonNumber || 1);
+    const storageKey = `mucho:rank-family:${seasonNumber}:${player.id}`;
+    const previousFamily = window.localStorage.getItem(storageKey);
+    const rankOrder = ["iron", "bronze", "silver", "gold", "platinum", "diamond", "masters"];
+
+    window.localStorage.setItem(storageKey, currentFamily);
+    if (!previousFamily || previousFamily === currentFamily) return undefined;
+
+    const fromIndex = rankOrder.indexOf(previousFamily);
+    const toIndex = rankOrder.indexOf(currentFamily);
+    if (fromIndex < 0 || toIndex < 0) return undefined;
+
+    setRankTransition({
+      direction: toIndex > fromIndex ? "up" : "down",
+      from: previousFamily,
+      to: currentFamily,
+      tier: currentTier,
+      elo: Math.round(Number(player.currentElo || 0)),
+    });
+
+    return undefined;
+  }, [player?.id, player?.currentElo, player?.placementRequired, player?.placementComplete, isOwnProfile, competitionData?.season_number, competitionData?.seasonNumber]);
 
   const playerMatches = useMemo(() => {
     if (!player) return [];
@@ -1145,6 +1178,40 @@ export default function PlayerProfile() {
     <div className="m8-page-stack">
       <MerdaRainOverlay count={merdaCountValue} visible={showMerdaIntro} />
       <CleanAgainOverlay visible={showCleanAgain} />
+
+      {rankTransition && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center overflow-hidden bg-[#05070b]/95 backdrop-blur-xl" role="dialog" aria-modal="true" aria-label="Rank transition">
+          <div className="absolute inset-0 opacity-40" style={{ background: `radial-gradient(circle at 50% 45%, ${rankTransition.tier.color}55 0%, transparent 42%)` }} />
+          <div className="absolute inset-0 m8-rank-transition-grid" />
+          <div className={`relative z-10 flex w-full max-w-3xl flex-col items-center px-6 text-center ${rankTransition.direction === "up" ? "m8-rank-transition-up" : "m8-rank-transition-down"}`}>
+            <div className="mb-5 text-[11px] font-black uppercase tracking-[0.45em] text-white/45">Mucho Ranked</div>
+            <div className="mb-2 text-sm font-black uppercase tracking-[0.32em]" style={{ color: rankTransition.direction === "up" ? rankTransition.tier.color : "#ef6b73" }}>
+              {rankTransition.direction === "up" ? "Rank Up" : "Rank Down"}
+            </div>
+            <div className="relative my-6 flex h-64 w-64 items-center justify-center">
+              <div className="absolute inset-0 rounded-full m8-rank-transition-pulse" style={{ boxShadow: `0 0 90px ${rankTransition.tier.color}55` }} />
+              <RankArtwork elo={rankTransition.elo} size="xl" />
+            </div>
+            <div className="text-5xl font-black uppercase tracking-tight text-white sm:text-7xl">{rankTransition.to}</div>
+            <div className="mt-3 font-mono text-sm font-bold tracking-[0.24em] text-white/55">{rankTransition.elo} ELO</div>
+            <div className="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-white/35">
+              {rankTransition.from} → {rankTransition.to}
+            </div>
+            <Button onClick={() => setRankTransition(null)} className="mt-9 min-w-44 rounded-xl bg-white text-black hover:bg-white/90 font-black uppercase tracking-[0.18em]">
+              Continue
+            </Button>
+          </div>
+          <style>{`
+            .m8-rank-transition-grid { background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px); background-size: 44px 44px; mask-image: radial-gradient(circle, black 15%, transparent 72%); }
+            .m8-rank-transition-up { animation: m8RankReveal .72s cubic-bezier(.16,1,.3,1) both; }
+            .m8-rank-transition-down { animation: m8RankDrop .72s cubic-bezier(.16,1,.3,1) both; }
+            .m8-rank-transition-pulse { animation: m8RankPulse 1.45s ease-out infinite; }
+            @keyframes m8RankReveal { 0% { opacity:0; transform:scale(.72); filter:blur(18px); } 55% { opacity:1; transform:scale(1.055); filter:blur(0); } 100% { transform:scale(1); } }
+            @keyframes m8RankDrop { 0% { opacity:0; transform:translateY(-30px) scale(1.08); filter:blur(12px); } 60% { opacity:1; transform:translateY(8px) scale(.97); filter:blur(0); } 100% { transform:none; } }
+            @keyframes m8RankPulse { 0% { transform:scale(.7); opacity:.8; } 100% { transform:scale(1.35); opacity:0; } }
+          `}</style>
+        </div>
+      )}
 
       <Link to="/players" className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-white self-start m8-pill order-0">
         <ArrowLeft size={16} /> Back to players
