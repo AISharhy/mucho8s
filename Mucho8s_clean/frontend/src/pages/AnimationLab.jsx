@@ -6,6 +6,7 @@ const tests = [
   { label: "Rank Down", detail: { type: "rank-down", from: "platinum", to: "gold", elo: 1680 } },
   { label: "Placement Reveal", detail: { type: "placement", rank: "platinum", elo: 1785 } },
   { label: "New Season", detail: { type: "season", season: 2 } },
+  { label: "Trophy Unlocked", detail: { type: "trophy", trophy: "Clutch Master" } },
   { label: "MVP", detail: { type: "mvp", count: 3 } },
   { label: "Merda", detail: { type: "merda", count: 2 } },
   { label: "Bounty Claimed", detail: { type: "bounty", bonus: 15 } },
@@ -22,7 +23,7 @@ export default function AnimationLab() {
         <div className="brand-kicker mb-2">DEV LAB</div>
         <h1 className="font-display text-4xl font-black tracking-[-0.04em]">Animation Lab</h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Preview sicura: questi test non modificano ELO, match, trophy, placement o statistiche.
+          Preview sicura con audio: questi test non modificano ELO, match, trophy, placement o statistiche.
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
