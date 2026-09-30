@@ -82,12 +82,12 @@ const COMPETITIVE_MAP_POOLS: Record<string, Record<string, string[]>> = {
 };
 
 const competitiveMapPool = (game: string, mode: string, format: string) => {
-  let pool = [...(COMPETITIVE_MAP_POOLS?.[game]?.[mode] || [])];
+  let pool = mode === "CDL Mix" ? [...(COMPETITIVE_MAP_POOLS?.[game]?.Hardpoint || []), ...(COMPETITIVE_MAP_POOLS?.[game]?.["Search & Destroy"] || [])] : [...(COMPETITIVE_MAP_POOLS?.[game]?.[mode] || [])];
 
-  if (game === "MW3" && mode === "Search & Destroy" && format !== "2v2") {
+  if (game === "MW3" && ["Search & Destroy","CDL Mix"].includes(mode) && format !== "2v2") {
     pool = pool.filter((map) => map !== "Scrapyard");
   }
-  if (game === "CW" && mode === "Search & Destroy" && format === "2v2") {
+  if (game === "CW" && ["Search & Destroy","CDL Mix"].includes(mode) && format === "2v2") {
     pool = pool.filter((map) => map !== "Miami");
   }
 
@@ -107,9 +107,9 @@ const drawSeriesMaps = (
   bestOf: number,
   recentMatches: any[] = [],
 ) => {
-  const seriesLength = bestOf === 5 ? 5 : 3;
+  const seriesLength = [3,5,7].includes(bestOf) ? bestOf : 3;
   const pool = competitiveMapPool(game, mode, format);
-  if (pool.length < seriesLength) return [];
+  if (!pool.length) return [];
 
   // Random, but history-aware: maps that have not appeared recently get
   // progressively more weight. Maps from the immediately previous matching
@@ -174,6 +174,7 @@ const drawSeriesMaps = (
     remaining.splice(selectedIndex, 1);
   }
 
+  while (picked.length < seriesLength && pool.length) picked.push(pool[Math.floor(secureRandom() * pool.length)]);
   return picked;
 };
 
@@ -815,7 +816,7 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       upsetWinnerBonus: upset.winnerBonus,
       upsetLoserPenalty: upset.loserPenalty,
       map: report.map || (Array.isArray(report.maps) ? report.maps[0] || "" : ""),
-      maps: Array.isArray(report.maps) ? report.maps.map(String).slice(0, 5) : [],
+      maps: Array.isArray(report.maps) ? report.maps.map(String).slice(0, 7) : [],
       mapResults: Array.isArray(report.map_results) ? report.map_results : [],
       mode: report.mode || "",
       game: report.game || "",
@@ -960,7 +961,7 @@ Deno.serve(async (req: Request) => {
       const game = String(body?.game || "").trim();
       const mode = String(body?.mode || "").trim();
       const format = String(body?.format || "").trim();
-      const bestOf = Number(body?.bestOf) === 5 ? 5 : 3;
+      const bestOf = [3,5,7].includes(Number(body?.bestOf)) ? Number(body.bestOf) : 3;
       const pool = competitiveMapPool(game, mode, format);
       const requestedMaps = Array.isArray(body?.maps)
         ? body.maps.map((map: unknown) => String(map || "").trim()).filter(Boolean)
@@ -971,8 +972,13 @@ Deno.serve(async (req: Request) => {
         const uniqueMaps = [...new Set(requestedMaps)];
         const validManualRotation =
           requestedMaps.length === bestOf &&
-          uniqueMaps.length === bestOf &&
-          requestedMaps.every((map) => pool.includes(map));
+          (bestOf === 7 || uniqueMaps.length === bestOf) &&
+          requestedMaps.every((map,index) => {
+            if (mode !== "CDL Mix") return pool.includes(map);
+            const requestedModes = Array.isArray(body?.mapModes) ? body.mapModes : [];
+            const slotMode = requestedModes[index];
+            return ["Hardpoint","Search & Destroy"].includes(slotMode) && competitiveMapPool(game,slotMode,format).includes(map);
+          });
 
         if (!validManualRotation) {
           return json({ error: "Manual map rotation is invalid for this game/mode/format" }, 400);
@@ -1352,8 +1358,8 @@ Deno.serve(async (req: Request) => {
         liveMatch = liveRow;
 
         if (mapResults.length) {
-          const scheduledMaps = Array.isArray(liveRow.maps) ? liveRow.maps.map(String).slice(0, 5) : [];
-          const winsNeeded = scheduledMaps.length >= 5 ? 3 : 2;
+          const scheduledMaps = Array.isArray(liveRow.maps) ? liveRow.maps.map(String).slice(0, 7) : [];
+          const winsNeeded = Math.ceil(scheduledMaps.length / 2);
           const alphaWins = mapResults.filter((row: any) => row.winner === "A").length;
           const bravoWins = mapResults.filter((row: any) => row.winner === "B").length;
           const resultWinner = alphaWins >= winsNeeded ? "A" : bravoWins >= winsNeeded ? "B" : "";
@@ -1382,7 +1388,7 @@ Deno.serve(async (req: Request) => {
         game: String(body?.game || ""),
         mode: String(body?.mode || ""),
         map: String(body?.map || ""),
-        maps: Array.isArray(liveMatch?.maps) ? liveMatch.maps.map(String).slice(0, 5) : [],
+        maps: Array.isArray(liveMatch?.maps) ? liveMatch.maps.map(String).slice(0, 7) : [],
         map_results: mapResults,
         pairings,
         season_number: seasonNumber,
