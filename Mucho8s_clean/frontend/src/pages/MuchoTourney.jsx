@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Navigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { Crown, Plus, RotateCcw, Shuffle, Swords, Trophy, UsersRound, X } from "lucide-react";
@@ -17,16 +18,22 @@ const makeBracket = teams => {
   return rounds;
 };
 export default function MuchoTourney(){
- const {isAdmin}=useData(); const [t,setT]=useState(load); const [teamName,setTeamName]=useState("");
+ const {isAdmin}=useData(); const [t,setT]=useState(load); const [teamName,setTeamName]=useState(""); const [fx,setFx]=useState(null);
+ const fireFx=(type,data={})=>setFx({type,...data,key:Date.now()});
+ useEffect(()=>{if(!fx)return;const id=setTimeout(()=>setFx(null),fx.type==="champion"?4200:2200);return()=>clearTimeout(id);},[fx]);
  const save=next=>{setT(next);localStorage.setItem(STORE,JSON.stringify(next));};
  const patch=p=>save({...t,...p});
  const addTeam=()=>{const name=teamName.trim();if(!name)return;if(t.teams.some(x=>x.name.toLowerCase()===name.toLowerCase()))return toast.error("Team already registered"); if(t.teams.length>=8)return toast.error("Maximum 8 teams in this test bracket"); save({...t,teams:[...t.teams,{id:crypto.randomUUID?.()||String(Date.now()),name,seed:t.teams.length+1}],bracket:[],champion:null,status:"setup"});setTeamName("");};
- const generate=()=>{if(t.teams.length<2)return toast.error("Add at least 2 teams");let teams=[...t.teams];if(t.seeding==="random")teams.sort(()=>Math.random()-.5); teams=teams.map((x,i)=>({...x,seed:i+1}));save({...t,teams,bracket:makeBracket(teams),champion:null,status:"live"});toast.success("Bracket generated");};
- const report=(ri,mi,winner)=>{const br=t.bracket.map(r=>r.map(m=>({...m})));const m=br[ri][mi];m.winner=winner;m.scoreA=winner==="a"?Math.ceil((ri===br.length-1?t.finalBestOf:t.bestOf)/2):0;m.scoreB=winner==="b"?Math.ceil((ri===br.length-1?t.finalBestOf:t.bestOf)/2):0;const won=winner==="a"?m.a:m.b;if(ri<br.length-1){const next=br[ri+1][Math.floor(mi/2)]; if(mi%2===0)next.a=won;else next.b=won;next.winner=null;next.scoreA=0;next.scoreB=0;} const champion=ri===br.length-1?won:null;save({...t,bracket:br,champion:champion||t.champion,status:champion?"completed":"live"});};
+ const generate=()=>{if(t.teams.length<2)return toast.error("Add at least 2 teams");let teams=[...t.teams];if(t.seeding==="random")teams.sort(()=>Math.random()-.5); teams=teams.map((x,i)=>({...x,seed:i+1}));save({...t,teams,bracket:makeBracket(teams),champion:null,status:"live"});fireFx("bracket",{title:"BRACKET LOCKED",sub:`${teams.length} TEAMS · THE ROAD STARTS NOW`});toast.success("Bracket generated");};
+ const report=(ri,mi,winner)=>{const br=t.bracket.map(r=>r.map(m=>({...m})));const m=br[ri][mi];m.winner=winner;m.scoreA=winner==="a"?Math.ceil((ri===br.length-1?t.finalBestOf:t.bestOf)/2):0;m.scoreB=winner==="b"?Math.ceil((ri===br.length-1?t.finalBestOf:t.bestOf)/2):0;const won=winner==="a"?m.a:m.b;if(ri<br.length-1){const next=br[ri+1][Math.floor(mi/2)]; if(mi%2===0)next.a=won;else next.b=won;next.winner=null;next.scoreA=0;next.scoreB=0;} const champion=ri===br.length-1?won:null;save({...t,bracket:br,champion:champion||t.champion,status:champion?"completed":"live"});
+ if(champion) fireFx("champion",{title:"MUCHOTOURNEY CHAMPION",sub:won?.name||"CHAMPION"});
+ else if(ri===br.length-2) fireFx("final",{title:"FINALIST LOCKED",sub:`${won?.name||"TEAM"} ADVANCES TO THE FINAL`});
+ else fireFx("advance",{title:"TEAM ADVANCES",sub:`${won?.name||"TEAM"} SURVIVES THE ROUND`});
+};
  const reset=()=>{if(!window.confirm("Reset MuchoTourney test data?"))return;save({...blank});};
  const labels=useMemo(()=>roundsFor(t.bracket?.[0]?.length? t.bracket[0].length*2:Math.max(2,t.teams.length)),[t.bracket,t.teams.length]);
  if(!isAdmin)return <Navigate to="/" replace/>;
- return <div className="m8-page-stack gap-3 max-w-7xl mx-auto">
+ return <><div className="m8-page-stack gap-3 max-w-7xl mx-auto">
   <section className="m8-panel rounded-[22px] p-5 sm:p-6 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
    <div><div className="brand-kicker text-[#D5A33A] mb-1">Admin test environment</div><h1 className="font-display text-3xl font-black tracking-[-.04em]">MuchoTourney</h1><p className="text-sm text-muted-foreground mt-1">Private tournament control room · single elimination test build.</p></div>
    <div className="flex gap-2"><span className="h-10 px-3 rounded-xl border border-[#D5A33A]/25 bg-[#D5A33A]/[.06] text-[#D5A33A] flex items-center gap-2 text-xs font-black"><Trophy size={15}/>ADMIN ONLY</span><button onClick={reset} className="h-10 w-10 rounded-xl border border-[#2A303B] flex items-center justify-center"><RotateCcw size={15}/></button></div>
@@ -55,5 +62,15 @@ export default function MuchoTourney(){
    </div>
   </section>
   {t.champion&&<section className="rounded-[22px] border border-[#D5A33A]/30 bg-[#D5A33A]/[.06] p-7 text-center"><Crown size={34} className="text-[#D5A33A] mx-auto"/><div className="brand-kicker text-[#D5A33A] mt-3">MuchoTourney Champion</div><div className="font-display text-3xl font-black mt-1">{t.champion.name}</div><div className="text-xs text-muted-foreground mt-2">Champion card / trophy hook ready for the final production flow.</div></section>}
- </div>;
+ </div><AnimatePresence>{fx&&<motion.div key={fx.key} initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-[180] bg-[#03050a]/90 backdrop-blur-xl flex items-center justify-center overflow-hidden" onClick={()=>setFx(null)}>
+ <motion.div initial={{scale:fx.type==="champion"?.55:.82,y:fx.type==="champion"?40:18,rotateX:fx.type==="champion"?18:0}} animate={{scale:1,y:0,rotateX:0}} transition={{type:"spring",stiffness:170,damping:16}} className="relative text-center px-8">
+  <motion.div initial={{scale:0,rotate:-30}} animate={{scale:1,rotate:0}} transition={{delay:.12,type:"spring"}} className={`mx-auto w-24 h-24 rounded-[28px] border flex items-center justify-center ${fx.type==="champion"?"border-[#D5A33A]/60 bg-[#D5A33A]/10 shadow-[0_0_90px_rgba(213,163,58,.35)]":fx.type==="final"?"border-purple-400/50 bg-purple-500/10 shadow-[0_0_80px_rgba(168,85,247,.28)]":"border-magma/50 bg-magma/10 shadow-[0_0_70px_rgba(255,42,59,.25)]"}`}><Trophy size={45} className={fx.type==="champion"?"text-[#D5A33A]":fx.type==="final"?"text-purple-300":"text-magma"}/></motion.div>
+  <motion.div initial={{opacity:0,letterSpacing:".5em"}} animate={{opacity:1,letterSpacing:".18em"}} transition={{delay:.2}} className="mt-6 text-[11px] font-black text-[#D5A33A]">MUCHOTOURNEY</motion.div>
+  <motion.div initial={{opacity:0,scale:1.18}} animate={{opacity:1,scale:1}} transition={{delay:.28}} className="font-display text-4xl sm:text-6xl font-black mt-2 tracking-[-.05em]">{fx.title}</motion.div>
+  <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{delay:.42}} className="mt-3 text-sm sm:text-lg font-black text-white/70">{fx.sub}</motion.div>
+  {fx.type==="champion"&&<><motion.div initial={{scaleX:0}} animate={{scaleX:1}} transition={{delay:.5,duration:.8}} className="h-px w-72 max-w-full mx-auto mt-6 bg-gradient-to-r from-transparent via-[#D5A33A] to-transparent"/><motion.div animate={{opacity:[.15,.55,.15],scale:[.9,1.15,.9]}} transition={{duration:1.6,repeat:Infinity}} className="absolute -inset-32 -z-10 rounded-full border border-[#D5A33A]/20"/></>}
+  <div className="mt-7 text-[9px] tracking-[.2em] text-white/30">TAP ANYWHERE TO CONTINUE</div>
+ </motion.div>
+ <motion.div initial={{scaleX:0}} animate={{scaleX:1}} transition={{duration:.45}} className="absolute left-0 right-0 top-1/2 h-[2px] bg-gradient-to-r from-transparent via-white/25 to-transparent"/>
+</motion.div>}</AnimatePresence></>;
 }
