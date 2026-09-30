@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RecordMatchDialog } from "@/components/RecordMatchDialog";
+import AnimationLab from "@/pages/AnimationLab";
 import MatchResultCenter from "@/components/MatchResultCenter";
 import ModeBadge, { isDirectMucho1v1 } from "@/components/ModeBadge";
 import {
@@ -21,6 +22,7 @@ const ADMIN_TABS = [
   { key: "matches", label: "Matches", icon: Gamepad2 },
   { key: "competition", label: "Competition", icon: Trophy },
   { key: "content", label: "Content", icon: Newspaper },
+  { key: "animations", label: "Animations", icon: Trophy },
   { key: "settings", label: "Settings", icon: Settings },
 ];
 
@@ -1003,6 +1005,8 @@ export default function AdminPanel() {
 
         </>
       )}
+
+      {activeTab === "animations" && <AnimationLab />}
 
       {activeTab === "settings" && storageMode === "local" && (
         <div className="rounded-xl border border-[#3A3320] bg-[#D5A33A]/5 px-4 py-3 text-sm text-muted-foreground">
