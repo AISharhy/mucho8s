@@ -1,0 +1,22 @@
+import React, { useEffect, useMemo, useState } from "react";
+import { Crown, Shield, Swords, Trophy, UsersRound } from "lucide-react";
+const STORE="mucho8s-tourney-admin-v1";
+const read=()=>{try{return JSON.parse(localStorage.getItem(STORE)||"null")}catch{return null}};
+export default function TourneyLive(){
+ const [t,setT]=useState(read);
+ useEffect(()=>{const sync=()=>setT(read());window.addEventListener("storage",sync);window.addEventListener("mucho:tourney-update",sync);return()=>{window.removeEventListener("storage",sync);window.removeEventListener("mucho:tourney-update",sync)}},[]);
+ const rounds=useMemo(()=>t?.bracket||[],[t]);
+ if(!t||!["live","completed"].includes(t.status)) return <section className="m8-panel rounded-[22px] min-h-[420px] flex flex-col items-center justify-center text-center p-8"><Trophy size={38} className="text-[#D5A33A] opacity-60"/><h1 className="font-display text-3xl font-black mt-4">MuchoTourney</h1><p className="text-sm text-muted-foreground mt-2">No tournament is live right now.</p></section>;
+ return <div className="m8-page-stack gap-3 max-w-7xl mx-auto">
+  <section className="rounded-[22px] border border-[#D5A33A]/25 bg-gradient-to-r from-[#15130c] to-[#0c1119] p-5 sm:p-7">
+   <div className="flex items-start justify-between gap-4"><div><div className="flex items-center gap-2 text-[#D5A33A] text-[10px] font-black tracking-[.18em]"><span className="w-2 h-2 rounded-full bg-[#D5A33A] animate-pulse"/> LIVE TOURNAMENT</div><h1 className="font-display text-3xl sm:text-4xl font-black mt-2">{t.name}</h1><div className="flex flex-wrap gap-2 mt-3 text-[10px] font-bold text-[#AAB1BE]"><span className="m8-pill">{t.game}</span><span className="m8-pill">{t.format}</span><span className="m8-pill">{t.mode}</span><span className="m8-pill">BO{t.bestOf}</span></div></div><Trophy size={42} className="text-[#D5A33A]"/></div>
+  </section>
+  <section className="grid lg:grid-cols-[1fr_300px] gap-3">
+   <div className="m8-panel rounded-[22px] p-5 overflow-x-auto"><div className="flex items-center justify-between"><div><div className="brand-kicker text-[#D5A33A]">Live progression</div><h2 className="font-display text-xl font-black">Bracket</h2></div>{t.champion&&<div className="text-right"><div className="text-[9px] text-[#D5A33A]">CHAMPION</div><div className="font-black">{t.champion.name}</div></div>}</div>
+    <div className="flex gap-6 min-w-[760px] mt-5">{rounds.map((round,ri)=><div key={ri} className="flex-1 min-w-[220px]"><div className="text-[10px] tracking-[.16em] text-[#D5A33A] font-black mb-3">{ri===rounds.length-1?"FINAL":ri===rounds.length-2?"SEMIFINALS":"QUARTERFINALS"}</div><div className="flex flex-col justify-around h-[430px]">{round.map(m=><div key={m.id} className="rounded-xl border border-[#252B36] bg-[#0F141C] overflow-hidden">{[["a",m.a],["b",m.b]].map(([side,team])=><div key={side} className={`h-11 px-3 border-b border-[#202631] flex items-center gap-2 ${m.winner===side?"bg-[#D5A33A]/10 text-[#F4CE70]":m.winner?"opacity-45":""}`}><span className="flex-1 text-xs font-black truncate">{team?.name||"TBD"}</span>{m.winner===side&&<Crown size={13}/>}</div>)}</div>)}</div></div>)}</div>
+   </div>
+   <aside className="space-y-3"><div className="m8-panel rounded-[22px] p-4"><div className="flex items-center gap-2"><UsersRound size={16}/><h2 className="font-display font-black">Teams</h2></div><div className="mt-3 space-y-2">{(t.teams||[]).map((team,i)=><details key={team.id} className="rounded-xl border border-[#252B36] bg-[#10151D] group"><summary className="cursor-pointer list-none h-11 px-3 flex items-center gap-2"><span className="text-[#D5A33A] font-mono text-[10px]">#{team.seed||i+1}</span><span className="font-black text-xs flex-1">{team.name}</span><span className="text-[9px] text-[#697181]">INFO</span></summary><div className="border-t border-[#252B36] p-3 text-xs text-[#8D96A5]"><div className="flex items-center gap-2"><Shield size={13}/>Roster</div><div className="mt-2">{team.roster?.length?team.roster.map(x=><div key={x.id||x.name} className="py-1 text-white">{x.name||x}</div>):"Roster not added yet."}</div></div></details>)}</div></div>
+    <div className="m8-panel rounded-[22px] p-4"><div className="flex items-center gap-2"><Swords size={15} className="text-[#D5A33A]"/><span className="font-black text-sm">Tournament rules</span></div><div className="text-xs text-muted-foreground mt-2">Final BO{t.finalBestOf} · {t.seeding} seeding{t.mode==="CDL Mix"?` · starts ${t.startMode}`:""}</div></div></aside>
+  </section>
+ </div>
+}
