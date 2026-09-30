@@ -50,8 +50,14 @@ const isAdmin = async (req: Request, supabase: any) => {
   );
 };
 
-const resetPlayer = (player: any, startingElo = 500) => {
+const resetPlayer = (player: any, startingElo = 500, nextSeason = 1) => {
   const elo = Math.max(500, Math.round(Number(startingElo) || 500));
+  const placementRequired =
+    nextSeason === 2
+      ? 3
+      : player?.lifetimePlacementCompleted === true
+        ? 1
+        : 3;
   return {
     ...player,
     currentElo: elo,
@@ -64,6 +70,9 @@ const resetPlayer = (player: any, startingElo = 500) => {
     currentStreak: 0,
     mvpCount: 0,
     merdaCount: 0,
+    placementRequired: nextSeason >= 2 ? placementRequired : 0,
+    placementPlayed: 0,
+    placementComplete: nextSeason < 2,
     eloHistory: [{ match: 0, elo }],
   };
 };
@@ -808,7 +817,7 @@ Deno.serve(async (req: Request) => {
     const resetStats = body?.resetStats !== false;
 
     if (resetStats) {
-      const nextPlayers = players.map((player: any) => resetPlayer(player, startingElo));
+      const nextPlayers = players.map((player: any) => resetPlayer(player, startingElo, nextSeason));
       const { error: stateUpdateError } = await supabase
         .from("app_state")
         .update({
