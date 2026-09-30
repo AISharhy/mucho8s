@@ -32,6 +32,7 @@ export const RecordMatchDialog = ({
   const { players, createMatchReport, createLiveMatch, editMatch } = useData();
   const [assign, setAssign] = useState({});
   const [winner, setWinner] = useState("A");
+  const [mapWinners, setMapWinners] = useState([]);
   const [map, setMap] = useState("");
   const [mode, setMode] = useState(MATCH_MODES[0]);
   const [game, setGame] = useState(GAMES[0]);
@@ -54,6 +55,7 @@ export const RecordMatchDialog = ({
 
     setAssign(next);
     setWinner(editData?.winner || "A");
+    setMapWinners(Array.isArray(source?.mapResults) ? source.mapResults.map((row) => row?.winner || "") : []);
     setMap(editData?.map || "");
     setMode(editData?.mode || defaultMode || MATCH_MODES[0]);
     setGame(editData?.game || defaultGame || GAMES[0]);
@@ -272,6 +274,37 @@ export const RecordMatchDialog = ({
     [players, query]
   );
 
+  const liveSeriesMaps = liveMatchId && Array.isArray(initialTeams?.maps)
+    ? initialTeams.maps.filter(Boolean).slice(0, 5)
+    : [];
+  const winsNeeded = liveSeriesMaps.length >= 5 ? 3 : 2;
+  const alphaMapWins = mapWinners.filter((side) => side === "A").length;
+  const bravoMapWins = mapWinners.filter((side) => side === "B").length;
+  const derivedWinner = alphaMapWins >= winsNeeded ? "A" : bravoMapWins >= winsNeeded ? "B" : "";
+  const playedMapCount = mapWinners.filter(Boolean).length;
+  const expectedPlayedMaps = derivedWinner ? alphaMapWins + bravoMapWins : 0;
+  const mapResultsValid = !liveSeriesMaps.length || Boolean(
+    derivedWinner &&
+    playedMapCount === expectedPlayedMaps &&
+    mapWinners.slice(0, expectedPlayedMaps).every(Boolean) &&
+    mapWinners.slice(expectedPlayedMaps).every((side) => !side)
+  );
+  const chooseMapWinner = (index, side) => {
+    setMapWinners((prev) => {
+      const next = liveSeriesMaps.map((_, mapIndex) => prev[mapIndex] || "");
+      const priorA = next.slice(0, index).filter((value) => value === "A").length;
+      const priorB = next.slice(0, index).filter((value) => value === "B").length;
+      if (priorA >= winsNeeded || priorB >= winsNeeded) return next;
+      next[index] = side;
+      const nextA = next.slice(0, index + 1).filter((value) => value === "A").length;
+      const nextB = next.slice(0, index + 1).filter((value) => value === "B").length;
+      if (nextA >= winsNeeded || nextB >= winsNeeded) {
+        for (let i = index + 1; i < next.length; i += 1) next[i] = "";
+      }
+      return next;
+    });
+  };
+
   const effectiveCaptainA =
     editData?.captainAPlayerId ||
     initialCaptains?.A ||
@@ -288,7 +321,8 @@ export const RecordMatchDialog = ({
     teamA.length >= 2 &&
     teamA.length <= 4 &&
     Boolean(effectiveCaptainA && effectiveCaptainB) &&
-    moneyValid;
+    moneyValid &&
+    mapResultsValid;
 
   const submit = async (withRechall = false) => {
     if (submitting) return;
@@ -355,12 +389,17 @@ export const RecordMatchDialog = ({
       toast.success("Mucho8s is now live");
       onReported?.(null, liveMatch);
     } else {
+      const reportWinner = liveSeriesMaps.length ? derivedWinner : winner;
       const report = await createMatchReport({
         teamA,
         teamB,
-        winner,
-        scoreA: 0,
-        scoreB: 0,
+        winner: reportWinner,
+        scoreA: liveSeriesMaps.length ? alphaMapWins : 0,
+        scoreB: liveSeriesMaps.length ? bravoMapWins : 0,
+        mapResults: liveSeriesMaps.length
+          ? liveSeriesMaps.slice(0, alphaMapWins + bravoMapWins).map((mapName, index) => ({ map: mapName, winner: mapWinners[index] }))
+          : [],
+
         map,
         mode,
         game,
@@ -512,30 +551,43 @@ export const RecordMatchDialog = ({
             </>
           )}
 
-          {!liveOnly && (
+          {!liveOnly && liveSeriesMaps.length > 0 && (
+            <div className="rounded-2xl bg-[#0F1218] border border-[#222834] p-4">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Map results</Label>
+                  <div className="text-sm font-black mt-0.5">Alpha {alphaMapWins} — {bravoMapWins} Bravo</div>
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">
+                  {derivedWinner ? `${derivedWinner === "A" ? "Alpha" : "Bravo"} wins` : `First to ${winsNeeded}`}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {liveSeriesMaps.map((mapName, index) => {
+                  const previousA = mapWinners.slice(0, index).filter((side) => side === "A").length;
+                  const previousB = mapWinners.slice(0, index).filter((side) => side === "B").length;
+                  const seriesAlreadyEnded = previousA >= winsNeeded || previousB >= winsNeeded;
+                  return (
+                    <div key={mapName + index} className={"grid grid-cols-[1fr_auto_auto] gap-2 items-center rounded-xl border p-2.5 " + (seriesAlreadyEnded ? "border-[#1C212A] opacity-35" : "border-[#242A35]")}>
+                      <div className="min-w-0">
+                        <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Map {index + 1}</div>
+                        <div className="text-xs font-bold truncate">{mapName}</div>
+                      </div>
+                      <Button type="button" disabled={seriesAlreadyEnded} onClick={() => chooseMapWinner(index, "A")} className={mapWinners[index] === "A" ? "h-9 bg-magma text-white" : "h-9 bg-[#111720] text-magma border border-magma/30"}>Alpha</Button>
+                      <Button type="button" disabled={seriesAlreadyEnded} onClick={() => chooseMapWinner(index, "B")} className={mapWinners[index] === "B" ? "h-9 bg-[#D5A33A] text-black" : "h-9 bg-[#111720] text-[#D5A33A] border border-[#3A3320]"}>Bravo</Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {!liveOnly && liveSeriesMaps.length === 0 && (
           <div>
             <Label className="text-xs text-muted-foreground">Winner</Label>
             <div className="grid grid-cols-2 gap-2 mt-1">
-              <Button
-                type="button"
-                data-testid="winner-alpha-btn"
-                onClick={() => setWinner("A")}
-                className={winner === "A"
-                  ? "bg-magma text-white"
-                  : "bg-[#0F1218] text-magma border border-magma/40 hover:bg-magma/10"}
-              >
-                Alpha
-              </Button>
-              <Button
-                type="button"
-                data-testid="winner-bravo-btn"
-                onClick={() => setWinner("B")}
-                className={winner === "B"
-                  ? "bg-[#D5A33A] text-black"
-                  : "bg-[#0F1218] text-[#D5A33A] border border-[#3A3320] hover:bg-[#D5A33A]/10"}
-              >
-                Bravo
-              </Button>
+              <Button type="button" data-testid="winner-alpha-btn" onClick={() => setWinner("A")} className={winner === "A" ? "bg-magma text-white" : "bg-[#0F1218] text-magma border border-magma/40 hover:bg-magma/10"}>Alpha</Button>
+              <Button type="button" data-testid="winner-bravo-btn" onClick={() => setWinner("B")} className={winner === "B" ? "bg-[#D5A33A] text-black" : "bg-[#0F1218] text-[#D5A33A] border border-[#3A3320] hover:bg-[#D5A33A]/10"}>Bravo</Button>
             </div>
           </div>
           )}
