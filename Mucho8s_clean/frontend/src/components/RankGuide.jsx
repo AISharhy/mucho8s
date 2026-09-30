@@ -52,30 +52,6 @@ export const RankEmblem = ({ elo = 1000, compact = false }) => {
         </div>
       )}
 
-
-      {selectedRank && (() => {
-        const r = selectedRank;
-        const next = RANK_FAMILIES[RANK_FAMILIES.findIndex(x => x.id === r.id) - 1];
-        return <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-md" role="dialog" aria-modal="true" aria-label={`Dettagli rank ${r.label}`} onClick={closeRank}>
-          <div onClick={e => e.stopPropagation()} className={`rank-detail-modal rank-detail-${r.id} relative w-full max-w-xl overflow-hidden rounded-[28px] border p-5 sm:p-7 animate-in fade-in zoom-in-95 duration-300`} style={{borderColor:r.color+"70",background:`linear-gradient(145deg, ${r.color}24, rgba(10,12,18,.94) 42%, ${r.accent}22)`,boxShadow:`0 0 70px ${r.glow}, inset 0 1px 0 ${r.color}55`}}>
-            <div className="absolute inset-0 opacity-30 pointer-events-none" style={{background:`radial-gradient(circle at 22% 18%, ${r.color}55, transparent 32%)`}} />
-            <button type="button" onClick={closeRank} className="absolute right-4 top-4 z-20 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-black/30 text-xl text-white/70 hover:text-white" aria-label="Chiudi">×</button>
-            <div className="relative z-10 flex items-center gap-5">
-              <div className={`rank-detail-emblem rank-detail-emblem-${r.id} shrink-0`} style={{filter:`drop-shadow(0 0 18px ${r.color}88)`}}><RankArtwork family={r.id} size={96} /></div>
-              <div className="min-w-0"><div className="text-[10px] uppercase tracking-[.28em] text-white/45">Mucho8s rank</div><h3 className="font-display text-3xl sm:text-4xl font-black uppercase mt-1" style={{color:r.color}}>{r.label}</h3><div className="font-mono text-xs sm:text-sm text-white/65 mt-1">{r.divisions.join(" · ")} <span style={{color:r.color}}>•</span> {Number.isFinite(r.max)?`${r.min}–${r.max} Elo`:`${r.min}+ Elo`}</div></div>
-            </div>
-            <div className="relative z-10 mt-6 grid grid-cols-3 gap-2">
-              {r.divisions.map((d,i) => <div key={d} className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-center"><div className="text-[10px] uppercase tracking-widest text-white/40">Divisione</div><div className="font-display text-xl font-black mt-1" style={{color:r.color}}>{d}</div>{r.id!=="masters" && <div className="font-mono text-[10px] text-white/45 mt-1">{r.min + Math.max(0,(r.divisions.length-1-i))*100}+</div>}</div>)}
-            </div>
-            <div className="relative z-10 mt-5 rounded-2xl border border-white/10 bg-black/25 p-4">
-              <div className="flex justify-between gap-3 text-xs"><span className="text-white/50">{next ? "Prossimo rank" : "Rank massimo"}</span><span className="font-bold" style={{color:r.color}}>{next ? next.label : "MASTERS"}</span></div>
-              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full w-full rank-detail-progress" style={{background:`linear-gradient(90deg,${r.accent},${r.color})`,boxShadow:`0 0 14px ${r.color}`}} /></div>
-              <p className="mt-3 text-xs leading-5 text-white/55">{next ? `Raggiungi ${next.min} Elo per entrare in ${next.label}.` : "Hai raggiunto la cima della ladder competitiva Mucho8s."}</p>
-            </div>
-            <div className="relative z-10 mt-4 text-center text-[10px] uppercase tracking-[.22em] text-white/30">Tocca fuori dalla scheda per chiudere</div>
-          </div>
-        </div>;
-      })()}
     </div>
   );
 };
@@ -273,6 +249,22 @@ export default function RankGuide() {
           </div>
         </div>
       </section>
+
+      {selectedRank && (() => {
+        const r = selectedRank;
+        const next = RANK_FAMILIES[RANK_FAMILIES.findIndex(x => x.id === r.id) - 1];
+        return <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-md" role="dialog" aria-modal="true" aria-label={`Dettagli rank ${r.label}`} onClick={closeRank}>
+          <div onClick={e => e.stopPropagation()} className={`rank-detail-modal rank-detail-${r.id} relative w-full max-w-xl overflow-hidden rounded-[28px] border p-5 sm:p-7 animate-in fade-in zoom-in-95 duration-300`} style={{borderColor:r.color+"70",background:`linear-gradient(145deg, ${r.color}24, rgba(10,12,18,.96) 42%, ${r.accent}22)`,boxShadow:`0 0 70px ${r.glow}, inset 0 1px 0 ${r.color}55`}}>
+            <div className="absolute inset-0 opacity-30 pointer-events-none" style={{background:`radial-gradient(circle at 22% 18%, ${r.color}55, transparent 32%)`}} />
+            <button type="button" onClick={closeRank} className="absolute right-4 top-4 z-20 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-black/30 text-xl text-white/70 hover:text-white" aria-label="Chiudi">×</button>
+            <div className="relative z-10 flex items-center gap-5"><div className={`rank-detail-emblem rank-detail-emblem-${r.id} shrink-0`} style={{filter:`drop-shadow(0 0 18px ${r.color}88)`}}><RankArtwork family={r.id} size={96} /></div><div className="min-w-0"><div className="text-[10px] uppercase tracking-[.28em] text-white/45">Mucho8s rank</div><h3 className="font-display text-3xl sm:text-4xl font-black uppercase mt-1" style={{color:r.color}}>{r.label}</h3><div className="font-mono text-xs sm:text-sm text-white/65 mt-1">{r.divisions.join(" · ")} <span style={{color:r.color}}>•</span> {Number.isFinite(r.max)?`${r.min}–${r.max} Elo`:`${r.min}+ Elo`}</div></div></div>
+            <div className="relative z-10 mt-6 grid grid-cols-3 gap-2">{r.divisions.map((d,i) => <div key={d} className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-center"><div className="text-[10px] uppercase tracking-widest text-white/40">Divisione</div><div className="font-display text-xl font-black mt-1" style={{color:r.color}}>{d}</div>{r.id!=="masters" && <div className="font-mono text-[10px] text-white/45 mt-1">{r.min + Math.max(0,(r.divisions.length-1-i))*100}+</div>}</div>)}</div>
+            <div className="relative z-10 mt-5 rounded-2xl border border-white/10 bg-black/25 p-4"><div className="flex justify-between gap-3 text-xs"><span className="text-white/50">{next ? "Prossimo rank" : "Rank massimo"}</span><span className="font-bold" style={{color:r.color}}>{next ? next.label : "MASTERS"}</span></div><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full w-full rank-detail-progress" style={{background:`linear-gradient(90deg,${r.accent},${r.color})`,boxShadow:`0 0 14px ${r.color}`}} /></div><p className="mt-3 text-xs leading-5 text-white/55">{next ? `Raggiungi ${next.min} Elo per entrare in ${next.label}.` : "Hai raggiunto la cima della ladder competitiva Mucho8s."}</p></div>
+            <div className="relative z-10 mt-4 text-center text-[10px] uppercase tracking-[.22em] text-white/30">Tocca fuori dalla scheda per chiudere</div>
+          </div>
+        </div>;
+      })()}
+
     </div>
   );
 }
