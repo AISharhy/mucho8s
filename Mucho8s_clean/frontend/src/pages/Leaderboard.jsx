@@ -22,7 +22,7 @@ const COLUMNS = [
   { key: "totalPoints", label: "Elo", sortable: true },
   { key: "matchWins", label: "Record", sortable: true },
   { key: "winRate", label: "Win %", sortable: true },
-  { key: "earnings", label: "Earnings", sortable: true },
+  { key: "earnings", label: "Money", sortable: true },
   { key: "currentStreak", label: "Streak", sortable: true },
   { key: "mvpCount", label: "MVP", sortable: true },
 ];
@@ -161,7 +161,11 @@ export default function Leaderboard() {
             matchWins: Number(player.wins || 0),
             matchLosses: Number(player.losses || 0),
             mucho8sWon: moneyByMode.mucho8sWon,
+            mucho8sLost: moneyByMode.mucho8sLost,
             mucho1v1Won: moneyByMode.mucho1v1Won,
+            mucho1v1Lost: moneyByMode.mucho1v1Lost,
+            moneyWon: moneyByMode.mucho8sWon + moneyByMode.mucho1v1Won,
+            moneyLost: moneyByMode.mucho8sLost + moneyByMode.mucho1v1Lost,
             mucho1v1Wins: moneyByMode.mucho1v1Wins,
             mucho1v1Losses: moneyByMode.mucho1v1Losses,
             earnings: (moneyByMode.mucho8sWon + moneyByMode.mucho1v1Won) - (moneyByMode.mucho8sLost + moneyByMode.mucho1v1Lost),
@@ -338,7 +342,13 @@ export default function Leaderboard() {
                   <div className="font-mono text-sm font-bold mt-0.5">{p.matchWins}-{p.matchLosses}</div>
                 </div>
                 <div className="m8-panel-quiet rounded-lg px-2.5 py-2">
-                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">Net Earnings</div>\n                  <div className={`mt-1 font-mono text-sm font-black ${p.earnings >= 0 ? "text-emerald-400" : "text-red-400"}`} title="Season net earnings: won minus lost">\n                    {p.earnings >= 0 ? "+" : "-"}{euro(Math.abs(p.earnings))}
+                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">Money</div>
+                  <div className="mt-1 flex items-center gap-1.5 font-mono text-[10px] font-black">
+                    <span className="text-emerald-400" title="Won">+{euro(p.moneyWon)}</span>
+                    <span className="text-red-400" title="Lost">-{euro(p.moneyLost)}</span>
+                  </div>
+                  <div className={`mt-0.5 font-mono text-sm font-black ${p.earnings >= 0 ? "text-emerald-400" : "text-red-400"}`} title="Net">
+                    NET {p.earnings >= 0 ? "+" : "-"}{euro(Math.abs(p.earnings))}
                   </div>
                 </div>
               </div>
@@ -439,8 +449,14 @@ export default function Leaderboard() {
                       {p.winRate.toFixed(1)}%
                     </td>
 
-                    <td className={`px-4 py-3 font-mono text-[11px] font-black ${p.earnings >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                      {p.earnings >= 0 ? "+" : "-"}{euro(Math.abs(p.earnings))}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2 whitespace-nowrap font-mono text-[10px] font-black">
+                        <span className="text-emerald-400" title="Won">WON +{euro(p.moneyWon)}</span>
+                        <span className="text-red-400" title="Lost">LOST -{euro(p.moneyLost)}</span>
+                        <span className={p.earnings >= 0 ? "text-emerald-400" : "text-red-400"} title="Net earnings">
+                          NET {p.earnings >= 0 ? "+" : "-"}{euro(Math.abs(p.earnings))}
+                        </span>
+                      </div>
                     </td>
 
                     <td className="px-4 py-3">
