@@ -313,6 +313,10 @@ const normalizePlayer = (player: any) => {
     currentStreak: Number(player?.currentStreak) || 0,
     mvpCount: Math.max(0, Number(player?.mvpCount) || 0),
     merdaCount: Math.max(0, Number(player?.merdaCount) || 0),
+    placementRequired: Math.max(0, Number(player?.placementRequired) || 0),
+    placementPlayed: Math.max(0, Number(player?.placementPlayed) || 0),
+    placementComplete: player?.placementComplete !== false,
+    lifetimePlacementCompleted: player?.lifetimePlacementCompleted === true,
     eloHistory: Array.isArray(player?.eloHistory) && player.eloHistory.length
       ? player.eloHistory
       : [{ match: 0, elo: current }],
@@ -371,6 +375,16 @@ const applyEffects = (
     player.currentElo = nextElo;
     player.peakElo = Math.max(Number(player.peakElo || nextElo), nextElo);
     player.totalMatches = Math.max(0, Number(player.totalMatches || 0)) + 1;
+    if (Number(player.placementRequired || 0) > 0 && player.placementComplete !== true) {
+      player.placementPlayed = Math.min(
+        Number(player.placementRequired),
+        Math.max(0, Number(player.placementPlayed || 0)) + 1,
+      );
+      if (player.placementPlayed >= Number(player.placementRequired)) {
+        player.placementComplete = true;
+        player.lifetimePlacementCompleted = true;
+      }
+    }
     if (won) player.wins = Math.max(0, Number(player.wins || 0)) + 1;
     else player.losses = Math.max(0, Number(player.losses || 0)) + 1;
     if (mvpSet.has(id)) player.mvpCount = Math.max(0, Number(player.mvpCount || 0)) + 1;
