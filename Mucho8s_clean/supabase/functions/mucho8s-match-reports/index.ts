@@ -930,10 +930,12 @@ Deno.serve(async (req: Request) => {
           playerBId: String(pair?.playerBId || "").trim(),
           amount: Number(pair?.amount),
           platform: String(pair?.platform || "paypal").trim().toLowerCase(),
+          payerPlayerId: String(pair?.payerPlayerId || "").trim(),
         }))
         .filter((pair: any) =>
           teamA.includes(pair.playerAId) &&
           teamB.includes(pair.playerBId) &&
+          [pair.playerAId, pair.playerBId].includes(pair.payerPlayerId) &&
           Number.isFinite(pair.amount) &&
           pair.amount >= 0 &&
           SUPPORTED_MATCH_PLATFORMS.has(pair.platform)
