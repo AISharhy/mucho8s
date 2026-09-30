@@ -44,8 +44,8 @@ export default function MuchoTourney(){
     <label className="col-span-2"><span className="text-[9px] tracking-widest text-[#697181]">NAME</span><input value={t.name} onChange={e=>patch({name:e.target.value})} className="mt-1 w-full h-10 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm"/></label>
     {[
      ["GAME","game",["BO7","BO6","MW3","CW","BO2"]],["FORMAT","format",["2v2","3v3","4v4"]],
-     ["MODE","mode",["CDL Mix","Hardpoint","Search & Destroy"]],["SERIES","bestOf",[3,5]],
-     ["FINAL","finalBestOf",[3,5]],["SEEDING","seeding",["manual","random"]]
+     ["MODE","mode",["CDL Mix","Hardpoint","Search & Destroy"]],["SERIES","bestOf",[3,5,7]],
+     ["FINAL","finalBestOf",[3,5,7]],["SEEDING","seeding",["manual","random"]]
     ].map(([l,k,opts])=><label key={k}><span className="text-[9px] tracking-widest text-[#697181]">{l}</span><select value={t[k]} onChange={e=>patch({[k]:["bestOf","finalBestOf"].includes(k)?Number(e.target.value):e.target.value})} className="mt-1 w-full h-10 rounded-xl bg-[#151923] border border-[#2A303B] px-2 text-xs font-semibold">{opts.map(o=><option key={o}>{o}</option>)}</select></label>)}
     {t.mode==="CDL Mix"&&<label><span className="text-[9px] tracking-widest text-[#697181]">MIX START</span><select value={t.startMode} onChange={e=>patch({startMode:e.target.value})} className="mt-1 w-full h-10 rounded-xl bg-[#151923] border border-[#2A303B] px-2 text-xs font-semibold"><option>Hardpoint</option><option>Search & Destroy</option></select></label>}
    </div>
