@@ -7,12 +7,15 @@ import { RankArtwork } from "@/components/shared";
 const family = (elo) => String(tierOf(elo)?.id || "iron").split("-")[0];
 const rankOrder = ["iron", "bronze", "silver", "gold", "platinum", "diamond", "masters"];
 
+const playerName = (playerMap, id) => playerMap?.[id]?.name || "Opponent";
+
 const eventCopy = (event) => {
   const map = {
     mvp: ["MVP ACQUIRED", "Three-win pressure converted."],
     merda: ["MERDA ACQUIRED", "The lobby will remember this."],
     bounty: ["BOUNTY CLAIMED", "The streak has been stopped."],
     upset: ["GIANT KILLER", "Higher-rated opposition defeated."],
+    nemesis: ["NEMESIS DEFEATED", "A bad matchup has been broken."],
     placement: ["RANK REVEALED", "Placements complete."],
     season: ["NEW SEASON", "The climb starts again."],
   };
@@ -20,7 +23,7 @@ const eventCopy = (event) => {
 };
 
 export default function CompetitionEventAnimator() {
-  const { discordPlayer, matches, competitionData } = useData();
+  const { discordPlayer, matches, competitionData, playerMap } = useData();
   const [queue, setQueue] = useState([]);
   const [active, setActive] = useState(null);
   const hydrated = useRef(false);
@@ -79,6 +82,36 @@ export default function CompetitionEventAnimator() {
       const winners = latestMatch.winner === "B" ? latestMatch.teamB : latestMatch.teamA;
       if (latestMatch.upsetApplied && (winners || []).map(String).includes(me)) {
         events.push({ type: "upset", bonus: Number(latestMatch.upsetWinnerBonus || 0) });
+      }
+
+      const mineA = (latestMatch.teamA || []).map(String).includes(me);
+      const enemies = (mineA ? latestMatch.teamB : latestMatch.teamA || []).map(String);
+      if (enemies.length) {
+        const history = [...(matches || [])]
+          .filter((match) => String(match?.id) !== String(latestMatch.id))
+          .filter((match) => (match.teamA || []).map(String).includes(me) || (match.teamB || []).map(String).includes(me))
+          .sort((a, b) => new Date(b?.date || 0) - new Date(a?.date || 0));
+
+        const h2h = {};
+        history.forEach((match) => {
+          const inA = (match.teamA || []).map(String).includes(me);
+          const opponents = (inA ? match.teamB : match.teamA || []).map(String);
+          const won = (inA && match.winner === "A") || (!inA && match.winner === "B");
+          opponents.forEach((enemy) => {
+            h2h[enemy] ||= { wins: 0, losses: 0 };
+            if (won) h2h[enemy].wins += 1;
+            else h2h[enemy].losses += 1;
+          });
+        });
+
+        const nemesis = Object.entries(h2h)
+          .filter(([, record]) => record.losses >= 2 && record.losses > record.wins)
+          .sort((a, b) => (b[1].losses - b[1].wins) - (a[1].losses - a[1].wins))[0];
+
+        const wonLatest = (mineA && latestMatch.winner === "A") || (!mineA && latestMatch.winner === "B");
+        if (wonLatest && nemesis && enemies.includes(String(nemesis[0]))) {
+          events.push({ type: "nemesis", opponent: playerName(playerMap, nemesis[0]) });
+        }
       }
     }
 
@@ -160,6 +193,7 @@ export default function CompetitionEventAnimator() {
           {active.type === "merda" && <div className="mb-5 text-8xl">💩</div>}
           {active.type === "bounty" && <div className="mb-5 text-8xl">🎯</div>}
           {active.type === "upset" && <div className="mb-5 text-8xl">⚔️</div>}
+          {active.type === "nemesis" && <div className="mb-5 text-8xl">☠️</div>}
           {active.type === "season" && <div className="mb-4 text-sm font-black uppercase tracking-[.55em] text-white/45">MUCHO RANKED</div>}
 
           <motion.div className="text-xs font-black uppercase tracking-[.38em] text-white/45">
@@ -184,6 +218,7 @@ export default function CompetitionEventAnimator() {
           </div>
           {active.type === "bounty" && active.bonus > 0 && <div className="mt-3 font-mono font-black text-magma">+{active.bonus} ELO BOUNTY</div>}
           {active.type === "upset" && active.bonus > 0 && <div className="mt-3 font-mono font-black text-magma">+{active.bonus} ELO UPSET</div>}
+          {active.type === "nemesis" && active.opponent && <div className="mt-3 font-mono font-black text-magma">VS {active.opponent}</div>}
           <div className="mt-8 text-[10px] font-bold uppercase tracking-[.24em] text-white/25">Tap anywhere to continue</div>
         </motion.div>
       </motion.div>
