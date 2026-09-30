@@ -1080,6 +1080,29 @@ export const DataProvider = ({ children }) => {
     const data = await matchReportRequest({ action: "create-live", ...payload });
     if (!data?.liveMatch) return null;
     await refreshLiveMatches();
+
+    // A real live match has just been created: fire the same global event
+    // consumed by CompetitionEventAnimator. Preview and production now share
+    // the exact same animation pipeline.
+    if (typeof window !== "undefined") {
+      const teamLabel = (ids = []) =>
+        ids
+          .map((id) => players.find((player) => String(player.id) === String(id))?.name)
+          .filter(Boolean)
+          .join(" + ");
+      const amount = Array.isArray(payload?.pairings) && payload.pairings.length
+        ? Number(payload.pairings[0]?.amount || 0)
+        : 0;
+      window.dispatchEvent(new CustomEvent("mucho:preview-animation", {
+        detail: {
+          type: "match-found",
+          teamA: teamLabel(payload?.teamA) || "TEAM ALPHA",
+          teamB: teamLabel(payload?.teamB) || "TEAM BRAVO",
+          meta: `BO${Number(payload?.bestOf) === 5 ? 5 : 3} • ${String(payload?.game || "MUCHO8S").toUpperCase()} • ${amount > 0 ? `MONEY CHALL €${amount}` : "FREE CHALL"}`,
+        },
+      }));
+    }
+
     return data.liveMatch;
   }, [matchReportRequest, refreshLiveMatches]);
 
