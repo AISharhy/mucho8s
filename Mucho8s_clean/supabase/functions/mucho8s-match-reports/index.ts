@@ -111,9 +111,10 @@ const drawSeriesMaps = (
   const pool = competitiveMapPool(game, mode, format);
   if (!pool.length) return [];
 
-  // Random, but history-aware: maps that have not appeared recently get
-  // progressively more weight. Maps from the immediately previous matching
-  // series are strongly cooled down whenever alternatives exist.
+  // History-aware rotation with a strict previous-series cooldown.
+  // Fresh maps are always exhausted before a map from the immediately
+  // previous matching series can be reused. This makes BO3 rotations
+  // fully non-repeating whenever the competitive pool has enough maps.
   const relevant = [...recentMatches]
     .filter((match: any) =>
       String(match?.game || "") === game &&
@@ -124,57 +125,62 @@ const drawSeriesMaps = (
     )
     .slice(0, 8);
 
+  const mapsForMatch = (match: any) =>
+    Array.isArray(match?.maps) && match.maps.length
+      ? match.maps.map(String)
+      : (match?.map ? [String(match.map)] : []);
+
   const lastSeen = new Map<string, number>();
   const usage = new Map<string, number>();
   relevant.forEach((match: any, matchIndex: number) => {
-    const played = Array.isArray(match?.maps) && match.maps.length
-      ? match.maps.map(String)
-      : (match?.map ? [String(match.map)] : []);
-    [...new Set(played)].forEach((map) => {
+    [...new Set(mapsForMatch(match))].forEach((map) => {
       usage.set(map, (usage.get(map) || 0) + 1);
       if (!lastSeen.has(map)) lastSeen.set(map, matchIndex);
     });
   });
 
   const previousMaps = new Set(
-    relevant.length
-      ? (Array.isArray(relevant[0]?.maps) && relevant[0].maps.length
-          ? relevant[0].maps.map(String)
-          : (relevant[0]?.map ? [String(relevant[0].map)] : []))
-      : []
+    relevant.length ? mapsForMatch(relevant[0]) : []
   );
 
   const remaining = [...pool];
   const picked: string[] = [];
+
   while (picked.length < seriesLength && remaining.length) {
-    const alternativesOutsidePrevious =
-      remaining.filter((map) => !previousMaps.has(map)).length;
-    const weights = remaining.map((map) => {
+    // Never reuse a previous-series map while at least one fresh map remains.
+    // If the pool is large enough (e.g. BO7 S&D pool of 7 maps with a BO3),
+    // this guarantees zero overlap with the immediately previous mapset.
+    const freshRemaining = remaining.filter((map) => !previousMaps.has(map));
+    const candidates = freshRemaining.length ? freshRemaining : remaining;
+
+    const weights = candidates.map((map) => {
       const seenAgo = lastSeen.has(map) ? Number(lastSeen.get(map)) : relevant.length + 3;
       const timesUsed = usage.get(map) || 0;
-      let weight = 1 + seenAgo * 2.5;
-      weight /= 1 + timesUsed * 0.75;
-      if (previousMaps.has(map) && alternativesOutsidePrevious >= (seriesLength - picked.length)) {
-        weight *= 0.04;
-      }
+      const weight = (1 + seenAgo * 2.5) / (1 + timesUsed * 0.75);
       return Math.max(0.01, weight);
     });
 
     const total = weights.reduce((sum, value) => sum + value, 0);
     let roll = secureRandom() * total;
-    let selectedIndex = remaining.length - 1;
-    for (let index = 0; index < remaining.length; index += 1) {
+    let selectedIndex = candidates.length - 1;
+
+    for (let index = 0; index < candidates.length; index += 1) {
       roll -= weights[index];
       if (roll <= 0) {
         selectedIndex = index;
         break;
       }
     }
-    picked.push(remaining[selectedIndex]);
-    remaining.splice(selectedIndex, 1);
+
+    const selected = candidates[selectedIndex];
+    picked.push(selected);
+    const remainingIndex = remaining.indexOf(selected);
+    if (remainingIndex >= 0) remaining.splice(remainingIndex, 1);
   }
 
-  while (picked.length < seriesLength && pool.length) picked.push(pool[Math.floor(secureRandom() * pool.length)]);
+  while (picked.length < seriesLength && pool.length) {
+    picked.push(pool[Math.floor(secureRandom() * pool.length)]);
+  }
   return picked;
 };
 
@@ -985,18 +991,57 @@ Deno.serve(async (req: Request) => {
         }
         seriesMaps = requestedMaps;
       } else {
-        const { data: mapHistoryState, error: mapHistoryError } = await supabase
-          .from("app_state")
-          .select("matches")
-          .eq("id", "main")
-          .maybeSingle();
+        const [
+          { data: mapHistoryState, error: mapHistoryError },
+          { data: recentLiveMatches, error: liveHistoryError },
+        ] = await Promise.all([
+          supabase
+            .from("app_state")
+            .select("matches")
+            .eq("id", "main")
+            .maybeSingle(),
+          supabase
+            .from("live_team_matches")
+            .select("match_id,game,mode,format,maps,status,created_at")
+            .in("status", ["live", "closed"])
+            .order("created_at", { ascending: false })
+            .limit(24),
+        ]);
         if (mapHistoryError) throw mapHistoryError;
+        if (liveHistoryError) throw liveHistoryError;
+
+        const completedHistory = Array.isArray(mapHistoryState?.matches)
+          ? mapHistoryState.matches
+          : [];
+        const generatedHistory = (recentLiveMatches || []).map((match: any) => ({
+          id: String(match?.match_id || ""),
+          game: String(match?.game || ""),
+          mode: String(match?.mode || ""),
+          format: String(match?.format || ""),
+          maps: Array.isArray(match?.maps) ? match.maps.map(String) : [],
+          date: match?.created_at || "",
+        }));
+
+        // A closed live match can also already exist in app_state. Keep one
+        // history entry per match id so it does not get double-weighted.
+        const historyById = new Map<string, any>();
+        [...completedHistory, ...generatedHistory].forEach((match: any, index: number) => {
+          const key = String(match?.id || match?.match_id || `history-${index}`);
+          const current = historyById.get(key);
+          if (
+            !current ||
+            new Date(match?.date || 0).getTime() > new Date(current?.date || 0).getTime()
+          ) {
+            historyById.set(key, match);
+          }
+        });
+
         seriesMaps = drawSeriesMaps(
           game,
           mode,
           format,
           bestOf,
-          Array.isArray(mapHistoryState?.matches) ? mapHistoryState.matches : [],
+          [...historyById.values()],
         );
       }
 
