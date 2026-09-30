@@ -120,6 +120,13 @@ export default function CompetitionEventAnimator() {
   }, [discordPlayer, latestMatch, competitionData?.season_number, competitionData?.seasonNumber]);
 
   useEffect(() => {
+    const preview = (event) => setQueue((current) => [...current, event]);
+    const handler = (e) => preview(e.detail || {});
+    window.addEventListener("mucho:preview-animation", handler);
+    return () => window.removeEventListener("mucho:preview-animation", handler);
+  }, []);
+
+  useEffect(() => {
     if (!active && queue.length) {
       setActive(queue[0]);
       setQueue((current) => current.slice(1));
