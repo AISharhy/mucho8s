@@ -1098,6 +1098,9 @@ export default function PlayerProfile() {
   }
 
   const tier = tierOf(player.currentElo);
+  const placementRequired = Math.max(0, Number(player.placementRequired || 0));
+  const placementPlayed = Math.min(placementRequired, Math.max(0, Number(player.placementPlayed || 0)));
+  const isPlacement = placementRequired > 0 && player.placementComplete !== true;
   const saveLinks = async () => {
     setSavingLinks(true);
     const ok = await saveMyChallengeLinks(links);
@@ -1344,35 +1347,45 @@ export default function PlayerProfile() {
                 "--profile-rank-accent": tier.accent,
               }}
             >
-              <div className="m8-profile-rank-emblem">
-                <div className="m8-profile-rank-visual" aria-label={`${tier.name} animated rank badge`}>
-                  <span className="m8-profile-rank-aura" aria-hidden="true" />
-                  <RankArtwork
-                    rank={tier}
-                    size={76}
-                    className="m8-profile-rank-artwork"
-                  />
-                  <span className="m8-profile-rank-shine" aria-hidden="true" />
-                </div>
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <div className="text-[9px] uppercase tracking-[0.2em] text-[#8E97A7] font-black">
-                  Current Rank
-                </div>
-                <div
-                  className="font-display text-2xl sm:text-[30px] font-black uppercase leading-none mt-1"
-                  style={{ color: tier.color }}
-                >
-                  {tier.name}
-                </div>
-                <div className="font-mono text-lg font-black mt-1 text-white">
-                  {player.currentElo.toLocaleString("it-IT")} Elo
-                </div>
-                <div className="mt-3 max-w-xl">
-                  <RankProgress elo={player.currentElo} compact />
-                </div>
-              </div>
+              {isPlacement ? (
+                <>
+                  <div className="m8-profile-rank-emblem">
+                    <div className="w-[76px] h-[76px] rounded-2xl border border-white/10 bg-white/[0.03] flex items-center justify-center">
+                      <Target size={34} className="text-[#8E97A7]" />
+                    </div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[9px] uppercase tracking-[0.2em] text-[#8E97A7] font-black">Season Rank</div>
+                    <div className="font-display text-2xl sm:text-[30px] font-black uppercase leading-none mt-1 text-white">
+                      UNRANKED
+                    </div>
+                    <div className="font-mono text-sm font-black mt-2 text-[#C8CED8]">
+                      PLACEMENT {placementPlayed}/{placementRequired}
+                    </div>
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#0B0D12] border border-[#222834]">
+                      <div className="h-full rounded-full bg-white/60 transition-all duration-500" style={{ width: `${placementRequired ? (placementPlayed / placementRequired) * 100 : 0}%` }} />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="m8-profile-rank-emblem">
+                    <div className="m8-profile-rank-visual" aria-label={`${tier.name} animated rank badge`}>
+                      <span className="m8-profile-rank-aura" aria-hidden="true" />
+                      <RankArtwork rank={tier} size={76} className="m8-profile-rank-artwork" />
+                      <span className="m8-profile-rank-shine" aria-hidden="true" />
+                    </div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[9px] uppercase tracking-[0.2em] text-[#8E97A7] font-black">Current Rank</div>
+                    <div className="font-display text-2xl sm:text-[30px] font-black uppercase leading-none mt-1" style={{ color: tier.color }}>
+                      {tier.name}
+                    </div>
+                    <div className="font-mono text-lg font-black mt-1 text-white">{player.currentElo.toLocaleString("it-IT")} Elo</div>
+                    <div className="mt-3 max-w-xl"><RankProgress elo={player.currentElo} compact /></div>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className={`m8-profile-metric-card ${Number(player.merdaCount || 0) > 0 ? "m8-profile-merda-card" : ""}`}>
