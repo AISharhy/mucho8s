@@ -48,7 +48,9 @@ export default function Leaderboard() {
       if (!stats.has(id)) {
         stats.set(id, {
           mucho8sWon: 0,
+          mucho8sLost: 0,
           mucho1v1Won: 0,
+          mucho1v1Lost: 0,
           mucho1v1Wins: 0,
           mucho1v1Losses: 0,
         });
@@ -66,6 +68,7 @@ export default function Leaderboard() {
       const teamB = Array.isArray(match.teamB) ? match.teamB : [];
       const winnerSide = match.winner === "B" ? "B" : "A";
       const winnerIds = winnerSide === "A" ? teamA : teamB;
+      const loserIds = winnerSide === "A" ? teamB : teamA;
       const pairings = Array.isArray(match.pairings) ? match.pairings : [];
 
       winnerIds.forEach((playerId) => {
@@ -83,6 +86,14 @@ export default function Leaderboard() {
           );
 
         if (amount > 0) ensure(playerId).mucho8sWon += amount;
+      });
+
+      loserIds.forEach((playerId) => {
+        if (!playerId) return;
+        const amount = pairings
+          .filter((pair) => pair?.playerAId === playerId || pair?.playerBId === playerId)
+          .reduce((sum, pair) => sum + Math.max(0, Number(pair?.amount) || 0), 0);
+        if (amount > 0) ensure(playerId).mucho8sLost += amount;
       });
     });
 
@@ -113,6 +124,7 @@ export default function Leaderboard() {
           row.mucho1v1Won += amount;
           row.mucho1v1Wins += 1;
         } else {
+          row.mucho1v1Lost += amount;
           row.mucho1v1Losses += 1;
         }
       });
@@ -137,7 +149,9 @@ export default function Leaderboard() {
         .map((player) => {
           const moneyByMode = modeMoneyById.get(player.id) || {
             mucho8sWon: 0,
+            mucho8sLost: 0,
             mucho1v1Won: 0,
+            mucho1v1Lost: 0,
             mucho1v1Wins: 0,
             mucho1v1Losses: 0,
           };
@@ -150,7 +164,7 @@ export default function Leaderboard() {
             mucho1v1Won: moneyByMode.mucho1v1Won,
             mucho1v1Wins: moneyByMode.mucho1v1Wins,
             mucho1v1Losses: moneyByMode.mucho1v1Losses,
-            earnings: moneyByMode.mucho8sWon + moneyByMode.mucho1v1Won,
+            earnings: (moneyByMode.mucho8sWon + moneyByMode.mucho1v1Won) - (moneyByMode.mucho8sLost + moneyByMode.mucho1v1Lost),
             winRate:
               (Number(player.wins || 0) / Number(player.totalMatches || 0)) * 100,
             totalPoints: Number(player.currentElo || 0),
@@ -324,9 +338,7 @@ export default function Leaderboard() {
                   <div className="font-mono text-sm font-bold mt-0.5">{p.matchWins}-{p.matchLosses}</div>
                 </div>
                 <div className="m8-panel-quiet rounded-lg px-2.5 py-2">
-                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">Earnings</div>
-                  <div className="mt-1 font-mono text-sm font-black text-emerald-400" title="Total verified earnings">
-                    +{euro(p.earnings)}
+                  <div className="text-[9px] uppercase tracking-wider text-[#697181]">Net Earnings</div>\n                  <div className={`mt-1 font-mono text-sm font-black ${p.earnings >= 0 ? "text-emerald-400" : "text-red-400"}`} title="Season net earnings: won minus lost">\n                    {p.earnings >= 0 ? "+" : "-"}{euro(Math.abs(p.earnings))}
                   </div>
                 </div>
               </div>
@@ -427,8 +439,8 @@ export default function Leaderboard() {
                       {p.winRate.toFixed(1)}%
                     </td>
 
-                    <td className="px-4 py-3 font-mono text-[11px] font-black text-emerald-400">
-                      +{euro(p.earnings)}
+                    <td className={`px-4 py-3 font-mono text-[11px] font-black ${p.earnings >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                      {p.earnings >= 0 ? "+" : "-"}{euro(Math.abs(p.earnings))}
                     </td>
 
                     <td className="px-4 py-3">
