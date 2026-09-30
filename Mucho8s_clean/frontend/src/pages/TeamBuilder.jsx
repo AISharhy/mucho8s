@@ -85,18 +85,31 @@ const mixRotationModes = (bestOf, startMode = "Hardpoint") => {
   return Array.from({length: [3,5,7].includes(Number(bestOf)) ? Number(bestOf) : 3}, (_, index) => index % 2 ? second : first);
 };
 
-const buildRandomRotation = (game, mode, format, bestOf, mixStartMode = "Hardpoint") => {
+const buildRandomRotation = (game, mode, format, bestOf, mixStartMode = "Hardpoint", recentMaps = []) => {
   const count = [3,5,7].includes(Number(bestOf)) ? Number(bestOf) : 3;
   if (mode !== "CDL Mix") {
     const pool = competitiveMapPool(game, mode, format);
-    return Array.from({length:count}, (_, index) => [...pool].sort(() => Math.random() - 0.5)[index % pool.length]).filter(Boolean);
+    const recent = new Set(recentMaps);
+    const fresh = pool.filter((map) => !recent.has(map));
+    const used = new Set();
+    return Array.from({length:count}, () => {
+      const unusedFresh = fresh.filter((map) => !used.has(map));
+      const unusedAny = pool.filter((map) => !used.has(map) && !recent.has(map));
+      const unusedFallback = pool.filter((map) => !used.has(map));
+      const source = unusedFresh.length ? unusedFresh : unusedAny.length ? unusedAny : unusedFallback.length ? unusedFallback : pool;
+      const map = source[Math.floor(Math.random() * source.length)] || "";
+      if (map) used.add(map);
+      return map;
+    }).filter(Boolean);
   }
 
   const used = new Set();
   return mixRotationModes(count, mixStartMode).map((slotMode) => {
-    const pool = competitiveMapPool(game, slotMode, format).filter((map) => !used.has(map));
-    const fallback = competitiveMapPool(game, slotMode, format);
-    const source = pool.length ? pool : fallback;
+    const recent = new Set(recentMaps);
+    const base = competitiveMapPool(game, slotMode, format);
+    const fresh = base.filter((map) => !used.has(map) && !recent.has(map));
+    const unused = base.filter((map) => !used.has(map));
+    const source = fresh.length ? fresh : unused.length ? unused : base;
     const map = source[Math.floor(Math.random() * source.length)] || "";
     if (map) used.add(map);
     return map;
@@ -612,6 +625,13 @@ export default function TeamBuilder() {
     });
   };
 
+  const recentComparableMaps = useMemo(() => {
+    const sameCompetition = [...(matches || [])]
+      .filter((match) => match?.game === game && match?.mode === matchMode && Array.isArray(match?.maps) && match.maps.length)
+      .sort((a,b) => new Date(b?.date || 0).getTime() - new Date(a?.date || 0).getTime());
+    return sameCompetition[0]?.maps || [];
+  }, [matches, game, matchMode]);
+
   const confirmMatch = async () => {
     if (!result || confirmBusy) return;
 
@@ -647,7 +667,7 @@ export default function TeamBuilder() {
       bestOf,
       maps: mapMode === "manual"
         ? manualMaps
-        : buildRandomRotation(game, matchMode, formatForCount(result.teamA.length + result.teamB.length), bestOf, mixStartMode),
+        : buildRandomRotation(game, matchMode, formatForCount(result.teamA.length + result.teamB.length), bestOf, mixStartMode, recentComparableMaps),
       mapModes: matchMode === "CDL Mix" ? mixRotationModes(bestOf, mixStartMode) : undefined,
       pairings,
     });
