@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { RANKS, rankProgress } from "@/lib/elo";
 import { RankArtwork } from "@/components/shared";
 
@@ -51,6 +51,31 @@ export const RankEmblem = ({ elo = 1000, compact = false }) => {
           />
         </div>
       )}
+
+
+      {selectedRank && (() => {
+        const r = selectedRank;
+        const next = RANK_FAMILIES[RANK_FAMILIES.findIndex(x => x.id === r.id) - 1];
+        return <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-md" role="dialog" aria-modal="true" aria-label={`Dettagli rank ${r.label}`} onClick={closeRank}>
+          <div onClick={e => e.stopPropagation()} className={`rank-detail-modal rank-detail-${r.id} relative w-full max-w-xl overflow-hidden rounded-[28px] border p-5 sm:p-7 animate-in fade-in zoom-in-95 duration-300`} style={{borderColor:r.color+"70",background:`linear-gradient(145deg, ${r.color}24, rgba(10,12,18,.94) 42%, ${r.accent}22)`,boxShadow:`0 0 70px ${r.glow}, inset 0 1px 0 ${r.color}55`}}>
+            <div className="absolute inset-0 opacity-30 pointer-events-none" style={{background:`radial-gradient(circle at 22% 18%, ${r.color}55, transparent 32%)`}} />
+            <button type="button" onClick={closeRank} className="absolute right-4 top-4 z-20 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-black/30 text-xl text-white/70 hover:text-white" aria-label="Chiudi">×</button>
+            <div className="relative z-10 flex items-center gap-5">
+              <div className={`rank-detail-emblem rank-detail-emblem-${r.id} shrink-0`} style={{filter:`drop-shadow(0 0 18px ${r.color}88)`}}><RankArtwork family={r.id} size={96} /></div>
+              <div className="min-w-0"><div className="text-[10px] uppercase tracking-[.28em] text-white/45">Mucho8s rank</div><h3 className="font-display text-3xl sm:text-4xl font-black uppercase mt-1" style={{color:r.color}}>{r.label}</h3><div className="font-mono text-xs sm:text-sm text-white/65 mt-1">{r.divisions.join(" · ")} <span style={{color:r.color}}>•</span> {Number.isFinite(r.max)?`${r.min}–${r.max} Elo`:`${r.min}+ Elo`}</div></div>
+            </div>
+            <div className="relative z-10 mt-6 grid grid-cols-3 gap-2">
+              {r.divisions.map((d,i) => <div key={d} className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-center"><div className="text-[10px] uppercase tracking-widest text-white/40">Divisione</div><div className="font-display text-xl font-black mt-1" style={{color:r.color}}>{d}</div>{r.id!=="masters" && <div className="font-mono text-[10px] text-white/45 mt-1">{r.min + Math.max(0,(r.divisions.length-1-i))*100}+</div>}</div>)}
+            </div>
+            <div className="relative z-10 mt-5 rounded-2xl border border-white/10 bg-black/25 p-4">
+              <div className="flex justify-between gap-3 text-xs"><span className="text-white/50">{next ? "Prossimo rank" : "Rank massimo"}</span><span className="font-bold" style={{color:r.color}}>{next ? next.label : "MASTERS"}</span></div>
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full w-full rank-detail-progress" style={{background:`linear-gradient(90deg,${r.accent},${r.color})`,boxShadow:`0 0 14px ${r.color}`}} /></div>
+              <p className="mt-3 text-xs leading-5 text-white/55">{next ? `Raggiungi ${next.min} Elo per entrare in ${next.label}.` : "Hai raggiunto la cima della ladder competitiva Mucho8s."}</p>
+            </div>
+            <div className="relative z-10 mt-4 text-center text-[10px] uppercase tracking-[.22em] text-white/30">Tocca fuori dalla scheda per chiudere</div>
+          </div>
+        </div>;
+      })()}
     </div>
   );
 };
@@ -128,11 +153,11 @@ const RANK_FAMILIES = [
   },
 ];
 
-const PyramidTier = ({ family, index }) => {
+const PyramidTier = ({ family, index, onOpen }) => {
   const width = 48 + index * 7.5;
 
   return (
-    <div className="rank-pyramid-step" style={{ width: `${width}%` }}>
+    <button type="button" className="rank-pyramid-step text-left cursor-pointer transition-transform active:scale-[.985] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-xl" style={{ width: `${width}%` }} onClick={() => onOpen(family)} aria-label={`Apri dettagli ${family.label}`}>
       <div
         className={`rank-pyramid-tier rank-pyramid-${family.id}`}
         style={{
@@ -157,11 +182,33 @@ const PyramidTier = ({ family, index }) => {
 
         <div className="rank-pyramid-arrow" aria-hidden="true">⌃</div>
       </div>
-    </div>
+    </button>
   );
 };
 
 export default function RankGuide() {
+  const [selectedRank, setSelectedRank] = useState(null);
+  const audioRef = useRef(null);
+
+  useEffect(() => () => { if (audioRef.current) audioRef.current.close?.(); }, []);
+
+  const playRankSound = (family) => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = audioRef.current || new AudioCtx(); audioRef.current = ctx;
+      const now = ctx.currentTime;
+      const presets = { iron:[95,0.12,"square"], bronze:[135,0.16,"triangle"], silver:[520,0.18,"sine"], gold:[740,0.28,"sine"], platinum:[420,0.34,"triangle"], diamond:[920,0.42,"sine"], masters:[110,0.52,"sawtooth"] };
+      const [freq,dur,type] = presets[family.id];
+      [1, family.id === "diamond" ? 1.5 : family.id === "gold" ? 1.25 : family.id === "masters" ? 2 : 1.08].forEach((mul,i) => {
+        const o=ctx.createOscillator(), g=ctx.createGain(); o.type=type; o.frequency.setValueAtTime(freq*mul,now+i*.045); g.gain.setValueAtTime(.0001,now); g.gain.exponentialRampToValueAtTime(i ? .035 : .07,now+.015+i*.045); g.gain.exponentialRampToValueAtTime(.0001,now+dur+i*.06); o.connect(g).connect(ctx.destination); o.start(now+i*.045); o.stop(now+dur+i*.08);
+      });
+    } catch (_) {}
+  };
+
+  const openRank = (family) => { setSelectedRank(family); playRankSound(family); };
+  const closeRank = () => setSelectedRank(null);
+
   return (
     <div className="m8-page-stack">
       <section className="m8-panel rounded-[22px] p-5 sm:p-6">
@@ -193,7 +240,7 @@ export default function RankGuide() {
           <div className="rank-pyramid-wrap">
             {RANK_FAMILIES.map((family, index) => (
               <React.Fragment key={family.id}>
-                <PyramidTier family={family} index={index} />
+                <PyramidTier family={family} index={index} onOpen={openRank} />
                 {index < RANK_FAMILIES.length - 1 && (
                   <div className="rank-pyramid-connector" aria-hidden="true">
                     <span />
