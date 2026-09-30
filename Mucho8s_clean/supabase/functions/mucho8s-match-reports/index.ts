@@ -802,6 +802,7 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       upsetLoserPenalty: upset.loserPenalty,
       map: report.map || (Array.isArray(report.maps) ? report.maps[0] || "" : ""),
       maps: Array.isArray(report.maps) ? report.maps.map(String).slice(0, 5) : [],
+      mapResults: Array.isArray(report.map_results) ? report.map_results : [],
       mode: report.mode || "",
       game: report.game || "",
       pairings: Array.isArray(report.pairings) ? report.pairings : [],
@@ -1249,6 +1250,12 @@ Deno.serve(async (req: Request) => {
         : String(body?.captainBPlayerId || teamB[0] || "").trim();
       const scoreA = Math.max(0, Number(body?.scoreA) || 0);
       const scoreB = Math.max(0, Number(body?.scoreB) || 0);
+      const mapResults = (Array.isArray(body?.mapResults) ? body.mapResults : [])
+        .map((row: any) => ({
+          map: String(row?.map || "").trim(),
+          winner: String(row?.winner || "").trim().toUpperCase(),
+        }))
+        .filter((row: any) => row.map && ["A", "B"].includes(row.winner));
       const pairings = (Array.isArray(body?.pairings) ? body.pairings : []).map((pair: any) => ({
         playerAId: String(pair?.playerAId || "").trim(),
         playerBId: String(pair?.playerBId || "").trim(),
@@ -1329,6 +1336,18 @@ Deno.serve(async (req: Request) => {
         }
 
         liveMatch = liveRow;
+
+        if (mapResults.length) {
+          const scheduledMaps = Array.isArray(liveRow.maps) ? liveRow.maps.map(String).slice(0, 5) : [];
+          const winsNeeded = scheduledMaps.length >= 5 ? 3 : 2;
+          const alphaWins = mapResults.filter((row: any) => row.winner === "A").length;
+          const bravoWins = mapResults.filter((row: any) => row.winner === "B").length;
+          const resultWinner = alphaWins >= winsNeeded ? "A" : bravoWins >= winsNeeded ? "B" : "";
+          const mapsMatch = mapResults.every((row: any, index: number) => row.map === scheduledMaps[index]);
+          if (!mapsMatch || !resultWinner || resultWinner !== winner || alphaWins !== Math.round(scoreA) || bravoWins !== Math.round(scoreB)) {
+            return json({ error: "Map results do not match the reported series score" }, 400);
+          }
+        }
       }
 
       const seasonNumber = Math.max(1, Number(body?.seasonNumber) || await getCurrentSeason(supabase));
@@ -1350,6 +1369,7 @@ Deno.serve(async (req: Request) => {
         mode: String(body?.mode || ""),
         map: String(body?.map || ""),
         maps: Array.isArray(liveMatch?.maps) ? liveMatch.maps.map(String).slice(0, 5) : [],
+        map_results: mapResults,
         pairings,
         season_number: seasonNumber,
         captain_a_player_id: captainA,
