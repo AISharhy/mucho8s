@@ -79,6 +79,29 @@ const competitiveMapPool = (game, mode, format = "") => {
   return [...new Set(pool)];
 };
 
+const mixRotationModes = (bestOf) =>
+  Number(bestOf) === 5
+    ? ["Hardpoint", "Search & Destroy", "Hardpoint", "Search & Destroy", "Hardpoint"]
+    : ["Hardpoint", "Search & Destroy", "Hardpoint"];
+
+const buildRandomRotation = (game, mode, format, bestOf) => {
+  const count = Number(bestOf) === 5 ? 5 : 3;
+  if (mode !== "CDL Mix") {
+    const pool = competitiveMapPool(game, mode, format);
+    return [...pool].sort(() => Math.random() - 0.5).slice(0, count);
+  }
+
+  const used = new Set();
+  return mixRotationModes(count).map((slotMode) => {
+    const pool = competitiveMapPool(game, slotMode, format).filter((map) => !used.has(map));
+    const fallback = competitiveMapPool(game, slotMode, format);
+    const source = pool.length ? pool : fallback;
+    const map = source[Math.floor(Math.random() * source.length)] || "";
+    if (map) used.add(map);
+    return map;
+  });
+};
+
 const VALID_LOBBY_SIZES = [4, 6, 8];
 const SNAKE_DRAFT_ORDER = ["A", "B", "B", "A"];
 
@@ -619,7 +642,10 @@ export default function TeamBuilder() {
       mode: matchMode,
       format: formatForCount(result.teamA.length + result.teamB.length),
       bestOf,
-      maps: mapMode === "manual" ? manualMaps : undefined,
+      maps: mapMode === "manual"
+        ? manualMaps
+        : buildRandomRotation(game, matchMode, formatForCount(result.teamA.length + result.teamB.length), bestOf),
+      mapModes: matchMode === "CDL Mix" ? mixRotationModes(bestOf) : undefined,
       pairings,
     });
     setConfirmBusy(false);
@@ -857,7 +883,9 @@ export default function TeamBuilder() {
 
                 {mapMode === "random" ? (
                   <div className="text-[11px] text-muted-foreground mt-2">
-                    The system will draw {bestOf} unique maps from the competitive pool when the match goes live.
+                    {matchMode === "CDL Mix"
+                      ? `CDL rotation: ${mixRotationModes(bestOf).map((mode) => mode === "Hardpoint" ? "HP" : "S&D").join(" → ")}. Each slot draws a map from its own competitive pool.`
+                      : `The system will draw ${bestOf} unique maps from the competitive pool when the match goes live.`}
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-3">
@@ -1367,7 +1395,9 @@ export default function TeamBuilder() {
                 </div>
               ) : (
                 <div className="text-[11px] text-muted-foreground">
-                  {bestOf} unique maps will be drawn automatically from the competitive pool when you confirm.
+                  {matchMode === "CDL Mix"
+                    ? `CDL Mix: ${mixRotationModes(bestOf).map((mode) => mode === "Hardpoint" ? "HP" : "S&D").join(" → ")}. Maps are drawn from the correct mode pool.`
+                    : `${bestOf} unique maps will be drawn automatically from the competitive pool when you confirm.`}
                 </div>
               )}
             </div>
