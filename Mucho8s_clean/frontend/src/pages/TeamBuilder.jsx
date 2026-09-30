@@ -566,6 +566,21 @@ export default function TeamBuilder() {
     );
   };
 
+  const updateReviewPairingOpponent = (rowIndex, nextPlayerBId) => {
+    setMoneyPairings((prev) => {
+      const current = prev[rowIndex];
+      if (!current) return prev;
+      const occupiedIndex = prev.findIndex(
+        (row, index) => index !== rowIndex && String(row.playerBId) === String(nextPlayerBId)
+      );
+      return prev.map((row, index) => {
+        if (index === rowIndex) return { ...row, playerBId: nextPlayerBId };
+        if (index === occupiedIndex) return { ...row, playerBId: current.playerBId };
+        return row;
+      });
+    });
+  };
+
   const confirmMatch = async () => {
     if (!result || confirmBusy) return;
 
@@ -1361,8 +1376,19 @@ export default function TeamBuilder() {
                   const free = Number(pair.amount) <= 0;
                   return (
                     <div key={pair.playerAId + ":" + pair.playerBId} className="grid grid-cols-1 sm:grid-cols-[1fr_100px_130px] gap-2 items-center rounded-lg border border-[#222834] bg-[#0C1118] p-2">
-                      <div className="text-[11px] font-semibold truncate">
-                        {playerA?.name || "Alpha"} <span className="text-white/30">⚔</span> {playerB?.name || "Bravo"}
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 min-w-0">
+                        <div className="text-[11px] font-semibold truncate">{playerA?.name || "Alpha"}</div>
+                        <span className="text-white/30 text-xs">⚔</span>
+                        <select
+                          value={pair.playerBId}
+                          onChange={(event) => updateReviewPairingOpponent(index, event.target.value)}
+                          className="h-9 min-w-0 rounded-md border border-[#2A303B] bg-[#111720] px-2 text-[11px] font-semibold"
+                          aria-label={`Chall opponent for ${playerA?.name || "Alpha"}`}
+                        >
+                          {result.teamB.map((opponent) => (
+                            <option key={opponent.id} value={opponent.id}>{opponent.name}</option>
+                          ))}
+                        </select>
                       </div>
                       <div className="relative">
                         <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-white/35">€</span>
