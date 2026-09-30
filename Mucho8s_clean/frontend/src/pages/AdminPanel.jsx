@@ -22,7 +22,7 @@ const ADMIN_TABS = [
   { key: "matches", label: "Matches", icon: Gamepad2 },
   { key: "competition", label: "Competition", icon: Trophy },
   { key: "content", label: "Content", icon: Newspaper },
-  { key: "animations", label: "Animations", icon: Trophy },
+  { key: "animations", label: "Media Lab", icon: Trophy },
   { key: "settings", label: "Settings", icon: Settings },
 ];
 
