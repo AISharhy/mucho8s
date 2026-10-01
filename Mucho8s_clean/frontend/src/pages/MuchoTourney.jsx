@@ -1237,7 +1237,6 @@ export default function MuchoTourney() {
             className="fixed inset-0 z-[180] bg-[#03050a]/90 backdrop-blur-xl flex items-center justify-center overflow-hidden"
             onClick={() => setFx(null)}
           >
-            (
               <motion.div
                 initial={{
                   scale: fx.type === "champion" ? 0.55 : 0.82,
@@ -1314,7 +1313,6 @@ export default function MuchoTourney() {
                   TAP ANYWHERE TO CONTINUE
                 </div>
               </motion.div>
-            )
           </motion.div>
         )}
       </AnimatePresence>
