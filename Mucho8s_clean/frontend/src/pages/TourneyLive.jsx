@@ -75,6 +75,13 @@ export default function TourneyLive() {
     reviewRemaining > 0 &&
     rerollsUsed < maxRerolls;
 
+  useEffect(() => {
+    if (t?.status !== "review" || reviewRemaining > 0) return;
+    fetchTourney().then((remote) => {
+      if (remote) setT(remote);
+    });
+  }, [reviewRemaining, t?.status]);
+
   const contribute = async (amount) => {
     if (!canContribute || busy) {
       if (!discordSession?.access_token) toast.error("Connect Discord to contribute");
