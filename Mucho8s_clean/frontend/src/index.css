@@ -4878,3 +4878,25 @@ textarea:focus-visible {
         height: 82px;
     }
 }
+
+
+/* Minimal dashboard logo */
+.dashboard-logo-stage.is-minimal {
+    width: 170px;
+    min-height: 120px;
+}
+
+.dashboard-logo-stage.is-minimal::before {
+    width: 118px;
+    height: 118px;
+    background: radial-gradient(circle, rgba(255,42,59,.07), rgba(255,42,59,0) 72%);
+    filter: blur(10px);
+    animation: none;
+}
+
+.dashboard-logo-stage.is-minimal .dashboard-logo-mark {
+    width: 118px;
+    height: 78px;
+    filter: drop-shadow(0 10px 24px rgba(0,0,0,.28));
+    animation: none;
+}
