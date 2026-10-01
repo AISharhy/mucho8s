@@ -2,6 +2,18 @@ import { supabaseAuth } from "@/lib/supabaseClient";
 const URL=(process.env.REACT_APP_SUPABASE_URL||"").replace(/\/$/,""), KEY=process.env.REACT_APP_SUPABASE_ANON_KEY||"";
 export const fetchTourney=async()=>{if(!URL||!KEY)return null;try{const r=await fetch(`${URL}/functions/v1/mucho8s-tourney`,{method:"POST",headers:{"Content-Type":"application/json",apikey:KEY},body:JSON.stringify({action:"get"})});const d=await r.json();return r.ok?d.tourney:null}catch{return null}};
 export const saveTourney=async(state,sessionToken)=>{if(!URL||!KEY||!sessionToken)return null;const r=await fetch(`${URL}/functions/v1/mucho8s-tourney`,{method:"POST",headers:{"Content-Type":"application/json",apikey:KEY,"X-Admin-Session":sessionToken},body:JSON.stringify({action:"save",state})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Tournament save failed");return d.tourney};
+export const contributeTourney=async(amount,accessToken)=>{
+  if(!URL||!KEY||!accessToken)throw new Error("Login with Discord first");
+  const r=await fetch(`${URL}/functions/v1/mucho8s-tourney`,{
+    method:"POST",
+    headers:{"Content-Type":"application/json",apikey:KEY,Authorization:`Bearer ${accessToken}`},
+    body:JSON.stringify({action:"contribute",amount})
+  });
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(d.error||"Switcheroo contribution failed");
+  return d;
+};
+
 export const subscribeTourney=(onChange)=>{
   if(!supabaseAuth)return()=>{};
   let active=true;
