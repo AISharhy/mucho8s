@@ -69,6 +69,7 @@ const blank = {
   bracket: [],
   champion: null,
   status: "setup",
+  setupConfigured: false,
   switcheroo: switcherooDefaults,
 };
 
@@ -360,6 +361,7 @@ export default function MuchoTourney() {
       bracket: [],
       champion: null,
       status: "setup",
+      setupConfigured: false,
       switcheroo: {
         ...t.switcheroo,
         phase: "idle",
@@ -464,6 +466,7 @@ export default function MuchoTourney() {
       return;
     }
 
+    save({ ...t, setupConfigured: true });
     toast.success("Tournament settings saved · create the teams below");
   };
 
@@ -910,6 +913,22 @@ export default function MuchoTourney() {
             </p>
           </div>
           <div className="flex gap-2">
+            {(t.status !== "setup" ||
+              t.setupConfigured ||
+              (t.teamBuild === "switcheroo" && switcherooSetupStage === "published")) && (
+              <button
+                type="button"
+                onClick={() => setEditSetupOpen(true)}
+                className={
+                  "h-10 px-3 rounded-xl border flex items-center gap-2 text-xs font-black " +
+                  (t.teamBuild === "switcheroo"
+                    ? "border-[#FF4FA3]/30 bg-[#FF4FA3]/[0.07] text-[#FF9DCE]"
+                    : "border-[#D5A33A]/25 bg-[#D5A33A]/[.06] text-[#D5A33A]")
+                }
+              >
+                EDIT TOURNAMENT
+              </button>
+            )}
             <span className="h-10 px-3 rounded-xl border border-[#D5A33A]/25 bg-[#D5A33A]/[.06] text-[#D5A33A] flex items-center gap-2 text-xs font-black">
               <Trophy size={15} />
               ADMIN ONLY
@@ -938,286 +957,47 @@ export default function MuchoTourney() {
           ))}
         </section>
 
-        {t.teamBuild === "switcheroo" && t.status === "setup" && (
-          <section className="m8-panel rounded-[22px] p-4 border border-[#FF4FA3]/15">
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                ["settings", "1", "SETTINGS"],
-                ["players", "2", "PLAYERS"],
-                ["published", "3", "ONLINE"],
-              ].map(([stage, number, label]) => {
-                const order = { settings: 0, players: 1, published: 2 };
-                const active = switcherooSetupStage === stage;
-                const complete = order[switcherooSetupStage] > order[stage];
-                return (
-                  <div
-                    key={stage}
-                    className={
-                      "rounded-xl border px-3 py-2 flex items-center gap-2 " +
-                      (active
-                        ? "border-[#FF4FA3]/45 bg-[#FF4FA3]/[0.08]"
-                        : complete
-                          ? "border-emerald-500/20 bg-emerald-500/[0.04]"
-                          : "border-[#252B36] bg-[#0D1219]")
-                    }
-                  >
-                    <span
-                      className={
-                        "w-6 h-6 rounded-full flex items-center justify-center font-mono text-[10px] font-black " +
-                        (active
-                          ? "bg-[#FF4FA3] text-black"
-                          : complete
-                            ? "bg-emerald-500 text-black"
-                            : "bg-[#1A202A] text-[#697181]")
-                      }
-                    >
-                      {number}
-                    </span>
-                    <span className="text-[9px] sm:text-[10px] tracking-[.12em] font-black">
-                      {label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {!(t.teamBuild === "switcheroo" && t.status === "setup" && switcherooSetupStage !== "settings") && (
-        <section className="m8-panel rounded-[22px] p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Swords size={17} className="text-[#D5A33A]" />
-            <h2 className="font-display font-black">Tournament Settings</h2>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <label className="col-span-2">
-              <span className="text-[9px] tracking-widest text-[#697181]">NAME</span>
-              <input
-                value={t.name}
-                onChange={(event) => patch({ name: event.target.value })}
-                className="mt-1 w-full h-10 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm"
+        {t.status === "setup" &&
+          (
+            t.teamBuild === "switcheroo"
+              ? switcherooSetupStage === "settings"
+              : !t.setupConfigured && !t.teams.length
+          ) && (
+            <section className="m8-panel rounded-[26px] p-3 sm:p-4">
+              <TourneySetupWizard
+                tournament={t}
+                economy={switcherooEconomy}
+                paymentsLocked={
+                  (t.switcheroo?.entryPaid || []).length > 0 ||
+                  (t.switcheroo?.entryPendingPayments || []).length > 0
+                }
+                onPatch={(value) => patch(value)}
+                onPatchSwitcheroo={patchSwitcheroo}
+                onChangeTeamBuild={changeTeamBuild}
+                onFinish={finishSetupWizard}
               />
-            </label>
-
-            {[
-              ["GAME", "game", ["BO7", "BO6", "MW3", "CW", "BO2"]],
-              ["FORMAT", "format", ["2v2", "3v3", "4v4"]],
-              ["MODE", "mode", ["CDL Mix", "Hardpoint", "Search & Destroy"]],
-              ["SERIES", "bestOf", [3, 5, 7]],
-              ["FINAL", "finalBestOf", [3, 5, 7]],
-              ["SEEDING", "seeding", ["manual", "random"]],
-              ["TEAM BUILD", "teamBuild", ["manual", "switcheroo"]],
-            ].map(([label, key, options]) => (
-              <label key={key}>
-                <span className="text-[9px] tracking-widest text-[#697181]">{label}</span>
-                <select
-                  value={t[key]}
-                  onChange={(event) => {
-                    const value = ["bestOf", "finalBestOf"].includes(key)
-                      ? Number(event.target.value)
-                      : event.target.value;
-                    if (key === "teamBuild") {
-                      if (
-                        value !== t.teamBuild &&
-                        ((t.switcheroo?.entryPaid || []).length > 0 ||
-                          (t.switcheroo?.entryPendingPayments || []).length > 0)
-                      ) {
-                        toast.error("Resolve existing tournament entry payments before changing Team Build");
-                        return;
-                      }
-                      save({
-                        ...t,
-                        teamBuild: value,
-                        teams: [],
-                        bracket: [],
-                        champion: null,
-                        status: "setup",
-                        switcheroo: {
-                          ...t.switcheroo,
-                          phase: "idle",
-                          setupStage: "settings",
-                          publishedAt: null,
-                          liveDraw: null,
-                          reviewEndsAt: null,
-                          rerollBaseGoal: switcherooEconomy.baseGoal,
-                          rerollGoal: switcherooEconomy.baseGoal,
-                          rerollStep: switcherooEconomy.firstMargin,
-                          rerollStepGrowth: switcherooEconomy.marginGrowth,
-                          contributedTotal: 0,
-                          contributions: [],
-                          pendingPayments: [],
-                          rerollsUsed: 0,
-                          generation: 0,
-                        },
-                      });
-                    } else {
-                      patch({ [key]: value });
-                    }
-                  }}
-                  disabled={t.status !== "setup"}
-                  className="mt-1 w-full h-10 rounded-xl bg-[#151923] border border-[#2A303B] px-2 text-xs font-semibold disabled:opacity-40"
-                >
-                  {options.map((option) => (
-                    <option key={option} value={option}>
-                      {String(option).toUpperCase()}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ))}
-
-            {t.mode === "CDL Mix" && (
-              <label>
-                <span className="text-[9px] tracking-widest text-[#697181]">MIX START</span>
-                <select
-                  value={t.startMode}
-                  onChange={(event) => patch({ startMode: event.target.value })}
-                  disabled={t.status !== "setup"}
-                  className="mt-1 w-full h-10 rounded-xl bg-[#151923] border border-[#2A303B] px-2 text-xs font-semibold disabled:opacity-40"
-                >
-                  <option>Hardpoint</option>
-                  <option>Search & Destroy</option>
-                </select>
-              </label>
-            )}
-          </div>
-
-          {t.teamBuild === "switcheroo" && (
-            <div className="mt-4 pt-4 border-t border-[#FF4FA3]/20">
-              <div className="text-[9px] tracking-[.16em] text-[#FF4FA3] font-black mb-3">
-                SWITCHEROO SETTINGS
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <label>
-                  <span className="text-[9px] tracking-widest text-[#697181]">ENTRY FEE / PLAYER</span>
-                  <div className="relative mt-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-white/40">€</span>
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={t.switcheroo.entryFee || 5}
-                      onChange={(event) => {
-                        const entryFee = Math.max(1, Number(event.target.value) || 1);
-                        const economy = switcherooEconomyFor(entryFee, switcherooPoolSize);
-                        save({
-                          ...t,
-                          switcheroo: {
-                            ...t.switcheroo,
-                            entryFee,
-                            entryPaid: [],
-                            entryPendingPayments: [],
-                            rerollBaseGoal: economy.baseGoal,
-                            rerollGoal: economy.baseGoal,
-                            rerollStep: economy.firstMargin,
-                            rerollStepGrowth: economy.marginGrowth,
-                            contributedTotal: 0,
-                            contributions: [],
-                            pendingPayments: [],
-                            rerollsUsed: 0,
-                            generation: 0,
-                          },
-                        });
-                      }}
-                      disabled={
-                        t.status !== "setup" ||
-                        (t.switcheroo.entryPaid || []).length > 0 ||
-                        (t.switcheroo.entryPendingPayments || []).length > 0
-                      }
-                      className="w-full h-10 rounded-xl bg-[#151923] border border-[#FF4FA3]/25 pl-7 pr-3 text-sm disabled:opacity-40"
-                    />
-                  </div>
-                </label>
-
-                <label>
-                  <span className="text-[9px] tracking-widest text-[#697181]">REVIEW TIME</span>
-                  <select
-                    value={t.switcheroo.reviewMinutes}
-                    onChange={(event) =>
-                      save({
-                        ...t,
-                        switcheroo: {
-                          ...t.switcheroo,
-                          reviewMinutes: Number(event.target.value),
-                        },
-                      })
-                    }
-                    disabled={t.status !== "setup"}
-                    className="mt-1 w-full h-10 rounded-xl bg-[#151923] border border-[#FF4FA3]/25 px-2 text-xs font-semibold disabled:opacity-40"
-                  >
-                    {[1, 3, 5, 10, 15].map((minutes) => (
-                      <option key={minutes} value={minutes}>{minutes} min</option>
-                    ))}
-                  </select>
-                </label>
-
-                <div>
-                  <span className="text-[9px] tracking-widest text-[#697181]">ENTRY POT</span>
-                  <div className="mt-1 h-10 rounded-xl bg-[#151923] border border-[#FF4FA3]/25 px-3 flex items-center font-mono text-sm font-black text-[#FF8BC5]">
-                    €{switcherooEconomy.entryPot}
-                  </div>
-                </div>
-
-                <div>
-                  <span className="text-[9px] tracking-widest text-[#697181]">STARTING RE-ROLL GOAL</span>
-                  <div className="mt-1 h-10 rounded-xl bg-[#151923] border border-[#FF4FA3]/35 px-3 flex items-center font-mono text-sm font-black text-[#FF4FA3]">
-                    €{switcherooEconomy.baseGoal}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-3 rounded-xl border border-[#FF4FA3]/20 bg-[#FF4FA3]/[0.045] px-3 py-2.5">
-                <div className="text-[9px] tracking-widest text-[#FF4FA3] font-black">PROGRESSIVE RE-SPIN PRICE</div>
-                <div className="mt-1 font-mono text-xs font-black">
-                  €{switcherooEconomy.baseGoal}
-                  <span className="mx-2 text-white/20">→</span>
-                  €{switcherooEconomy.baseGoal + switcherooEconomy.firstMargin}
-                  <span className="mx-2 text-white/20">→</span>
-                  €{switcherooEconomy.baseGoal + switcherooEconomy.firstMargin + switcherooEconomy.firstMargin + switcherooEconomy.marginGrowth}
-                  <span className="mx-2 text-white/20">→</span>
-                  …
-                </div>
-                <div className="text-[10px] text-muted-foreground mt-1.5">
-                  Starting goal = 50% of the entry pot, rounded up to €5. The first re-spin margin is €{switcherooEconomy.firstMargin}; after every successful re-spin the margin itself increases by €{switcherooEconomy.marginGrowth}.
-                </div>
-              </div>
-
-              <label className="block mt-3">
-                <span className="text-[9px] tracking-widest text-[#697181]">PAYPAL LINK</span>
-                <input
-                  value={t.switcheroo.paypalUrl || ""}
-                  onChange={(event) =>
-                    save({
-                      ...t,
-                      switcheroo: {
-                        ...t.switcheroo,
-                        paypalUrl: event.target.value,
-                      },
-                    })
-                  }
-                  disabled={t.status !== "setup"}
-                  placeholder="https://paypal.me/tuonome"
-                  className="mt-1 w-full h-10 rounded-xl bg-[#151923] border border-[#FF4FA3]/25 px-3 text-sm disabled:opacity-40"
-                />
-                <div className="text-[9px] text-muted-foreground mt-1.5">
-                  The same PayPal destination is used for tournament entry fees and Switcheroo re-spin contributions.
-                </div>
-              </label>
-
-              {t.status === "setup" && switcherooSetupStage === "settings" && (
-                <button
-                  type="button"
-                  onClick={goToSwitcherooPlayers}
-                  className="mt-4 w-full h-12 rounded-xl bg-[#FF4FA3] hover:bg-[#FF69B4] text-black font-display font-black tracking-[.05em]"
-                >
-                  CONTINUE TO PLAYER SELECTION
-                </button>
-              )}
-            </div>
+            </section>
           )}
-        </section>
+
+        {editSetupOpen && (
+          <div className="fixed inset-0 z-[240] bg-[#03050A]/90 backdrop-blur-xl overflow-y-auto p-3 sm:p-6">
+            <div className="max-w-5xl mx-auto min-h-full flex items-center">
+              <TourneySetupWizard
+                tournament={t}
+                economy={switcherooEconomy}
+                paymentsLocked={
+                  (t.switcheroo?.entryPaid || []).length > 0 ||
+                  (t.switcheroo?.entryPendingPayments || []).length > 0
+                }
+                published
+                onPatch={(value) => patch(value)}
+                onPatchSwitcheroo={patchSwitcheroo}
+                onChangeTeamBuild={changeTeamBuild}
+                onFinish={finishSetupWizard}
+                onClose={() => setEditSetupOpen(false)}
+              />
+            </div>
+          </div>
         )}
 
         {t.teamBuild === "switcheroo" && t.status === "setup" && switcherooSetupStage === "settings" ? null : t.teamBuild === "switcheroo" ? (
