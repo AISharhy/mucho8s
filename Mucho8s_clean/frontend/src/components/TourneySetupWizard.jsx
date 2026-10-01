@@ -400,7 +400,15 @@ export default function TourneySetupWizard({
                             title="Paid entry"
                             subtitle="Players confirm the entry and PayPal opens for the configured fee."
                             icon={WalletCards}
-                            onClick={() => onPatchSwitcheroo({ freeEntry: false })}
+                            onClick={() =>
+                              onPatchSwitcheroo({
+                                freeEntry: false,
+                                entryFee: Math.max(
+                                  1,
+                                  Number(tournament.switcheroo?.entryFee) || 5
+                                ),
+                              })
+                            }
                           />
                           <ChoiceCard
                             active={freeEntry}
@@ -498,7 +506,15 @@ export default function TourneySetupWizard({
                             subtitle="Players confirm and pay the configured entry fee."
                             icon={WalletCards}
                             accent="pink"
-                            onClick={() => onPatchSwitcheroo({ freeEntry: false })}
+                            onClick={() =>
+                              onPatchSwitcheroo({
+                                freeEntry: false,
+                                entryFee: Math.max(
+                                  1,
+                                  Number(tournament.switcheroo?.entryFee) || 5
+                                ),
+                              })
+                            }
                           />
                           <ChoiceCard
                             active={freeEntry}
