@@ -318,7 +318,8 @@ export const RecordMatchDialog = ({
     initialCaptains?.B ||
     teamB[0] ||
     "";
-  const teamsLocked = reportOnly || lockTeams;
+  const pairingEditOnly = Boolean(editData) && !reportOnly;
+  const teamsLocked = reportOnly || lockTeams || pairingEditOnly;
   const valid =
     teamA.length === teamB.length &&
     teamA.length >= 2 &&
@@ -341,27 +342,38 @@ export const RecordMatchDialog = ({
     setSubmitting(true);
 
     if (editData) {
-      const payload = reportOnly
+      const payload = pairingEditOnly
         ? {
             teamA: editData.teamA || [],
             teamB: editData.teamB || [],
-            winner,
+            winner: editData.winner || winner,
             mode: editData.mode || mode,
             game: editData.game || game,
             map: editData.map || "",
             date: editData.date,
             pairings: submittedPairings,
           }
-        : {
-            teamA,
-            teamB,
-            winner,
-            mode,
-            game,
-            map,
-            date: editData.date,
-            pairings: submittedPairings,
-          };
+        : reportOnly
+          ? {
+              teamA: editData.teamA || [],
+              teamB: editData.teamB || [],
+              winner,
+              mode: editData.mode || mode,
+              game: editData.game || game,
+              map: editData.map || "",
+              date: editData.date,
+              pairings: submittedPairings,
+            }
+          : {
+              teamA,
+              teamB,
+              winner,
+              mode,
+              game,
+              map,
+              date: editData.date,
+              pairings: submittedPairings,
+            };
 
       const ok = await editMatch(editData.id, payload);
       if (!ok) {
@@ -370,9 +382,11 @@ export const RecordMatchDialog = ({
       }
 
       toast.success(
-        reportOnly
-          ? "Result reported — Elo & stats recalculated"
-          : "Mucho8s updated — Elo & stats recalculated"
+        pairingEditOnly
+          ? "Money Challs updated"
+          : reportOnly
+            ? "Result reported — Elo & stats recalculated"
+            : "Mucho8s updated — Elo & stats recalculated"
       );
     } else if (liveOnly) {
       const liveMatch = await createLiveMatch({
@@ -455,6 +469,7 @@ export const RecordMatchDialog = ({
         </DialogHeader>
 
         <div className="overflow-y-auto pr-1 space-y-4">
+          {!pairingEditOnly && (
           <div className="flex items-center gap-3 text-sm">
             <span className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-sm bg-magma" /> Alpha
@@ -466,8 +481,38 @@ export const RecordMatchDialog = ({
             </span>
             <span className="text-muted-foreground text-xs ml-auto">Teams must be equal (2–4 each)</span>
           </div>
+          )}
 
-          {teamsLocked ? (
+          {pairingEditOnly ? (
+            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.035] p-4">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 h-9 w-9 shrink-0 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.08] flex items-center justify-center">
+                  <WalletCards size={17} className="text-emerald-400" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-black text-white">Edit Money Challs only</div>
+                  <div className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                    Choose who each Chall was against and the amount. Roster, match winner, maps and game stay locked.
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <span className="rounded-md border border-[#2A303B] bg-[#0F1218] px-2 py-1 text-[9px] font-black uppercase tracking-wider text-[#AAB2BF]">
+                      {editData?.winner === "A" ? "Alpha" : "Bravo"} won
+                    </span>
+                    {editData?.game && (
+                      <span className="rounded-md border border-[#2A303B] bg-[#0F1218] px-2 py-1 text-[9px] font-black uppercase tracking-wider text-[#AAB2BF]">
+                        {editData.game}
+                      </span>
+                    )}
+                    {editData?.mode && (
+                      <span className="rounded-md border border-[#2A303B] bg-[#0F1218] px-2 py-1 text-[9px] font-black uppercase tracking-wider text-[#AAB2BF]">
+                        {editData.mode}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : teamsLocked ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="rounded-xl bg-magma/5 border border-magma/20 p-3">
                 <div className="flex items-center justify-between gap-3 mb-2">
@@ -554,7 +599,7 @@ export const RecordMatchDialog = ({
             </>
           )}
 
-          {!liveOnly && liveSeriesMaps.length > 0 && (
+          {!pairingEditOnly && !liveOnly && liveSeriesMaps.length > 0 && (
             <div className="rounded-2xl bg-[#0F1218] border border-[#222834] p-4">
               <div className="flex items-center justify-between gap-3 mb-3">
                 <div>
@@ -585,7 +630,7 @@ export const RecordMatchDialog = ({
             </div>
           )}
 
-          {!liveOnly && liveSeriesMaps.length === 0 && (
+          {!pairingEditOnly && !liveOnly && liveSeriesMaps.length === 0 && (
           <div>
             <Label className="text-xs text-muted-foreground">Winner</Label>
             <div className="grid grid-cols-2 gap-2 mt-1">
@@ -600,9 +645,11 @@ export const RecordMatchDialog = ({
               <div className="flex items-center gap-2 min-w-0">
                 <WalletCards size={16} className="text-emerald-400 shrink-0" />
                 <div className="min-w-0">
-                  <div className="text-sm font-bold">Money Chall Pairings</div>
+                  <div className="text-sm font-bold">{pairingEditOnly ? "Who played who & how much" : "Money Chall Pairings"}</div>
                   <div className="text-[11px] text-muted-foreground">
-                    Base pairings + optional extra Challs against another opponent.
+                    {pairingEditOnly
+                      ? "Set the opponent and the stake for each Chall, then confirm."
+                      : "Base pairings + optional extra Challs against another opponent."}
                   </div>
                 </div>
               </div>
@@ -780,7 +827,7 @@ export const RecordMatchDialog = ({
             )}
           </div>
 
-          {!reportOnly && !lockContext && (
+          {!pairingEditOnly && !reportOnly && !lockContext && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <Label className="text-xs text-muted-foreground">Mode</Label>
@@ -855,16 +902,20 @@ export const RecordMatchDialog = ({
             className="w-full sm:w-auto rounded-xl bg-magma hover:bg-[#ff3c4c] text-white"
             data-testid="record-save-btn"
           >
-            <Crown size={16} className="mr-1" />
+            {pairingEditOnly
+              ? <WalletCards size={16} className="mr-1" />
+              : <Crown size={16} className="mr-1" />}
             {submitting
-              ? (liveOnly ? "Starting..." : "Submitting...")
+              ? (liveOnly ? "Starting..." : pairingEditOnly ? "Saving..." : "Submitting...")
               : liveOnly
                 ? "Start Mucho8s"
                 : reportOnly
                   ? "Update Result"
-                  : editData
-                    ? "Update Mucho8s"
-                    : "Submit Mucho8s"}
+                  : pairingEditOnly
+                    ? "Confirm Money Challs"
+                    : editData
+                      ? "Update Mucho8s"
+                      : "Submit Mucho8s"}
           </Button>
         </DialogFooter>
       </DialogContent>
