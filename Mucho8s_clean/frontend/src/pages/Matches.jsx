@@ -1327,7 +1327,7 @@ export default function Matches() {
         open={!!editData}
         onOpenChange={(open) => !open && setEditData(null)}
         editData={editData}
-        title="Edit Mucho8s"
+        title="Edit Money Challs"
       />
     </div>
   );
