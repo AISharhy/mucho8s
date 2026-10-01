@@ -24,6 +24,8 @@ import {
 } from "@/lib/tourneyLive";
 import SwitcherooWheel from "@/components/SwitcherooWheel";
 import SwitcherooDrawOverlay from "@/components/SwitcherooDrawOverlay";
+import TourneySetupWizard from "@/components/TourneySetupWizard";
+import TournamentPlayerPicker from "@/components/TournamentPlayerPicker";
 
 export const TOURNEY_STORE = "mucho8s-tourney-admin-v1";
 const STORE = TOURNEY_STORE;
@@ -32,6 +34,8 @@ const switcherooDefaults = {
   pool: [],
   reviewMinutes: 5,
   entryFee: 5,
+  registrationMode: "manual",
+  maxTeams: 4,
   entryPaid: [],
   entryPendingPayments: [],
   rerollBaseGoal: 20,
@@ -194,6 +198,7 @@ export default function MuchoTourney() {
   const [paymentBusyId, setPaymentBusyId] = useState("");
   const [entryPaymentBusyId, setEntryPaymentBusyId] = useState("");
   const [switcherooDraw, setSwitcherooDraw] = useState(null);
+  const [editSetupOpen, setEditSetupOpen] = useState(false);
 
   const fireFx = (type, data = {}) => setFx({ type, ...data, key: Date.now() });
 
@@ -279,6 +284,12 @@ export default function MuchoTourney() {
 
   const switcherooRosterSize = rosterSizeFor(t.format);
   const switcherooPoolSize = Array.isArray(t.switcheroo?.pool) ? t.switcheroo.pool.length : 0;
+  const switcherooRegistrationMode =
+    t.switcheroo?.registrationMode === "open" ? "open" : "manual";
+  const switcherooMaxTeams = Math.min(
+    8,
+    Math.max(2, Number(t.switcheroo?.maxTeams || 4))
+  );
   const switcherooEconomy = switcherooEconomyFor(
     t.switcheroo?.entryFee || 5,
     switcherooPoolSize
@@ -307,6 +318,99 @@ export default function MuchoTourney() {
 
   const switcherooSetupStage = t.switcheroo?.setupStage || "settings";
 
+  const patchSwitcheroo = (value) => {
+    const nextEntryFee =
+      value?.entryFee !== undefined
+        ? Math.max(1, Number(value.entryFee) || 1)
+        : Number(t.switcheroo?.entryFee || 5);
+    const economy = switcherooEconomyFor(nextEntryFee, switcherooPoolSize);
+
+    save({
+      ...t,
+      switcheroo: {
+        ...t.switcheroo,
+        ...value,
+        ...(value?.entryFee !== undefined
+          ? {
+              entryFee: nextEntryFee,
+              rerollBaseGoal: economy.baseGoal,
+              rerollGoal: economy.baseGoal,
+              rerollStep: economy.firstMargin,
+              rerollStepGrowth: economy.marginGrowth,
+            }
+          : {}),
+      },
+    });
+  };
+
+  const changeTeamBuild = (value) => {
+    if (value === t.teamBuild) return;
+    if (
+      (t.switcheroo?.entryPaid || []).length > 0 ||
+      (t.switcheroo?.entryPendingPayments || []).length > 0
+    ) {
+      toast.error("Resolve existing tournament entry payments before changing Team Build");
+      return;
+    }
+
+    save({
+      ...t,
+      teamBuild: value,
+      teams: [],
+      bracket: [],
+      champion: null,
+      status: "setup",
+      switcheroo: {
+        ...t.switcheroo,
+        phase: "idle",
+        setupStage: "settings",
+        publishedAt: null,
+        liveDraw: null,
+        reviewEndsAt: null,
+        contributedTotal: 0,
+        contributions: [],
+        pendingPayments: [],
+        rerollsUsed: 0,
+        generation: 0,
+      },
+    });
+  };
+
+  const setSwitcherooPool = (nextPool) => {
+    const economy = switcherooEconomyFor(
+      t.switcheroo?.entryFee || 5,
+      nextPool.length
+    );
+    save({
+      ...t,
+      teams: [],
+      bracket: [],
+      champion: null,
+      status: "setup",
+      switcheroo: {
+        ...t.switcheroo,
+        pool: nextPool,
+        phase: "idle",
+        reviewEndsAt: null,
+        entryPaid: (t.switcheroo?.entryPaid || []).filter((row) =>
+          nextPool.some((player) => String(player.id) === String(row.playerId))
+        ),
+        entryPendingPayments: (t.switcheroo?.entryPendingPayments || []).filter((row) =>
+          nextPool.some((player) => String(player.id) === String(row.playerId))
+        ),
+        rerollBaseGoal: economy.baseGoal,
+        rerollGoal: economy.baseGoal,
+        rerollStep: economy.firstMargin,
+        rerollStepGrowth: economy.marginGrowth,
+        contributedTotal: 0,
+        contributions: [],
+        pendingPayments: [],
+        rerollsUsed: 0,
+        generation: 0,
+      },
+    });
+  };
+
   const goToSwitcherooPlayers = () => {
     save({
       ...t,
@@ -319,7 +423,10 @@ export default function MuchoTourney() {
   };
 
   const publishSwitcheroo = () => {
-    if (!switcherooStructureReady) {
+    if (
+      switcherooRegistrationMode !== "open" &&
+      !switcherooStructureReady
+    ) {
       toast.error(`Select a valid ${t.format} player pool before publishing`);
       return;
     }
@@ -329,12 +436,35 @@ export default function MuchoTourney() {
       status: "setup",
       switcheroo: {
         ...t.switcheroo,
+        registrationMode: switcherooRegistrationMode,
+        maxTeams: switcherooMaxTeams,
         setupStage: "published",
         phase: "published",
-        publishedAt: new Date().toISOString(),
+        publishedAt: t.switcheroo?.publishedAt || new Date().toISOString(),
       },
     });
-    toast.success("MuchoTourney is online · public Switcheroo wheel is now visible");
+    setEditSetupOpen(false);
+    toast.success(
+      switcherooRegistrationMode === "open"
+        ? "MuchoTourney published · registration is open"
+        : "MuchoTourney is online · public Switcheroo wheel is now visible"
+    );
+  };
+
+  const finishSetupWizard = () => {
+    if (editSetupOpen) {
+      setEditSetupOpen(false);
+      toast.success("Tournament settings updated");
+      return;
+    }
+
+    if (t.teamBuild === "switcheroo") {
+      if (switcherooRegistrationMode === "open") publishSwitcheroo();
+      else goToSwitcherooPlayers();
+      return;
+    }
+
+    toast.success("Tournament settings saved · create the teams below");
   };
 
   const addTeam = () => {
@@ -413,34 +543,7 @@ export default function MuchoTourney() {
       ? pool.filter((row) => String(row.id) !== String(player.id))
       : [...pool, { id: player.id, name: player.name }];
 
-    save({
-      ...t,
-      teams: t.teamBuild === "switcheroo" ? [] : t.teams,
-      bracket: [],
-      champion: null,
-      status: "setup",
-      switcheroo: {
-        ...t.switcheroo,
-        pool: nextPool,
-        phase: "idle",
-        reviewEndsAt: null,
-        entryPaid: (t.switcheroo?.entryPaid || []).filter((row) =>
-          nextPool.some((player) => String(player.id) === String(row.playerId))
-        ),
-        entryPendingPayments: (t.switcheroo?.entryPendingPayments || []).filter((row) =>
-          nextPool.some((player) => String(player.id) === String(row.playerId))
-        ),
-        rerollBaseGoal: switcherooEconomyFor(t.switcheroo?.entryFee || 5, nextPool.length).baseGoal,
-        rerollGoal: switcherooEconomyFor(t.switcheroo?.entryFee || 5, nextPool.length).baseGoal,
-        rerollStep: switcherooEconomyFor(t.switcheroo?.entryFee || 5, nextPool.length).firstMargin,
-        rerollStepGrowth: 5,
-        contributedTotal: 0,
-        contributions: [],
-        pendingPayments: [],
-        rerollsUsed: 0,
-        generation: 0,
-      },
-    });
+    setSwitcherooPool(nextPool);
   };
 
   const compUnpaidEntries = () => {
