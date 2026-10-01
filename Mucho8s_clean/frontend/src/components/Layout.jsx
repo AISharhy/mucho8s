@@ -118,7 +118,24 @@ export const Layout = () => {
   const [seenModeNotificationKeys, setSeenModeNotificationKeys] = useState(() => new Set());
   const [liveTourney, setLiveTourney] = useState(null);
 
-  useEffect(() => { let alive=true; const apply=row=>{if(alive)setLiveTourney(["live","completed"].includes(row?.status)?row:null)}; fetchTourney().then(apply); const off=subscribeTourney(apply); return()=>{alive=false;off()}; }, []);
+  useEffect(() => {
+    let alive = true;
+    const apply = (row) => {
+      if (!alive) return;
+      const switcherooPublished =
+        row?.teamBuild === "switcheroo" &&
+        row?.status === "setup" &&
+        row?.switcheroo?.setupStage === "published";
+      const visibleStatus = ["review", "ready", "live", "completed"].includes(row?.status);
+      setLiveTourney(switcherooPublished || visibleStatus ? row : null);
+    };
+    fetchTourney().then(apply);
+    const off = subscribeTourney(apply);
+    return () => {
+      alive = false;
+      off();
+    };
+  }, []);
 
   useEffect(() => {
     setAccountOpen(false);
@@ -791,11 +808,25 @@ export const Layout = () => {
             {liveTourney && (
               <NavLink
                 to="/tourney/live"
-                className={({ isActive }) => `h-8 px-3 rounded-lg border inline-flex items-center gap-1.5 text-[10px] font-black tracking-[.05em] transition-all ${isActive ? "border-[#F3C64F] bg-[#D5A33A]/20 text-[#FFE18A]" : "border-[#D5A33A]/35 bg-[#D5A33A]/10 text-[#E9BE55] hover:bg-[#D5A33A]/16"}`}
+                className={({ isActive }) => {
+                  const switcheroo = liveTourney?.teamBuild === "switcheroo";
+                  const activeClass = switcheroo
+                    ? "border-[#FF4FA3] bg-[#FF4FA3]/20 text-[#FFD1E8]"
+                    : "border-[#F3C64F] bg-[#D5A33A]/20 text-[#FFE18A]";
+                  const idleClass = switcheroo
+                    ? "border-[#FF4FA3]/35 bg-[#FF4FA3]/10 text-[#FF9DCE] hover:bg-[#FF4FA3]/16"
+                    : "border-[#D5A33A]/35 bg-[#D5A33A]/10 text-[#E9BE55] hover:bg-[#D5A33A]/16";
+                  return `h-8 px-3 rounded-lg border inline-flex items-center gap-1.5 text-[10px] font-black tracking-[.05em] transition-all ${isActive ? activeClass : idleClass}`;
+                }}
                 title={`${liveTourney.name} · live tournament`}
                 data-testid="header-live-muchotourney"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-[#F3C64F] animate-pulse" />
+                <span
+                  className={
+                    "w-1.5 h-1.5 rounded-full animate-pulse " +
+                    (liveTourney?.teamBuild === "switcheroo" ? "bg-[#FF4FA3]" : "bg-[#F3C64F]")
+                  }
+                />
                 <Trophy size={12} />
                 <span>MuchoTourney</span>
               </NavLink>
