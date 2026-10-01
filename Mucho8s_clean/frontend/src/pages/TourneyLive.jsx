@@ -74,14 +74,33 @@ export default function TourneyLive() {
   const rerollStep = Math.max(5, Number(t?.switcheroo?.rerollStep || 10));
   const rerollStepGrowth = Math.max(5, Number(t?.switcheroo?.rerollStepGrowth || 5));
 
+  const classicRosterPlayers = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          (t?.teams || [])
+            .flatMap((team) => (Array.isArray(team?.roster) ? team.roster : []))
+            .filter((player) => player?.id)
+            .map((player) => [
+              String(player.id),
+              { id: player.id, name: player.name || "Player" },
+            ])
+        ).values()
+      ),
+    [t?.teams]
+  );
+
   const participantIds = useMemo(
     () =>
       new Set(
-        (t?.switcheroo?.pool || [])
+        (t?.teamBuild === "switcheroo"
+          ? t?.switcheroo?.pool || []
+          : classicRosterPlayers
+        )
           .map((player) => String(player?.id || ""))
           .filter(Boolean)
       ),
-    [t?.switcheroo?.pool]
+    [t?.teamBuild, t?.switcheroo?.pool, classicRosterPlayers]
   );
 
   const entryPaidIds = useMemo(
@@ -108,8 +127,13 @@ export default function TourneyLive() {
   const isTournamentPlayer = participantIds.has(currentPlayerId);
   const entryPaid = entryPaidIds.has(currentPlayerId);
   const entryPending = entryPendingIds.has(currentPlayerId);
-  const entryFee = Math.max(1, Number(t?.switcheroo?.entryFee || 5));
-  const openRegistration = t?.switcheroo?.registrationMode === "open";
+  const freeEntry = Boolean(t?.switcheroo?.freeEntry);
+  const entryFee = freeEntry
+    ? 0
+    : Math.max(1, Number(t?.switcheroo?.entryFee ?? 5));
+  const openRegistration =
+    t?.teamBuild === "switcheroo" &&
+    t?.switcheroo?.registrationMode === "open";
   const maxTeams = Math.min(8, Math.max(2, Number(t?.switcheroo?.maxTeams || 4)));
   const rosterSize = Math.max(
     1,
@@ -132,13 +156,16 @@ export default function TourneyLive() {
 
   const payEntry = async () => {
     if (entryBusy) return;
-    void playUiSound("money", "switcheroo");
+    void playUiSound(
+      freeEntry ? "confirm" : "money",
+      t?.teamBuild === "switcheroo" ? "switcheroo" : "tourney"
+    );
     if (!discordSession?.access_token) {
-      toast.error("Connect Discord to pay the tournament entry");
+      toast.error("Connect Discord to confirm the tournament entry");
       return;
     }
     if (!isTournamentPlayer && !openRegistration) {
-      toast.error("You are not in this tournament pool");
+      toast.error("You are not registered in this tournament");
       return;
     }
 
@@ -150,7 +177,9 @@ export default function TourneyLive() {
         window.open(data.paymentUrl, "_blank", "noopener,noreferrer");
       }
       toast.success(
-        `Pay €${data?.amount || entryFee} on PayPal · entry activates after Admin confirmation`
+        data?.freeEntry
+          ? "Free entry confirmed · you are in the tournament"
+          : `Pay €${data?.amount ?? entryFee} on PayPal · entry activates after Admin confirmation`
       );
     } catch (error) {
       toast.error(error?.message || "Unable to open tournament entry payment");
@@ -187,6 +216,167 @@ export default function TourneyLive() {
       setBusy(false);
     }
   };
+
+  if (
+    t?.status === "setup" &&
+    t?.teamBuild === "manual" &&
+    t?.switcheroo?.setupStage === "published" &&
+    classicRosterPlayers.length > 0
+  ) {
+    const paidCount = classicRosterPlayers.filter((player) =>
+      entryPaidIds.has(String(player.id))
+    ).length;
+    const totalPot = entryFee * classicRosterPlayers.length;
+
+    return (
+      <div className="m8-page-stack gap-3 max-w-6xl mx-auto">
+        <section className="rounded-[22px] border border-[#D5A33A]/25 bg-gradient-to-r from-[#15130c] to-[#0c1119] p-5 sm:p-7">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-[#D5A33A] text-[10px] font-black tracking-[.18em]">
+                <span className="w-2 h-2 rounded-full bg-[#D5A33A] animate-pulse" />
+                CLASSIC MUCHOTOURNEY · ENTRY OPEN
+              </div>
+              <h1 className="font-display text-3xl sm:text-4xl font-black mt-2">{t.name}</h1>
+              <div className="flex flex-wrap gap-2 mt-3 text-[10px] font-bold text-[#AAB1BE]">
+                <span className="m8-pill">{t.game}</span>
+                <span className="m8-pill">{t.format}</span>
+                <span className="m8-pill">{t.mode}</span>
+                <span className="m8-pill">
+                  {freeEntry ? "FREE TOURNEY" : `ENTRY €${entryFee}`}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {isAdmin && (
+                <Link
+                  to="/tourney"
+                  className="h-[54px] px-4 rounded-xl border border-[#D5A33A]/30 bg-[#D5A33A]/10 text-[#F4CE70] text-[10px] font-black inline-flex items-center justify-center"
+                >
+                  MANAGE TOURNAMENT
+                </Link>
+              )}
+              <div className="rounded-xl border border-[#D5A33A]/20 bg-[#D5A33A]/[0.05] px-3 py-2 text-right">
+                <div className="text-[8px] tracking-widest text-[#697181]">CONFIRMED</div>
+                <div className="font-mono text-lg font-black text-[#F4CE70]">
+                  {paidCount}/{classicRosterPlayers.length}
+                </div>
+              </div>
+              <div className="rounded-xl border border-[#D5A33A]/20 bg-[#D5A33A]/[0.05] px-3 py-2 text-right">
+                <div className="text-[8px] tracking-widest text-[#697181]">
+                  {freeEntry ? "ENTRY" : "ENTRY POT"}
+                </div>
+                <div className="font-mono text-lg font-black text-[#F4CE70]">
+                  {freeEntry ? "FREE" : `€${totalPot}`}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid lg:grid-cols-[1fr_360px] gap-3">
+          <div className="m8-panel rounded-[22px] p-5">
+            <div className="brand-kicker text-[#D5A33A]">Teams & entry status</div>
+            <div className="grid sm:grid-cols-2 gap-3 mt-4">
+              {(t.teams || []).map((team, teamIndex) => (
+                <button
+                  key={team.id}
+                  type="button"
+                  onClick={() => {
+                    void playUiSound("click", "tourney");
+                    setSelectedTeam(team);
+                  }}
+                  className="rounded-xl border border-[#D5A33A]/15 bg-[#D5A33A]/[0.025] p-3 text-left hover:border-[#D5A33A]/30"
+                >
+                  <div className="text-xs font-black">
+                    <span className="text-[#D5A33A] mr-2">#{teamIndex + 1}</span>
+                    {team.name}
+                  </div>
+                  <div className="mt-2 space-y-1.5">
+                    {(team.roster || []).map((player) => {
+                      const paid = entryPaidIds.has(String(player.id));
+                      const pending = entryPendingIds.has(String(player.id));
+                      return (
+                        <div
+                          key={player.id}
+                          className="h-9 rounded-lg border border-[#252B36] bg-[#111720] px-2.5 flex items-center justify-between gap-2"
+                        >
+                          <span className="text-[11px] font-semibold truncate">{player.name}</span>
+                          <span
+                            className={
+                              "font-mono text-[8px] " +
+                              (paid
+                                ? "text-emerald-400"
+                                : pending
+                                  ? "text-amber-300"
+                                  : "text-[#D5A33A]")
+                            }
+                          >
+                            {paid ? "CONFIRMED" : pending ? "PENDING" : freeEntry ? "FREE" : `€${entryFee} DUE`}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="m8-panel rounded-[22px] p-5">
+            <div className="brand-kicker text-[#D5A33A]">Your entry</div>
+            <h2 className="font-display text-2xl font-black mt-1">
+              {entryPaid
+                ? "Entry confirmed"
+                : entryPending
+                  ? "Waiting for Admin confirmation"
+                  : isTournamentPlayer
+                    ? freeEntry
+                      ? "Confirm your free entry"
+                      : `Pay €${entryFee} to enter`
+                    : "Tournament roster"}
+            </h2>
+
+            {isTournamentPlayer && !entryPaid && !entryPending && (
+              <button
+                type="button"
+                disabled={entryBusy}
+                onClick={payEntry}
+                className="mt-4 w-full h-12 rounded-xl bg-[#D5A33A] hover:bg-[#E0B247] text-black font-black disabled:opacity-40"
+              >
+                {freeEntry ? "CONFIRM FREE ENTRY" : `CONFIRM & PAY €${entryFee}`}
+              </button>
+            )}
+
+            {entryPaid && (
+              <div className="mt-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] px-4 py-3 text-sm text-emerald-400 font-bold">
+                {freeEntry ? "Free entry confirmed." : "Entry payment confirmed."}
+              </div>
+            )}
+
+            {entryPending && (
+              <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/[0.05] px-4 py-3 text-sm text-amber-300">
+                Payment opened. Waiting for the tournament Admin to confirm it.
+              </div>
+            )}
+
+            {!isTournamentPlayer && (
+              <p className="text-sm text-muted-foreground mt-4">
+                Only players assigned to a Classic MuchoTourney roster can confirm this entry.
+              </p>
+            )}
+          </div>
+        </section>
+
+        <TournamentTeamRosterModal
+          team={selectedTeam}
+          onClose={() => setSelectedTeam(null)}
+          switcheroo={false}
+        />
+      </div>
+    );
+  }
 
   if (
     t?.status === "setup" &&
@@ -230,7 +420,9 @@ export default function TourneyLive() {
                   <span className="m8-pill">{t.game}</span>
                   <span className="m8-pill">{t.format}</span>
                   <span className="m8-pill">{t.mode}</span>
-                  <span className="m8-pill">ENTRY €{entryFee}</span>
+                  <span className="m8-pill">
+                    {freeEntry ? "FREE TOURNEY" : `ENTRY €${entryFee}`}
+                  </span>
                 </div>
               </div>
 
@@ -245,7 +437,9 @@ export default function TourneyLive() {
                 )}
                 <div className="rounded-xl border border-[#FF4FA3]/20 bg-[#FF4FA3]/[0.05] px-3 py-2 text-right">
                   <div className="text-[8px] tracking-widest text-[#697181]">ENTRY POT</div>
-                  <div className="font-mono text-lg font-black text-[#FF9DCE]">€{totalPot}</div>
+                  <div className="font-mono text-lg font-black text-[#FF9DCE]">
+                    {freeEntry ? "FREE" : `€${totalPot}`}
+                  </div>
                 </div>
                 <div className="rounded-xl border border-[#FF4FA3]/20 bg-[#FF4FA3]/[0.05] px-3 py-2 text-right">
                   <div className="text-[8px] tracking-widest text-[#697181]">START RE-SPIN</div>
@@ -345,7 +539,9 @@ export default function TourneyLive() {
                         : entryPending
                           ? "Payment waiting for confirmation"
                           : isTournamentPlayer
-                            ? `Pay €${entryFee} to enter`
+                            ? freeEntry
+                              ? "Confirm your free entry"
+                              : `Pay €${entryFee} to enter`
                             : openRegistration
                               ? "Join MuchoTourney"
                               : "Switcheroo is online"}
@@ -470,7 +666,15 @@ export default function TourneyLive() {
                           >
                             <span className="text-xs font-black truncate">{player.name}</span>
                             <span className={"font-mono text-[9px] " + (paid ? "text-emerald-400" : "text-[#FF8BC5]")}>
-                              {paid ? "PAID" : pending ? "PENDING" : `€${entryFee} DUE`}
+                              {paid
+                                ? freeEntry
+                                  ? "CONFIRMED"
+                                  : "PAID"
+                                : pending
+                                  ? "PENDING"
+                                  : freeEntry
+                                    ? "FREE"
+                                    : `€${entryFee} DUE`}
                             </span>
                           </div>
                         );
