@@ -317,6 +317,26 @@ export default function MuchoTourney() {
     (player) => !entryPaidIds.has(String(player.id))
   );
 
+  const classicRosterPlayers = Array.from(
+    new Map(
+      (t.teams || [])
+        .flatMap((team) => (Array.isArray(team?.roster) ? team.roster : []))
+        .filter((player) => player?.id)
+        .map((player) => [String(player.id), { id: player.id, name: player.name }])
+    ).values()
+  );
+  const classicRosterSize = rosterSizeFor(t.format);
+  const classicRostersComplete =
+    t.teams.length >= 2 &&
+    t.teams.every((team) => (team.roster || []).length === classicRosterSize);
+  const classicAllPaid =
+    classicRosterPlayers.length > 0 &&
+    classicRosterPlayers.every((player) => entryPaidIds.has(String(player.id)));
+  const classicEntryPublished =
+    t.teamBuild === "manual" &&
+    t.status === "setup" &&
+    t.switcheroo?.setupStage === "published";
+
   const switcherooSetupStage = t.switcheroo?.setupStage || "settings";
 
   const patchSwitcheroo = (value) => {
@@ -459,6 +479,43 @@ export default function MuchoTourney() {
         ? "MuchoTourney published · registration is open"
         : "MuchoTourney is online · public Switcheroo wheel is now visible"
     );
+  };
+
+  const publishClassicEntry = () => {
+    if (!String(t.name || "").trim()) {
+      toast.error("Add a tournament name before publishing");
+      return;
+    }
+    if (!String(t.switcheroo?.paypalUrl || "").trim()) {
+      toast.error("Add your PayPal link before publishing");
+      return;
+    }
+    if (!classicRostersComplete) {
+      toast.error(`Create at least 2 complete ${t.format} teams before publishing entry`);
+      return;
+    }
+
+    const economy = switcherooEconomyFor(
+      t.switcheroo?.entryFee || 5,
+      classicRosterPlayers.length
+    );
+
+    save({
+      ...t,
+      status: "setup",
+      setupConfigured: true,
+      switcheroo: {
+        ...t.switcheroo,
+        registrationMode: "manual",
+        pool: [],
+        setupStage: "published",
+        phase: "published",
+        publishedAt: t.switcheroo?.publishedAt || new Date().toISOString(),
+        rerollBaseGoal: economy.baseGoal,
+        rerollGoal: economy.baseGoal,
+      },
+    });
+    toast.success("Classic MuchoTourney published · roster entry payments are open");
   };
 
   const finishSetupWizard = () => {
@@ -816,6 +873,24 @@ export default function MuchoTourney() {
       return;
     }
 
+    if (t.teamBuild === "manual") {
+      if (t.switcheroo?.setupStage !== "published") {
+        toast.error("Publish tournament entry before generating the bracket");
+        return;
+      }
+      if ((t.switcheroo?.entryPendingPayments || []).length > 0) {
+        toast.error("Confirm or reject pending entry payments first");
+        return;
+      }
+      const unpaid = classicRosterPlayers.filter(
+        (player) => !entryPaidIds.has(String(player.id))
+      );
+      if (unpaid.length) {
+        toast.error(`${unpaid.length} roster player${unpaid.length === 1 ? "" : "s"} still need confirmed entry payment`);
+        return;
+      }
+    }
+
     let teams = [...t.teams];
     if (t.seeding === "random") teams = shuffleRows(teams);
     teams = teams.map((team, index) => ({ ...team, seed: index + 1 }));
@@ -828,7 +903,8 @@ export default function MuchoTourney() {
       status: "live",
       switcheroo: {
         ...t.switcheroo,
-        phase: t.teamBuild === "switcheroo" ? "locked" : t.switcheroo.phase,
+        phase: t.teamBuild === "switcheroo" ? "locked" : "bracket",
+        setupStage: "bracket",
       },
     });
     fireFx("bracket", {
@@ -1413,7 +1489,8 @@ export default function MuchoTourney() {
                 <button
                   type="button"
                   onClick={addTeam}
-                  className="w-10 h-10 rounded-xl bg-[#D5A33A] text-black flex items-center justify-center"
+                  disabled={classicEntryPublished}
+                  className="w-10 h-10 rounded-xl bg-[#D5A33A] text-black flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <Plus size={16} />
                 </button>
@@ -1427,8 +1504,9 @@ export default function MuchoTourney() {
                       <span className="font-bold text-sm flex-1 truncate">{team.name}</span>
                       <button
                         type="button"
+                        disabled={classicEntryPublished}
                         onClick={() => setEditingRoster(editingRoster === team.id ? null : team.id)}
-                        className="h-7 px-2 rounded-lg border border-[#D5A33A]/25 text-[#D5A33A] text-[9px] font-black"
+                        className="h-7 px-2 rounded-lg border border-[#D5A33A]/25 text-[#D5A33A] text-[9px] font-black disabled:opacity-30"
                       >
                         EDIT ROSTER · {(team.roster || []).length}
                       </button>
@@ -1495,14 +1573,78 @@ export default function MuchoTourney() {
                 ))}
               </div>
 
-              <button
-                type="button"
-                onClick={generate}
-                className="mt-4 w-full h-11 rounded-xl bg-magma text-white font-black flex items-center justify-center gap-2"
-              >
-                <Shuffle size={15} />
-                Generate Bracket
-              </button>
+              <div className="mt-4 rounded-xl border border-[#D5A33A]/20 bg-[#D5A33A]/[0.035] p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-[9px] tracking-[.14em] text-[#D5A33A] font-black">
+                      TOURNAMENT ENTRY
+                    </div>
+                    <div className="text-[10px] text-muted-foreground mt-1">
+                      €{Number(t.switcheroo?.entryFee || 5)} / player · {entryPaidIds.size}/{classicRosterPlayers.length} confirmed
+                    </div>
+                  </div>
+                  {classicEntryPublished && (
+                    <span className="m8-pill text-emerald-400 border-emerald-500/25">
+                      ONLINE
+                    </span>
+                  )}
+                </div>
+
+                {(t.switcheroo?.entryPendingPayments || []).length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {(t.switcheroo.entryPendingPayments || []).map((row) => (
+                      <div
+                        key={row.id}
+                        className="rounded-lg border border-[#2A303B] bg-[#111720] px-3 py-2 flex items-center gap-2"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-black truncate">{row.name || "Player"}</div>
+                          <div className="text-[9px] text-muted-foreground">
+                            Entry €{row.amount} · waiting for verification
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={entryPaymentBusyId === row.id}
+                          onClick={() => reviewEntryPayment(row.id, "reject")}
+                          className="h-8 px-2.5 rounded-lg border border-red-500/20 text-red-300 text-[9px] font-black disabled:opacity-40"
+                        >
+                          REJECT
+                        </button>
+                        <button
+                          type="button"
+                          disabled={entryPaymentBusyId === row.id}
+                          onClick={() => reviewEntryPayment(row.id, "confirm")}
+                          className="h-8 px-2.5 rounded-lg border border-emerald-500/20 text-emerald-300 text-[9px] font-black disabled:opacity-40"
+                        >
+                          CONFIRM PAID
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {!classicEntryPublished ? (
+                  <button
+                    type="button"
+                    onClick={publishClassicEntry}
+                    disabled={!classicRostersComplete}
+                    className="mt-3 w-full h-11 rounded-xl bg-[#D5A33A] text-black font-black disabled:opacity-30"
+                  >
+                    PUBLISH ENTRY
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={generate}
+                    disabled={!classicAllPaid || (t.switcheroo?.entryPendingPayments || []).length > 0}
+                    className="mt-3 w-full h-11 rounded-xl bg-magma text-white font-black flex items-center justify-center gap-2 disabled:opacity-30"
+                  >
+                    <Shuffle size={15} />
+                    GENERATE BRACKET
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="m8-panel rounded-[22px] p-5 overflow-x-auto">
