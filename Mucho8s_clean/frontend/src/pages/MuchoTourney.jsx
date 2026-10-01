@@ -34,6 +34,7 @@ const switcherooDefaults = {
   pool: [],
   reviewMinutes: 5,
   entryFee: 5,
+  freeEntry: false,
   registrationMode: "manual",
   maxTeams: 4,
   entryPaid: [],
@@ -168,7 +169,7 @@ const roundUpToFive = (value) =>
   Math.max(5, Math.ceil(Math.max(0, Number(value) || 0) / 5) * 5);
 
 const switcherooEconomyFor = (entryFee, playerCount) => {
-  const fee = Math.max(1, Math.round(Number(entryFee) || 1));
+  const fee = Math.max(0, Math.round(Number(entryFee) || 0));
   const count = Math.max(0, Number(playerCount) || 0);
   const entryPot = fee * count;
   const baseGoal = roundUpToFive(entryPot * 0.5);
@@ -292,7 +293,7 @@ export default function MuchoTourney() {
     Math.max(2, Number(t.switcheroo?.maxTeams || 4))
   );
   const switcherooEconomy = switcherooEconomyFor(
-    t.switcheroo?.entryFee || 5,
+    t.switcheroo?.entryFee ?? 5,
     switcherooPoolSize
   );
   const currentRerollStep = Math.max(5, Number(t.switcheroo?.rerollStep || switcherooEconomy.firstMargin));
@@ -342,8 +343,8 @@ export default function MuchoTourney() {
   const patchSwitcheroo = (value) => {
     const nextEntryFee =
       value?.entryFee !== undefined
-        ? Math.max(1, Number(value.entryFee) || 1)
-        : Number(t.switcheroo?.entryFee || 5);
+        ? Math.max(0, Number(value.entryFee) || 0)
+        : Number(t.switcheroo?.entryFee ?? 5);
     const economy = switcherooEconomyFor(nextEntryFee, switcherooPoolSize);
 
     save({
@@ -400,7 +401,7 @@ export default function MuchoTourney() {
 
   const setSwitcherooPool = (nextPool) => {
     const economy = switcherooEconomyFor(
-      t.switcheroo?.entryFee || 5,
+      t.switcheroo?.entryFee ?? 5,
       nextPool.length
     );
     save({
@@ -449,7 +450,7 @@ export default function MuchoTourney() {
       toast.error("Add a tournament name before publishing");
       return;
     }
-    if (!String(t.switcheroo?.paypalUrl || "").trim()) {
+    if (!t.switcheroo?.freeEntry && !String(t.switcheroo?.paypalUrl || "").trim()) {
       toast.error("Add your PayPal link before publishing");
       return;
     }
@@ -486,7 +487,7 @@ export default function MuchoTourney() {
       toast.error("Add a tournament name before publishing");
       return;
     }
-    if (!String(t.switcheroo?.paypalUrl || "").trim()) {
+    if (!t.switcheroo?.freeEntry && !String(t.switcheroo?.paypalUrl || "").trim()) {
       toast.error("Add your PayPal link before publishing");
       return;
     }
@@ -496,7 +497,7 @@ export default function MuchoTourney() {
     }
 
     const economy = switcherooEconomyFor(
-      t.switcheroo?.entryFee || 5,
+      t.switcheroo?.entryFee ?? 5,
       classicRosterPlayers.length
     );
 
@@ -727,7 +728,7 @@ export default function MuchoTourney() {
     const reviewMinutes = Math.max(1, Number(t.switcheroo?.reviewMinutes || 5));
     const reviewEndsAt = new Date(Date.now() + reviewMinutes * 60 * 1000).toISOString();
     const economy = switcherooEconomyFor(
-      t.switcheroo?.entryFee || 5,
+      t.switcheroo?.entryFee ?? 5,
       (t.switcheroo?.pool || []).length
     );
 
@@ -1135,7 +1136,7 @@ export default function MuchoTourney() {
                 <div>
                   <div className="text-[9px] tracking-[.16em] text-[#FF4FA3] font-black">TOURNAMENT ENTRY</div>
                   <h2 className="font-display text-lg font-black mt-1">
-                    €{Number(t.switcheroo.entryFee || 5)} per player
+                    €{Number(t.switcheroo.entryFee ?? 5)} per player
                   </h2>
                   <div className="text-[10px] text-muted-foreground mt-1">
                     {entryPaidIds.size}/{switcherooPoolSize} confirmed · starting re-spin goal €{switcherooEconomy.baseGoal}
@@ -1202,7 +1203,7 @@ export default function MuchoTourney() {
               selected={t.switcheroo?.pool || []}
               paidIds={entryPaidIds}
               pendingIds={entryPendingIds}
-              entryFee={Number(t.switcheroo?.entryFee || 5)}
+              entryFee={Number(t.switcheroo?.entryFee ?? 5)}
               onChange={setSwitcherooPool}
             />
           ) : (
@@ -1283,7 +1284,7 @@ export default function MuchoTourney() {
                             ? "✓ PAID"
                             : pending
                               ? "PAYMENT PENDING"
-                              : `€${Number(t.switcheroo.entryFee || 5)} DUE`
+                              : `€${Number(t.switcheroo.entryFee ?? 5)} DUE`
                           : player.currentElo + " ELO"}
                       </span>
                     </button>
@@ -1580,7 +1581,9 @@ export default function MuchoTourney() {
                       TOURNAMENT ENTRY
                     </div>
                     <div className="text-[10px] text-muted-foreground mt-1">
-                      €{Number(t.switcheroo?.entryFee || 5)} / player · {entryPaidIds.size}/{classicRosterPlayers.length} confirmed
+                      {t.switcheroo?.freeEntry
+                        ? "FREE ENTRY"
+                        : `€${Number(t.switcheroo?.entryFee ?? 5)} / player`} · {entryPaidIds.size}/{classicRosterPlayers.length} confirmed
                     </div>
                   </div>
                   {classicEntryPublished && (
