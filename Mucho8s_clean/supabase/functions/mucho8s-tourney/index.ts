@@ -110,6 +110,40 @@ const makeSwitcherooTeams = (pool: any[], format: unknown, generation: number) =
   return teams;
 };
 
+const buildPayPalPaymentUrl = (rawValue: unknown, amount: number) => {
+  const raw = String(rawValue || "").trim();
+  if (!raw) throw new Error("Admin must configure the PayPal link first");
+
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new Error("Invalid PayPal link");
+  }
+
+  if (url.protocol !== "https:") {
+    throw new Error("PayPal link must use HTTPS");
+  }
+
+  const host = url.hostname.toLowerCase();
+  const allowed =
+    host === "paypal.me" ||
+    host.endsWith(".paypal.me") ||
+    host === "paypal.com" ||
+    host.endsWith(".paypal.com");
+
+  if (!allowed) throw new Error("Use a paypal.me or paypal.com link");
+
+  if ((host === "paypal.me" || host.endsWith(".paypal.me")) && amount > 0) {
+    const parts = url.pathname.split("/").filter(Boolean);
+    if (parts.length === 1) {
+      url.pathname = `/${parts[0]}/${amount}`;
+    }
+  }
+
+  return url.toString();
+};
+
 const normalizeExpiredReview = async (supabase: any, row: any) => {
   const state = row?.state && typeof row.state === "object" ? { ...row.state } : null;
   if (!state || state.status !== "review") return row;
@@ -206,7 +240,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    if (action === "contribute") {
+    if (action === "request-payment") {
       const actor = await validatePlayer(req, supabase);
       if (!actor) {
         return json(req, { error: "A linked Discord player account is required" }, 401);
@@ -228,7 +262,7 @@ Deno.serve(async (req: Request) => {
       const state = row?.state && typeof row.state === "object" ? row.state : null;
 
       if (!state || state.status !== "review" || state.teamBuild !== "switcheroo") {
-        return json(req, { error: "Switcheroo contributions are not open" }, 409);
+        return json(req, { error: "Switcheroo payments are not open" }, 409);
       }
 
       const switcheroo =
@@ -240,7 +274,6 @@ Deno.serve(async (req: Request) => {
       const participant = pool.some(
         (player: any) => String(player?.id || "") === actor.playerId
       );
-
       if (!participant) {
         return json(req, { error: "Only tournament players can contribute" }, 403);
       }
@@ -256,38 +289,188 @@ Deno.serve(async (req: Request) => {
         return json(req, { error: "Switcheroo review has ended" }, 409);
       }
 
-      const goal = Math.max(1, Math.round(Number(switcheroo.rerollGoal || 1)));
-      const currentTotal = Math.max(0, Math.round(Number(switcheroo.contributedTotal || 0)));
-      const remaining = Math.max(0, goal - currentTotal);
-      if (remaining <= 0) {
-        return json(req, { error: "Re-roll goal already reached" }, 409);
+      const pendingPayments = Array.isArray(switcheroo.pendingPayments)
+        ? switcheroo.pendingPayments
+        : [];
+
+      const existingPending = pendingPayments.find(
+        (payment: any) => String(payment?.playerId || "") === actor.playerId
+      );
+      if (existingPending) {
+        return json(req, { error: "You already have a PayPal payment waiting for Admin confirmation" }, 409);
       }
 
-      const acceptedAmount = Math.min(requestedAmount, remaining);
-      const contribution = {
+      const goal = Math.max(1, Math.round(Number(switcheroo.rerollGoal || 1)));
+      const currentTotal = Math.max(0, Math.round(Number(switcheroo.contributedTotal || 0)));
+      const reserved = pendingPayments.reduce(
+        (sum: number, payment: any) => sum + Math.max(0, Math.round(Number(payment?.amount || 0))),
+        0
+      );
+      const available = Math.max(0, goal - currentTotal - reserved);
+
+      if (available <= 0) {
+        return json(req, { error: "Enough PayPal payments are already waiting for confirmation" }, 409);
+      }
+
+      const amount = Math.min(requestedAmount, available);
+      const paymentUrl = buildPayPalPaymentUrl(switcheroo.paypalUrl, amount);
+      const pending = {
         id: crypto.randomUUID(),
         playerId: actor.playerId,
         name: actor.name,
-        amount: acceptedAmount,
-        at: new Date().toISOString(),
+        amount,
+        requestedAt: new Date().toISOString(),
       };
 
+      const nextState = {
+        ...state,
+        switcheroo: {
+          ...switcheroo,
+          pendingPayments: [...pendingPayments, pending],
+        },
+      };
+
+      const { data: updated, error: updateError } = await supabase
+        .from("tourney_state")
+        .update({
+          state: nextState,
+          status: "review",
+          updated_at: new Date().toISOString(),
+          updated_by: `player:${actor.playerId}:paypal-request`,
+        })
+        .eq("id", "current")
+        .select("state,status,updated_at")
+        .single();
+
+      if (updateError) throw updateError;
+
+      return json(req, {
+        ok: true,
+        amount,
+        paymentId: pending.id,
+        paymentUrl,
+        tourney: updated.state,
+        status: updated.status,
+        updatedAt: updated.updated_at,
+      });
+    }
+
+    if (action === "review-payment") {
+      const admin = await validateAdmin(req, supabase);
+      if (!admin) return json(req, { error: "Admin access required" }, 401);
+
+      const paymentId = String(body.paymentId || "").trim();
+      const decision = String(body.decision || "").trim().toLowerCase();
+      if (!paymentId || !["confirm", "reject"].includes(decision)) {
+        return json(req, { error: "Invalid PayPal payment review" }, 400);
+      }
+
+      const { data: rawRow, error: stateError } = await supabase
+        .from("tourney_state")
+        .select("state,status,updated_at")
+        .eq("id", "current")
+        .single();
+
+      if (stateError) throw stateError;
+      const state = rawRow?.state && typeof rawRow.state === "object" ? rawRow.state : null;
+      if (!state || state.teamBuild !== "switcheroo") {
+        return json(req, { error: "No Switcheroo tournament found" }, 409);
+      }
+
+      const switcheroo =
+        state.switcheroo && typeof state.switcheroo === "object"
+          ? { ...state.switcheroo }
+          : {};
+
+      const pendingPayments = Array.isArray(switcheroo.pendingPayments)
+        ? switcheroo.pendingPayments
+        : [];
+      const pending = pendingPayments.find(
+        (payment: any) => String(payment?.id || "") === paymentId
+      );
+
+      if (!pending) {
+        return json(req, { error: "Pending PayPal payment not found" }, 404);
+      }
+
+      const remainingPending = pendingPayments.filter(
+        (payment: any) => String(payment?.id || "") !== paymentId
+      );
+
+      if (decision === "reject") {
+        const nextState = {
+          ...state,
+          switcheroo: {
+            ...switcheroo,
+            pendingPayments: remainingPending,
+          },
+        };
+
+        const { data: updated, error: updateError } = await supabase
+          .from("tourney_state")
+          .update({
+            state: nextState,
+            status: String(state.status || "review"),
+            updated_at: new Date().toISOString(),
+            updated_by: `${admin.username}:paypal-reject`,
+          })
+          .eq("id", "current")
+          .select("state,status,updated_at")
+          .single();
+
+        if (updateError) throw updateError;
+        return json(req, {
+          ok: true,
+          decision,
+          rerolled: false,
+          tourney: updated.state,
+          status: updated.status,
+          updatedAt: updated.updated_at,
+        });
+      }
+
+      if (state.status !== "review") {
+        return json(req, { error: "Switcheroo review is no longer open" }, 409);
+      }
+
+      const reviewEndsAt = new Date(switcheroo.reviewEndsAt || 0).getTime();
+      if (!reviewEndsAt || reviewEndsAt <= Date.now()) {
+        return json(req, { error: "Switcheroo review has ended" }, 409);
+      }
+
+      const goal = Math.max(1, Math.round(Number(switcheroo.rerollGoal || 1)));
+      const currentTotal = Math.max(0, Math.round(Number(switcheroo.contributedTotal || 0)));
+      const amount = Math.max(0, Math.round(Number(pending.amount || 0)));
+      const nextTotal = Math.min(goal, currentTotal + amount);
+      const contribution = {
+        id: pending.id,
+        playerId: pending.playerId,
+        name: pending.name,
+        amount,
+        at: new Date().toISOString(),
+        confirmedBy: admin.username,
+      };
       const contributions = [
         ...(Array.isArray(switcheroo.contributions) ? switcheroo.contributions : []),
         contribution,
       ];
-      const nextTotal = currentTotal + acceptedAmount;
+
       let nextState: any = {
         ...state,
         switcheroo: {
           ...switcheroo,
+          pendingPayments: remainingPending,
           contributions,
           contributedTotal: nextTotal,
         },
       };
       let rerolled = false;
 
-      if (nextTotal >= goal) {
+      const maxRerolls = Math.max(0, Number(switcheroo.maxRerolls || 0));
+      const rerollsUsed = Math.max(0, Number(switcheroo.rerollsUsed || 0));
+
+      if (nextTotal >= goal && rerollsUsed < maxRerolls) {
+        const pool = Array.isArray(switcheroo.pool) ? switcheroo.pool : [];
         const rosterSize = rosterSizeFor(state.format);
         if (pool.length < rosterSize * 2 || pool.length % rosterSize !== 0) {
           return json(req, { error: "Switcheroo player pool is no longer valid" }, 409);
@@ -311,6 +494,7 @@ Deno.serve(async (req: Request) => {
             reviewEndsAt: new Date(Date.now() + reviewMinutes * 60 * 1000).toISOString(),
             contributedTotal: 0,
             contributions: [],
+            pendingPayments: [],
             phase: "review",
             history: [
               ...(Array.isArray(switcheroo.history) ? switcheroo.history : []),
@@ -333,7 +517,7 @@ Deno.serve(async (req: Request) => {
           state: nextState,
           status: String(nextState.status || "review"),
           updated_at: new Date().toISOString(),
-          updated_by: `player:${actor.playerId}`,
+          updated_by: `${admin.username}:paypal-confirm`,
         })
         .eq("id", "current")
         .select("state,status,updated_at")
@@ -343,8 +527,9 @@ Deno.serve(async (req: Request) => {
 
       return json(req, {
         ok: true,
+        decision,
         rerolled,
-        acceptedAmount,
+        confirmedAmount: amount,
         tourney: updated.state,
         status: updated.status,
         updatedAt: updated.updated_at,
