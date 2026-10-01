@@ -15,6 +15,7 @@ import { PlayerAvatar, EloBadge } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { playUiSound } from "@/lib/uiAudio";
 
 const StepRow = ({ number, title, text, children }) => (
   <div className="m8-play-step">
@@ -140,6 +141,7 @@ export default function Play() {
   const numericAmount = Number(String(amount).replace(",", "."));
 
   const chooseTarget = (playerId) => {
+    void playUiSound("select", "mucho1v1");
     setTargetId(playerId);
 
     const profile = playerProfiles?.[playerId] || null;
@@ -162,6 +164,7 @@ export default function Play() {
   );
 
   const openMucho8s = async () => {
+    void playUiSound("next", "mucho8s");
     if (isAdmin) {
       navigate("/team-builder");
       return;
@@ -181,6 +184,7 @@ export default function Play() {
   };
 
   const sendQuickChallenge = async () => {
+    void playUiSound("confirm", "mucho1v1");
     if (!discordSession) {
       await signInWithDiscord();
       return;
@@ -411,7 +415,10 @@ export default function Play() {
                     <button
                       key={value}
                       type="button"
-                      onClick={() => setAmount(String(value))}
+                      onClick={() => {
+                        void playUiSound("money", "mucho1v1");
+                        setAmount(String(value));
+                      }}
                       className={`h-9 min-w-12 px-3 rounded-lg border text-[11px] font-black transition-all ${
                         String(amount) === String(value)
                           ? "bg-emerald-400 text-black border-emerald-400"
@@ -456,7 +463,10 @@ export default function Play() {
                         key={key}
                         type="button"
                         disabled={unavailable}
-                        onClick={() => setPlatform(key)}
+                        onClick={() => {
+                          void playUiSound("select", "mucho1v1");
+                          setPlatform(key);
+                        }}
                         title={
                           unavailable
                             ? `${target?.name || "Player"} has not linked ${label}`
@@ -554,7 +564,10 @@ export default function Play() {
             {isAdmin ? (
               <button
                 type="button"
-                onClick={() => navigate("/tourney")}
+                onClick={() => {
+                  void playUiSound("next", "tourney");
+                  navigate("/tourney");
+                }}
                 className="m8-play-tourney-soon group cursor-pointer hover:border-[#D5A33A]/45 hover:bg-[#D5A33A]/[0.07] transition-all"
                 data-testid="open-muchotourney-admin"
               >
