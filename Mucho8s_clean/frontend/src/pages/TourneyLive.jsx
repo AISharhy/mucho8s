@@ -189,6 +189,7 @@ export default function TourneyLive() {
       ? liveDraw.remaining
       : pool;
     const drawIndex = Number(liveDraw?.drawIndex || 0);
+    const spinSignal = Number(liveDraw?.spinSignal || 0);
     const assigned = Math.max(0, pool.length - remainingPlayers.length);
 
     return (
@@ -244,7 +245,7 @@ export default function TourneyLive() {
                         ? "All entry fees confirmed · waiting for Admin to start the live draw"
                         : "Tournament is online · entry payments are open"
                   }
-                  spinSignal={drawing ? drawIndex : 0}
+                  spinSignal={drawing ? spinSignal : 0}
                   sizeClass="w-[82vw] h-[82vw] max-w-[580px] max-h-[580px] min-w-[310px] min-h-[310px]"
                 />
               </div>
@@ -262,9 +263,14 @@ export default function TourneyLive() {
                             Building the teams
                           </div>
                         </div>
+                        <div className="text-right">
                         <div className="font-mono text-sm font-black text-[#FF9DCE]">
                           {assigned}/{pool.length}
                         </div>
+                        <div className="text-[9px] text-muted-foreground mt-0.5">
+                          {liveDraw?.spinning ? "WHEEL SPINNING…" : "PLAYERS ASSIGNED"}
+                        </div>
+                      </div>
                       </div>
 
                       {liveDraw?.lastPlayer && (
