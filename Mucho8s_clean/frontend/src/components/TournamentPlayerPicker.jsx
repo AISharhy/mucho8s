@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { GripVertical, Plus, Search, UserPlus, UsersRound, X } from "lucide-react";
+import { playUiSound } from "@/lib/uiAudio";
 
 export default function TournamentPlayerPicker({
   players = [],
@@ -31,11 +32,13 @@ export default function TournamentPlayerPicker({
 
   const add = (player) => {
     if (disabled || !player || selectedIds.has(String(player.id))) return;
+    void playUiSound("select", "switcheroo");
     onChange?.([...(selected || []), { id: player.id, name: player.name }]);
   };
 
   const remove = (player) => {
     if (disabled) return;
+    void playUiSound("back", "switcheroo");
     onChange?.((selected || []).filter((row) => String(row.id) !== String(player.id)));
   };
 
@@ -47,6 +50,7 @@ export default function TournamentPlayerPicker({
     if (from < 0 || to < 0) return;
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved);
+    void playUiSound("click", "switcheroo");
     onChange?.(next);
     setDragId(null);
   };
