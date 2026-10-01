@@ -589,6 +589,30 @@ export default function MuchoTourney() {
     toast.success("Switcheroo complete · review phase started");
   };
 
+  const syncSwitcherooSpinStart = (spinState) => {
+    if (!spinState || switcherooDraw?.mode !== "new") return;
+
+    const currentLiveDraw = t.switcheroo?.liveDraw || {};
+    save({
+      ...t,
+      status: "setup",
+      switcheroo: {
+        ...t.switcheroo,
+        setupStage: "published",
+        phase: "drawing",
+        generation: 1,
+        liveDraw: {
+          ...currentLiveDraw,
+          spinSignal: Number(currentLiveDraw.spinSignal || 0) + 1,
+          spinning: true,
+          pendingPlayerId: spinState.player?.id || null,
+          targetTeamIndex: spinState.targetTeamIndex,
+          spinStartedAt: new Date().toISOString(),
+        },
+      },
+    });
+  };
+
   const syncSwitcherooDrawProgress = (progressState) => {
     if (!progressState || switcherooDraw?.mode !== "new") return;
 
@@ -608,6 +632,9 @@ export default function MuchoTourney() {
           lastPlayer: progressState.lastPlayer,
           targetTeamIndex: progressState.targetTeamIndex,
           complete: progressState.complete,
+          spinSignal: Number(t.switcheroo?.liveDraw?.spinSignal || progressState.drawIndex || 0),
+          spinning: false,
+          pendingPlayerId: null,
         },
       },
     });
@@ -1721,6 +1748,9 @@ export default function MuchoTourney() {
             title={switcherooDraw.mode === "new" ? "SWITCHEROO DRAW" : "RE-SWITCHEROO"}
             onProgress={
               switcherooDraw.mode === "new" ? syncSwitcherooDrawProgress : undefined
+            }
+            onSpinStart={
+              switcherooDraw.mode === "new" ? syncSwitcherooSpinStart : undefined
             }
             onClose={() => {
               if (switcherooDraw.mode === "new") {
