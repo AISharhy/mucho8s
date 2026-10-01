@@ -248,6 +248,11 @@ export default function TeamBuilder() {
     [manualB, contextualPlayerMap]
   );
 
+  const manualUnassigned = useMemo(
+    () => selected.filter((id) => !manualA.includes(id) && !manualB.includes(id)),
+    [selected, manualA, manualB]
+  );
+
   const filtered = useMemo(
     () =>
       players.filter((player) =>
@@ -1182,55 +1187,182 @@ export default function TeamBuilder() {
 
             {teamMethod === "manual" && validLobby && (
               <div className="mt-4 pt-4 border-t border-[#222834]">
-                <div className="flex items-center justify-between gap-3 mb-2">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                   <div>
-                    <div className="text-[10px] uppercase tracking-widest text-[#697181]">Manual split</div>
-                    <div className="text-xs font-bold mt-0.5">Assign every player with one dropdown.</div>
+                    <div className="text-[10px] uppercase tracking-widest text-[#697181]">Manual teams</div>
+                    <div className="text-xs font-bold mt-0.5">
+                      One click to assign. Move or remove players directly from each team.
+                    </div>
                   </div>
-                  <div className="font-mono text-[10px] text-muted-foreground">
-                    A {manualA.length}/{perTeam} · B {manualB.length}/{perTeam}
+
+                  <div className="flex items-center gap-2">
+                    <div className="font-mono text-[10px] text-muted-foreground">
+                      A {manualA.length}/{perTeam} · B {manualB.length}/{perTeam}
+                    </div>
+                    {(manualA.length > 0 || manualB.length > 0) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setResult(null);
+                          setManualA([]);
+                          setManualB([]);
+                        }}
+                        className="h-8 px-2.5 rounded-lg border border-[#2A303B] bg-[#11151C] text-[10px] font-bold text-muted-foreground hover:text-white hover:border-[#414A58] transition-colors inline-flex items-center gap-1.5"
+                      >
+                        <RotateCcw size={11} />
+                        Reset
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {selected.map((id) => {
-                    const player = contextualPlayerMap[id];
-                    if (!player) return null;
-                    const currentSide = manualA.includes(id) ? "A" : manualB.includes(id) ? "B" : "";
-                    return (
-                      <div key={id} className="rounded-xl border border-[#222834] bg-[#10151D] px-3 py-2 flex items-center gap-3">
-                        <span className="text-xs font-semibold truncate flex-1">{player.name}</span>
-                        <select
-                          value={currentSide}
-                          onChange={(event) => {
-                            const side = event.target.value;
-                            setResult(null);
-                            setManualA((prev) => prev.filter((item) => item !== id));
-                            setManualB((prev) => prev.filter((item) => item !== id));
-                            if (side === "A") {
-                              if (manualA.length >= perTeam && !manualA.includes(id)) {
-                                toast.error("Alpha is already full");
-                                return;
-                              }
-                              setManualA((prev) => [...prev.filter((item) => item !== id), id]);
-                            }
-                            if (side === "B") {
-                              if (manualB.length >= perTeam && !manualB.includes(id)) {
-                                toast.error("Bravo is already full");
-                                return;
-                              }
-                              setManualB((prev) => [...prev.filter((item) => item !== id), id]);
-                            }
-                          }}
-                          className="h-9 min-w-[130px] rounded-lg bg-[#151923] border border-[#2A303B] px-2 text-xs font-semibold"
-                        >
-                          <option value="">Choose team...</option>
-                          <option value="A">Alpha</option>
-                          <option value="B">Bravo</option>
-                        </select>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  {[
+                    ["A", "Alpha", manualA, "text-magma", "border-magma/25 bg-magma/[0.035]"],
+                    ["B", "Bravo", manualB, "text-[#65D5D3]", "border-[#65D5D3]/25 bg-[#65D5D3]/[0.035]"],
+                  ].map(([side, label, ids, tone, shell]) => (
+                    <div key={side} className={"rounded-xl border p-3 " + shell}>
+                      <div className="flex items-center justify-between gap-2 mb-2.5">
+                        <div className={"text-[10px] uppercase tracking-[0.16em] font-black " + tone}>
+                          {label}
+                        </div>
+                        <span className="font-mono text-[10px] text-muted-foreground">
+                          {ids.length}/{perTeam}
+                        </span>
                       </div>
-                    );
-                  })}
+
+                      <div className="space-y-1.5">
+                        {ids.map((id) => {
+                          const player = contextualPlayerMap[id];
+                          if (!player) return null;
+                          const otherSide = side === "A" ? "B" : "A";
+                          const otherFull = otherSide === "A" ? manualA.length >= perTeam : manualB.length >= perTeam;
+
+                          return (
+                            <div
+                              key={id}
+                              className={"min-h-[46px] rounded-lg border border-[#242B35] bg-[#0E131A] px-2.5 py-2 flex items-center gap-2 " + merdaSurfaceClass(player.merdaCount)}
+                            >
+                              <PlayerAvatar
+                                name={player.name}
+                                elo={player.currentElo}
+                                size={28}
+                                avatarUrl={playerAvatars[player.id]}
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="text-xs font-bold truncate">{player.name}</div>
+                                <div className="font-mono text-[9px] text-muted-foreground">
+                                  {Math.round(Number(player.currentElo) || 0)} Elo
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => assignManual(id, otherSide)}
+                                disabled={otherFull}
+                                className="h-7 px-2 rounded-md border border-[#303846] bg-[#151A22] text-[9px] font-black text-[#C5CBD5] hover:text-white hover:border-[#4A5564] disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                                title={otherFull ? (otherSide === "A" ? "Alpha is full" : "Bravo is full") : "Move to " + (otherSide === "A" ? "Alpha" : "Bravo")}
+                              >
+                                → {otherSide}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => assignManual(id, side)}
+                                className="w-7 h-7 rounded-md border border-[#303846] bg-[#151A22] text-[13px] text-muted-foreground hover:text-white hover:border-[#4A5564] transition-colors"
+                                aria-label={"Remove " + player.name + " from " + label}
+                                title="Unassign"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          );
+                        })}
+
+                        {Array.from({ length: Math.max(0, perTeam - ids.length) }).map((_, index) => (
+                          <div
+                            key={"slot-" + side + "-" + index}
+                            className="h-[46px] rounded-lg border border-dashed border-[#2A303A] bg-black/[0.08] flex items-center justify-center text-[9px] uppercase tracking-[0.14em] text-[#4F5866]"
+                          >
+                            Empty slot
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-3 rounded-xl border border-[#222834] bg-[#0F141B] p-3">
+                  <div className="flex items-center justify-between gap-3 mb-2.5">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-[0.16em] text-[#697181]">Players to assign</div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5">
+                        {manualUnassigned.length
+                          ? "Tap A or B. No dropdowns."
+                          : "Teams complete. You can build the match."}
+                      </div>
+                    </div>
+                    <span className="font-mono text-[10px] text-muted-foreground">
+                      {manualUnassigned.length} left
+                    </span>
+                  </div>
+
+                  {manualUnassigned.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {manualUnassigned.map((id) => {
+                        const player = contextualPlayerMap[id];
+                        if (!player) return null;
+                        const alphaFull = manualA.length >= perTeam;
+                        const bravoFull = manualB.length >= perTeam;
+
+                        return (
+                          <div
+                            key={id}
+                            className={"rounded-xl border border-[#242B35] bg-[#12171F] px-3 py-2.5 flex items-center gap-2.5 " + merdaSurfaceClass(player.merdaCount)}
+                          >
+                            <PlayerAvatar
+                              name={player.name}
+                              elo={player.currentElo}
+                              size={30}
+                              avatarUrl={playerAvatars[player.id]}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="text-xs font-bold truncate">{player.name}</div>
+                              <div className="font-mono text-[9px] text-muted-foreground">
+                                {Math.round(Number(player.currentElo) || 0)} Elo
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => assignManual(id, "A")}
+                                disabled={alphaFull}
+                                className="w-8 h-8 rounded-lg border border-magma/35 bg-magma/[0.06] text-magma text-[11px] font-black hover:bg-magma/[0.13] disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                                title={alphaFull ? "Alpha is full" : "Assign to Alpha"}
+                              >
+                                A
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => assignManual(id, "B")}
+                                disabled={bravoFull}
+                                className="w-8 h-8 rounded-lg border border-[#65D5D3]/35 bg-[#65D5D3]/[0.06] text-[#65D5D3] text-[11px] font-black hover:bg-[#65D5D3]/[0.13] disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                                title={bravoFull ? "Bravo is full" : "Assign to Bravo"}
+                              >
+                                B
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="h-12 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.05] flex items-center justify-center gap-2 text-[11px] font-bold text-emerald-400">
+                      <Check size={13} />
+                      Manual teams ready
+                    </div>
+                  )}
                 </div>
               </div>
             )}
