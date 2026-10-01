@@ -363,12 +363,40 @@ Deno.serve(async (req: Request) => {
           ? { ...state.switcheroo }
           : {};
 
-      const pool = Array.isArray(switcheroo.pool) ? switcheroo.pool : [];
-      const participant = pool.find(
+      if (
+        switcheroo.setupStage !== "published" ||
+        !["published", "idle"].includes(String(switcheroo.phase || "published"))
+      ) {
+        return json(req, { error: "Tournament registration is not open" }, 409);
+      }
+
+      const registrationMode =
+        String(switcheroo.registrationMode || "manual") === "open"
+          ? "open"
+          : "manual";
+      const maxTeams = Math.min(8, Math.max(2, Number(switcheroo.maxTeams || 4)));
+      const maxPlayers = rosterSizeFor(state.format) * maxTeams;
+
+      let pool = Array.isArray(switcheroo.pool) ? [...switcheroo.pool] : [];
+      let participant = pool.find(
         (player: any) => String(player?.id || "") === actor.playerId
       );
+
       if (!participant) {
-        return json(req, { error: "You are not in the Switcheroo tournament pool" }, 403);
+        if (registrationMode !== "open") {
+          return json(req, { error: "You are not in the Switcheroo tournament pool" }, 403);
+        }
+        if (pool.length >= maxPlayers) {
+          return json(req, { error: "Tournament registration is full" }, 409);
+        }
+
+        participant = {
+          id: actor.playerId,
+          name: actor.name,
+          registeredAt: new Date().toISOString(),
+          registrationSource: "open",
+        };
+        pool.push(participant);
       }
 
       const entryPaid = Array.isArray(switcheroo.entryPaid) ? switcheroo.entryPaid : [];
@@ -395,12 +423,16 @@ Deno.serve(async (req: Request) => {
         amount: economy.entryFee,
         requestedAt: new Date().toISOString(),
         type: "entry",
+        openRegistration: registrationMode === "open",
       };
 
       const nextState = {
         ...state,
         switcheroo: {
           ...switcheroo,
+          registrationMode,
+          maxTeams,
+          pool,
           entryFee: economy.entryFee,
           rerollBaseGoal: economy.baseGoal,
           rerollGoal: economy.baseGoal,
@@ -429,6 +461,8 @@ Deno.serve(async (req: Request) => {
         amount: economy.entryFee,
         paymentId: pending.id,
         paymentUrl,
+        registered: true,
+        openRegistration: registrationMode === "open",
         tourney: updated.state,
         status: updated.status,
         updatedAt: updated.updated_at,
@@ -494,13 +528,27 @@ Deno.serve(async (req: Request) => {
         });
       }
 
-      const pool = Array.isArray(switcheroo.pool) ? switcheroo.pool : [];
+      let pool = Array.isArray(switcheroo.pool) ? [...switcheroo.pool] : [];
+      if (
+        decision === "reject" &&
+        pending.openRegistration &&
+        !entryPaid.some(
+          (row: any) => String(row?.playerId || "") === String(pending.playerId || "")
+        )
+      ) {
+        pool = pool.filter(
+          (player: any) =>
+            String(player?.id || "") !== String(pending.playerId || "")
+        );
+      }
+
       const economy = switcherooEconomy(switcheroo.entryFee, pool.length);
 
       const nextState = {
         ...state,
         switcheroo: {
           ...switcheroo,
+          pool,
           entryFee: economy.entryFee,
           entryPaid,
           entryPendingPayments: remainingPending,
