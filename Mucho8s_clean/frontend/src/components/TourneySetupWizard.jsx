@@ -186,9 +186,7 @@ export default function TourneySetupWizard({
   const canContinue = (() => {
     if (current.key === "identity") {
       if (!String(tournament.name || "").trim()) return false;
-      if (isSwitcheroo && !String(tournament.switcheroo?.paypalUrl || "").trim()) {
-        return false;
-      }
+      if (!String(tournament.switcheroo?.paypalUrl || "").trim()) return false;
     }
     return true;
   })();
@@ -379,6 +377,79 @@ export default function TourneySetupWizard({
                         />
                       </div>
                     </div>
+
+                    {!isSwitcheroo && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="rounded-2xl border border-[#D5A33A]/20 bg-[#D5A33A]/[0.04] p-4 space-y-4"
+                      >
+                        <div>
+                          <div className="text-[9px] tracking-[.16em] text-[#D5A33A] font-black">
+                            TOURNAMENT ENTRY
+                          </div>
+                          <div className="text-[10px] text-muted-foreground mt-1">
+                            Classic MuchoTourney uses the players assigned to team rosters. Once published, each roster player confirms the entry and pays before the bracket can start.
+                          </div>
+                        </div>
+
+                        <div className="grid sm:grid-cols-2 gap-3">
+                          <label>
+                            <span className="text-[9px] tracking-[.14em] text-[#697181] font-black">
+                              ENTRY FEE / PLAYER
+                            </span>
+                            <div className="relative mt-2">
+                              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-white/35">
+                                €
+                              </span>
+                              <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={tournament.switcheroo?.entryFee || 5}
+                                disabled={paymentsLocked}
+                                onChange={(event) =>
+                                  onPatchSwitcheroo({
+                                    entryFee: Math.max(
+                                      1,
+                                      Number(event.target.value) || 1
+                                    ),
+                                    registrationMode: "manual",
+                                  })
+                                }
+                                className="w-full h-12 rounded-xl bg-[#111720] border border-[#D5A33A]/25 pl-9 pr-3 text-sm font-black disabled:opacity-35"
+                              />
+                            </div>
+                          </label>
+
+                          <div>
+                            <span className="text-[9px] tracking-[.14em] text-[#697181] font-black">
+                              ENTRY METHOD
+                            </span>
+                            <div className="mt-2 h-12 rounded-xl border border-[#D5A33A]/20 bg-[#D5A33A]/[0.05] px-3 flex items-center text-xs font-black text-[#F4CE70]">
+                              TEAM ROSTER PLAYERS
+                            </div>
+                          </div>
+                        </div>
+
+                        <label className="block">
+                          <span className="text-[9px] tracking-[.14em] text-[#697181] font-black">
+                            PAYPAL LINK
+                          </span>
+                          <input
+                            value={tournament.switcheroo?.paypalUrl || ""}
+                            onChange={(event) =>
+                              onPatchSwitcheroo({
+                                paypalUrl: event.target.value,
+                                registrationMode: "manual",
+                              })
+                            }
+                            placeholder="https://paypal.me/tuonome"
+                            className="mt-2 w-full h-12 rounded-xl bg-[#111720] border border-[#D5A33A]/25 px-4 text-sm"
+                          />
+                        </label>
+                      </motion.div>
+                    )}
 
                     {isSwitcheroo && (
                       <motion.div
@@ -713,6 +784,10 @@ export default function TourneySetupWizard({
                           "Type",
                           isSwitcheroo ? "SWITCHEROO" : "CLASSIC MUCHOTOURNEY",
                         ],
+                        [
+                          "Entry",
+                          `€${tournament.switcheroo?.entryFee || 5} / player`,
+                        ],
                         ["Game", tournament.game],
                         ["Format", tournament.format],
                         ["Mode", tournament.mode],
@@ -734,10 +809,6 @@ export default function TourneySetupWizard({
                                 tournament.switcheroo?.registrationMode === "open"
                                   ? "OPEN REGISTRATION"
                                   : "INVITED / SELECTED PLAYERS",
-                              ],
-                              [
-                                "Entry",
-                                `€${tournament.switcheroo?.entryFee || 5} / player`,
                               ],
                               [
                                 "Review",
