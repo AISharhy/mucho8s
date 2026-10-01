@@ -1,6 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Shuffle } from "lucide-react";
+import { Shuffle, Volume2, VolumeX } from "lucide-react";
+import {
+  isWheelSoundEnabled,
+  playWheelLand,
+  setWheelSoundEnabled,
+  startWheelSpinSfx,
+  stopWheelSpinSfx,
+  unlockWheelAudio,
+} from "@/lib/wheelAudio";
 
 const PALETTE = [
   "#FF4FA3",
@@ -45,7 +53,9 @@ export default function SwitcherooWheel({
 }) {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
+  const [soundOn, setSoundOn] = useState(isWheelSoundEnabled);
   const timerRef = useRef(null);
+  const cancelSpinSfxRef = useRef(null);
   const lastSignalRef = useRef(spinSignal);
 
   const displayPlayers = useMemo(() => {
@@ -95,6 +105,10 @@ export default function SwitcherooWheel({
     if (spinning || displayPlayers.length < 2) return;
     if (notify && disabled) return;
 
+    unlockWheelAudio();
+    if (cancelSpinSfxRef.current) cancelSpinSfxRef.current();
+    cancelSpinSfxRef.current = startWheelSpinSfx(3300);
+
     setSpinning(true);
     const extraTurns = 5 + Math.floor(Math.random() * 3);
     const landing = Math.floor(Math.random() * 360);
@@ -102,9 +116,12 @@ export default function SwitcherooWheel({
 
     if (timerRef.current) window.clearTimeout(timerRef.current);
     timerRef.current = window.setTimeout(() => {
+      stopWheelSpinSfx();
+      playWheelLand();
       setSpinning(false);
       if (notify) onSpinComplete?.();
       timerRef.current = null;
+      cancelSpinSfxRef.current = null;
     }, 3300);
   };
 
@@ -127,6 +144,7 @@ export default function SwitcherooWheel({
   useEffect(
     () => () => {
       if (timerRef.current) window.clearTimeout(timerRef.current);
+      if (cancelSpinSfxRef.current) cancelSpinSfxRef.current();
     },
     []
   );
@@ -222,8 +240,22 @@ export default function SwitcherooWheel({
         <div className="absolute inset-[2px] rounded-full border border-white/10 pointer-events-none z-20" />
       </button>
 
-      <div className="mt-3 text-[10px] text-muted-foreground text-center">
-        {spinning ? "Switcheroo is choosing…" : hint}
+      <div className="mt-3 flex items-center justify-center gap-2 text-[10px] text-muted-foreground text-center">
+        <span>{spinning ? "Switcheroo is choosing…" : hint}</span>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            const next = setWheelSoundEnabled(!soundOn);
+            setSoundOn(next);
+          }}
+          className="h-7 px-2 rounded-lg border border-[#2A303B] bg-[#10151D] inline-flex items-center gap-1.5 text-[9px] font-black hover:border-[#FF4FA3]/35 hover:text-[#FF9DCE]"
+          aria-label={soundOn ? "Mute wheel sounds" : "Enable wheel sounds"}
+          title={soundOn ? "Wheel sounds on" : "Wheel sounds off"}
+        >
+          {soundOn ? <Volume2 size={12} /> : <VolumeX size={12} />}
+          {soundOn ? "SOUND" : "MUTED"}
+        </button>
       </div>
     </div>
   );
