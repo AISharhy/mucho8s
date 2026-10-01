@@ -797,6 +797,52 @@ export default function MuchoTourney() {
           ))}
         </section>
 
+        {t.teamBuild === "switcheroo" && t.status === "setup" && (
+          <section className="m8-panel rounded-[22px] p-4 border border-[#FF4FA3]/15">
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                ["settings", "1", "SETTINGS"],
+                ["players", "2", "PLAYERS"],
+                ["published", "3", "ONLINE"],
+              ].map(([stage, number, label]) => {
+                const order = { settings: 0, players: 1, published: 2 };
+                const active = switcherooSetupStage === stage;
+                const complete = order[switcherooSetupStage] > order[stage];
+                return (
+                  <div
+                    key={stage}
+                    className={
+                      "rounded-xl border px-3 py-2 flex items-center gap-2 " +
+                      (active
+                        ? "border-[#FF4FA3]/45 bg-[#FF4FA3]/[0.08]"
+                        : complete
+                          ? "border-emerald-500/20 bg-emerald-500/[0.04]"
+                          : "border-[#252B36] bg-[#0D1219]")
+                    }
+                  >
+                    <span
+                      className={
+                        "w-6 h-6 rounded-full flex items-center justify-center font-mono text-[10px] font-black " +
+                        (active
+                          ? "bg-[#FF4FA3] text-black"
+                          : complete
+                            ? "bg-emerald-500 text-black"
+                            : "bg-[#1A202A] text-[#697181]")
+                      }
+                    >
+                      {number}
+                    </span>
+                    <span className="text-[9px] sm:text-[10px] tracking-[.12em] font-black">
+                      {label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {!(t.teamBuild === "switcheroo" && t.status === "setup" && switcherooSetupStage !== "settings") && (
         <section className="m8-panel rounded-[22px] p-5">
           <div className="flex items-center gap-2 mb-4">
             <Swords size={17} className="text-[#D5A33A]" />
@@ -1018,14 +1064,68 @@ export default function MuchoTourney() {
                   The same PayPal destination is used for tournament entry fees and Switcheroo re-spin contributions.
                 </div>
               </label>
+
+              {t.status === "setup" && switcherooSetupStage === "settings" && (
+                <button
+                  type="button"
+                  onClick={goToSwitcherooPlayers}
+                  className="mt-4 w-full h-12 rounded-xl bg-[#FF4FA3] hover:bg-[#FF69B4] text-black font-display font-black tracking-[.05em]"
+                >
+                  CONTINUE TO PLAYER SELECTION
+                </button>
+              )}
             </div>
           )}
         </section>
+        )}
 
-        {t.teamBuild === "switcheroo" ? (
+        {t.teamBuild === "switcheroo" && t.status === "setup" && switcherooSetupStage === "settings" ? null : t.teamBuild === "switcheroo" ? (
           <>
           {t.status === "setup" && (
             <section className="m8-panel rounded-[22px] p-5 border border-[#FF4FA3]/20">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-4 border-b border-[#FF4FA3]/15">
+                <div>
+                  <div className="text-[9px] tracking-[.16em] text-[#FF4FA3] font-black">
+                    {switcherooSetupStage === "published" ? "TOURNAMENT ONLINE" : "STEP 2 · PLAYER SELECTION"}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {switcherooSetupStage === "published"
+                      ? "The public MuchoTourney page is now showing the Switcheroo wheel."
+                      : "Choose the players, verify entry payments, then publish the tournament."}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {switcherooSetupStage === "players" && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        save({
+                          ...t,
+                          switcheroo: { ...t.switcheroo, setupStage: "settings", phase: "idle" },
+                        })
+                      }
+                      className="h-9 px-3 rounded-lg border border-[#2A303B] text-[9px] font-black"
+                    >
+                      BACK TO SETTINGS
+                    </button>
+                  )}
+                  {switcherooSetupStage === "players" && (
+                    <button
+                      type="button"
+                      onClick={publishSwitcheroo}
+                      disabled={!switcherooStructureReady}
+                      className="h-9 px-4 rounded-lg bg-[#FF4FA3] text-black text-[9px] font-black disabled:opacity-35"
+                    >
+                      PUBLISH TOURNAMENT
+                    </button>
+                  )}
+                  {switcherooSetupStage === "published" && (
+                    <span className="h-9 px-3 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.05] text-emerald-400 text-[9px] font-black flex items-center">
+                      ● ONLINE
+                    </span>
+                  )}
+                </div>
+              </div>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                   <div className="text-[9px] tracking-[.16em] text-[#FF4FA3] font-black">TOURNAMENT ENTRY</div>
@@ -1103,7 +1203,8 @@ export default function MuchoTourney() {
                 </span>
               </div>
 
-              <div className="mt-4 rounded-2xl border border-[#252B36] bg-[#0B0F15] p-4">
+              {(t.status !== "setup" || switcherooSetupStage === "published") && (
+              <div className="mt-4 rounded-2xl border border-[#FF4FA3]/20 bg-[#0B0F15] p-4">
                 <SwitcherooWheel
                   players={t.switcheroo.pool || []}
                   disabled={!switcherooStructureReady && t.status === "setup"}
@@ -1134,9 +1235,12 @@ export default function MuchoTourney() {
                   sizeClass="w-[250px] h-[250px] sm:w-[300px] sm:h-[300px]"
                 />
               </div>
+              )}
 
               <p className="text-[11px] text-muted-foreground mt-3">
-                Select the tournament players. The wheel stays on screen and creates complete {t.format} teams when you click it.
+                {switcherooSetupStage === "published"
+                  ? "Tournament published. Start the live draw from the wheel when entries are ready."
+                  : `Select the tournament players for ${t.format}. The wheel becomes public only after you publish the tournament.`}
               </p>
 
               <div className="mt-3 max-h-[430px] overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-1.5">
@@ -1149,7 +1253,7 @@ export default function MuchoTourney() {
                       key={player.id}
                       type="button"
                       onClick={() => toggleSwitcherooPlayer(player)}
-                      disabled={t.status !== "setup"}
+                      disabled={t.status !== "setup" || switcherooSetupStage !== "players"}
                       className={
                         "h-11 px-3 rounded-lg border text-left text-xs font-bold flex items-center justify-between gap-2 transition-all disabled:cursor-not-allowed " +
                         (active
