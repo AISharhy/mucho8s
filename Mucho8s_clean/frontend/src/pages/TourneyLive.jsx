@@ -173,117 +173,219 @@ export default function TourneyLive() {
     }
   };
 
-  if (t?.status === "setup" && t?.teamBuild === "switcheroo" && (t?.switcheroo?.pool || []).length > 0) {
+  if (
+    t?.status === "setup" &&
+    t?.teamBuild === "switcheroo" &&
+    t?.switcheroo?.setupStage === "published" &&
+    (t?.switcheroo?.pool || []).length > 0
+  ) {
     const pool = t.switcheroo.pool || [];
     const paidCount = pool.filter((player) => entryPaidIds.has(String(player.id))).length;
     const totalPot = entryFee * pool.length;
+    const liveDraw = t.switcheroo?.liveDraw || null;
+    const drawing = t.switcheroo?.phase === "drawing";
+    const drawTeams = drawing ? liveDraw?.teams || [] : [];
+    const remainingPlayers = drawing && Array.isArray(liveDraw?.remaining)
+      ? liveDraw.remaining
+      : pool;
+    const drawIndex = Number(liveDraw?.drawIndex || 0);
+    const assigned = Math.max(0, pool.length - remainingPlayers.length);
 
     return (
-      <div className="m8-page-stack gap-3 max-w-5xl mx-auto">
-        <section className="rounded-[22px] border border-[#FF4FA3]/30 bg-gradient-to-r from-[#1A0C15] to-[#0C1119] p-5 sm:p-7">
-          <div className="text-[#FF4FA3] text-[10px] font-black tracking-[.2em]">
-            SWITCHEROO ENTRY OPEN
+      <div className="min-h-[calc(100vh-88px)] -mx-2 sm:-mx-4 lg:-mx-6 bg-[#03050A]">
+        <section className="min-h-[calc(100vh-88px)] relative overflow-hidden border-y border-[#FF4FA3]/15">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute -top-72 left-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full bg-[#FF4FA3]/[0.06] blur-3xl" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,.025),transparent_62%)]" />
           </div>
-          <h1 className="font-display text-3xl sm:text-4xl font-black mt-2">{t.name}</h1>
-          <p className="text-sm text-muted-foreground mt-2">
-            Entry fee: <strong className="text-[#FF9DCE]">€{entryFee}</strong> per player.
-            The first re-spin target scales from the entry pot.
-          </p>
 
-          <div className="grid grid-cols-3 gap-2 mt-5">
-            <div className="rounded-xl border border-[#FF4FA3]/20 bg-[#FF4FA3]/[0.045] p-3">
-              <div className="text-[9px] tracking-widest text-[#697181]">PAID</div>
-              <div className="font-mono text-xl font-black text-[#FF9DCE] mt-1">{paidCount}/{pool.length}</div>
-            </div>
-            <div className="rounded-xl border border-[#FF4FA3]/20 bg-[#FF4FA3]/[0.045] p-3">
-              <div className="text-[9px] tracking-widest text-[#697181]">ENTRY POT</div>
-              <div className="font-mono text-xl font-black text-[#FF9DCE] mt-1">€{totalPot}</div>
-            </div>
-            <div className="rounded-xl border border-[#FF4FA3]/20 bg-[#FF4FA3]/[0.045] p-3">
-              <div className="text-[9px] tracking-widest text-[#697181]">STARTING RE-SPIN</div>
-              <div className="font-mono text-xl font-black text-[#FF9DCE] mt-1">
-                €{Number(t.switcheroo?.rerollBaseGoal || t.switcheroo?.rerollGoal || 0)}
+          <div className="relative z-10 max-w-[1500px] mx-auto px-5 sm:px-7 py-6">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
+              <div>
+                <div className="text-[#FF4FA3] text-[10px] font-black tracking-[.2em] flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#FF4FA3] animate-pulse" />
+                  {drawing ? "SWITCHEROO LIVE DRAW" : "SWITCHEROO TOURNAMENT ONLINE"}
+                </div>
+                <h1 className="font-display text-3xl sm:text-5xl font-black tracking-[-.04em] mt-2">
+                  {t.name}
+                </h1>
+                <div className="flex flex-wrap gap-2 mt-3 text-[10px] font-black text-[#AAB1BE]">
+                  <span className="m8-pill">{t.game}</span>
+                  <span className="m8-pill">{t.format}</span>
+                  <span className="m8-pill">{t.mode}</span>
+                  <span className="m8-pill">ENTRY €{entryFee}</span>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <div className="rounded-xl border border-[#FF4FA3]/20 bg-[#FF4FA3]/[0.05] px-3 py-2 text-right">
+                  <div className="text-[8px] tracking-widest text-[#697181]">ENTRY POT</div>
+                  <div className="font-mono text-lg font-black text-[#FF9DCE]">€{totalPot}</div>
+                </div>
+                <div className="rounded-xl border border-[#FF4FA3]/20 bg-[#FF4FA3]/[0.05] px-3 py-2 text-right">
+                  <div className="text-[8px] tracking-widest text-[#697181]">START RE-SPIN</div>
+                  <div className="font-mono text-lg font-black text-[#FF9DCE]">
+                    €{Number(t.switcheroo?.rerollBaseGoal || t.switcheroo?.rerollGoal || 0)}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
 
-        <section className="m8-panel rounded-[22px] p-5">
-          <div className="grid lg:grid-cols-[330px_1fr] gap-5 items-center">
-            <SwitcherooWheel
-              players={pool}
-              disabled
-              label="SPIN"
-              hint={
-                paidCount === pool.length
-                  ? "All entry fees confirmed · waiting for Admin to start the draw"
-                  : "Wheel unlocks after every selected player has paid the entry"
-              }
-              sizeClass="w-[240px] h-[240px] sm:w-[290px] sm:h-[290px]"
-            />
-
-            <div>
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="brand-kicker text-[#FF4FA3]">Tournament entry</div>
-              <h2 className="font-display text-xl font-black mt-1">
-                {entryPaid
-                  ? "Entry confirmed"
-                  : entryPending
-                    ? "Payment waiting for confirmation"
-                    : isTournamentPlayer
-                      ? `Pay €${entryFee} to enter`
-                      : "Tournament pool"}
-              </h2>
-            </div>
-            {entryPaid && <span className="m8-pill text-emerald-400 border-emerald-500/25">PAID</span>}
-          </div>
-
-          {isTournamentPlayer && !entryPaid && !entryPending && (
-            <button
-              type="button"
-              disabled={entryBusy}
-              onClick={payEntry}
-              className="mt-4 h-12 px-5 rounded-xl bg-[#FF4FA3] hover:bg-[#FF69B4] text-black font-black disabled:opacity-40"
-            >
-              PAY €{entryFee} WITH PAYPAL
-            </button>
-          )}
-
-          {entryPending && (
-            <div className="mt-4 rounded-xl border border-[#FF4FA3]/20 bg-[#FF4FA3]/[0.05] px-4 py-3 text-sm text-[#FFB7D9]">
-              Payment opened. Waiting for the tournament Admin to confirm receipt.
-            </div>
-          )}
-
-          {!isTournamentPlayer && (
-            <div className="mt-4 text-sm text-muted-foreground">
-              Your account is not currently selected in the Switcheroo player pool.
-            </div>
-          )}
-
-          <div className="grid sm:grid-cols-2 gap-2 mt-5">
-            {pool.map((player) => {
-              const paid = entryPaidIds.has(String(player.id));
-              const pending = entryPendingIds.has(String(player.id));
-              return (
-                <div
-                  key={player.id}
-                  className={
-                    "h-11 rounded-xl border px-3 flex items-center justify-between gap-2 " +
-                    (paid
-                      ? "border-emerald-500/20 bg-emerald-500/[0.04]"
-                      : "border-[#FF4FA3]/20 bg-[#FF4FA3]/[0.03]")
+            <div className="grid xl:grid-cols-[minmax(540px,1.08fr)_minmax(440px,.92fr)] gap-7 xl:gap-10 items-center">
+              <div className="flex items-center justify-center min-h-[590px]">
+                <SwitcherooWheel
+                  players={remainingPlayers}
+                  disabled
+                  label={drawing ? "LIVE" : "SPIN"}
+                  hint={
+                    drawing
+                      ? `Live draw · ${assigned}/${pool.length} players assigned`
+                      : paidCount === pool.length
+                        ? "All entry fees confirmed · waiting for Admin to start the live draw"
+                        : "Tournament is online · entry payments are open"
                   }
-                >
-                  <span className="text-xs font-black truncate">{player.name}</span>
-                  <span className={"font-mono text-[9px] " + (paid ? "text-emerald-400" : "text-[#FF8BC5]")}>
-                    {paid ? "PAID" : pending ? "PENDING" : `€${entryFee} DUE`}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+                  spinSignal={drawing ? drawIndex : 0}
+                  sizeClass="w-[82vw] h-[82vw] max-w-[580px] max-h-[580px] min-w-[310px] min-h-[310px]"
+                />
+              </div>
+
+              <div className="space-y-3">
+                {drawing ? (
+                  <>
+                    <div className="rounded-[22px] border border-[#FF4FA3]/25 bg-[#FF4FA3]/[0.05] p-5">
+                      <div className="flex items-end justify-between gap-3">
+                        <div>
+                          <div className="text-[9px] tracking-[.18em] text-[#FF4FA3] font-black">
+                            LIVE TEAM DRAW
+                          </div>
+                          <div className="font-display text-2xl font-black mt-1">
+                            Building the teams
+                          </div>
+                        </div>
+                        <div className="font-mono text-sm font-black text-[#FF9DCE]">
+                          {assigned}/{pool.length}
+                        </div>
+                      </div>
+
+                      {liveDraw?.lastPlayer && (
+                        <div className="mt-4 rounded-xl border border-[#FF4FA3]/25 bg-[#111720] px-4 py-3">
+                          <div className="text-[9px] tracking-widest text-[#697181]">LAST PLAYER</div>
+                          <div className="font-display text-xl font-black mt-1">
+                            {liveDraw.lastPlayer.name}
+                            <span className="text-[#FF4FA3]">
+                              {" "}→ {drawTeams[liveDraw.targetTeamIndex]?.name || "Team"}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-2">
+                      {drawTeams.map((team, index) => (
+                        <div
+                          key={team.id || index}
+                          className="rounded-xl border border-[#FF4FA3]/20 bg-[#FF4FA3]/[0.035] p-3 min-h-[125px]"
+                        >
+                          <div className="text-xs font-black">
+                            <span className="text-[#FF4FA3] mr-2">#{index + 1}</span>
+                            {team.name}
+                          </div>
+                          <div className="mt-2 space-y-1">
+                            {(team.roster || []).map((player) => (
+                              <div
+                                key={player.id}
+                                className="h-8 rounded-lg border border-[#252B36] bg-[#111720] px-2.5 flex items-center text-[11px] font-semibold"
+                              >
+                                {player.name}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="rounded-[22px] border border-[#FF4FA3]/20 bg-[#0D1219] p-5">
+                    <div className="brand-kicker text-[#FF4FA3]">Tournament Entry</div>
+                    <h2 className="font-display text-2xl font-black mt-1">
+                      {entryPaid
+                        ? "Entry confirmed"
+                        : entryPending
+                          ? "Payment waiting for confirmation"
+                          : isTournamentPlayer
+                            ? `Pay €${entryFee} to enter`
+                            : "Switcheroo is online"}
+                    </h2>
+
+                    <div className="grid grid-cols-2 gap-2 mt-4">
+                      <div className="rounded-xl border border-[#FF4FA3]/15 bg-[#FF4FA3]/[0.035] p-3">
+                        <div className="text-[8px] tracking-widest text-[#697181]">CONFIRMED</div>
+                        <div className="font-mono text-xl font-black text-[#FF9DCE] mt-1">
+                          {paidCount}/{pool.length}
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-[#FF4FA3]/15 bg-[#FF4FA3]/[0.035] p-3">
+                        <div className="text-[8px] tracking-widest text-[#697181]">FORMAT</div>
+                        <div className="font-mono text-xl font-black text-[#FF9DCE] mt-1">
+                          {t.format}
+                        </div>
+                      </div>
+                    </div>
+
+                    {isTournamentPlayer && !entryPaid && !entryPending && (
+                      <button
+                        type="button"
+                        disabled={entryBusy}
+                        onClick={payEntry}
+                        className="mt-4 w-full h-12 rounded-xl bg-[#FF4FA3] hover:bg-[#FF69B4] text-black font-black disabled:opacity-40"
+                      >
+                        PAY €{entryFee} WITH PAYPAL
+                      </button>
+                    )}
+
+                    {entryPending && (
+                      <div className="mt-4 rounded-xl border border-[#FF4FA3]/20 bg-[#FF4FA3]/[0.05] px-4 py-3 text-sm text-[#FFB7D9]">
+                        Payment opened. Waiting for Admin confirmation.
+                      </div>
+                    )}
+
+                    {entryPaid && (
+                      <div className="mt-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] px-4 py-3 text-sm text-emerald-400 font-bold">
+                        Entry confirmed · you are in the tournament.
+                      </div>
+                    )}
+
+                    {!isTournamentPlayer && (
+                      <p className="text-sm text-muted-foreground mt-4">
+                        The tournament is public. Only selected players can pay the entry fee.
+                      </p>
+                    )}
+
+                    <div className="grid sm:grid-cols-2 gap-1.5 mt-5 max-h-[260px] overflow-y-auto pr-1">
+                      {pool.map((player) => {
+                        const paid = entryPaidIds.has(String(player.id));
+                        const pending = entryPendingIds.has(String(player.id));
+                        return (
+                          <div
+                            key={player.id}
+                            className={
+                              "h-10 rounded-lg border px-3 flex items-center justify-between gap-2 " +
+                              (paid
+                                ? "border-emerald-500/20 bg-emerald-500/[0.04]"
+                                : "border-[#FF4FA3]/15 bg-[#FF4FA3]/[0.025]")
+                            }
+                          >
+                            <span className="text-xs font-black truncate">{player.name}</span>
+                            <span className={"font-mono text-[9px] " + (paid ? "text-emerald-400" : "text-[#FF8BC5]")}>
+                              {paid ? "PAID" : pending ? "PENDING" : `€${entryFee} DUE`}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </section>
