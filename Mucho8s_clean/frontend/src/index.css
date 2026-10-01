@@ -4900,3 +4900,22 @@ textarea:focus-visible {
     filter: drop-shadow(0 10px 24px rgba(0,0,0,.28));
     animation: none;
 }
+
+
+/* Horizontal Mucho8s wordmark in homepage hero */
+.dashboard-logo-stage.is-minimal {
+    width: 260px;
+    min-height: 110px;
+}
+
+.dashboard-logo-stage.is-minimal::before {
+    display: none;
+}
+
+.dashboard-logo-stage.is-minimal .dashboard-logo-mark {
+    width: 250px;
+    height: auto;
+    object-fit: contain;
+    filter: none;
+    animation: none;
+}
