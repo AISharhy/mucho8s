@@ -209,6 +209,20 @@ export default function TourneyLive() {
         </section>
 
         <section className="m8-panel rounded-[22px] p-5">
+          <div className="grid lg:grid-cols-[330px_1fr] gap-5 items-center">
+            <SwitcherooWheel
+              players={pool}
+              disabled
+              label="SPIN"
+              hint={
+                paidCount === pool.length
+                  ? "All entry fees confirmed · waiting for Admin to start the draw"
+                  : "Wheel unlocks after every selected player has paid the entry"
+              }
+              sizeClass="w-[240px] h-[240px] sm:w-[290px] sm:h-[290px]"
+            />
+
+            <div>
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="brand-kicker text-[#FF4FA3]">Tournament entry</div>
@@ -269,6 +283,8 @@ export default function TourneyLive() {
                 </div>
               );
             })}
+          </div>
+            </div>
           </div>
         </section>
       </div>
@@ -380,7 +396,7 @@ export default function TourneyLive() {
                   </div>
                   <span className="text-[10px] text-muted-foreground text-right">
                     <span className="block">Re-spins completed: {rerollsUsed}</span>
-                    <span className="block text-[#D5A33A] mt-0.5">
+                    <span className="block text-[#FF4FA3] mt-0.5">
                       Next target: €{goal + rerollStep}
                     </span>
                   </span>
@@ -427,7 +443,7 @@ export default function TourneyLive() {
                           type="button"
                           disabled={busy}
                           onClick={() => contribute(amount)}
-                          className="h-10 rounded-lg border border-[#FF4FA3]/25 bg-[#FF4FA3]/[0.06] text-[#D5A33A] font-black hover:bg-[#D5A33A]/[0.12] disabled:opacity-40"
+                          className="h-10 rounded-lg border border-[#FF4FA3]/25 bg-[#FF4FA3]/[0.06] text-[#FF8BC5] font-black hover:bg-[#FF4FA3]/[0.13] disabled:opacity-40"
                         >
                           +€{amount}
                         </button>
@@ -455,7 +471,7 @@ export default function TourneyLive() {
           <div className="flex items-center gap-2">
             <Shuffle size={17} className="text-[#FF4FA3]" />
             <div>
-              <div className="brand-kicker text-[#D5A33A]">
+              <div className="brand-kicker text-[#FF4FA3]">
                 Switcheroo generation {t.switcheroo?.generation || 1}
               </div>
               <h2 className="font-display font-black text-xl">Provisional Teams</h2>
@@ -502,11 +518,28 @@ export default function TourneyLive() {
         />
       )}
 
-      <section className="rounded-[22px] border border-[#FF4FA3]/25 bg-gradient-to-r from-[#1A0C15] to-[#0C1119] p-5 sm:p-7">
+      <section
+        className={
+          "rounded-[22px] border p-5 sm:p-7 " +
+          (t.teamBuild === "switcheroo"
+            ? "border-[#FF4FA3]/25 bg-gradient-to-r from-[#1A0C15] to-[#0C1119]"
+            : "border-[#D5A33A]/25 bg-gradient-to-r from-[#15130c] to-[#0c1119]")
+        }
+      >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-[#FF4FA3] text-[10px] font-black tracking-[.18em]">
-              <span className="w-2 h-2 rounded-full bg-[#FF4FA3] animate-pulse" />
+            <div
+              className={
+                "flex items-center gap-2 text-[10px] font-black tracking-[.18em] " +
+                (t.teamBuild === "switcheroo" ? "text-[#FF4FA3]" : "text-[#D5A33A]")
+              }
+            >
+              <span
+                className={
+                  "w-2 h-2 rounded-full animate-pulse " +
+                  (t.teamBuild === "switcheroo" ? "bg-[#FF4FA3]" : "bg-[#D5A33A]")
+                }
+              />
               LIVE TOURNAMENT
             </div>
             <h1 className="font-display text-3xl sm:text-4xl font-black mt-2">{t.name}</h1>
@@ -517,7 +550,10 @@ export default function TourneyLive() {
               <span className="m8-pill">BO{t.bestOf}</span>
             </div>
           </div>
-          <Trophy size={42} className="text-[#FF4FA3]" />
+          <Trophy
+            size={42}
+            className={t.teamBuild === "switcheroo" ? "text-[#FF4FA3]" : "text-[#D5A33A]"}
+          />
         </div>
       </section>
 
