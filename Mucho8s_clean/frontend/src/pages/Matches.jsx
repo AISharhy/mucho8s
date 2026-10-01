@@ -900,16 +900,43 @@ export default function Matches() {
             </span>
           </div>
           <div className={match.maps.length === 5 ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2" : "grid grid-cols-1 sm:grid-cols-3 gap-2"}>
-            {match.maps.map((mapName, index) => (
-              <MapPreviewCard
-                key={mapName + "-" + index}
-                mapName={mapName}
-                game={match.game}
-                mode={match.mode}
-                index={index}
-                compact
-              />
-            ))}
+            {match.maps.map((mapName, index) => {
+              const storedMapResults = Array.isArray(match.mapResults) ? match.mapResults : [];
+              const mapResult = storedMapResults[index];
+              const hasRecordedMapResults = storedMapResults.length > 0;
+              const mapWinner =
+                mapResult?.winner === "A" ? "Alpha" : mapResult?.winner === "B" ? "Bravo" : "";
+              const mapLoser =
+                mapResult?.winner === "A" ? "Bravo" : mapResult?.winner === "B" ? "Alpha" : "";
+
+              return (
+                <div key={mapName + "-" + index} className="relative">
+                  <MapPreviewCard
+                    mapName={mapName}
+                    game={match.game}
+                    mode={match.mode}
+                    index={index}
+                    compact
+                    className={mapResult ? "border-emerald-500/30" : ""}
+                  />
+
+                  {mapResult ? (
+                    <div className="absolute top-2 right-2 z-20 flex items-center gap-1">
+                      <span className="rounded-md border border-emerald-400/25 bg-emerald-500/15 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-emerald-300 backdrop-blur-sm">
+                        {mapWinner} W
+                      </span>
+                      <span className="rounded-md border border-red-400/20 bg-red-500/15 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-red-300 backdrop-blur-sm">
+                        {mapLoser} L
+                      </span>
+                    </div>
+                  ) : hasRecordedMapResults ? (
+                    <span className="absolute top-2 right-2 z-20 rounded-md border border-white/10 bg-black/55 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-white/45 backdrop-blur-sm">
+                      Not played
+                    </span>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
