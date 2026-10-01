@@ -5,7 +5,6 @@ import {
   ArrowRight,
   Check,
   Crosshair,
-  Gamepad2,
   Globe2,
   ListChecks,
   LockKeyhole,
@@ -40,6 +39,7 @@ const ChoiceCard = ({
 }) => {
   const pink = accent === "pink";
   const soundProduct = pink ? "switcheroo" : "tourney";
+
   return (
     <button
       type="button"
@@ -81,6 +81,7 @@ const ChoiceCard = ({
           ) : null}
         </div>
       </div>
+
       {active && (
         <div
           className={
@@ -105,6 +106,7 @@ const Segmented = ({
 }) => {
   const pink = accent === "pink";
   const soundProduct = pink ? "switcheroo" : "tourney";
+
   return (
     <div className="grid grid-cols-3 gap-2">
       {options.map((option) => {
@@ -153,19 +155,18 @@ export default function TourneySetupWizard({
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [soundOn, setSoundOn] = useState(isUiSoundEnabled);
+
   const isSwitcheroo = tournament.teamBuild === "switcheroo";
-  const accent = isSwitcheroo ? "pink" : "gold";
+  const pink = isSwitcheroo;
 
   const steps = useMemo(
     () => [
-      { key: "identity", label: "BASICS" },
-      { key: "format", label: "FORMAT" },
+      { key: "identity", label: "SETUP" },
+      { key: "game", label: "GAME" },
       { key: "series", label: "SERIES" },
-      { key: "build", label: "TEAM BUILD" },
-      ...(isSwitcheroo ? [{ key: "entry", label: "ENTRY" }] : []),
-      { key: "review", label: "REVIEW" },
+      { key: "review", label: "PREVIEW" },
     ],
-    [isSwitcheroo]
+    []
   );
 
   const current = steps[step] || steps[0];
@@ -173,6 +174,7 @@ export default function TourneySetupWizard({
   const go = (next) => {
     const clamped = Math.max(0, Math.min(steps.length - 1, next));
     if (clamped === step) return;
+
     setDirection(clamped > step ? 1 : -1);
     void playUiSound(
       clamped > step ? "next" : "back",
@@ -182,33 +184,29 @@ export default function TourneySetupWizard({
   };
 
   const canContinue = (() => {
-    if (current.key === "identity") return Boolean(String(tournament.name || "").trim());
-    if (current.key === "entry" && isSwitcheroo) {
-      return Boolean(String(tournament.switcheroo?.paypalUrl || "").trim());
+    if (current.key === "identity") {
+      if (!String(tournament.name || "").trim()) return false;
+      if (isSwitcheroo && !String(tournament.switcheroo?.paypalUrl || "").trim()) {
+        return false;
+      }
     }
     return true;
   })();
 
-  const pink = accent === "pink";
-
   const titleByStep = {
     identity: "Create your MuchoTourney",
-    format: "How will the tournament be played?",
-    series: "Set the competitive rules",
-    build: "How should teams be created?",
-    entry: "Choose registration & entry flow",
-    review: "Review before moving on",
+    game: "Game, format & mode",
+    series: "Set the series",
+    review: "Tournament preview",
   };
 
   const subtitleByStep = {
-    identity: "Start with the tournament identity. You can go back at any time.",
-    format: "Pick format and game mode without crowding the page with every setting at once.",
-    series: "Main series, final series and seeding stay together in one clear step.",
-    build: "Manual teams keep the classic MuchoTourney look. Switcheroo changes the flow to pink.",
-    entry: "Choose invited players or open registration, then set the entry fee and PayPal destination.",
+    identity: "First choose the tournament name and type.",
+    game: "Now choose the game, team format and competitive mode.",
+    series: "Set the series length, final and seeding.",
     review: published
-      ? "Changes are saved directly to the live MuchoTourney."
-      : "Confirm the setup, then continue to players or publish registration.",
+      ? "Review the live setup before saving your changes."
+      : "Final check before continuing to teams or publishing registration.",
   };
 
   return (
@@ -228,7 +226,8 @@ export default function TourneySetupWizard({
             (pink ? "bg-[#FF4FA3]/[0.07]" : "bg-[#D5A33A]/[0.06]")
           }
         />
-        <div className="px-4 sm:px-6 pt-5">
+
+        <div className="px-4 sm:px-6 pt-5 relative z-10">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
               <div
@@ -243,6 +242,7 @@ export default function TourneySetupWizard({
                 Step {step + 1} of {steps.length}
               </div>
             </div>
+
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -259,13 +259,19 @@ export default function TourneySetupWizard({
                 title={soundOn ? "UI sounds on" : "UI sounds off"}
               >
                 {soundOn ? <Volume2 size={13} /> : <VolumeX size={13} />}
-                <span className="hidden sm:inline">{soundOn ? "SOUND" : "MUTED"}</span>
+                <span className="hidden sm:inline">
+                  {soundOn ? "SOUND" : "MUTED"}
+                </span>
               </button>
+
               {onClose ? (
                 <button
                   type="button"
                   onClick={() => {
-                    void playUiSound("back", isSwitcheroo ? "switcheroo" : "tourney");
+                    void playUiSound(
+                      "back",
+                      isSwitcheroo ? "switcheroo" : "tourney"
+                    );
                     onClose();
                   }}
                   className="w-9 h-9 rounded-xl border border-[#2A303B] bg-[#111720] text-muted-foreground hover:text-white flex items-center justify-center"
@@ -276,7 +282,12 @@ export default function TourneySetupWizard({
             </div>
           </div>
 
-          <div className="mt-4 grid gap-1.5" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
+          <div
+            className="mt-4 grid gap-1.5"
+            style={{
+              gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))`,
+            }}
+          >
             {steps.map((item, index) => {
               const active = index === step;
               const done = index < step;
@@ -315,7 +326,7 @@ export default function TourneySetupWizard({
           </div>
         </div>
 
-        <div className="px-4 sm:px-6 py-6 min-h-[430px]">
+        <div className="px-4 sm:px-6 py-6 min-h-[430px] relative z-10">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={current.key}
@@ -333,7 +344,7 @@ export default function TourneySetupWizard({
                 </p>
 
                 {current.key === "identity" && (
-                  <div className="mt-7 space-y-5">
+                  <div className="mt-7 space-y-6">
                     <label className="block">
                       <span className="text-[9px] tracking-[.16em] text-[#697181] font-black">
                         TOURNAMENT NAME
@@ -348,6 +359,163 @@ export default function TourneySetupWizard({
 
                     <div>
                       <div className="text-[9px] tracking-[.16em] text-[#697181] font-black mb-2">
+                        TOURNAMENT TYPE
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        <ChoiceCard
+                          active={tournament.teamBuild === "manual"}
+                          title="Classic MuchoTourney"
+                          subtitle="Manual teams, seeding and standard bracket."
+                          icon={UsersRound}
+                          onClick={() => onChangeTeamBuild("manual")}
+                        />
+                        <ChoiceCard
+                          active={tournament.teamBuild === "switcheroo"}
+                          title="Switcheroo"
+                          subtitle="Live wheel, paid entry, re-spins and animated team creation."
+                          icon={Shuffle}
+                          accent="pink"
+                          onClick={() => onChangeTeamBuild("switcheroo")}
+                        />
+                      </div>
+                    </div>
+
+                    {isSwitcheroo && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="rounded-2xl border border-[#FF4FA3]/20 bg-[#FF4FA3]/[0.04] p-4 space-y-4"
+                      >
+                        <div>
+                          <div className="text-[9px] tracking-[.16em] text-[#FF4FA3] font-black">
+                            SWITCHEROO SETTINGS
+                          </div>
+                          <div className="text-[10px] text-muted-foreground mt-1">
+                            Entry settings stay attached to the tournament type.
+                          </div>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-3">
+                          <ChoiceCard
+                            active={
+                              (tournament.switcheroo?.registrationMode || "manual") ===
+                              "manual"
+                            }
+                            title="Invite / select players"
+                            subtitle="Choose the player pool before publishing."
+                            icon={LockKeyhole}
+                            accent="pink"
+                            onClick={() =>
+                              onPatchSwitcheroo({ registrationMode: "manual" })
+                            }
+                          />
+                          <ChoiceCard
+                            active={
+                              tournament.switcheroo?.registrationMode === "open"
+                            }
+                            title="Open registration"
+                            subtitle="Publish first and let players join themselves."
+                            icon={Globe2}
+                            accent="pink"
+                            onClick={() =>
+                              onPatchSwitcheroo({ registrationMode: "open" })
+                            }
+                          />
+                        </div>
+
+                        <div className="grid sm:grid-cols-2 gap-3">
+                          <label>
+                            <span className="text-[9px] tracking-[.14em] text-[#697181] font-black">
+                              ENTRY FEE / PLAYER
+                            </span>
+                            <div className="relative mt-2">
+                              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-white/35">
+                                €
+                              </span>
+                              <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={tournament.switcheroo?.entryFee || 5}
+                                disabled={paymentsLocked}
+                                onChange={(event) =>
+                                  onPatchSwitcheroo({
+                                    entryFee: Math.max(
+                                      1,
+                                      Number(event.target.value) || 1
+                                    ),
+                                  })
+                                }
+                                className="w-full h-12 rounded-xl bg-[#111720] border border-[#FF4FA3]/25 pl-9 pr-3 text-sm font-black disabled:opacity-35"
+                              />
+                            </div>
+                          </label>
+
+                          <label>
+                            <span className="text-[9px] tracking-[.14em] text-[#697181] font-black">
+                              REVIEW TIME
+                            </span>
+                            <select
+                              value={tournament.switcheroo?.reviewMinutes || 5}
+                              onChange={(event) =>
+                                onPatchSwitcheroo({
+                                  reviewMinutes: Number(event.target.value),
+                                })
+                              }
+                              className="mt-2 w-full h-12 rounded-xl bg-[#111720] border border-[#FF4FA3]/25 px-3 text-sm font-black"
+                            >
+                              {[1, 3, 5, 10, 15].map((minutes) => (
+                                <option key={minutes} value={minutes}>
+                                  {minutes} min
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
+
+                        {tournament.switcheroo?.registrationMode === "open" && (
+                          <div>
+                            <div className="text-[9px] tracking-[.14em] text-[#697181] font-black mb-2">
+                              TOURNAMENT CAPACITY
+                            </div>
+                            <Segmented
+                              value={tournament.switcheroo?.maxTeams || 4}
+                              options={[2, 4, 8]}
+                              accent="pink"
+                              formatLabel={(maxTeams) => `${maxTeams} TEAMS`}
+                              onChange={(maxTeams) =>
+                                onPatchSwitcheroo({
+                                  maxTeams: Number(maxTeams),
+                                })
+                              }
+                            />
+                          </div>
+                        )}
+
+                        <label className="block">
+                          <span className="text-[9px] tracking-[.14em] text-[#697181] font-black">
+                            PAYPAL LINK
+                          </span>
+                          <input
+                            value={tournament.switcheroo?.paypalUrl || ""}
+                            onChange={(event) =>
+                              onPatchSwitcheroo({
+                                paypalUrl: event.target.value,
+                              })
+                            }
+                            placeholder="https://paypal.me/tuonome"
+                            className="mt-2 w-full h-12 rounded-xl bg-[#111720] border border-[#FF4FA3]/25 px-4 text-sm"
+                          />
+                        </label>
+                      </motion.div>
+                    )}
+                  </div>
+                )}
+
+                {current.key === "game" && (
+                  <div className="mt-7 space-y-6">
+                    <div>
+                      <div className="text-[9px] tracking-[.16em] text-[#697181] font-black mb-2">
                         GAME
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -356,13 +524,18 @@ export default function TourneySetupWizard({
                             key={game}
                             type="button"
                             onClick={() => {
-                              void playUiSound("select", "tourney");
+                              void playUiSound(
+                                "select",
+                                isSwitcheroo ? "switcheroo" : "tourney"
+                              );
                               onPatch({ game });
                             }}
                             className={
                               "h-12 rounded-xl border font-black text-xs transition-all " +
                               (tournament.game === game
-                                ? "border-[#D5A33A]/55 bg-[#D5A33A]/10 text-[#F4CE70]"
+                                ? pink
+                                  ? "border-[#FF4FA3]/55 bg-[#FF4FA3]/10 text-[#FFB7D9]"
+                                  : "border-[#D5A33A]/55 bg-[#D5A33A]/10 text-[#F4CE70]"
                                 : "border-[#252B36] bg-[#0D1219] text-[#AAB1BE] hover:border-[#3B4554]")
                             }
                           >
@@ -371,11 +544,7 @@ export default function TourneySetupWizard({
                         ))}
                       </div>
                     </div>
-                  </div>
-                )}
 
-                {current.key === "format" && (
-                  <div className="mt-7 space-y-6">
                     <div>
                       <div className="text-[9px] tracking-[.16em] text-[#697181] font-black mb-2">
                         TEAM FORMAT
@@ -388,6 +557,7 @@ export default function TourneySetupWizard({
                             title={format}
                             subtitle={`${format.split("v")[0]} players per team`}
                             icon={UsersRound}
+                            accent={pink ? "pink" : "gold"}
                             onClick={() => onPatch({ format })}
                           />
                         ))}
@@ -412,6 +582,7 @@ export default function TourneySetupWizard({
                                   : "Search & Destroy only"
                             }
                             icon={mode === "Hardpoint" ? Crosshair : Swords}
+                            accent={pink ? "pink" : "gold"}
                             onClick={() => onPatch({ mode })}
                           />
                         ))}
@@ -419,7 +590,10 @@ export default function TourneySetupWizard({
                     </div>
 
                     {tournament.mode === "CDL Mix" && (
-                      <div>
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                      >
                         <div className="text-[9px] tracking-[.16em] text-[#697181] font-black mb-2">
                           MIX START
                         </div>
@@ -431,11 +605,12 @@ export default function TourneySetupWizard({
                               title={startMode}
                               subtitle="First map mode"
                               icon={Crosshair}
+                              accent={pink ? "pink" : "gold"}
                               onClick={() => onPatch({ startMode })}
                             />
                           ))}
                         </div>
-                      </div>
+                      </motion.div>
                     )}
                   </div>
                 )}
@@ -450,9 +625,13 @@ export default function TourneySetupWizard({
                         <Segmented
                           value={tournament.bestOf}
                           options={SERIES_OPTIONS}
-                          onChange={(bestOf) => onPatch({ bestOf: Number(bestOf) })}
+                          accent={pink ? "pink" : "gold"}
+                          onChange={(bestOf) =>
+                            onPatch({ bestOf: Number(bestOf) })
+                          }
                         />
                       </div>
+
                       <div>
                         <div className="text-[9px] tracking-[.16em] text-[#697181] font-black mb-2">
                           FINAL
@@ -460,7 +639,10 @@ export default function TourneySetupWizard({
                         <Segmented
                           value={tournament.finalBestOf}
                           options={SERIES_OPTIONS}
-                          onChange={(finalBestOf) => onPatch({ finalBestOf: Number(finalBestOf) })}
+                          accent={pink ? "pink" : "gold"}
+                          onChange={(finalBestOf) =>
+                            onPatch({ finalBestOf: Number(finalBestOf) })
+                          }
                         />
                       </div>
                     </div>
@@ -475,6 +657,7 @@ export default function TourneySetupWizard({
                           title="Manual"
                           subtitle="You decide the bracket order."
                           icon={ListChecks}
+                          accent={pink ? "pink" : "gold"}
                           onClick={() => onPatch({ seeding: "manual" })}
                         />
                         <ChoiceCard
@@ -482,6 +665,7 @@ export default function TourneySetupWizard({
                           title="Random"
                           subtitle="MuchoTourney shuffles the teams."
                           icon={Shuffle}
+                          accent={pink ? "pink" : "gold"}
                           onClick={() => onPatch({ seeding: "random" })}
                         />
                       </div>
@@ -489,162 +673,60 @@ export default function TourneySetupWizard({
                   </div>
                 )}
 
-                {current.key === "build" && (
-                  <div className="mt-7 grid md:grid-cols-2 gap-3">
-                    <ChoiceCard
-                      active={tournament.teamBuild === "manual"}
-                      title="Classic teams"
-                      subtitle="Create teams manually and assign rosters yourself."
-                      icon={UsersRound}
-                      onClick={() => onChangeTeamBuild("manual")}
-                    />
-                    <ChoiceCard
-                      active={tournament.teamBuild === "switcheroo"}
-                      title="Switcheroo"
-                      subtitle="Pink live wheel, paid entry, re-spins and animated team creation."
-                      icon={Shuffle}
-                      accent="pink"
-                      onClick={() => onChangeTeamBuild("switcheroo")}
-                    />
-                  </div>
-                )}
-
-                {current.key === "entry" && isSwitcheroo && (
-                  <div className="mt-7 space-y-6">
-                    <div>
-                      <div className="text-[9px] tracking-[.16em] text-[#697181] font-black mb-2">
-                        REGISTRATION
-                      </div>
-                      <div className="grid md:grid-cols-2 gap-3">
-                        <ChoiceCard
-                          active={(tournament.switcheroo?.registrationMode || "manual") === "manual"}
-                          title="Invite / select players"
-                          subtitle="You pick players before publishing. Selected players then confirm and pay."
-                          icon={LockKeyhole}
-                          accent="pink"
-                          onClick={() => onPatchSwitcheroo({ registrationMode: "manual" })}
-                        />
-                        <ChoiceCard
-                          active={tournament.switcheroo?.registrationMode === "open"}
-                          title="Open registration"
-                          subtitle="Publish first. Players register themselves and PayPal opens after confirmation."
-                          icon={Globe2}
-                          accent="pink"
-                          onClick={() => onPatchSwitcheroo({ registrationMode: "open" })}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <label>
-                        <span className="text-[9px] tracking-[.16em] text-[#697181] font-black">
-                          ENTRY FEE / PLAYER
-                        </span>
-                        <div className="relative mt-2">
-                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-white/35">€</span>
-                          <input
-                            type="number"
-                            min="1"
-                            step="1"
-                            value={tournament.switcheroo?.entryFee || 5}
-                            disabled={paymentsLocked}
-                            onChange={(event) =>
-                              onPatchSwitcheroo({
-                                entryFee: Math.max(1, Number(event.target.value) || 1),
-                              })
-                            }
-                            className="w-full h-12 rounded-xl bg-[#111720] border border-[#FF4FA3]/25 pl-9 pr-3 text-sm font-black disabled:opacity-35"
-                          />
+                {current.key === "review" && (
+                  <div className="mt-7 space-y-4">
+                    {isSwitcheroo && (
+                      <div className="rounded-2xl border border-[#FF4FA3]/20 bg-[#FF4FA3]/[0.045] p-4">
+                        <div className="flex items-center gap-2">
+                          <WalletCards size={16} className="text-[#FF4FA3]" />
+                          <div className="text-[9px] tracking-[.16em] text-[#FF4FA3] font-black">
+                            SWITCHEROO ECONOMY
+                          </div>
                         </div>
-                      </label>
-
-                      <label>
-                        <span className="text-[9px] tracking-[.16em] text-[#697181] font-black">
-                          REVIEW TIME
-                        </span>
-                        <select
-                          value={tournament.switcheroo?.reviewMinutes || 5}
-                          onChange={(event) =>
-                            onPatchSwitcheroo({ reviewMinutes: Number(event.target.value) })
-                          }
-                          className="mt-2 w-full h-12 rounded-xl bg-[#111720] border border-[#FF4FA3]/25 px-3 text-sm font-black"
-                        >
-                          {[1, 3, 5, 10, 15].map((minutes) => (
-                            <option key={minutes} value={minutes}>
-                              {minutes} min
-                            </option>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+                          {[
+                            ["ENTRY POT", `€${economy?.entryPot || 0}`],
+                            ["START GOAL", `€${economy?.baseGoal || 0}`],
+                            ["1ST MARGIN", `+€${economy?.firstMargin || 0}`],
+                            ["GROWTH", `+€${economy?.marginGrowth || 5}`],
+                          ].map(([label, value]) => (
+                            <div
+                              key={label}
+                              className="rounded-xl border border-[#FF4FA3]/15 bg-[#0D1219] p-3"
+                            >
+                              <div className="text-[8px] tracking-widest text-[#697181]">
+                                {label}
+                              </div>
+                              <div className="font-mono text-base font-black text-[#FF9DCE] mt-1">
+                                {value}
+                              </div>
+                            </div>
                           ))}
-                        </select>
-                      </label>
-                    </div>
-
-                    {tournament.switcheroo?.registrationMode === "open" && (
-                      <div>
-                        <div className="text-[9px] tracking-[.16em] text-[#697181] font-black mb-2">
-                          TOURNAMENT CAPACITY
-                        </div>
-                        <Segmented
-                          value={tournament.switcheroo?.maxTeams || 4}
-                          options={[2, 4, 8]}
-                          accent="pink"
-                          formatLabel={(maxTeams) => `${maxTeams} TEAMS`}
-                          onChange={(maxTeams) => onPatchSwitcheroo({ maxTeams: Number(maxTeams) })}
-                        />
-                        <div className="text-[10px] text-muted-foreground mt-2">
-                          {Number(tournament.switcheroo?.maxTeams || 4) *
-                            Math.max(1, Number(String(tournament.format).split("v")[0]) || 4)}{" "}
-                          player slots maximum.
                         </div>
                       </div>
                     )}
 
-                    <label className="block">
-                      <span className="text-[9px] tracking-[.16em] text-[#697181] font-black">
-                        PAYPAL LINK
-                      </span>
-                      <input
-                        value={tournament.switcheroo?.paypalUrl || ""}
-                        onChange={(event) => onPatchSwitcheroo({ paypalUrl: event.target.value })}
-                        placeholder="https://paypal.me/tuonome"
-                        className="mt-2 w-full h-12 rounded-xl bg-[#111720] border border-[#FF4FA3]/25 px-4 text-sm"
-                      />
-                    </label>
-
-                    <div className="rounded-2xl border border-[#FF4FA3]/20 bg-[#FF4FA3]/[0.045] p-4">
-                      <div className="flex items-center gap-2">
-                        <WalletCards size={16} className="text-[#FF4FA3]" />
-                        <div className="text-[9px] tracking-[.16em] text-[#FF4FA3] font-black">
-                          SWITCHEROO ECONOMY
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
-                        {[
-                          ["ENTRY POT", `€${economy?.entryPot || 0}`],
-                          ["START GOAL", `€${economy?.baseGoal || 0}`],
-                          ["1ST MARGIN", `+€${economy?.firstMargin || 0}`],
-                          ["GROWTH", `+€${economy?.marginGrowth || 5}`],
-                        ].map(([label, value]) => (
-                          <div key={label} className="rounded-xl border border-[#FF4FA3]/15 bg-[#0D1219] p-3">
-                            <div className="text-[8px] tracking-widest text-[#697181]">{label}</div>
-                            <div className="font-mono text-base font-black text-[#FF9DCE] mt-1">{value}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {current.key === "review" && (
-                  <div className="mt-7">
                     <div className="rounded-2xl border border-[#252B36] bg-[#0D1219] overflow-hidden">
                       {[
                         ["Tournament", tournament.name],
+                        [
+                          "Type",
+                          isSwitcheroo ? "SWITCHEROO" : "CLASSIC MUCHOTOURNEY",
+                        ],
                         ["Game", tournament.game],
                         ["Format", tournament.format],
                         ["Mode", tournament.mode],
-                        ["Series", `BO${tournament.bestOf} · Final BO${tournament.finalBestOf}`],
-                        ["Seeding", String(tournament.seeding || "manual").toUpperCase()],
-                        ["Team build", isSwitcheroo ? "SWITCHEROO" : "CLASSIC"],
+                        ...(tournament.mode === "CDL Mix"
+                          ? [["Mix starts", tournament.startMode]]
+                          : []),
+                        [
+                          "Series",
+                          `BO${tournament.bestOf} · Final BO${tournament.finalBestOf}`,
+                        ],
+                        [
+                          "Seeding",
+                          String(tournament.seeding || "manual").toUpperCase(),
+                        ],
                         ...(isSwitcheroo
                           ? [
                               [
@@ -653,8 +735,14 @@ export default function TourneySetupWizard({
                                   ? "OPEN REGISTRATION"
                                   : "INVITED / SELECTED PLAYERS",
                               ],
-                              ["Entry", `€${tournament.switcheroo?.entryFee || 5} / player`],
-                              ["Review", `${tournament.switcheroo?.reviewMinutes || 5} min`],
+                              [
+                                "Entry",
+                                `€${tournament.switcheroo?.entryFee || 5} / player`,
+                              ],
+                              [
+                                "Review",
+                                `${tournament.switcheroo?.reviewMinutes || 5} min`,
+                              ],
                             ]
                           : []),
                       ].map(([label, value]) => (
@@ -662,15 +750,19 @@ export default function TourneySetupWizard({
                           key={label}
                           className="min-h-11 px-4 py-2.5 border-b last:border-b-0 border-[#202631] flex items-center justify-between gap-4"
                         >
-                          <span className="text-[9px] tracking-[.13em] text-[#697181] font-black">{label}</span>
-                          <span className="text-xs font-black text-right">{value}</span>
+                          <span className="text-[9px] tracking-[.13em] text-[#697181] font-black">
+                            {label}
+                          </span>
+                          <span className="text-xs font-black text-right">
+                            {value}
+                          </span>
                         </div>
                       ))}
                     </div>
 
                     <div
                       className={
-                        "mt-4 rounded-xl border px-4 py-3 text-xs " +
+                        "rounded-xl border px-4 py-3 text-xs " +
                         (pink
                           ? "border-[#FF4FA3]/20 bg-[#FF4FA3]/[0.045] text-[#FFB7D9]"
                           : "border-[#D5A33A]/20 bg-[#D5A33A]/[0.045] text-[#F4CE70]")
@@ -678,7 +770,8 @@ export default function TourneySetupWizard({
                     >
                       {published
                         ? "Saving here updates MuchoTourney directly. Fields tied to already received payments remain protected."
-                        : isSwitcheroo && tournament.switcheroo?.registrationMode === "open"
+                        : isSwitcheroo &&
+                            tournament.switcheroo?.registrationMode === "open"
                           ? "Next: publish the tournament and let players register themselves."
                           : isSwitcheroo
                             ? "Next: choose the player pool with drag & drop, then publish."
@@ -691,7 +784,7 @@ export default function TourneySetupWizard({
           </AnimatePresence>
         </div>
 
-        <div className="border-t border-[#202631] px-4 sm:px-6 py-4 flex items-center justify-between gap-3 bg-[#0A0F15]">
+        <div className="border-t border-[#202631] px-4 sm:px-6 py-4 flex items-center justify-between gap-3 bg-[#0A0F15] relative z-10">
           <button
             type="button"
             onClick={() => go(step - 1)}
@@ -735,9 +828,12 @@ export default function TourneySetupWizard({
                   : "bg-[#D5A33A] hover:bg-[#E0B247] text-black")
               }
             >
-              {published ? "SAVE CHANGES" : isSwitcheroo && tournament.switcheroo?.registrationMode === "open"
-                ? "PUBLISH REGISTRATION"
-                : "CONTINUE"}
+              {published
+                ? "SAVE CHANGES"
+                : isSwitcheroo &&
+                    tournament.switcheroo?.registrationMode === "open"
+                  ? "PUBLISH REGISTRATION"
+                  : "CONTINUE"}
               <Trophy size={14} />
             </button>
           )}
