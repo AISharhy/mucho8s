@@ -196,7 +196,7 @@ const roundUpToFive = (value: number) =>
   Math.max(5, Math.ceil(Math.max(0, value) / 5) * 5);
 
 const switcherooEconomy = (entryFeeRaw: unknown, playerCountRaw: unknown) => {
-  const entryFee = Math.max(1, Math.round(Number(entryFeeRaw || 1)));
+  const entryFee = Math.max(0, Math.round(Number(entryFeeRaw || 0)));
   const playerCount = Math.max(0, Math.round(Number(playerCountRaw || 0)));
   const entryPot = entryFee * playerCount;
   const baseGoal = roundUpToFive(entryPot * 0.5);
@@ -362,6 +362,7 @@ Deno.serve(async (req: Request) => {
         state.switcheroo && typeof state.switcheroo === "object"
           ? { ...state.switcheroo }
           : {};
+      const freeEntry = Boolean(switcheroo.freeEntry);
 
       if (
         switcheroo.setupStage !== "published" ||
@@ -428,7 +429,75 @@ Deno.serve(async (req: Request) => {
         return json(req, { error: "Your tournament entry payment is already waiting for Admin confirmation" }, 409);
       }
 
-      const economy = switcherooEconomy(switcheroo.entryFee, pool.length);
+      const economy = switcherooEconomy(
+        freeEntry ? 0 : switcheroo.entryFee,
+        pool.length
+      );
+
+      if (freeEntry) {
+        const freeConfirmation = {
+          id: crypto.randomUUID(),
+          playerId: actor.playerId,
+          name: actor.name,
+          amount: 0,
+          paidAt: new Date().toISOString(),
+          confirmedBy: "free-entry",
+          freeEntry: true,
+        };
+
+        const nextEntryPaid = [
+          ...entryPaid.filter(
+            (row: any) => String(row?.playerId || "") !== actor.playerId
+          ),
+          freeConfirmation,
+        ];
+
+        const nextState = {
+          ...state,
+          switcheroo: {
+            ...switcheroo,
+            freeEntry: true,
+            registrationMode,
+            maxTeams,
+            ...(isSwitcheroo ? { pool } : {}),
+            entryFee: 0,
+            rerollBaseGoal: economy.baseGoal,
+            rerollGoal: economy.baseGoal,
+            rerollStep: economy.firstMargin,
+            rerollStepGrowth: economy.marginGrowth,
+            entryPaid: nextEntryPaid,
+            entryPendingPayments,
+          },
+        };
+
+        const { data: updated, error: updateError } = await supabase
+          .from("tourney_state")
+          .update({
+            state: nextState,
+            status: "setup",
+            updated_at: new Date().toISOString(),
+            updated_by: `player:${actor.playerId}:free-entry-confirm`,
+          })
+          .eq("id", "current")
+          .select("state,status,updated_at")
+          .single();
+
+        if (updateError) throw updateError;
+
+        return json(req, {
+          ok: true,
+          amount: 0,
+          paymentId: freeConfirmation.id,
+          paymentUrl: null,
+          freeEntry: true,
+          registered: true,
+          openRegistration: registrationMode === "open",
+          tourney: updated.state,
+          status: updated.status,
+          updatedAt: updated.updated_at,
+        });
+      }
+
       const paymentUrl = buildPayPalPaymentUrl(switcheroo.paypalUrl, economy.entryFee);
       const pending = {
         id: crypto.randomUUID(),
@@ -445,6 +514,7 @@ Deno.serve(async (req: Request) => {
         ...state,
         switcheroo: {
           ...switcheroo,
+          freeEntry: false,
           registrationMode,
           maxTeams,
           ...(isSwitcheroo ? { pool } : {}),
@@ -476,6 +546,7 @@ Deno.serve(async (req: Request) => {
         amount: economy.entryFee,
         paymentId: pending.id,
         paymentUrl,
+        freeEntry: false,
         registered: true,
         openRegistration: registrationMode === "open",
         tourney: updated.state,
