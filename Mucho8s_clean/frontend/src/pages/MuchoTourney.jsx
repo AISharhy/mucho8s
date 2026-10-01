@@ -362,6 +362,15 @@ export default function MuchoTourney() {
     if (t.status !== "setup") return;
     const pool = Array.isArray(t.switcheroo?.pool) ? t.switcheroo.pool : [];
     const exists = pool.some((row) => String(row.id) === String(player.id));
+    if (exists && entryPaidIds.has(String(player.id))) {
+      toast.error("This player already has a confirmed entry payment. Refund/resolve it before removing the player.");
+      return;
+    }
+    if (exists && entryPendingIds.has(String(player.id))) {
+      toast.error("This player has an entry payment waiting for confirmation. Confirm or reject it first.");
+      return;
+    }
+
     const nextPool = exists
       ? pool.filter((row) => String(row.id) !== String(player.id))
       : [...pool, { id: player.id, name: player.name }];
@@ -692,6 +701,14 @@ export default function MuchoTourney() {
                       ? Number(event.target.value)
                       : event.target.value;
                     if (key === "teamBuild") {
+                      if (
+                        value !== t.teamBuild &&
+                        ((t.switcheroo?.entryPaid || []).length > 0 ||
+                          (t.switcheroo?.entryPendingPayments || []).length > 0)
+                      ) {
+                        toast.error("Resolve existing tournament entry payments before changing Team Build");
+                        return;
+                      }
                       save({
                         ...t,
                         teamBuild: value,
@@ -784,7 +801,11 @@ export default function MuchoTourney() {
                           },
                         });
                       }}
-                      disabled={t.status !== "setup"}
+                      disabled={
+                        t.status !== "setup" ||
+                        (t.switcheroo.entryPaid || []).length > 0 ||
+                        (t.switcheroo.entryPendingPayments || []).length > 0
+                      }
                       className="w-full h-10 rounded-xl bg-[#151923] border border-[#FF4FA3]/25 pl-7 pr-3 text-sm disabled:opacity-40"
                     />
                   </div>
@@ -1029,7 +1050,7 @@ export default function MuchoTourney() {
                       </p>
                     </div>
                     <div className="h-11 px-3 rounded-xl border border-[#2A303B] bg-[#111720] flex items-center gap-2">
-                      <Clock3 size={15} className={reviewRemaining <= 30000 ? "text-magma" : "text-[#D5A33A]"} />
+                      <Clock3 size={15} className={reviewRemaining <= 30000 ? "text-magma" : "text-[#FF4FA3]"} />
                       <span className={"font-mono font-black " + (reviewRemaining <= 30000 ? "text-magma" : "")}>
                         {formatClock(reviewRemaining)}
                       </span>
@@ -1049,7 +1070,7 @@ export default function MuchoTourney() {
                       </div>
                       <div className="text-right text-[10px] text-muted-foreground">
                         <div>Re-spins completed: {Number(t.switcheroo.rerollsUsed || 0)}</div>
-                        <div className="mt-0.5 text-[#D5A33A]">
+                        <div className="mt-0.5 text-[#FF4FA3]">
                           Next target after this: €{nextRerollGoal}
                         </div>
                       </div>
@@ -1076,7 +1097,7 @@ export default function MuchoTourney() {
                         {(t.switcheroo.contributions || []).slice(-8).reverse().map((row) => (
                           <span key={row.id || row.at} className="h-7 px-2 rounded-lg border border-[#2A303B] bg-[#111720] text-[10px] inline-flex items-center gap-1.5">
                             <strong>{row.name || "Player"}</strong>
-                            <span className="text-[#D5A33A]">+€{row.amount}</span>
+                            <span className="text-[#FF4FA3]">+€{row.amount}</span>
                           </span>
                         ))}
                       </div>
@@ -1087,7 +1108,7 @@ export default function MuchoTourney() {
                     <div className="mt-4 pt-3 border-t border-[#222834]">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <div className="text-[9px] tracking-widest text-[#697181]">PAYPAL PAYMENTS TO VERIFY</div>
-                        <span className="font-mono text-[9px] text-[#D5A33A]">
+                        <span className="font-mono text-[9px] text-[#FF4FA3]">
                           {t.switcheroo.pendingPayments.length} pending
                         </span>
                       </div>
@@ -1100,7 +1121,7 @@ export default function MuchoTourney() {
                             <div className="min-w-0 flex-1">
                               <div className="text-xs font-black truncate">{row.name || "Player"}</div>
                               <div className="text-[10px] text-muted-foreground">
-                                Declared payment <span className="text-[#D5A33A] font-black">€{row.amount}</span>
+                                Declared payment <span className="text-[#FF4FA3] font-black">€{row.amount}</span>
                               </div>
                             </div>
                             <div className="flex gap-1.5">
