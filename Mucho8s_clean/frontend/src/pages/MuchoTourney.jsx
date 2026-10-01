@@ -425,6 +425,14 @@ export default function MuchoTourney() {
   };
 
   const publishSwitcheroo = () => {
+    if (!String(t.name || "").trim()) {
+      toast.error("Add a tournament name before publishing");
+      return;
+    }
+    if (!String(t.switcheroo?.paypalUrl || "").trim()) {
+      toast.error("Add your PayPal link before publishing");
+      return;
+    }
     if (
       switcherooRegistrationMode !== "open" &&
       !switcherooStructureReady
