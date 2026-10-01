@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { Crown, Shield, Swords, Trophy, UsersRound, Clock3, Shuffle } from "lucide-react";
 import { toast } from "sonner";
 import { useData } from "@/context/DataContext";
