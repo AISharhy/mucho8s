@@ -293,11 +293,14 @@ export default function MuchoTourney() {
   const allEntryPaid =
     switcherooPoolSize > 0 &&
     (t.switcheroo?.pool || []).every((player) => entryPaidIds.has(String(player.id)));
-  const switcherooPoolReady =
+  const switcherooStructureReady =
     switcherooPoolSize >= switcherooRosterSize * 2 &&
     switcherooPoolSize % switcherooRosterSize === 0 &&
-    switcherooPoolSize / switcherooRosterSize <= 8 &&
-    allEntryPaid;
+    switcherooPoolSize / switcherooRosterSize <= 8;
+  const switcherooPoolReady = switcherooStructureReady && allEntryPaid;
+  const unpaidEntryPlayers = (t.switcheroo?.pool || []).filter(
+    (player) => !entryPaidIds.has(String(player.id))
+  );
 
   const addTeam = () => {
     const name = teamName.trim();
@@ -405,6 +408,44 @@ export default function MuchoTourney() {
     });
   };
 
+  const compUnpaidEntries = () => {
+    if (!unpaidEntryPlayers.length) return true;
+
+    const ok = window.confirm(
+      `${unpaidEntryPlayers.length} player${unpaidEntryPlayers.length === 1 ? " has" : "s have"} not paid the entry fee. Start anyway and mark them as ADMIN COMP?`
+    );
+    if (!ok) return false;
+
+    const existing = Array.isArray(t.switcheroo?.entryPaid)
+      ? t.switcheroo.entryPaid
+      : [];
+    const nowIso = new Date().toISOString();
+    const comped = unpaidEntryPlayers.map((player) => ({
+      id: `admin-comp-${player.id}-${Date.now()}`,
+      playerId: player.id,
+      name: player.name,
+      amount: 0,
+      paidAt: nowIso,
+      confirmedBy: admin?.username || "admin",
+      comped: true,
+    }));
+
+    save({
+      ...t,
+      switcheroo: {
+        ...t.switcheroo,
+        entryPaid: [...existing, ...comped],
+        entryPendingPayments: (t.switcheroo?.entryPendingPayments || []).filter(
+          (row) => !unpaidEntryPlayers.some(
+            (player) => String(player.id) === String(row.playerId)
+          )
+        ),
+      },
+    });
+
+    return true;
+  };
+
   const openSwitcherooDraw = () => {
     const pool = Array.isArray(t.switcheroo?.pool) ? t.switcheroo.pool : [];
     const rosterSize = rosterSizeFor(t.format);
@@ -418,10 +459,7 @@ export default function MuchoTourney() {
       return;
     }
     const unpaid = pool.filter((player) => !entryPaidIds.has(String(player.id)));
-    if (unpaid.length) {
-      toast.error(`Entry fee not confirmed for ${unpaid.length} player${unpaid.length === 1 ? "" : "s"}`);
-      return;
-    }
+    if (unpaid.length && !compUnpaidEntries()) return;
 
     const teamCount = pool.length / rosterSize;
     if (teamCount > 8) {
@@ -903,8 +941,19 @@ export default function MuchoTourney() {
                     {entryPaidIds.size}/{switcherooPoolSize} confirmed · starting re-spin goal €{switcherooEconomy.baseGoal}
                   </div>
                 </div>
-                <div className="font-mono text-sm font-black text-[#FF8BC5]">
-                  POT €{switcherooEconomy.entryPot}
+                <div className="flex items-center gap-2">
+                  <div className="font-mono text-sm font-black text-[#FF8BC5]">
+                    POT €{switcherooEconomy.entryPot}
+                  </div>
+                  {unpaidEntryPlayers.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => compUnpaidEntries()}
+                      className="h-8 px-3 rounded-lg border border-[#FF4FA3]/30 bg-[#FF4FA3]/10 text-[#FF8BC5] text-[9px] font-black"
+                    >
+                      ADMIN COMP {unpaidEntryPlayers.length}
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -962,7 +1011,7 @@ export default function MuchoTourney() {
               <div className="mt-4 rounded-2xl border border-[#252B36] bg-[#0B0F15] p-4">
                 <SwitcherooWheel
                   players={t.switcheroo.pool || []}
-                  disabled={!switcherooPoolReady && t.status === "setup"}
+                  disabled={!switcherooStructureReady && t.status === "setup"}
                   onActivate={() => {
                     if (t.status === "setup") {
                       openSwitcherooDraw();
@@ -982,9 +1031,9 @@ export default function MuchoTourney() {
                     t.status === "setup"
                       ? switcherooPoolReady
                         ? "All entry fees confirmed · click to open Switcheroo fullscreen"
-                        : allEntryPaid
+                        : !switcherooStructureReady
                           ? `Select a valid ${t.format} pool first`
-                          : "Waiting for all tournament entry payments"
+                          : `${unpaidEntryPlayers.length} unpaid · click to start with Admin Comp override`
                       : "Click to replay this Switcheroo fullscreen"
                   }
                   sizeClass="w-[250px] h-[250px] sm:w-[300px] sm:h-[300px]"
