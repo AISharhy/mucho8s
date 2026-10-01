@@ -69,6 +69,7 @@ export default function SwitcherooDrawOverlay({
   generation = 1,
   presetTeams = null,
   onComplete,
+  onProgress,
   onClose,
   title = "SWITCHEROO",
 }) {
@@ -145,22 +146,32 @@ export default function SwitcherooDrawOverlay({
     : 0;
 
   const commitWinner = (picked, teamIndex) => {
-    setTeams((current) =>
-      current.map((team, index) =>
-        index === teamIndex
-          ? { ...team, roster: [...(team.roster || []), picked] }
-          : team
-      )
+    const nextTeams = teams.map((team, index) =>
+      index === teamIndex
+        ? { ...team, roster: [...(team.roster || []), picked] }
+        : team
     );
-    setRemaining((current) =>
-      current.filter((player) => String(player.id) !== String(picked.id))
+    const nextRemaining = remaining.filter(
+      (player) => String(player.id) !== String(picked.id)
     );
-    setQueue((current) => current.slice(1));
-    setDrawIndex((value) => value + 1);
-    setWinner(null);
+    const nextDrawIndex = drawIndex + 1;
+    const isLast = nextRemaining.length === 0;
 
-    const isLast = remaining.length <= 1;
+    setTeams(nextTeams);
+    setRemaining(nextRemaining);
+    setQueue((current) => current.slice(1));
+    setDrawIndex(nextDrawIndex);
+    setWinner(null);
     setPhase(isLast ? "complete" : "idle");
+
+    onProgress?.({
+      teams: nextTeams,
+      remaining: nextRemaining,
+      drawIndex: nextDrawIndex,
+      lastPlayer: picked,
+      targetTeamIndex: teamIndex,
+      complete: isLast,
+    });
   };
 
   const spin = () => {
