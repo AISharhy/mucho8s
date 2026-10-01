@@ -6,33 +6,7 @@ import { PlayerAvatar } from "@/components/shared";
 import ModeBadge from "@/components/ModeBadge";
 import { Check, X, Landmark, ShieldCheck, AlertTriangle, Trophy } from "lucide-react";
 import { toast } from "sonner";
-
-const playChallengeTone = () => {
-  try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
-    const ctx = new AudioContext();
-    const now = ctx.currentTime;
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.12, now + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
-    gain.connect(ctx.destination);
-
-    [440, 660].forEach((frequency, index) => {
-      const osc = ctx.createOscillator();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(frequency, now + index * 0.12);
-      osc.connect(gain);
-      osc.start(now + index * 0.12);
-      osc.stop(now + 0.42 + index * 0.12);
-    });
-
-    setTimeout(() => ctx.close().catch(() => {}), 900);
-  } catch {
-    // Browsers may block audio before a user interaction.
-  }
-};
+import { playUiSound } from "@/lib/uiAudio";
 
 const money = (challenge) =>
   new Intl.NumberFormat("it-IT", {
@@ -129,7 +103,10 @@ export default function ChallengeCenter() {
     const key = `${attention.type}:${attention.challenge.id}:${attention.challenge.status}:${attention.challenge.last_event || ""}`;
     if (lastAttentionRef.current === key) return;
     lastAttentionRef.current = key;
-    playChallengeTone();
+    void playUiSound(
+      attention.type === "incoming" ? "next" : "confirm",
+      "mucho1v1"
+    );
 
     if (attention.type === "accepted") {
       void markChallengeSeen(attention.challenge.id);
@@ -168,6 +145,7 @@ export default function ChallengeCenter() {
     challenge.reported_winner_player_id === discordPlayer.id;
 
   const respond = async (decision) => {
+    void playUiSound(decision === "accept" ? "confirm" : "back", "mucho1v1");
     setBusy(true);
     const updated = await respondToChallenge(challenge.id, decision);
     setBusy(false);
@@ -182,6 +160,7 @@ export default function ChallengeCenter() {
   };
 
   const verify = async (decision) => {
+    void playUiSound(decision === "confirm" ? "confirm" : "back", "mucho1v1");
     setBusy(true);
     const updated = await verifyChallengeResult(challenge.id, decision);
     setBusy(false);
