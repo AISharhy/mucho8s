@@ -41,6 +41,9 @@ const switcherooDefaults = {
   rerollsUsed: 0,
   generation: 0,
   phase: "idle",
+  setupStage: "settings",
+  publishedAt: null,
+  liveDraw: null,
   reviewEndsAt: null,
   contributedTotal: 0,
   contributions: [],
@@ -302,6 +305,38 @@ export default function MuchoTourney() {
     (player) => !entryPaidIds.has(String(player.id))
   );
 
+  const switcherooSetupStage = t.switcheroo?.setupStage || "settings";
+
+  const goToSwitcherooPlayers = () => {
+    save({
+      ...t,
+      switcheroo: {
+        ...t.switcheroo,
+        setupStage: "players",
+        phase: "idle",
+      },
+    });
+  };
+
+  const publishSwitcheroo = () => {
+    if (!switcherooStructureReady) {
+      toast.error(`Select a valid ${t.format} player pool before publishing`);
+      return;
+    }
+
+    save({
+      ...t,
+      status: "setup",
+      switcheroo: {
+        ...t.switcheroo,
+        setupStage: "published",
+        phase: "published",
+        publishedAt: new Date().toISOString(),
+      },
+    });
+    toast.success("MuchoTourney is online · public Switcheroo wheel is now visible");
+  };
+
   const addTeam = () => {
     const name = teamName.trim();
     if (!name) return;
@@ -362,7 +397,7 @@ export default function MuchoTourney() {
   };
 
   const toggleSwitcherooPlayer = (player) => {
-    if (t.status !== "setup") return;
+    if (t.status !== "setup" || switcherooSetupStage === "published") return;
     const pool = Array.isArray(t.switcheroo?.pool) ? t.switcheroo.pool : [];
     const exists = pool.some((row) => String(row.id) === String(player.id));
     if (exists && entryPaidIds.has(String(player.id))) {
@@ -467,6 +502,37 @@ export default function MuchoTourney() {
       return;
     }
 
+    const initialTeams = Array.from({ length: teamCount }, (_, index) => ({
+      id: globalThis.crypto?.randomUUID?.() || `switcheroo-1-${index}-${Date.now()}`,
+      name: `Team ${teamLabels[index] || index + 1}`,
+      seed: index + 1,
+      roster: [],
+      switcherooGeneration: 1,
+    }));
+
+    save({
+      ...t,
+      status: "setup",
+      teams: [],
+      bracket: [],
+      champion: null,
+      switcheroo: {
+        ...t.switcheroo,
+        setupStage: "published",
+        phase: "drawing",
+        generation: 1,
+        liveDraw: {
+          generation: 1,
+          teams: initialTeams,
+          remaining: pool,
+          drawIndex: 0,
+          lastPlayer: null,
+          targetTeamIndex: 0,
+          complete: false,
+        },
+      },
+    });
+
     setSwitcherooDraw({
       mode: "new",
       generation: 1,
@@ -493,7 +559,9 @@ export default function MuchoTourney() {
       switcheroo: {
         ...t.switcheroo,
         phase: "review",
+        setupStage: "published",
         generation: 1,
+        liveDraw: null,
         reviewEndsAt,
         rerollBaseGoal: economy.baseGoal,
         rerollGoal: economy.baseGoal,
@@ -508,6 +576,30 @@ export default function MuchoTourney() {
 
     setSwitcherooDraw(null);
     toast.success("Switcheroo complete · review phase started");
+  };
+
+  const syncSwitcherooDrawProgress = (progressState) => {
+    if (!progressState || switcherooDraw?.mode !== "new") return;
+
+    save({
+      ...t,
+      status: "setup",
+      switcheroo: {
+        ...t.switcheroo,
+        setupStage: "published",
+        phase: "drawing",
+        generation: 1,
+        liveDraw: {
+          generation: 1,
+          teams: progressState.teams,
+          remaining: progressState.remaining,
+          drawIndex: progressState.drawIndex,
+          lastPlayer: progressState.lastPlayer,
+          targetTeamIndex: progressState.targetTeamIndex,
+          complete: progressState.complete,
+        },
+      },
+    });
   };
 
   const reviewEntryPayment = async (paymentId, decision) => {
@@ -757,6 +849,9 @@ export default function MuchoTourney() {
                         switcheroo: {
                           ...t.switcheroo,
                           phase: "idle",
+                          setupStage: "settings",
+                          publishedAt: null,
+                          liveDraw: null,
                           reviewEndsAt: null,
                           rerollBaseGoal: switcherooEconomy.baseGoal,
                           rerollGoal: switcherooEconomy.baseGoal,
