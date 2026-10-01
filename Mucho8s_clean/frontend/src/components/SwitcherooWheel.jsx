@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Shuffle } from "lucide-react";
 
 const PALETTE = [
-  "#D5A33A",
+  "#FF4FA3",
   "#7C3AED",
   "#E11D48",
   "#0F766E",
@@ -151,15 +151,15 @@ export default function SwitcherooWheel({
         disabled={disabled || spinning}
         aria-label={spinning ? "Switcheroo wheel spinning" : "Spin the Switcheroo wheel"}
         className={
-          "relative rounded-full select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D5A33A] focus-visible:ring-offset-4 focus-visible:ring-offset-[#0B0F15] disabled:cursor-not-allowed " +
+          "relative rounded-full select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF4FA3] focus-visible:ring-offset-4 focus-visible:ring-offset-[#0B0F15] disabled:cursor-not-allowed " +
           sizeClass
         }
       >
         <div className="absolute left-1/2 -top-3 -translate-x-1/2 z-30">
-          <div className="w-0 h-0 border-l-[13px] border-r-[13px] border-t-[24px] border-l-transparent border-r-transparent border-t-[#F5E2A8] drop-shadow-[0_3px_3px_rgba(0,0,0,.45)]" />
+          <div className="w-0 h-0 border-l-[13px] border-r-[13px] border-t-[24px] border-l-transparent border-r-transparent border-t-[#FFD1E8] drop-shadow-[0_3px_3px_rgba(0,0,0,.45)]" />
         </div>
 
-        <div className="absolute inset-0 rounded-full border-[10px] border-[#242A33] bg-[#0A0E14] shadow-[inset_0_0_0_2px_rgba(213,163,58,.2),0_18px_50px_rgba(0,0,0,.32)]" />
+        <div className="absolute inset-0 rounded-full border-[10px] border-[#242A33] bg-[#0A0E14] shadow-[inset_0_0_0_2px_rgba(255,79,163,.2),0_18px_50px_rgba(0,0,0,.32)]" />
 
         <motion.div
           className="absolute inset-[12px] rounded-full overflow-hidden"
@@ -205,14 +205,14 @@ export default function SwitcherooWheel({
               );
             })}
 
-            <circle cx="50" cy="50" r="15.5" fill="#090D13" stroke="#D5A33A" strokeWidth="1.1" />
+            <circle cx="50" cy="50" r="15.5" fill="#090D13" stroke="#FF4FA3" strokeWidth="1.1" />
             <circle cx="50" cy="50" r="12.2" fill="#111720" stroke="rgba(255,255,255,.12)" strokeWidth=".6" />
           </svg>
         </motion.div>
 
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-          <div className="w-[82px] h-[82px] rounded-full border border-[#D5A33A]/50 bg-[#0B0F15]/95 backdrop-blur flex flex-col items-center justify-center shadow-[0_0_30px_rgba(213,163,58,.16)]">
-            <Shuffle size={19} className={spinning ? "text-[#F4CE70] animate-pulse" : "text-[#D5A33A]"} />
+          <div className="w-[82px] h-[82px] rounded-full border border-[#FF4FA3]/50 bg-[#0B0F15]/95 backdrop-blur flex flex-col items-center justify-center shadow-[0_0_30px_rgba(255,79,163,.16)]">
+            <Shuffle size={19} className={spinning ? "text-[#FF9DCE] animate-pulse" : "text-[#FF4FA3]"} />
             <span className="font-display text-[10px] font-black tracking-[.13em] mt-1">
               {spinning ? "SPINNING" : label}
             </span>
