@@ -452,8 +452,8 @@ export default function TourneyLive() {
         </section>
 
         {t?.teamBuild === "switcheroo" && (
-          <section className="m8-panel rounded-[22px] p-5 sm:p-6">
-            <div className="grid lg:grid-cols-[380px_1fr] gap-5 items-center">
+          <section className="m8-panel rounded-[22px] p-5 sm:p-7 min-h-[640px] flex items-center">
+            <div className="grid xl:grid-cols-[620px_1fr] gap-7 items-center w-full">
               <SwitcherooWheel
                 players={t.switcheroo?.pool || []}
                 label="SPIN"
@@ -462,17 +462,18 @@ export default function TourneyLive() {
                     ? "Click the wheel to replay the Switcheroo animation"
                     : "Teams are locked · wheel remains available as the tournament element"
                 }
-                sizeClass="w-[260px] h-[260px] sm:w-[320px] sm:h-[320px]"
+                sizeClass="w-[82vw] h-[82vw] max-w-[560px] max-h-[560px] min-w-[300px] min-h-[300px]"
                 onActivate={() => setReplayOpen(true)}
               />
               <div>
                 <div className="brand-kicker text-[#FF4FA3]">Switcheroo wheel</div>
                 <h2 className="font-display text-2xl font-black mt-1">
-                  Click the wheel anytime
+                  Switcheroo live
                 </h2>
                 <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
-                  The player names stay on the wheel. During review, reaching the current fund target
-                  triggers a completely new draw; if the timer reaches zero first, the current teams are final.
+                  The draw is complete, but teams are still provisional during the review timer.
+                  If the re-spin goal is reached, Switcheroo starts again. When the timer reaches zero,
+                  the bracket is generated automatically and this wheel disappears from the public tournament page.
                 </p>
                 <div className="flex flex-wrap gap-2 mt-4 text-[10px] font-black">
                   <span className="m8-pill">Generation {t.switcheroo?.generation || 1}</span>
@@ -659,37 +660,16 @@ export default function TourneyLive() {
         </div>
       </section>
 
-      {t?.teamBuild === "switcheroo" && (
-        <section className="m8-panel rounded-[22px] p-5">
-          <div className="grid lg:grid-cols-[330px_1fr] gap-4 items-center">
-            <SwitcherooWheel
-              players={t.switcheroo?.pool || []}
-              label="SPIN"
-              hint="Switcheroo wheel · click to replay the animation"
-              sizeClass="w-[230px] h-[230px] sm:w-[280px] sm:h-[280px]"
-              onActivate={() => setReplayOpen(true)}
-            />
-            <div>
-              <div className="brand-kicker text-[#FF4FA3]">Switcheroo</div>
-              <h2 className="font-display text-xl font-black mt-1">Tournament wheel</h2>
-              <p className="text-xs text-muted-foreground mt-2">
-                Final Switcheroo generation {t.switcheroo?.generation || 1} · {rerollsUsed} re-spins completed.
-              </p>
-            </div>
-          </div>
-        </section>
-      )}
-
-      <section className="grid lg:grid-cols-[1fr_300px] gap-3">
+      <section className={t.teamBuild === "switcheroo" ? "grid grid-cols-1 gap-3" : "grid lg:grid-cols-[1fr_300px] gap-3"}>
         <div className="m8-panel rounded-[22px] p-5 overflow-x-auto">
           <div className="flex items-center justify-between">
             <div>
-              <div className="brand-kicker text-[#D5A33A]">Live progression</div>
+              <div className={"brand-kicker " + (t.teamBuild === "switcheroo" ? "text-[#FF4FA3]" : "text-[#D5A33A]")}>Live progression</div>
               <h2 className="font-display text-xl font-black">Bracket</h2>
             </div>
             {t.champion && (
               <div className="text-right">
-                <div className="text-[9px] text-[#D5A33A]">CHAMPION</div>
+                <div className={"text-[9px] " + (t.teamBuild === "switcheroo" ? "text-[#FF4FA3]" : "text-[#D5A33A]")}>CHAMPION</div>
                 <div className="font-black">{t.champion.name}</div>
               </div>
             )}
@@ -743,6 +723,7 @@ export default function TourneyLive() {
           </div>
         </div>
 
+        {t.teamBuild !== "switcheroo" && (
         <aside className="space-y-3">
           <div className="m8-panel rounded-[22px] p-4">
             <div className="flex items-center gap-2">
@@ -784,6 +765,7 @@ export default function TourneyLive() {
             </div>
           </div>
         </aside>
+        )}
       </section>
 
       {t.champion && (
