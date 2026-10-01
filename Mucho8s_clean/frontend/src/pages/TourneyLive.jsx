@@ -255,7 +255,7 @@ export default function TourneyLive() {
                       ))}
                     </div>
                     <div className="text-[9px] text-muted-foreground mt-2 leading-4">
-                      PayPal opens in a new tab. Your payment stays pending until the tournament Admin confirms it was received.
+                      PayPal opens in a new tab. The payment counts only if the tournament Admin confirms it before the review timer reaches zero.
                     </div>
                   </>
                 ) : (
