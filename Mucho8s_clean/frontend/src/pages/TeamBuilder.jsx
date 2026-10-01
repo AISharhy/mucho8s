@@ -669,6 +669,7 @@ export default function TeamBuilder() {
     });
     setMoneyPairings(draftPairings);
     setResult(draft);
+    void playUiSound("confirm", "mucho8s");
     setWizardStep(4);
 
     toast.success(
@@ -867,13 +868,13 @@ export default function TeamBuilder() {
                 <div
                   className={
                     "h-1 rounded-full mb-2 " +
-                    (active ? "bg-white" : done ? "bg-emerald-400" : "bg-[#242A35]")
+                    (active ? "bg-[#FF2A3B]" : done ? "bg-[#9E1D2A]" : "bg-[#242A35]")
                   }
                 />
                 <div
                   className={
                     "text-[9px] sm:text-[10px] uppercase tracking-[0.14em] font-black truncate " +
-                    (active ? "text-white" : done ? "text-emerald-400" : "text-[#606978]")
+                    (active ? "text-[#FF6B77]" : done ? "text-[#C43A47]" : "text-[#606978]")
                   }
                 >
                   {step}. {label}
@@ -884,9 +885,9 @@ export default function TeamBuilder() {
         </div>
 
         {wizardStep === 1 && (
-          <div className="rounded-2xl border border-[#222834] bg-[#0D1117] p-4 sm:p-5">
+          <div className="rounded-2xl border border-[#FF2A3B]/20 bg-[linear-gradient(135deg,#0D1117_0%,#120D11_64%,#1B0B10_100%)] p-4 sm:p-5 shadow-[0_18px_48px_rgba(255,42,59,.035)]">
             <div className="flex items-center gap-3 mb-4">
-              <span className="w-9 h-9 rounded-xl bg-white text-black flex items-center justify-center font-black">1</span>
+              <span className="w-9 h-9 rounded-xl border border-[#FF2A3B]/45 bg-[#FF2A3B] text-white flex items-center justify-center font-black shadow-[0_0_24px_rgba(255,42,59,.16)]">1</span>
               <div>
                 <div className="font-display font-black text-lg">Match setup</div>
                 <div className="text-xs text-muted-foreground">Choose the basic rules, then continue.</div>
@@ -1030,9 +1031,9 @@ export default function TeamBuilder() {
             <div className="flex justify-end mt-5">
               <Button
                 type="button"
-                onClick={() => setWizardStep(2)}
+                onClick={() => goWizardStep(2)}
                 disabled={!setupValid}
-                className="h-11 px-5 bg-white hover:bg-[#E8E8E8] text-black font-black rounded-xl"
+                className="h-11 px-5 bg-[#FF2A3B] hover:bg-[#FF4352] text-white font-black rounded-xl shadow-[0_10px_30px_rgba(255,42,59,.12)]"
               >
                 Continue
                 <ArrowRight size={15} className="ml-2" />
@@ -1042,9 +1043,9 @@ export default function TeamBuilder() {
         )}
 
         {wizardStep === 2 && (
-          <div className="rounded-2xl border border-[#222834] bg-[#0D1117] p-4 sm:p-5">
+          <div className="rounded-2xl border border-[#FF2A3B]/20 bg-[linear-gradient(135deg,#0D1117_0%,#120D11_64%,#1B0B10_100%)] p-4 sm:p-5 shadow-[0_18px_48px_rgba(255,42,59,.035)]">
             <div className="flex items-center gap-3 mb-4">
-              <span className="w-9 h-9 rounded-xl bg-white text-black flex items-center justify-center font-black">2</span>
+              <span className="w-9 h-9 rounded-xl border border-[#FF2A3B]/45 bg-[#FF2A3B] text-white flex items-center justify-center font-black shadow-[0_0_24px_rgba(255,42,59,.16)]">2</span>
               <div>
                 <div className="font-display font-black text-lg">Team method</div>
                 <div className="text-xs text-muted-foreground">Keep it simple: choose how the teams should be built.</div>
@@ -1144,7 +1145,7 @@ export default function TeamBuilder() {
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => setWizardStep(1)}
+                onClick={() => goWizardStep(1)}
                 className="h-10 px-3 border border-[#2A303B]"
               >
                 <ArrowLeft size={15} className="mr-1.5" />
@@ -1153,8 +1154,8 @@ export default function TeamBuilder() {
 
               <Button
                 type="button"
-                onClick={() => setWizardStep(3)}
-                className="h-11 px-5 bg-white hover:bg-[#E8E8E8] text-black font-black rounded-xl"
+                onClick={() => goWizardStep(3)}
+                className="h-11 px-5 bg-[#FF2A3B] hover:bg-[#FF4352] text-white font-black rounded-xl shadow-[0_10px_30px_rgba(255,42,59,.12)]"
               >
                 Select players
                 <ArrowRight size={15} className="ml-2" />
@@ -1164,10 +1165,10 @@ export default function TeamBuilder() {
         )}
 
         {wizardStep === 3 && (
-          <div className="rounded-2xl border border-[#222834] bg-[#0D1117] p-4 sm:p-5">
+          <div className="rounded-2xl border border-[#FF2A3B]/20 bg-[linear-gradient(135deg,#0D1117_0%,#120D11_64%,#1B0B10_100%)] p-4 sm:p-5 shadow-[0_18px_48px_rgba(255,42,59,.035)]">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <div className="flex items-center gap-3">
-                <span className="w-9 h-9 rounded-xl bg-white text-black flex items-center justify-center font-black">3</span>
+                <span className="w-9 h-9 rounded-xl border border-[#FF2A3B]/45 bg-[#FF2A3B] text-white flex items-center justify-center font-black shadow-[0_0_24px_rgba(255,42,59,.16)]">3</span>
                 <div>
                   <div className="font-display font-black text-lg">Lobby</div>
                   <div className="text-xs text-muted-foreground">
@@ -1477,7 +1478,7 @@ export default function TeamBuilder() {
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => setWizardStep(2)}
+                onClick={() => goWizardStep(2)}
                 className="h-10 px-3 border border-[#2A303B]"
               >
                 <ArrowLeft size={15} className="mr-1.5" />
@@ -1504,7 +1505,7 @@ export default function TeamBuilder() {
                     !validLobby ||
                     (teamMethod === "manual" && (manualA.length !== perTeam || manualB.length !== perTeam))
                   }
-                  className="h-11 px-5 bg-white hover:bg-[#E8E8E8] text-black font-black rounded-xl"
+                  className="h-11 px-5 bg-[#FF2A3B] hover:bg-[#FF4352] text-white font-black rounded-xl shadow-[0_10px_30px_rgba(255,42,59,.12)]"
                 >
                   Build teams
                   <ArrowRight size={15} className="ml-2" />
@@ -1515,10 +1516,10 @@ export default function TeamBuilder() {
         )}
 
         {wizardStep === 4 && result && (
-          <div className="rounded-2xl border border-[#222834] bg-[#0D1117] p-4 sm:p-5">
+          <div className="rounded-2xl border border-[#FF2A3B]/20 bg-[linear-gradient(135deg,#0D1117_0%,#120D11_64%,#1B0B10_100%)] p-4 sm:p-5 shadow-[0_18px_48px_rgba(255,42,59,.035)]">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 mb-4">
               <div className="flex items-center gap-3">
-                <span className="w-9 h-9 rounded-xl bg-white text-black flex items-center justify-center font-black">4</span>
+                <span className="w-9 h-9 rounded-xl border border-[#FF2A3B]/45 bg-[#FF2A3B] text-white flex items-center justify-center font-black shadow-[0_0_24px_rgba(255,42,59,.16)]">4</span>
                 <div>
                   <div className="font-display font-black text-lg">Review</div>
                   <div className="text-xs text-muted-foreground">Everything in one place before the match goes live.</div>
@@ -1745,7 +1746,7 @@ export default function TeamBuilder() {
                 variant="ghost"
                 onClick={() => {
                   setResult(null);
-                  setWizardStep(3);
+                  goWizardStep(3);
                 }}
                 className="h-10 px-3 border border-[#2A303B]"
               >
