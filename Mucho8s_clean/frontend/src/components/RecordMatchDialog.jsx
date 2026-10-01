@@ -280,13 +280,18 @@ export const RecordMatchDialog = ({
   const liveSeriesMaps = liveMatchId && Array.isArray(initialTeams?.maps)
     ? initialTeams.maps.filter(Boolean).slice(0, 5)
     : [];
-  const winsNeeded = liveSeriesMaps.length >= 5 ? 3 : 2;
+  const editSeriesMaps = editData && Array.isArray(editData?.maps)
+    ? editData.maps.filter(Boolean).slice(0, 5)
+    : [];
+  const resultSeriesMaps = liveSeriesMaps.length ? liveSeriesMaps : editSeriesMaps;
+  const winsNeeded = resultSeriesMaps.length >= 5 ? 3 : 2;
   const alphaMapWins = mapWinners.filter((side) => side === "A").length;
   const bravoMapWins = mapWinners.filter((side) => side === "B").length;
   const derivedWinner = alphaMapWins >= winsNeeded ? "A" : bravoMapWins >= winsNeeded ? "B" : "";
   const playedMapCount = mapWinners.filter(Boolean).length;
   const expectedPlayedMaps = derivedWinner ? alphaMapWins + bravoMapWins : 0;
-  const mapResultsValid = !liveSeriesMaps.length || Boolean(
+  const hasMapSelection = mapWinners.some(Boolean);
+  const mapResultsValid = !resultSeriesMaps.length || (Boolean(editData) && !hasMapSelection) || Boolean(
     derivedWinner &&
     playedMapCount === expectedPlayedMaps &&
     mapWinners.slice(0, expectedPlayedMaps).every(Boolean) &&
@@ -294,7 +299,7 @@ export const RecordMatchDialog = ({
   );
   const chooseMapWinner = (index, side) => {
     setMapWinners((prev) => {
-      const next = liveSeriesMaps.map((_, mapIndex) => prev[mapIndex] || "");
+      const next = resultSeriesMaps.map((_, mapIndex) => prev[mapIndex] || "");
       const priorA = next.slice(0, index).filter((value) => value === "A").length;
       const priorB = next.slice(0, index).filter((value) => value === "B").length;
       if (priorA >= winsNeeded || priorB >= winsNeeded) return next;
@@ -342,11 +347,26 @@ export const RecordMatchDialog = ({
     setSubmitting(true);
 
     if (editData) {
+      const editedMapResults = resultSeriesMaps.length && hasMapSelection && derivedWinner
+        ? resultSeriesMaps
+            .slice(0, alphaMapWins + bravoMapWins)
+            .map((mapName, index) => ({ map: mapName, winner: mapWinners[index] }))
+        : (Array.isArray(editData?.mapResults) ? editData.mapResults : []);
+
       const payload = pairingEditOnly
         ? {
             teamA: editData.teamA || [],
             teamB: editData.teamB || [],
-            winner: editData.winner || winner,
+            winner: resultSeriesMaps.length && hasMapSelection && derivedWinner
+              ? derivedWinner
+              : (editData.winner || winner),
+            scoreA: resultSeriesMaps.length && hasMapSelection && derivedWinner
+              ? alphaMapWins
+              : Math.max(0, Number(editData?.scoreA) || 0),
+            scoreB: resultSeriesMaps.length && hasMapSelection && derivedWinner
+              ? bravoMapWins
+              : Math.max(0, Number(editData?.scoreB) || 0),
+            mapResults: editedMapResults,
             mode: editData.mode || mode,
             game: editData.game || game,
             map: editData.map || "",
@@ -383,7 +403,7 @@ export const RecordMatchDialog = ({
 
       toast.success(
         pairingEditOnly
-          ? "Money Challs updated"
+          ? "Map count & Money Challs updated"
           : reportOnly
             ? "Result reported — Elo & stats recalculated"
             : "Mucho8s updated — Elo & stats recalculated"
@@ -490,9 +510,9 @@ export const RecordMatchDialog = ({
                   <WalletCards size={17} className="text-emerald-400" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-sm font-black text-white">Edit Money Challs only</div>
+                  <div className="text-sm font-black text-white">Edit result details</div>
                   <div className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-                    Choose who each Chall was against and the amount. Roster, match winner, maps and game stay locked.
+                    Correct the map count and Money Challs. Roster, map rotation and game stay locked.
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     <span className="rounded-md border border-[#2A303B] bg-[#0F1218] px-2 py-1 text-[9px] font-black uppercase tracking-wider text-[#AAB2BF]">
@@ -599,11 +619,11 @@ export const RecordMatchDialog = ({
             </>
           )}
 
-          {!pairingEditOnly && !liveOnly && liveSeriesMaps.length > 0 && (
+          {!liveOnly && resultSeriesMaps.length > 0 && (
             <div className="rounded-2xl bg-[#0F1218] border border-[#222834] p-4">
               <div className="flex items-center justify-between gap-3 mb-3">
                 <div>
-                  <Label className="text-xs text-muted-foreground">Map results</Label>
+                  <Label className="text-xs text-muted-foreground">{pairingEditOnly ? "Map count" : "Map results"}</Label>
                   <div className="text-sm font-black mt-0.5">Alpha {alphaMapWins} — {bravoMapWins} Bravo</div>
                 </div>
                 <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">
@@ -611,7 +631,7 @@ export const RecordMatchDialog = ({
                 </span>
               </div>
               <div className="space-y-2">
-                {liveSeriesMaps.map((mapName, index) => {
+                {resultSeriesMaps.map((mapName, index) => {
                   const previousA = mapWinners.slice(0, index).filter((side) => side === "A").length;
                   const previousB = mapWinners.slice(0, index).filter((side) => side === "B").length;
                   const seriesAlreadyEnded = previousA >= winsNeeded || previousB >= winsNeeded;
@@ -630,7 +650,7 @@ export const RecordMatchDialog = ({
             </div>
           )}
 
-          {!pairingEditOnly && !liveOnly && liveSeriesMaps.length === 0 && (
+          {!pairingEditOnly && !liveOnly && resultSeriesMaps.length === 0 && (
           <div>
             <Label className="text-xs text-muted-foreground">Winner</Label>
             <div className="grid grid-cols-2 gap-2 mt-1">
@@ -645,10 +665,10 @@ export const RecordMatchDialog = ({
               <div className="flex items-center gap-2 min-w-0">
                 <WalletCards size={16} className="text-emerald-400 shrink-0" />
                 <div className="min-w-0">
-                  <div className="text-sm font-bold">{pairingEditOnly ? "Who played who & how much" : "Money Chall Pairings"}</div>
+                  <div className="text-sm font-bold">{pairingEditOnly ? "Money Challs" : "Money Chall Pairings"}</div>
                   <div className="text-[11px] text-muted-foreground">
                     {pairingEditOnly
-                      ? "Set the opponent and the stake for each Chall, then confirm."
+                      ? "Set who each Chall was against and the stake, then confirm."
                       : "Base pairings + optional extra Challs against another opponent."}
                   </div>
                 </div>
@@ -912,7 +932,7 @@ export const RecordMatchDialog = ({
                 : reportOnly
                   ? "Update Result"
                   : pairingEditOnly
-                    ? "Confirm Money Challs"
+                    ? "Confirm Changes"
                     : editData
                       ? "Update Mucho8s"
                       : "Submit Mucho8s"}
