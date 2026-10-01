@@ -151,10 +151,33 @@ const normalizeExpiredReview = async (supabase: any, row: any) => {
   const endsAt = new Date(state?.switcheroo?.reviewEndsAt || 0).getTime();
   if (!endsAt || endsAt > Date.now()) return row;
 
+  const currentSwitcheroo =
+    state.switcheroo && typeof state.switcheroo === "object"
+      ? { ...state.switcheroo }
+      : {};
+  const pendingPayments = Array.isArray(currentSwitcheroo.pendingPayments)
+    ? currentSwitcheroo.pendingPayments
+    : [];
+  const expiredAt = new Date().toISOString();
+
   const nextState = {
     ...state,
     status: "ready",
-    switcheroo: { ...(state.switcheroo || {}), phase: "locked" },
+    switcheroo: {
+      ...currentSwitcheroo,
+      phase: "locked",
+      pendingPayments: [],
+      expiredPayments: [
+        ...(Array.isArray(currentSwitcheroo.expiredPayments)
+          ? currentSwitcheroo.expiredPayments
+          : []),
+        ...pendingPayments.map((payment: any) => ({
+          ...payment,
+          expiredAt,
+          status: "expired",
+        })),
+      ],
+    },
   };
 
   const { data, error } = await supabase
@@ -276,12 +299,6 @@ Deno.serve(async (req: Request) => {
       );
       if (!participant) {
         return json(req, { error: "Only tournament players can contribute" }, 403);
-      }
-
-      const maxRerolls = Math.max(0, Number(switcheroo.maxRerolls || 0));
-      const rerollsUsed = Math.max(0, Number(switcheroo.rerollsUsed || 0));
-      if (rerollsUsed >= maxRerolls) {
-        return json(req, { error: "Maximum number of re-rolls reached" }, 409);
       }
 
       const reviewEndsAt = new Date(switcheroo.reviewEndsAt || 0).getTime();
@@ -429,13 +446,17 @@ Deno.serve(async (req: Request) => {
         });
       }
 
-      if (!["review", "ready"].includes(String(state.status || ""))) {
-        return json(req, { error: "This Switcheroo can no longer accept payment confirmations" }, 409);
+      if (String(state.status || "") !== "review") {
+        return json(req, { error: "Switcheroo is locked: the review timer has ended" }, 409);
       }
 
       const reviewEndsAt = new Date(switcheroo.reviewEndsAt || 0).getTime();
       const requestedAt = new Date(pending.requestedAt || 0).getTime();
-      if (!reviewEndsAt || !requestedAt || requestedAt > reviewEndsAt) {
+      if (!reviewEndsAt || reviewEndsAt <= Date.now()) {
+        await normalizeExpiredReview(supabase, rawRow);
+        return json(req, { error: "Switcheroo is locked: the review timer has ended" }, 409);
+      }
+      if (!requestedAt || requestedAt > reviewEndsAt) {
         return json(req, { error: "This PayPal request was not created during the review window" }, 409);
       }
 
@@ -467,10 +488,9 @@ Deno.serve(async (req: Request) => {
       };
       let rerolled = false;
 
-      const maxRerolls = Math.max(0, Number(switcheroo.maxRerolls || 0));
       const rerollsUsed = Math.max(0, Number(switcheroo.rerollsUsed || 0));
 
-      if (nextTotal >= goal && rerollsUsed < maxRerolls) {
+      if (nextTotal >= goal) {
         const pool = Array.isArray(switcheroo.pool) ? switcheroo.pool : [];
         const rosterSize = rosterSizeFor(state.format);
         if (pool.length < rosterSize * 2 || pool.length % rosterSize !== 0) {
@@ -481,6 +501,8 @@ Deno.serve(async (req: Request) => {
         const generation = Math.max(1, Number(switcheroo.generation || 1)) + 1;
         const teams = makeSwitcherooTeams(pool, state.format, generation);
         const reviewMinutes = Math.max(1, Number(switcheroo.reviewMinutes || 5));
+        const step = Math.max(1, Math.round(Number(switcheroo.rerollStep || 10)));
+        const nextGoal = goal + step;
 
         nextState = {
           ...state,
@@ -492,6 +514,8 @@ Deno.serve(async (req: Request) => {
             ...switcheroo,
             generation,
             rerollsUsed: nextUsed,
+            rerollStep: step,
+            rerollGoal: nextGoal,
             reviewEndsAt: new Date(Date.now() + reviewMinutes * 60 * 1000).toISOString(),
             contributedTotal: 0,
             contributions: [],
@@ -502,6 +526,7 @@ Deno.serve(async (req: Request) => {
               {
                 generation: Number(switcheroo.generation || 1),
                 goal,
+                nextGoal,
                 total: nextTotal,
                 contributions,
                 completedAt: new Date().toISOString(),
