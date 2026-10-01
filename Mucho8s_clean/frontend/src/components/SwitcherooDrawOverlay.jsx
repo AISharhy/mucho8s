@@ -1,6 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Shuffle, X, Check, ArrowRight } from "lucide-react";
+import { Shuffle, X, Check, ArrowRight, Volume2, VolumeX } from "lucide-react";
+import {
+  isWheelSoundEnabled,
+  playWheelDrop,
+  playWheelLand,
+  setWheelSoundEnabled,
+  startWheelSpinSfx,
+  stopWheelSpinSfx,
+  unlockWheelAudio,
+} from "@/lib/wheelAudio";
 
 const PALETTE = [
   "#FF4FA3",
@@ -82,8 +91,10 @@ export default function SwitcherooDrawOverlay({
   const [phase, setPhase] = useState("idle");
   const [winner, setWinner] = useState(null);
   const [targetTeamIndex, setTargetTeamIndex] = useState(0);
+  const [soundOn, setSoundOn] = useState(isWheelSoundEnabled);
   const spinTimer = useRef(null);
   const landTimer = useRef(null);
+  const cancelSpinSfxRef = useRef(null);
 
   useEffect(() => {
     if (!open) return;
@@ -125,6 +136,7 @@ export default function SwitcherooDrawOverlay({
     () => () => {
       if (spinTimer.current) window.clearTimeout(spinTimer.current);
       if (landTimer.current) window.clearTimeout(landTimer.current);
+      if (cancelSpinSfxRef.current) cancelSpinSfxRef.current();
     },
     []
   );
@@ -158,6 +170,7 @@ export default function SwitcherooDrawOverlay({
     const nextDrawIndex = drawIndex + 1;
     const isLast = nextRemaining.length === 0;
 
+    playWheelDrop();
     setTeams(nextTeams);
     setRemaining(nextRemaining);
     setQueue((current) => current.slice(1));
@@ -200,6 +213,10 @@ export default function SwitcherooDrawOverlay({
     const delta = (targetMod - currentMod + 360) % 360;
     const turns = 6 + randomIndex(3);
 
+    unlockWheelAudio();
+    if (cancelSpinSfxRef.current) cancelSpinSfxRef.current();
+    cancelSpinSfxRef.current = startWheelSpinSfx(3200);
+
     onSpinStart?.({
       drawIndex: drawIndex + 1,
       player: picked,
@@ -212,6 +229,9 @@ export default function SwitcherooDrawOverlay({
 
     if (spinTimer.current) window.clearTimeout(spinTimer.current);
     spinTimer.current = window.setTimeout(() => {
+      stopWheelSpinSfx();
+      playWheelLand();
+      cancelSpinSfxRef.current = null;
       setWinner(picked);
       setPhase("landed");
 
@@ -260,6 +280,19 @@ export default function SwitcherooDrawOverlay({
               </div>
               <div className="text-[9px] text-muted-foreground">PLAYERS ASSIGNED</div>
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                const next = setWheelSoundEnabled(!soundOn);
+                setSoundOn(next);
+              }}
+              className="h-10 px-3 rounded-xl border border-[#2A303B] bg-[#0F141C] flex items-center gap-2 text-[9px] font-black text-muted-foreground hover:text-[#FF9DCE] hover:border-[#FF4FA3]/35"
+              aria-label={soundOn ? "Mute Switcheroo sounds" : "Enable Switcheroo sounds"}
+            >
+              {soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
+              <span className="hidden sm:inline">{soundOn ? "SOUND ON" : "SOUND OFF"}</span>
+            </button>
+
             {drawIndex === 0 && phase === "idle" && (
               <button
                 type="button"
@@ -392,7 +425,7 @@ export default function SwitcherooDrawOverlay({
                     animate={{ scale: 1, opacity: 1 }}
                     type="button"
                     onClick={spin}
-                    className="h-14 px-10 rounded-2xl bg-[#FF4FA3] hover:bg-[#E1B34C] text-black font-display font-black tracking-[.08em] shadow-[0_12px_45px_rgba(255,79,163,.2)]"
+                    className="h-14 px-10 rounded-2xl bg-[#FF4FA3] hover:bg-[#FF69B4] text-black font-display font-black tracking-[.08em] shadow-[0_12px_45px_rgba(255,79,163,.2)]"
                   >
                     {drawIndex === 0 ? "SPIN" : "NEXT SPIN"}
                   </motion.button>
