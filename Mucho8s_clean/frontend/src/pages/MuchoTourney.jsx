@@ -444,12 +444,17 @@ export default function MuchoTourney() {
   };
 
   const compUnpaidEntries = () => {
-    if (!unpaidEntryPlayers.length) return true;
+    if (!unpaidEntryPlayers.length) {
+      return {
+        entryPaid: t.switcheroo?.entryPaid || [],
+        entryPendingPayments: t.switcheroo?.entryPendingPayments || [],
+      };
+    }
 
     const ok = window.confirm(
       `${unpaidEntryPlayers.length} player${unpaidEntryPlayers.length === 1 ? " has" : "s have"} not paid the entry fee. Start anyway and mark them as ADMIN COMP?`
     );
-    if (!ok) return false;
+    if (!ok) return null;
 
     const existing = Array.isArray(t.switcheroo?.entryPaid)
       ? t.switcheroo.entryPaid
@@ -464,21 +469,23 @@ export default function MuchoTourney() {
       confirmedBy: admin?.username || "admin",
       comped: true,
     }));
+    const entryPaid = [...existing, ...comped];
+    const entryPendingPayments = (t.switcheroo?.entryPendingPayments || []).filter(
+      (row) => !unpaidEntryPlayers.some(
+        (player) => String(player.id) === String(row.playerId)
+      )
+    );
 
     save({
       ...t,
       switcheroo: {
         ...t.switcheroo,
-        entryPaid: [...existing, ...comped],
-        entryPendingPayments: (t.switcheroo?.entryPendingPayments || []).filter(
-          (row) => !unpaidEntryPlayers.some(
-            (player) => String(player.id) === String(row.playerId)
-          )
-        ),
+        entryPaid,
+        entryPendingPayments,
       },
     });
 
-    return true;
+    return { entryPaid, entryPendingPayments };
   };
 
   const openSwitcherooDraw = () => {
@@ -494,7 +501,8 @@ export default function MuchoTourney() {
       return;
     }
     const unpaid = pool.filter((player) => !entryPaidIds.has(String(player.id)));
-    if (unpaid.length && !compUnpaidEntries()) return;
+    const compResult = unpaid.length ? compUnpaidEntries() : null;
+    if (unpaid.length && !compResult) return;
 
     const teamCount = pool.length / rosterSize;
     if (teamCount > 8) {
@@ -518,6 +526,9 @@ export default function MuchoTourney() {
       champion: null,
       switcheroo: {
         ...t.switcheroo,
+        entryPaid: compResult?.entryPaid || t.switcheroo?.entryPaid || [],
+        entryPendingPayments:
+          compResult?.entryPendingPayments || t.switcheroo?.entryPendingPayments || [],
         setupStage: "published",
         phase: "drawing",
         generation: 1,
