@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchTourney, reviewTourneyPayment, saveTourney, subscribeTourney } from "@/lib/tourneyLive";
+import SwitcherooWheel from "@/components/SwitcherooWheel";
 
 export const TOURNEY_STORE = "mucho8s-tourney-admin-v1";
 const STORE = TOURNEY_STORE;
@@ -23,8 +24,9 @@ const STORE = TOURNEY_STORE;
 const switcherooDefaults = {
   pool: [],
   reviewMinutes: 5,
+  rerollBaseGoal: 20,
   rerollGoal: 20,
-  maxRerolls: 1,
+  rerollStep: 10,
   rerollsUsed: 0,
   generation: 0,
   phase: "idle",
@@ -209,20 +211,24 @@ export default function MuchoTourney() {
 
   useEffect(() => {
     if (
-      t.status === "review" &&
-      t.switcheroo?.reviewEndsAt &&
-      reviewRemaining <= 0 &&
-      t.switcheroo?.phase !== "locked"
+      t.status !== "review" ||
+      !t.switcheroo?.reviewEndsAt ||
+      reviewRemaining > 0 ||
+      t.switcheroo?.phase === "locked"
     ) {
-      save({
-        ...t,
-        status: "ready",
-        switcheroo: { ...t.switcheroo, phase: "locked" },
-      });
-      toast.success("Switcheroo review ended · teams locked");
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reviewRemaining, t.status, t.switcheroo?.phase]);
+
+    fetchTourney()
+      .then((remote) => {
+        if (!remote) return;
+        setT(normalize(remote));
+        if (remote.status === "ready") {
+          toast.success("Switcheroo review ended · teams locked");
+        }
+      })
+      .catch(() => {});
+  }, [reviewRemaining, t.status, t.switcheroo?.reviewEndsAt, t.switcheroo?.phase]);
 
   const switcherooProgress = Math.min(
     100,
@@ -235,8 +241,14 @@ export default function MuchoTourney() {
 
   const switcherooCanFund =
     t.status === "review" &&
-    reviewRemaining > 0 &&
-    Number(t.switcheroo?.rerollsUsed || 0) < Number(t.switcheroo?.maxRerolls || 0);
+    reviewRemaining > 0;
+
+  const switcherooRosterSize = rosterSizeFor(t.format);
+  const switcherooPoolSize = Array.isArray(t.switcheroo?.pool) ? t.switcheroo.pool.length : 0;
+  const switcherooPoolReady =
+    switcherooPoolSize >= switcherooRosterSize * 2 &&
+    switcherooPoolSize % switcherooRosterSize === 0 &&
+    switcherooPoolSize / switcherooRosterSize <= 8;
 
   const addTeam = () => {
     const name = teamName.trim();
@@ -316,6 +328,10 @@ export default function MuchoTourney() {
         pool: nextPool,
         phase: "idle",
         reviewEndsAt: null,
+        rerollGoal: Math.max(
+          1,
+          Number(t.switcheroo?.rerollBaseGoal || t.switcheroo?.rerollGoal || 20)
+        ),
         contributedTotal: 0,
         contributions: [],
         pendingPayments: [],
@@ -347,6 +363,10 @@ export default function MuchoTourney() {
     const teams = makeSwitcherooTeams(pool, t.format, generation);
     const reviewMinutes = Math.max(1, Number(t.switcheroo?.reviewMinutes || 5));
     const reviewEndsAt = new Date(Date.now() + reviewMinutes * 60 * 1000).toISOString();
+    const baseGoal = Math.max(
+      1,
+      Number(t.switcheroo?.rerollBaseGoal || t.switcheroo?.rerollGoal || 20)
+    );
 
     save({
       ...t,
@@ -360,6 +380,9 @@ export default function MuchoTourney() {
         phase: "review",
         generation,
         reviewEndsAt,
+        rerollBaseGoal: baseGoal,
+        rerollGoal: baseGoal,
+        rerollStep: 10,
         contributedTotal: 0,
         contributions: [],
         pendingPayments: [],
@@ -367,53 +390,7 @@ export default function MuchoTourney() {
       },
     });
 
-    fireFx("switcheroo", {
-      title: "SWITCHEROO",
-      sub: `${pool.length} PLAYERS · ${teams.length} TEAMS GENERATED`,
-      pool,
-    });
     toast.success("Switcheroo complete · review phase started");
-  };
-
-  const forceReroll = () => {
-    const pool = Array.isArray(t.switcheroo?.pool) ? t.switcheroo.pool : [];
-    if (!pool.length) return;
-    if ((t.switcheroo?.pendingPayments || []).length) {
-      toast.error("Confirm or reject pending PayPal payments before forcing a re-spin");
-      return;
-    }
-    const nextUsed = Number(t.switcheroo?.rerollsUsed || 0) + 1;
-    if (nextUsed > Number(t.switcheroo?.maxRerolls || 0)) {
-      toast.error("Maximum rerolls reached");
-      return;
-    }
-
-    const generation = Number(t.switcheroo?.generation || 1) + 1;
-    const teams = makeSwitcherooTeams(pool, t.format, generation);
-    const reviewMinutes = Math.max(1, Number(t.switcheroo?.reviewMinutes || 5));
-
-    save({
-      ...t,
-      teams,
-      bracket: [],
-      champion: null,
-      status: "review",
-      switcheroo: {
-        ...t.switcheroo,
-        phase: "review",
-        generation,
-        rerollsUsed: nextUsed,
-        reviewEndsAt: new Date(Date.now() + reviewMinutes * 60 * 1000).toISOString(),
-        contributedTotal: 0,
-        contributions: [],
-      },
-    });
-
-    fireFx("switcheroo", {
-      title: "RE-SWITCHEROO",
-      sub: `REROLL ${nextUsed}/${t.switcheroo.maxRerolls}`,
-      pool,
-    });
   };
 
   const reviewPayment = async (paymentId, decision) => {
@@ -423,10 +400,9 @@ export default function MuchoTourney() {
       const data = await reviewTourneyPayment(paymentId, decision, admin.sessionToken);
       if (data?.tourney) setT(normalize(data.tourney));
       if (data?.rerolled) {
-        fireFx("switcheroo", {
+        fireFx("bracket", {
           title: "RE-SWITCHEROO",
-          sub: "PAYPAL GOAL REACHED · NEW TEAMS GENERATED",
-          pool: data?.tourney?.switcheroo?.pool || [],
+          sub: `GOAL REACHED · NEXT TARGET €${Number(data?.tourney?.switcheroo?.rerollGoal || 0)}`,
         });
         toast.success("Goal reached · Switcheroo re-spin started");
       } else {
@@ -442,10 +418,6 @@ export default function MuchoTourney() {
   const generate = () => {
     if (t.status === "review") {
       toast.error("Wait for the Switcheroo review to finish");
-      return;
-    }
-    if (t.teamBuild === "switcheroo" && (t.switcheroo?.pendingPayments || []).length > 0) {
-      toast.error("Confirm or reject pending PayPal payments before generating the bracket");
       return;
     }
     if (t.teams.length < 2) {
@@ -638,6 +610,10 @@ export default function MuchoTourney() {
                           ...t.switcheroo,
                           phase: "idle",
                           reviewEndsAt: null,
+                          rerollGoal: Math.max(
+                            1,
+                            Number(t.switcheroo?.rerollBaseGoal || t.switcheroo?.rerollGoal || 20)
+                          ),
                           contributedTotal: 0,
                           contributions: [],
                           pendingPayments: [],
@@ -682,7 +658,7 @@ export default function MuchoTourney() {
               <div className="text-[9px] tracking-[.16em] text-[#D5A33A] font-black mb-3">
                 SWITCHEROO SETTINGS
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label>
                   <span className="text-[9px] tracking-widest text-[#697181]">REVIEW TIME</span>
                   <select
@@ -708,52 +684,41 @@ export default function MuchoTourney() {
                 </label>
 
                 <label>
-                  <span className="text-[9px] tracking-widest text-[#697181]">RE-ROLL GOAL</span>
+                  <span className="text-[9px] tracking-widest text-[#697181]">STARTING RE-ROLL GOAL</span>
                   <div className="relative mt-1">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-white/40">€</span>
                     <input
                       type="number"
                       min="1"
                       step="1"
-                      value={t.switcheroo.rerollGoal}
-                      onChange={(event) =>
+                      value={t.switcheroo.rerollBaseGoal || t.switcheroo.rerollGoal}
+                      onChange={(event) => {
+                        const goal = Math.max(1, Number(event.target.value) || 1);
                         save({
                           ...t,
                           switcheroo: {
                             ...t.switcheroo,
-                            rerollGoal: Math.max(1, Number(event.target.value) || 1),
+                            rerollBaseGoal: goal,
+                            rerollGoal: goal,
+                            rerollStep: 10,
                           },
-                        })
-                      }
+                        });
+                      }}
                       disabled={t.status === "review"}
                       className="w-full h-10 rounded-xl bg-[#151923] border border-[#2A303B] pl-7 pr-3 text-sm disabled:opacity-40"
                     />
                   </div>
                 </label>
 
-                <label>
-                  <span className="text-[9px] tracking-widest text-[#697181]">MAX RE-ROLLS</span>
-                  <select
-                    value={t.switcheroo.maxRerolls}
-                    onChange={(event) =>
-                      save({
-                        ...t,
-                        switcheroo: {
-                          ...t.switcheroo,
-                          maxRerolls: Number(event.target.value),
-                        },
-                      })
-                    }
-                    disabled={t.status === "review"}
-                    className="mt-1 w-full h-10 rounded-xl bg-[#151923] border border-[#2A303B] px-2 text-xs font-semibold disabled:opacity-40"
-                  >
-                    {[1, 2, 3].map((value) => (
-                      <option key={value} value={value}>
-                        {value}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+
+              </div>
+
+              <div className="mt-2 text-[10px] text-muted-foreground">
+                Every successful re-spin raises the next target by <strong className="text-[#D5A33A]">€10</strong>:
+                {" "}€{Number(t.switcheroo.rerollBaseGoal || t.switcheroo.rerollGoal || 20)}
+                {" "}→ €{Number(t.switcheroo.rerollBaseGoal || t.switcheroo.rerollGoal || 20) + 10}
+                {" "}→ €{Number(t.switcheroo.rerollBaseGoal || t.switcheroo.rerollGoal || 20) + 20}…
+                If the timer reaches zero first, the current teams are final.
               </div>
 
               <label className="block mt-3">
@@ -794,8 +759,27 @@ export default function MuchoTourney() {
                 </span>
               </div>
 
-              <p className="text-[11px] text-muted-foreground mt-2">
-                Select the tournament players. Switcheroo randomly builds complete {t.format} teams.
+              <div className="mt-4 rounded-2xl border border-[#252B36] bg-[#0B0F15] p-4">
+                <SwitcherooWheel
+                  players={t.switcheroo.pool || []}
+                  disabled={t.status === "setup" && !switcherooPoolReady}
+                  onSpinComplete={t.status === "setup" ? startSwitcheroo : undefined}
+                  label={t.status === "setup" ? "SPIN" : "SPIN"}
+                  hint={
+                    t.status === "setup"
+                      ? switcherooPoolReady
+                        ? "Click the wheel to create the teams"
+                        : `Select a valid ${t.format} pool, then spin`
+                      : t.status === "review"
+                        ? "Click anytime to replay the wheel animation"
+                        : "Switcheroo wheel"
+                  }
+                  sizeClass="w-[250px] h-[250px] sm:w-[300px] sm:h-[300px]"
+                />
+              </div>
+
+              <p className="text-[11px] text-muted-foreground mt-3">
+                Select the tournament players. The wheel stays on screen and creates complete {t.format} teams when you click it.
               </p>
 
               <div className="mt-3 max-h-[430px] overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-1.5">
@@ -820,17 +804,6 @@ export default function MuchoTourney() {
                   );
                 })}
               </div>
-
-              {t.status === "setup" && (
-                <button
-                  type="button"
-                  onClick={startSwitcheroo}
-                  className="mt-4 w-full h-11 rounded-xl bg-[#D5A33A] hover:bg-[#E0B247] text-black font-black flex items-center justify-center gap-2"
-                >
-                  <Shuffle size={15} />
-                  START SWITCHEROO
-                </button>
-              )}
 
               {t.status === "ready" && (
                 <div className="mt-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] px-3 py-3 text-xs font-bold text-emerald-400 flex items-center gap-2">
@@ -873,7 +846,10 @@ export default function MuchoTourney() {
                         </div>
                       </div>
                       <div className="text-right text-[10px] text-muted-foreground">
-                        Re-rolls {t.switcheroo.rerollsUsed}/{t.switcheroo.maxRerolls}
+                        <div>Re-spins completed: {Number(t.switcheroo.rerollsUsed || 0)}</div>
+                        <div className="mt-0.5 text-[#D5A33A]">
+                          Next target after this: €{Number(t.switcheroo.rerollGoal || 0) + Number(t.switcheroo.rerollStep || 10)}
+                        </div>
                       </div>
                     </div>
 
@@ -884,25 +860,10 @@ export default function MuchoTourney() {
                       />
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
-                      <div className="text-[10px] text-muted-foreground">
-                        {switcherooCanFund
-                          ? "Goal reached = automatic full Switcheroo re-spin."
-                          : Number(t.switcheroo.rerollsUsed || 0) >= Number(t.switcheroo.maxRerolls || 0)
-                            ? "Re-roll limit reached. Final review only."
-                            : "Review ending · teams will lock."}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={forceReroll}
-                        disabled={
-                          Number(t.switcheroo.rerollsUsed || 0) >= Number(t.switcheroo.maxRerolls || 0) ||
-                          (t.switcheroo.pendingPayments || []).length > 0
-                        }
-                        className="h-8 px-3 rounded-lg border border-[#D5A33A]/25 bg-[#D5A33A]/[0.06] text-[#D5A33A] text-[9px] font-black disabled:opacity-30"
-                      >
-                        ADMIN FORCE RE-SPIN
-                      </button>
+                    <div className="mt-3 text-[10px] text-muted-foreground">
+                      {switcherooCanFund
+                        ? `Reach €${Number(t.switcheroo.rerollGoal || 0)} before the timer ends to trigger a full re-spin. The next target becomes €${Number(t.switcheroo.rerollGoal || 0) + Number(t.switcheroo.rerollStep || 10)}.`
+                        : "Time is over: these teams are final and Switcheroo is closed."}
                     </div>
                   </div>
 
@@ -976,47 +937,6 @@ export default function MuchoTourney() {
                     <span className="m8-pill text-emerald-400 border-emerald-500/25">LOCKED</span>
                   )}
                 </div>
-
-                {t.status === "ready" && (t.switcheroo.pendingPayments || []).length > 0 && (
-                  <div className="mt-4 rounded-xl border border-[#D5A33A]/25 bg-[#D5A33A]/[0.05] p-3">
-                    <div className="text-[9px] tracking-widest text-[#D5A33A] font-black mb-2">
-                      PAYPAL PAYMENTS RECEIVED DURING REVIEW · VERIFY BEFORE BRACKET
-                    </div>
-                    <div className="space-y-2">
-                      {t.switcheroo.pendingPayments.map((row) => (
-                        <div
-                          key={row.id}
-                          className="rounded-lg border border-[#2A303B] bg-[#111720] px-3 py-2 flex flex-col sm:flex-row sm:items-center gap-2"
-                        >
-                          <div className="min-w-0 flex-1">
-                            <div className="text-xs font-black truncate">{row.name || "Player"}</div>
-                            <div className="text-[10px] text-muted-foreground">
-                              Pending PayPal <span className="text-[#D5A33A] font-black">€{row.amount}</span>
-                            </div>
-                          </div>
-                          <div className="flex gap-1.5">
-                            <button
-                              type="button"
-                              disabled={paymentBusyId === row.id}
-                              onClick={() => reviewPayment(row.id, "reject")}
-                              className="h-8 px-3 rounded-lg border border-red-500/20 bg-red-500/[0.05] text-red-300 text-[9px] font-black disabled:opacity-40"
-                            >
-                              REJECT
-                            </button>
-                            <button
-                              type="button"
-                              disabled={paymentBusyId === row.id}
-                              onClick={() => reviewPayment(row.id, "confirm")}
-                              className="h-8 px-3 rounded-lg border border-emerald-500/25 bg-emerald-500/[0.07] text-emerald-300 text-[9px] font-black disabled:opacity-40"
-                            >
-                              CONFIRM PAID
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {!t.teams.length ? (
                   <div className="min-h-[260px] flex flex-col items-center justify-center text-center text-muted-foreground">
@@ -1317,45 +1237,7 @@ export default function MuchoTourney() {
             className="fixed inset-0 z-[180] bg-[#03050a]/90 backdrop-blur-xl flex items-center justify-center overflow-hidden"
             onClick={() => setFx(null)}
           >
-            {fx.type === "switcheroo" ? (
-              <div className="relative text-center px-6 w-full max-w-3xl">
-                <motion.div
-                  initial={{ rotate: 0, scale: 0.82 }}
-                  animate={{ rotate: 1620, scale: 1 }}
-                  transition={{ duration: 3.3, ease: [0.12, 0.8, 0.18, 1] }}
-                  className="mx-auto relative w-64 h-64 sm:w-80 sm:h-80 rounded-full border-[10px] border-[#D5A33A]/75 bg-[conic-gradient(from_0deg,#19140a_0deg_45deg,#2a1115_45deg_90deg,#101822_90deg_135deg,#211329_135deg_180deg,#19140a_180deg_225deg,#2a1115_225deg_270deg,#101822_270deg_315deg,#211329_315deg_360deg)] shadow-[0_0_90px_rgba(213,163,58,.25)]"
-                >
-                  <div className="absolute inset-[22%] rounded-full bg-[#080B10] border border-[#D5A33A]/50 flex items-center justify-center">
-                    <div>
-                      <Shuffle size={32} className="text-[#D5A33A] mx-auto" />
-                      <div className="font-display font-black text-xl mt-2">SWITCHEROO</div>
-                    </div>
-                  </div>
-                  {Array.from({ length: 8 }, (_, index) => (
-                    <span
-                      key={index}
-                      className="absolute left-1/2 top-1/2 w-2 h-2 rounded-full bg-white/75"
-                      style={{
-                        transform: `translate(-50%,-50%) rotate(${index * 45}deg) translateY(-122px)`,
-                      }}
-                    />
-                  ))}
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 2.7 }}
-                  className="mt-7"
-                >
-                  <div className="text-[11px] tracking-[.22em] font-black text-[#D5A33A]">MUCHOTOURNEY</div>
-                  <div className="font-display text-4xl sm:text-6xl font-black mt-2 tracking-[-.05em]">
-                    {fx.title}
-                  </div>
-                  <div className="mt-2 text-sm sm:text-lg font-black text-white/65">{fx.sub}</div>
-                </motion.div>
-              </div>
-            ) : (
+            (
               <motion.div
                 initial={{
                   scale: fx.type === "champion" ? 0.55 : 0.82,
@@ -1432,7 +1314,7 @@ export default function MuchoTourney() {
                   TAP ANYWHERE TO CONTINUE
                 </div>
               </motion.div>
-            )}
+            )
           </motion.div>
         )}
       </AnimatePresence>
