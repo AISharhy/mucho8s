@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useData } from "@/context/DataContext";
 import { fetchTourney, requestTourneyPayment, subscribeTourney } from "@/lib/tourneyLive";
 import SwitcherooWheel from "@/components/SwitcherooWheel";
+import SwitcherooDrawOverlay from "@/components/SwitcherooDrawOverlay";
 
 const STORE = "mucho8s-tourney-admin-v1";
 
@@ -27,6 +28,7 @@ export default function TourneyLive() {
   const [t, setT] = useState(read);
   const [now, setNow] = useState(Date.now());
   const [busy, setBusy] = useState(false);
+  const [replayOpen, setReplayOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -123,6 +125,19 @@ export default function TourneyLive() {
   if (t.status === "review" || t.status === "ready") {
     return (
       <div className="m8-page-stack gap-3 max-w-7xl mx-auto">
+        {replayOpen && t?.teamBuild === "switcheroo" && (
+          <SwitcherooDrawOverlay
+            open
+            players={t.switcheroo?.pool || []}
+            format={t.format}
+            generation={Number(t.switcheroo?.generation || 1)}
+            presetTeams={t.teams || []}
+            title="SWITCHEROO REPLAY"
+            onClose={() => setReplayOpen(false)}
+            onComplete={() => setReplayOpen(false)}
+          />
+        )}
+
         <section className="rounded-[22px] border border-[#D5A33A]/25 bg-gradient-to-r from-[#15130c] to-[#0c1119] p-5 sm:p-7">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
@@ -167,7 +182,7 @@ export default function TourneyLive() {
                     : "Teams are locked · wheel remains available as the tournament element"
                 }
                 sizeClass="w-[260px] h-[260px] sm:w-[320px] sm:h-[320px]"
-                spinSignal={Number(t.switcheroo?.generation || 0)}
+                onActivate={() => setReplayOpen(true)}
               />
               <div>
                 <div className="brand-kicker text-[#D5A33A]">Switcheroo wheel</div>
@@ -311,6 +326,19 @@ export default function TourneyLive() {
 
   return (
     <div className="m8-page-stack gap-3 max-w-7xl mx-auto">
+      {replayOpen && t?.teamBuild === "switcheroo" && (
+        <SwitcherooDrawOverlay
+          open
+          players={t.switcheroo?.pool || []}
+          format={t.format}
+          generation={Number(t.switcheroo?.generation || 1)}
+          presetTeams={t.teams || []}
+          title="SWITCHEROO REPLAY"
+          onClose={() => setReplayOpen(false)}
+          onComplete={() => setReplayOpen(false)}
+        />
+      )}
+
       <section className="rounded-[22px] border border-[#D5A33A]/25 bg-gradient-to-r from-[#15130c] to-[#0c1119] p-5 sm:p-7">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -338,7 +366,7 @@ export default function TourneyLive() {
               label="SPIN"
               hint="Switcheroo wheel · click to replay the animation"
               sizeClass="w-[230px] h-[230px] sm:w-[280px] sm:h-[280px]"
-              spinSignal={Number(t.switcheroo?.generation || 0)}
+              onActivate={() => setReplayOpen(true)}
             />
             <div>
               <div className="brand-kicker text-[#D5A33A]">Switcheroo</div>
