@@ -41,6 +41,7 @@ export default function SwitcherooWheel({
   hint = "Click the wheel",
   sizeClass = "w-[280px] h-[280px] sm:w-[340px] sm:h-[340px]",
   spinSignal = 0,
+  onActivate,
 }) {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
@@ -107,7 +108,13 @@ export default function SwitcherooWheel({
     }, 3300);
   };
 
-  const spin = () => runSpin(true);
+  const spin = () => {
+    if (onActivate) {
+      if (!disabled && !spinning) onActivate();
+      return;
+    }
+    runSpin(true);
+  };
 
   useEffect(() => {
     if (lastSignalRef.current === spinSignal) return;
