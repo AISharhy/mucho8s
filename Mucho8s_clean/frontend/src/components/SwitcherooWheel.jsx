@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Shuffle } from "lucide-react";
 
@@ -40,10 +40,12 @@ export default function SwitcherooWheel({
   label = "SPIN",
   hint = "Click the wheel",
   sizeClass = "w-[280px] h-[280px] sm:w-[340px] sm:h-[340px]",
+  spinSignal = 0,
 }) {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const timerRef = useRef(null);
+  const lastSignalRef = useRef(spinSignal);
 
   const displayPlayers = useMemo(() => {
     const clean = (Array.isArray(players) ? players : [])
@@ -88,8 +90,9 @@ export default function SwitcherooWheel({
     }));
   }, [displayPlayers]);
 
-  const spin = () => {
-    if (disabled || spinning || displayPlayers.length < 2) return;
+  const runSpin = (notify = true) => {
+    if (spinning || displayPlayers.length < 2) return;
+    if (notify && disabled) return;
 
     setSpinning(true);
     const extraTurns = 5 + Math.floor(Math.random() * 3);
@@ -99,10 +102,27 @@ export default function SwitcherooWheel({
     if (timerRef.current) window.clearTimeout(timerRef.current);
     timerRef.current = window.setTimeout(() => {
       setSpinning(false);
-      onSpinComplete?.();
+      if (notify) onSpinComplete?.();
       timerRef.current = null;
     }, 3300);
   };
+
+  const spin = () => runSpin(true);
+
+  useEffect(() => {
+    if (lastSignalRef.current === spinSignal) return;
+    lastSignalRef.current = spinSignal;
+    if (Number(spinSignal || 0) > 1) runSpin(false);
+    // The wheel intentionally reacts only to generation changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spinSignal]);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+    },
+    []
+  );
 
   const fontSize =
     displayPlayers.length > 24
