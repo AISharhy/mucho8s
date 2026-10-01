@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Shuffle, X, Check, ArrowRight } from "lucide-react";
 
 const PALETTE = [
-  "#D5A33A",
+  "#FF4FA3",
   "#7C3AED",
   "#E11D48",
   "#0F766E",
@@ -223,13 +223,13 @@ export default function SwitcherooDrawOverlay({
     >
       <div className="min-h-screen relative">
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-56 left-1/2 -translate-x-1/2 w-[760px] h-[760px] rounded-full bg-[#D5A33A]/[0.06] blur-3xl" />
+          <div className="absolute -top-56 left-1/2 -translate-x-1/2 w-[760px] h-[760px] rounded-full bg-[#FF4FA3]/[0.06] blur-3xl" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,.025),transparent_60%)]" />
         </div>
 
         <header className="relative z-10 px-5 sm:px-8 py-5 flex items-center justify-between gap-4 border-b border-white/[0.06]">
           <div>
-            <div className="text-[10px] tracking-[.22em] font-black text-[#D5A33A]">
+            <div className="text-[10px] tracking-[.22em] font-black text-[#FF4FA3]">
               MUCHOTOURNEY · GENERATION {generation}
             </div>
             <div className="font-display text-xl sm:text-2xl font-black mt-1">{title}</div>
@@ -258,7 +258,7 @@ export default function SwitcherooDrawOverlay({
         <div className="relative z-10 h-1 bg-[#111720]">
           <motion.div
             animate={{ width: progress + "%" }}
-            className="h-full bg-[#D5A33A]"
+            className="h-full bg-[#FF4FA3]"
           />
         </div>
 
@@ -267,10 +267,10 @@ export default function SwitcherooDrawOverlay({
             <div className="flex flex-col items-center justify-center min-h-[560px]">
               <div className="relative">
                 <div className="absolute left-1/2 -top-5 -translate-x-1/2 z-40">
-                  <div className="w-0 h-0 border-l-[18px] border-r-[18px] border-t-[34px] border-l-transparent border-r-transparent border-t-[#F5E2A8] drop-shadow-[0_5px_5px_rgba(0,0,0,.55)]" />
+                  <div className="w-0 h-0 border-l-[18px] border-r-[18px] border-t-[34px] border-l-transparent border-r-transparent border-t-[#FFD1E8] drop-shadow-[0_5px_5px_rgba(0,0,0,.55)]" />
                 </div>
 
-                <div className="relative w-[82vw] h-[82vw] max-w-[580px] max-h-[580px] min-w-[310px] min-h-[310px] rounded-full border-[14px] border-[#242A33] bg-[#080B10] shadow-[inset_0_0_0_2px_rgba(213,163,58,.22),0_28px_90px_rgba(0,0,0,.55),0_0_80px_rgba(213,163,58,.08)]">
+                <div className="relative w-[82vw] h-[82vw] max-w-[580px] max-h-[580px] min-w-[310px] min-h-[310px] rounded-full border-[14px] border-[#242A33] bg-[#080B10] shadow-[inset_0_0_0_2px_rgba(255,79,163,.22),0_28px_90px_rgba(0,0,0,.55),0_0_80px_rgba(255,79,163,.08)]">
                   <motion.div
                     className="absolute inset-[12px] rounded-full overflow-hidden"
                     animate={{ rotate: rotation }}
@@ -325,16 +325,16 @@ export default function SwitcherooDrawOverlay({
                         );
                       })}
 
-                      <circle cx="50" cy="50" r="16.2" fill="#080B10" stroke="#D5A33A" strokeWidth="1" />
+                      <circle cx="50" cy="50" r="16.2" fill="#080B10" stroke="#FF4FA3" strokeWidth="1" />
                       <circle cx="50" cy="50" r="12.5" fill="#111720" stroke="rgba(255,255,255,.12)" strokeWidth=".55" />
                     </svg>
                   </motion.div>
 
                   <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
-                    <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border border-[#D5A33A]/45 bg-[#080B10]/95 backdrop-blur flex flex-col items-center justify-center shadow-[0_0_42px_rgba(213,163,58,.18)]">
+                    <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border border-[#FF4FA3]/45 bg-[#080B10]/95 backdrop-blur flex flex-col items-center justify-center shadow-[0_0_42px_rgba(255,79,163,.18)]">
                       <Shuffle
                         size={25}
-                        className={phase === "spinning" ? "text-[#F4CE70] animate-pulse" : "text-[#D5A33A]"}
+                        className={phase === "spinning" ? "text-[#FF9DCE] animate-pulse" : "text-[#FF4FA3]"}
                       />
                       <div className="font-display text-sm font-black tracking-[.14em] mt-1">
                         {phase === "spinning" ? "SPINNING" : "SWITCHEROO"}
@@ -352,9 +352,9 @@ export default function SwitcherooDrawOverlay({
                       animate={{ opacity: 1, scale: 1.08, y: 105 }}
                       exit={{ opacity: 0, scale: 0.8, y: 180 }}
                       transition={{ type: "spring", stiffness: 170, damping: 18 }}
-                      className="absolute z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 min-w-[230px] rounded-2xl border border-[#D5A33A]/60 bg-[#111720] px-5 py-4 text-center shadow-[0_18px_70px_rgba(0,0,0,.6),0_0_55px_rgba(213,163,58,.22)]"
+                      className="absolute z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 min-w-[230px] rounded-2xl border border-[#FF4FA3]/60 bg-[#111720] px-5 py-4 text-center shadow-[0_18px_70px_rgba(0,0,0,.6),0_0_55px_rgba(255,79,163,.22)]"
                     >
-                      <div className="text-[9px] tracking-[.2em] font-black text-[#D5A33A]">
+                      <div className="text-[9px] tracking-[.2em] font-black text-[#FF4FA3]">
                         PLAYER DRAWN
                       </div>
                       <div className="font-display text-2xl font-black mt-1">{winner.name}</div>
@@ -374,21 +374,21 @@ export default function SwitcherooDrawOverlay({
                     animate={{ scale: 1, opacity: 1 }}
                     type="button"
                     onClick={spin}
-                    className="h-14 px-10 rounded-2xl bg-[#D5A33A] hover:bg-[#E1B34C] text-black font-display font-black tracking-[.08em] shadow-[0_12px_45px_rgba(213,163,58,.2)]"
+                    className="h-14 px-10 rounded-2xl bg-[#FF4FA3] hover:bg-[#E1B34C] text-black font-display font-black tracking-[.08em] shadow-[0_12px_45px_rgba(255,79,163,.2)]"
                   >
                     {drawIndex === 0 ? "SPIN" : "NEXT SPIN"}
                   </motion.button>
                 )}
 
                 {phase === "spinning" && (
-                  <div className="text-sm font-black text-[#D5A33A] animate-pulse">
+                  <div className="text-sm font-black text-[#FF4FA3] animate-pulse">
                     THE WHEEL IS SPINNING…
                   </div>
                 )}
 
                 {phase === "landed" && winner && (
                   <div className="text-sm font-black">
-                    {winner.name} <span className="text-[#D5A33A]">→ {currentTeam?.name}</span>
+                    {winner.name} <span className="text-[#FF4FA3]">→ {currentTeam?.name}</span>
                   </div>
                 )}
 
@@ -428,7 +428,7 @@ export default function SwitcherooDrawOverlay({
                       key={team.id}
                       animate={{
                         borderColor: isTarget
-                          ? "rgba(213,163,58,.75)"
+                          ? "rgba(255,79,163,.75)"
                           : "rgba(42,48,59,1)",
                         scale: isTarget ? 1.02 : 1,
                       }}
@@ -436,7 +436,7 @@ export default function SwitcherooDrawOverlay({
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="font-display text-base font-black">
-                          <span className="text-[#D5A33A] mr-2">#{index + 1}</span>
+                          <span className="text-[#FF4FA3] mr-2">#{index + 1}</span>
                           {team.name}
                         </div>
                         <span className="font-mono text-[10px] text-muted-foreground">
