@@ -10,6 +10,7 @@ import {
 } from "@/lib/tourneyLive";
 import SwitcherooWheel from "@/components/SwitcherooWheel";
 import SwitcherooDrawOverlay from "@/components/SwitcherooDrawOverlay";
+import TournamentTeamRosterModal from "@/components/TournamentTeamRosterModal";
 
 const STORE = "mucho8s-tourney-admin-v1";
 
@@ -35,6 +36,7 @@ export default function TourneyLive() {
   const [busy, setBusy] = useState(false);
   const [entryBusy, setEntryBusy] = useState(false);
   const [replayOpen, setReplayOpen] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState(null);
 
   useEffect(() => {
     let alive = true;
@@ -412,6 +414,11 @@ export default function TourneyLive() {
   if (t.status === "review" || t.status === "ready") {
     return (
       <div className="m8-page-stack gap-3 max-w-7xl mx-auto">
+      <TournamentTeamRosterModal
+        team={selectedTeam}
+        onClose={() => setSelectedTeam(null)}
+        switcheroo={t.teamBuild === "switcheroo"}
+      />
         {replayOpen && t?.teamBuild === "switcheroo" && (
           <SwitcherooDrawOverlay
             open
@@ -698,28 +705,48 @@ export default function TourneyLive() {
                         ["a", match.a],
                         ["b", match.b],
                       ].map(([side, team]) => (
-                        <div
+                        <button
                           key={side}
+                          type="button"
+                          disabled={!team}
+                          onClick={() => team && setSelectedTeam(team)}
                           className={
-                            `h-11 px-3 border-b border-[#202631] flex items-center gap-2 ${match.winner === side
-                              ? "bg-[#D5A33A]/10 text-[#F4CE70]"
+                            `w-full h-11 px-3 border-b border-[#202631] flex items-center gap-2 text-left transition-colors disabled:cursor-default ${match.winner === side
+                              ? t.teamBuild === "switcheroo"
+                                ? "bg-[#FF4FA3]/10 text-[#FFB7D9]"
+                                : "bg-[#D5A33A]/10 text-[#F4CE70]"
                               : match.winner
                                 ? "opacity-45"
-                                : ""}`
+                                : team
+                                  ? t.teamBuild === "switcheroo"
+                                    ? "hover:bg-[#FF4FA3]/[0.06]"
+                                    : "hover:bg-white/[.04]"
+                                  : ""}`
                           }
+                          title={team ? `View ${team.name} roster` : "TBD"}
                         >
                           <span className="flex-1 text-xs font-black truncate">{team?.name || "TBD"}</span>
+                          {team && (
+                            <UsersRound
+                              size={12}
+                              className={t.teamBuild === "switcheroo" ? "text-[#FF4FA3]" : "text-[#D5A33A]"}
+                            />
+                          )}
                           {match.winner && (
                             <span
                               className={
-                                `font-mono text-base font-black ${match.winner === side ? "text-[#F4CE70]" : "text-[#697181]"}`
+                                `font-mono text-base font-black ${match.winner === side
+                                  ? t.teamBuild === "switcheroo"
+                                    ? "text-[#FFB7D9]"
+                                    : "text-[#F4CE70]"
+                                  : "text-[#697181]"}`
                               }
                             >
                               {side === "a" ? match.scoreA : match.scoreB}
                             </span>
                           )}
                           {match.winner === side && <Crown size={13} />}
-                        </div>
+                        </button>
                       ))}
                     </div>
                   ))}
