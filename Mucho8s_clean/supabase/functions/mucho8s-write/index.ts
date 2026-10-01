@@ -95,7 +95,28 @@ Deno.serve(async (req: Request) => {
       const cleanName = String(draft?.name || player?.name || "").trim();
       if (!cleanName) return json({ error: "Nickname cannot be empty" }, 400);
 
-      const currentElo = Math.max(500, Math.round(Number(draft?.currentElo ?? player?.currentElo ?? 500)));
+      const currentWins = Math.max(0, Math.round(Number(player?.wins || 0)));
+      const currentLosses = Math.max(0, Math.round(Number(player?.losses || 0)));
+      const wins = Math.max(0, Math.round(Number(draft?.wins ?? player?.wins ?? 0)));
+      const losses = Math.max(0, Math.round(Number(draft?.losses ?? player?.losses ?? 0)));
+
+      const storedElo = Math.max(
+        500,
+        Math.round(Number(player?.currentElo ?? 500)),
+      );
+      const requestedElo = Number(draft?.currentElo);
+      const explicitEloOverride =
+        Number.isFinite(requestedElo) &&
+        Math.round(requestedElo) !== storedElo;
+      const manualResultEloDelta =
+        (wins - currentWins) * 25 - (losses - currentLosses) * 15;
+      const currentElo = Math.max(
+        500,
+        explicitEloOverride
+          ? Math.round(requestedElo)
+          : storedElo + manualResultEloDelta,
+      );
+
       const existingHistory = Array.isArray(player?.eloHistory) && player.eloHistory.length
         ? player.eloHistory.map((row: any) => ({ ...row }))
         : [{ match: 0, elo: currentElo }];
@@ -107,8 +128,6 @@ Deno.serve(async (req: Request) => {
         currentElo,
         Math.round(Number(draft?.peakElo ?? player?.peakElo ?? currentElo)),
       );
-      const wins = Math.max(0, Math.round(Number(draft?.wins ?? player?.wins ?? 0)));
-      const losses = Math.max(0, Math.round(Number(draft?.losses ?? player?.losses ?? 0)));
       const avgPlacement = Math.max(0, Number(draft?.avgPlacement ?? player?.avgPlacement ?? 0));
       const currentStreak = Math.trunc(Number(draft?.currentStreak ?? player?.currentStreak ?? 0));
       const mvpCount = Math.max(0, Math.round(Number(draft?.mvpCount ?? player?.mvpCount ?? 0)));
@@ -120,8 +139,6 @@ Deno.serve(async (req: Request) => {
         existingHistory.push({ match: wins + losses, elo: currentElo });
       }
 
-      const currentWins = Math.max(0, Math.round(Number(player?.wins || 0)));
-      const currentLosses = Math.max(0, Math.round(Number(player?.losses || 0)));
       const existingAdjustments =
         player?.manualStatAdjustments && typeof player.manualStatAdjustments === "object"
           ? player.manualStatAdjustments
@@ -159,7 +176,13 @@ Deno.serve(async (req: Request) => {
         .eq("id", "main");
 
       if (updateError) throw updateError;
-      return json({ ok: true, player, version });
+      return json({
+        ok: true,
+        player,
+        version,
+        eloAutoAdjusted: !explicitEloOverride && manualResultEloDelta !== 0,
+        eloDelta: explicitEloOverride ? 0 : manualResultEloDelta,
+      });
     }
 
     if (!Array.isArray(body.players) || !Array.isArray(body.matches)) {
