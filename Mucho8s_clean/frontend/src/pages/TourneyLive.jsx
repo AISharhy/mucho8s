@@ -37,6 +37,7 @@ export default function TourneyLive() {
   const [entryBusy, setEntryBusy] = useState(false);
   const [replayOpen, setReplayOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState(null);
+  const [joinConfirmOpen, setJoinConfirmOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -105,6 +106,13 @@ export default function TourneyLive() {
   const entryPaid = entryPaidIds.has(currentPlayerId);
   const entryPending = entryPendingIds.has(currentPlayerId);
   const entryFee = Math.max(1, Number(t?.switcheroo?.entryFee || 5));
+  const openRegistration = t?.switcheroo?.registrationMode === "open";
+  const maxTeams = Math.min(8, Math.max(2, Number(t?.switcheroo?.maxTeams || 4)));
+  const rosterSize = Math.max(
+    1,
+    Number(String(t?.format || "4v4").split("v")[0]) || 4
+  );
+  const maxPlayers = maxTeams * rosterSize;
 
   const canContribute =
     Boolean(discordSession?.access_token && discordPlayer?.id) &&
@@ -125,7 +133,7 @@ export default function TourneyLive() {
       toast.error("Connect Discord to pay the tournament entry");
       return;
     }
-    if (!isTournamentPlayer) {
+    if (!isTournamentPlayer && !openRegistration) {
       toast.error("You are not in this tournament pool");
       return;
     }
@@ -179,11 +187,12 @@ export default function TourneyLive() {
     t?.status === "setup" &&
     t?.teamBuild === "switcheroo" &&
     t?.switcheroo?.setupStage === "published" &&
-    (t?.switcheroo?.pool || []).length > 0
+    ((t?.switcheroo?.pool || []).length > 0 || t?.switcheroo?.registrationMode === "open")
   ) {
     const pool = t.switcheroo.pool || [];
     const paidCount = pool.filter((player) => entryPaidIds.has(String(player.id))).length;
     const totalPot = entryFee * pool.length;
+    const registrationFull = openRegistration && pool.length >= maxPlayers;
     const liveDraw = t.switcheroo?.liveDraw || null;
     const drawing = t.switcheroo?.phase === "drawing";
     const drawTeams = drawing ? liveDraw?.teams || [] : [];
@@ -243,9 +252,11 @@ export default function TourneyLive() {
                   hint={
                     drawing
                       ? `Live draw · ${assigned}/${pool.length} players assigned`
-                      : paidCount === pool.length
-                        ? "All entry fees confirmed · waiting for Admin to start the live draw"
-                        : "Tournament is online · entry payments are open"
+                      : openRegistration
+                        ? `Open registration · ${pool.length}/${maxPlayers} players joined`
+                        : paidCount === pool.length
+                          ? "All entry fees confirmed · waiting for Admin to start the live draw"
+                          : "Tournament is online · entry payments are open"
                   }
                   spinSignal={drawing ? spinSignal : 0}
                   sizeClass="w-[82vw] h-[82vw] max-w-[580px] max-h-[580px] min-w-[310px] min-h-[310px]"
@@ -322,14 +333,18 @@ export default function TourneyLive() {
                           ? "Payment waiting for confirmation"
                           : isTournamentPlayer
                             ? `Pay €${entryFee} to enter`
-                            : "Switcheroo is online"}
+                            : openRegistration
+                              ? "Join MuchoTourney"
+                              : "Switcheroo is online"}
                     </h2>
 
                     <div className="grid grid-cols-2 gap-2 mt-4">
                       <div className="rounded-xl border border-[#FF4FA3]/15 bg-[#FF4FA3]/[0.035] p-3">
-                        <div className="text-[8px] tracking-widest text-[#697181]">CONFIRMED</div>
+                        <div className="text-[8px] tracking-widest text-[#697181]">
+                          {openRegistration ? "REGISTERED" : "CONFIRMED"}
+                        </div>
                         <div className="font-mono text-xl font-black text-[#FF9DCE] mt-1">
-                          {paidCount}/{pool.length}
+                          {openRegistration ? `${pool.length}/${maxPlayers}` : `${paidCount}/${pool.length}`}
                         </div>
                       </div>
                       <div className="rounded-xl border border-[#FF4FA3]/15 bg-[#FF4FA3]/[0.035] p-3">
@@ -340,15 +355,59 @@ export default function TourneyLive() {
                       </div>
                     </div>
 
-                    {isTournamentPlayer && !entryPaid && !entryPending && (
-                      <button
-                        type="button"
-                        disabled={entryBusy}
-                        onClick={payEntry}
-                        className="mt-4 w-full h-12 rounded-xl bg-[#FF4FA3] hover:bg-[#FF69B4] text-black font-black disabled:opacity-40"
-                      >
-                        PAY €{entryFee} WITH PAYPAL
-                      </button>
+                    {(isTournamentPlayer || openRegistration) && !entryPaid && !entryPending && (
+                      <div className="mt-4">
+                        {!joinConfirmOpen ? (
+                          <button
+                            type="button"
+                            disabled={entryBusy || registrationFull}
+                            onClick={() => setJoinConfirmOpen(true)}
+                            className="w-full h-12 rounded-xl bg-[#FF4FA3] hover:bg-[#FF69B4] text-black font-black disabled:opacity-40"
+                          >
+                            {registrationFull
+                              ? "REGISTRATION FULL"
+                              : openRegistration && !isTournamentPlayer
+                                ? "JOIN TOURNAMENT"
+                                : "CONFIRM ENTRY"}
+                          </button>
+                        ) : (
+                          <motion.div
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="rounded-xl border border-[#FF4FA3]/25 bg-[#FF4FA3]/[0.05] p-4"
+                          >
+                            <div className="text-[9px] tracking-[.16em] text-[#FF4FA3] font-black">
+                              CONFIRM REGISTRATION
+                            </div>
+                            <div className="text-sm font-black mt-1">
+                              Entry fee €{entryFee}
+                            </div>
+                            <p className="text-[11px] text-muted-foreground mt-1">
+                              Confirm to register and open PayPal. Your place becomes active after the Admin verifies the payment.
+                            </p>
+                            <div className="grid grid-cols-2 gap-2 mt-3">
+                              <button
+                                type="button"
+                                onClick={() => setJoinConfirmOpen(false)}
+                                className="h-10 rounded-lg border border-[#2A303B] bg-[#111720] text-xs font-black"
+                              >
+                                BACK
+                              </button>
+                              <button
+                                type="button"
+                                disabled={entryBusy}
+                                onClick={() => {
+                                  setJoinConfirmOpen(false);
+                                  payEntry();
+                                }}
+                                className="h-10 rounded-lg bg-[#FF4FA3] text-black text-xs font-black disabled:opacity-40"
+                              >
+                                CONFIRM & PAY
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </div>
                     )}
 
                     {entryPending && (
@@ -363,9 +422,15 @@ export default function TourneyLive() {
                       </div>
                     )}
 
-                    {!isTournamentPlayer && (
+                    {!isTournamentPlayer && !openRegistration && (
                       <p className="text-sm text-muted-foreground mt-4">
                         The tournament is public. Only selected players can pay the entry fee.
+                      </p>
+                    )}
+
+                    {!isTournamentPlayer && openRegistration && (
+                      <p className="text-sm text-muted-foreground mt-4">
+                        Registration is open. Confirm your place above and PayPal will open for the entry fee.
                       </p>
                     )}
 
