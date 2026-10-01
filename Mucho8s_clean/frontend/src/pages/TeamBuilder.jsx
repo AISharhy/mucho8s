@@ -843,15 +843,32 @@ export default function TeamBuilder() {
             </p>
           </div>
 
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={startOver}
-            className="h-9 px-3 border border-[#222834] bg-[#0F1218] text-xs"
-          >
-            <RotateCcw size={14} className="mr-1.5" />
-            Start over
-          </Button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const next = setUiSoundEnabled(!soundOn);
+                setSoundOn(next);
+              }}
+              className="h-9 px-2.5 rounded-xl border border-[#FF2A3B]/20 bg-[#FF2A3B]/[0.05] text-[#FF6B77] text-[9px] font-black inline-flex items-center gap-1.5"
+              title={soundOn ? "UI sounds on" : "UI sounds off"}
+            >
+              {soundOn ? <Volume2 size={13} /> : <VolumeX size={13} />}
+              {soundOn ? "SOUND" : "MUTED"}
+            </button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                void playUiSound("back", "mucho8s");
+                startOver();
+              }}
+              className="h-9 px-3 border border-[#222834] bg-[#0F1218] text-xs"
+            >
+              <RotateCcw size={14} className="mr-1.5" />
+              Start over
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-4 gap-2 py-4">
@@ -1756,7 +1773,10 @@ export default function TeamBuilder() {
 
               <Button
                 type="button"
-                onClick={() => void confirmMatch()}
+                onClick={() => {
+                  void playUiSound("confirm", "mucho8s");
+                  void confirmMatch();
+                }}
                 disabled={!canConfirm || confirmBusy}
                 className="h-11 px-6 bg-magma hover:bg-[#ff3c4c] text-white font-black rounded-xl"
                 title={
