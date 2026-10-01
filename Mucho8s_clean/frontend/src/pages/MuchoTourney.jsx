@@ -1708,7 +1708,24 @@ export default function MuchoTourney() {
             generation={switcherooDraw.generation}
             presetTeams={switcherooDraw.presetTeams}
             title={switcherooDraw.mode === "new" ? "SWITCHEROO DRAW" : "RE-SWITCHEROO"}
-            onClose={() => setSwitcherooDraw(null)}
+            onProgress={
+              switcherooDraw.mode === "new" ? syncSwitcherooDrawProgress : undefined
+            }
+            onClose={() => {
+              if (switcherooDraw.mode === "new") {
+                save({
+                  ...t,
+                  status: "setup",
+                  switcheroo: {
+                    ...t.switcheroo,
+                    setupStage: "published",
+                    phase: "published",
+                    liveDraw: null,
+                  },
+                });
+              }
+              setSwitcherooDraw(null);
+            }}
             onComplete={(teams) => {
               if (switcherooDraw.mode === "new") {
                 finalizeSwitcherooDraw(teams);
