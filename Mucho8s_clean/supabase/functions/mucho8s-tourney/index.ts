@@ -110,6 +110,54 @@ const makeSwitcherooTeams = (pool: any[], format: unknown, generation: number) =
   return teams;
 };
 
+const makeBracket = (teamsInput: any[]) => {
+  const size = teamsInput.length <= 2 ? 2 : teamsInput.length <= 4 ? 4 : 8;
+  const seeded = [...teamsInput].slice(0, size);
+  while (seeded.length < size) seeded.push(null);
+
+  const order =
+    size === 8
+      ? [0, 7, 3, 4, 1, 6, 2, 5]
+      : size === 4
+        ? [0, 3, 1, 2]
+        : [0, 1];
+
+  const first: any[] = [];
+  for (let index = 0; index < order.length; index += 2) {
+    first.push({
+      id: `r0m${index / 2}`,
+      round: 0,
+      a: seeded[order[index]],
+      b: seeded[order[index + 1]],
+      winner: null,
+      scoreA: 0,
+      scoreB: 0,
+    });
+  }
+
+  const rounds: any[][] = [first];
+  let count = first.length / 2;
+  let round = 1;
+
+  while (count >= 1) {
+    rounds.push(
+      Array.from({ length: count }, (_, matchIndex) => ({
+        id: `r${round}m${matchIndex}`,
+        round,
+        a: null,
+        b: null,
+        winner: null,
+        scoreA: 0,
+        scoreB: 0,
+      }))
+    );
+    count /= 2;
+    round += 1;
+  }
+
+  return rounds;
+};
+
 const buildPayPalPaymentUrl = (rawValue: unknown, amount: number) => {
   const raw = String(rawValue || "").trim();
   if (!raw) throw new Error("Admin must configure the PayPal link first");
@@ -178,13 +226,23 @@ const normalizeExpiredReview = async (supabase: any, row: any) => {
     : [];
   const expiredAt = new Date().toISOString();
 
+  let teams = Array.isArray(state.teams) ? [...state.teams] : [];
+  if (state.seeding === "random") teams = shuffleRows(teams);
+  teams = teams.map((team: any, index: number) => ({ ...team, seed: index + 1 }));
+  const bracket = teams.length >= 2 ? makeBracket(teams) : [];
+
   const nextState = {
     ...state,
-    status: "ready",
+    teams,
+    bracket,
+    champion: null,
+    status: "live",
     switcheroo: {
       ...currentSwitcheroo,
-      phase: "locked",
+      phase: "bracket",
+      setupStage: "bracket",
       pendingPayments: [],
+      liveDraw: null,
       expiredPayments: [
         ...(Array.isArray(currentSwitcheroo.expiredPayments)
           ? currentSwitcheroo.expiredPayments
@@ -202,9 +260,9 @@ const normalizeExpiredReview = async (supabase: any, row: any) => {
     .from("tourney_state")
     .update({
       state: nextState,
-      status: "ready",
+      status: "live",
       updated_at: new Date().toISOString(),
-      updated_by: "system:review-expired",
+      updated_by: "system:review-expired-bracket",
     })
     .eq("id", "current")
     .select("state,status,updated_at")
