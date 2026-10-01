@@ -167,6 +167,7 @@ export default function TourneyLive() {
                     : "Teams are locked · wheel remains available as the tournament element"
                 }
                 sizeClass="w-[260px] h-[260px] sm:w-[320px] sm:h-[320px]"
+                spinSignal={Number(t.switcheroo?.generation || 0)}
               />
               <div>
                 <div className="brand-kicker text-[#D5A33A]">Switcheroo wheel</div>
@@ -337,6 +338,7 @@ export default function TourneyLive() {
               label="SPIN"
               hint="Switcheroo wheel · click to replay the animation"
               sizeClass="w-[230px] h-[230px] sm:w-[280px] sm:h-[280px]"
+              spinSignal={Number(t.switcheroo?.generation || 0)}
             />
             <div>
               <div className="brand-kicker text-[#D5A33A]">Switcheroo</div>
