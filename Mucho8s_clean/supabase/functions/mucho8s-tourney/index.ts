@@ -429,13 +429,14 @@ Deno.serve(async (req: Request) => {
         });
       }
 
-      if (state.status !== "review") {
-        return json(req, { error: "Switcheroo review is no longer open" }, 409);
+      if (!["review", "ready"].includes(String(state.status || ""))) {
+        return json(req, { error: "This Switcheroo can no longer accept payment confirmations" }, 409);
       }
 
       const reviewEndsAt = new Date(switcheroo.reviewEndsAt || 0).getTime();
-      if (!reviewEndsAt || reviewEndsAt <= Date.now()) {
-        return json(req, { error: "Switcheroo review has ended" }, 409);
+      const requestedAt = new Date(pending.requestedAt || 0).getTime();
+      if (!reviewEndsAt || !requestedAt || requestedAt > reviewEndsAt) {
+        return json(req, { error: "This PayPal request was not created during the review window" }, 409);
       }
 
       const goal = Math.max(1, Math.round(Number(switcheroo.rerollGoal || 1)));
