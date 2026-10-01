@@ -25,7 +25,14 @@ import {
   Shuffle,
   Swords,
   UsersRound,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
+import {
+  isUiSoundEnabled,
+  playUiSound,
+  setUiSoundEnabled,
+} from "@/lib/uiAudio";
 import { toast } from "sonner";
 
 const MATCH_MODES = ["Hardpoint", "Search & Destroy", "CDL Mix"];
@@ -186,6 +193,7 @@ export default function TeamBuilder() {
   const [result, setResult] = useState(null);
   const [confirmBusy, setConfirmBusy] = useState(false);
   const [moneyPairings, setMoneyPairings] = useState([]);
+  const [soundOn, setSoundOn] = useState(isUiSoundEnabled);
 
   const selectedCount = selected.length;
   const inferredFormat = formatForCount(selectedCount);
@@ -385,6 +393,7 @@ export default function TeamBuilder() {
   };
 
   const changeGame = (nextGame) => {
+    void playUiSound("select", "mucho8s");
     setGame(nextGame);
     setMatchMode("");
     setManualMaps([]);
@@ -392,12 +401,14 @@ export default function TeamBuilder() {
   };
 
   const changeMatchMode = (nextMode) => {
+    void playUiSound("select", "mucho8s");
     setMatchMode(nextMode);
     setManualMaps([]);
     resetLobby({ keepGame: true });
   };
 
   const changeBestOf = (value) => {
+    void playUiSound("select", "mucho8s");
     const next = [3,5,7].includes(Number(value)) ? Number(value) : 3;
     setBestOf(next);
     setManualMaps((prev) => prev.slice(0, next));
@@ -435,12 +446,20 @@ export default function TeamBuilder() {
   };
 
   const changeTeamMethod = (nextMethod) => {
+    void playUiSound("select", "mucho8s");
     setTeamMethod(nextMethod);
     setManualA([]);
     setManualB([]);
     if (nextMethod === "manual") setSelected([]);
     resetCaptainDraft();
     setResult(null);
+  };
+
+  const goWizardStep = (nextStep) => {
+    const next = Math.max(1, Math.min(4, Number(nextStep) || 1));
+    if (next === wizardStep) return;
+    void playUiSound(next > wizardStep ? "next" : "back", "mucho8s");
+    setWizardStep(next);
   };
 
   const togglePlayer = (id) => {
