@@ -910,30 +910,65 @@ export default function Matches() {
                 mapResult?.winner === "A" ? "Bravo" : mapResult?.winner === "B" ? "Alpha" : "";
 
               return (
-                <div key={mapName + "-" + index} className="relative">
+                <div key={mapName + "-" + index} className="group">
+                  {mapResult ? (
+                    <div className="relative overflow-hidden rounded-t-xl border border-b-0 border-[#2A303B] bg-[#10151D] px-2.5 py-2">
+                      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(16,185,129,.08),transparent_38%,transparent_62%,rgba(239,68,68,.07))]" />
+                      <div className="relative z-10 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                        <div className="flex min-w-0 items-center gap-1.5">
+                          <span className={`inline-flex h-5 min-w-5 items-center justify-center rounded-md border px-1.5 text-[8px] font-black uppercase tracking-wider ${
+                            mapResult.winner === "A"
+                              ? "border-emerald-400/25 bg-emerald-500/12 text-emerald-300"
+                              : "border-red-400/20 bg-red-500/10 text-red-300"
+                          }`}>
+                            {mapResult.winner === "A" ? "W" : "L"}
+                          </span>
+                          <span className={`truncate text-[9px] font-black uppercase tracking-[0.12em] ${
+                            mapResult.winner === "A" ? "text-emerald-300" : "text-red-300"
+                          }`}>
+                            Alpha
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 whitespace-nowrap text-[8px] font-black uppercase tracking-[0.16em] text-white/55">
+                          <Trophy size={10} className="text-amber-300/80" />
+                          Map {index + 1}
+                        </div>
+
+                        <div className="flex min-w-0 items-center justify-end gap-1.5">
+                          <span className={`truncate text-right text-[9px] font-black uppercase tracking-[0.12em] ${
+                            mapResult.winner === "B" ? "text-emerald-300" : "text-red-300"
+                          }`}>
+                            Bravo
+                          </span>
+                          <span className={`inline-flex h-5 min-w-5 items-center justify-center rounded-md border px-1.5 text-[8px] font-black uppercase tracking-wider ${
+                            mapResult.winner === "B"
+                              ? "border-emerald-400/25 bg-emerald-500/12 text-emerald-300"
+                              : "border-red-400/20 bg-red-500/10 text-red-300"
+                          }`}>
+                            {mapResult.winner === "B" ? "W" : "L"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="relative z-10 mt-1 text-center text-[8px] font-black uppercase tracking-[0.18em] text-white/35">
+                        {mapWinner} won · {mapLoser} lost
+                      </div>
+                    </div>
+                  ) : hasRecordedMapResults ? (
+                    <div className="rounded-t-xl border border-b-0 border-[#2A303B] bg-[#10151D] px-3 py-2 text-center text-[8px] font-black uppercase tracking-[0.18em] text-white/35">
+                      Map {index + 1} · Not played
+                    </div>
+                  ) : null}
+
                   <MapPreviewCard
                     mapName={mapName}
                     game={match.game}
                     mode={match.mode}
                     index={index}
                     compact
-                    className={mapResult ? "border-emerald-500/30" : ""}
+                    className={hasRecordedMapResults ? "rounded-t-none" : ""}
                   />
-
-                  {mapResult ? (
-                    <div className="absolute top-2 right-2 z-20 flex items-center gap-1">
-                      <span className="rounded-md border border-emerald-400/25 bg-emerald-500/15 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-emerald-300 backdrop-blur-sm">
-                        {mapWinner} W
-                      </span>
-                      <span className="rounded-md border border-red-400/20 bg-red-500/15 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-red-300 backdrop-blur-sm">
-                        {mapLoser} L
-                      </span>
-                    </div>
-                  ) : hasRecordedMapResults ? (
-                    <span className="absolute top-2 right-2 z-20 rounded-md border border-white/10 bg-black/55 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-white/45 backdrop-blur-sm">
-                      Not played
-                    </span>
-                  ) : null}
                 </div>
               );
             })}
