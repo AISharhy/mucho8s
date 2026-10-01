@@ -293,7 +293,7 @@ export default function MuchoTourney() {
     Math.max(2, Number(t.switcheroo?.maxTeams || 4))
   );
   const switcherooEconomy = switcherooEconomyFor(
-    t.switcheroo?.entryFee ?? 5,
+    t.switcheroo?.freeEntry ? 0 : t.switcheroo?.entryFee ?? 5,
     switcherooPoolSize
   );
   const currentRerollStep = Math.max(5, Number(t.switcheroo?.rerollStep || switcherooEconomy.firstMargin));
@@ -341,26 +341,35 @@ export default function MuchoTourney() {
   const switcherooSetupStage = t.switcheroo?.setupStage || "settings";
 
   const patchSwitcheroo = (value) => {
+    const nextFreeEntry =
+      value?.freeEntry !== undefined
+        ? Boolean(value.freeEntry)
+        : Boolean(t.switcheroo?.freeEntry);
     const nextEntryFee =
       value?.entryFee !== undefined
         ? Math.max(0, Number(value.entryFee) || 0)
         : Number(t.switcheroo?.entryFee ?? 5);
-    const economy = switcherooEconomyFor(nextEntryFee, switcherooPoolSize);
+    const economy = switcherooEconomyFor(
+      nextFreeEntry ? 0 : nextEntryFee,
+      switcherooPoolSize
+    );
 
     save({
       ...t,
       switcheroo: {
         ...t.switcheroo,
         ...value,
-        ...(value?.entryFee !== undefined
-          ? {
-              entryFee: nextEntryFee,
-              rerollBaseGoal: economy.baseGoal,
-              rerollGoal: economy.baseGoal,
-              rerollStep: economy.firstMargin,
-              rerollStepGrowth: economy.marginGrowth,
-            }
-          : {}),
+        ...(
+          value?.entryFee !== undefined || value?.freeEntry !== undefined
+            ? {
+                entryFee: nextFreeEntry ? 0 : nextEntryFee,
+                rerollBaseGoal: economy.baseGoal,
+                rerollGoal: economy.baseGoal,
+                rerollStep: economy.firstMargin,
+                rerollStepGrowth: economy.marginGrowth,
+              }
+            : {}
+        ),
       },
     });
   };
