@@ -318,6 +318,7 @@ export default function MuchoTourney() {
         reviewEndsAt: null,
         contributedTotal: 0,
         contributions: [],
+        pendingPayments: [],
         rerollsUsed: 0,
         generation: 0,
       },
@@ -361,6 +362,7 @@ export default function MuchoTourney() {
         reviewEndsAt,
         contributedTotal: 0,
         contributions: [],
+        pendingPayments: [],
         rerollsUsed: 0,
       },
     });
@@ -376,6 +378,10 @@ export default function MuchoTourney() {
   const forceReroll = () => {
     const pool = Array.isArray(t.switcheroo?.pool) ? t.switcheroo.pool : [];
     if (!pool.length) return;
+    if ((t.switcheroo?.pendingPayments || []).length) {
+      toast.error("Confirm or reject pending PayPal payments before forcing a re-spin");
+      return;
+    }
     const nextUsed = Number(t.switcheroo?.rerollsUsed || 0) + 1;
     if (nextUsed > Number(t.switcheroo?.maxRerolls || 0)) {
       toast.error("Maximum rerolls reached");
@@ -630,6 +636,7 @@ export default function MuchoTourney() {
                           reviewEndsAt: null,
                           contributedTotal: 0,
                           contributions: [],
+                          pendingPayments: [],
                           rerollsUsed: 0,
                           generation: 0,
                         },
@@ -884,7 +891,10 @@ export default function MuchoTourney() {
                       <button
                         type="button"
                         onClick={forceReroll}
-                        disabled={Number(t.switcheroo.rerollsUsed || 0) >= Number(t.switcheroo.maxRerolls || 0)}
+                        disabled={
+                          Number(t.switcheroo.rerollsUsed || 0) >= Number(t.switcheroo.maxRerolls || 0) ||
+                          (t.switcheroo.pendingPayments || []).length > 0
+                        }
                         className="h-8 px-3 rounded-lg border border-[#D5A33A]/25 bg-[#D5A33A]/[0.06] text-[#D5A33A] text-[9px] font-black disabled:opacity-30"
                       >
                         ADMIN FORCE RE-SPIN
@@ -962,6 +972,47 @@ export default function MuchoTourney() {
                     <span className="m8-pill text-emerald-400 border-emerald-500/25">LOCKED</span>
                   )}
                 </div>
+
+                {t.status === "ready" && (t.switcheroo.pendingPayments || []).length > 0 && (
+                  <div className="mt-4 rounded-xl border border-[#D5A33A]/25 bg-[#D5A33A]/[0.05] p-3">
+                    <div className="text-[9px] tracking-widest text-[#D5A33A] font-black mb-2">
+                      PAYPAL PAYMENTS RECEIVED DURING REVIEW · VERIFY BEFORE BRACKET
+                    </div>
+                    <div className="space-y-2">
+                      {t.switcheroo.pendingPayments.map((row) => (
+                        <div
+                          key={row.id}
+                          className="rounded-lg border border-[#2A303B] bg-[#111720] px-3 py-2 flex flex-col sm:flex-row sm:items-center gap-2"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-black truncate">{row.name || "Player"}</div>
+                            <div className="text-[10px] text-muted-foreground">
+                              Pending PayPal <span className="text-[#D5A33A] font-black">€{row.amount}</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-1.5">
+                            <button
+                              type="button"
+                              disabled={paymentBusyId === row.id}
+                              onClick={() => reviewPayment(row.id, "reject")}
+                              className="h-8 px-3 rounded-lg border border-red-500/20 bg-red-500/[0.05] text-red-300 text-[9px] font-black disabled:opacity-40"
+                            >
+                              REJECT
+                            </button>
+                            <button
+                              type="button"
+                              disabled={paymentBusyId === row.id}
+                              onClick={() => reviewPayment(row.id, "confirm")}
+                              className="h-8 px-3 rounded-lg border border-emerald-500/25 bg-emerald-500/[0.07] text-emerald-300 text-[9px] font-black disabled:opacity-40"
+                            >
+                              CONFIRM PAID
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {!t.teams.length ? (
                   <div className="min-h-[260px] flex flex-col items-center justify-center text-center text-muted-foreground">
