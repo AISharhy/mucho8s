@@ -444,6 +444,10 @@ export default function MuchoTourney() {
       toast.error("Wait for the Switcheroo review to finish");
       return;
     }
+    if (t.teamBuild === "switcheroo" && (t.switcheroo?.pendingPayments || []).length > 0) {
+      toast.error("Confirm or reject pending PayPal payments before generating the bracket");
+      return;
+    }
     if (t.teams.length < 2) {
       toast.error("Add at least 2 teams");
       return;
