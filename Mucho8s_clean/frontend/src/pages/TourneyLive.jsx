@@ -13,6 +13,7 @@ import {
 import SwitcherooWheel from "@/components/SwitcherooWheel";
 import SwitcherooDrawOverlay from "@/components/SwitcherooDrawOverlay";
 import TournamentTeamRosterModal from "@/components/TournamentTeamRosterModal";
+import { playUiSound } from "@/lib/uiAudio";
 
 const STORE = "mucho8s-tourney-admin-v1";
 
@@ -131,6 +132,7 @@ export default function TourneyLive() {
 
   const payEntry = async () => {
     if (entryBusy) return;
+    void playUiSound("money", "switcheroo");
     if (!discordSession?.access_token) {
       toast.error("Connect Discord to pay the tournament entry");
       return;
@@ -158,6 +160,7 @@ export default function TourneyLive() {
   };
 
   const contribute = async (amount) => {
+    void playUiSound("money", "switcheroo");
     if (!canContribute || busy) {
       if (!discordSession?.access_token) toast.error("Connect Discord to contribute");
       else if (!participantIds.has(String(discordPlayer?.id || ""))) {
@@ -371,7 +374,10 @@ export default function TourneyLive() {
                           <button
                             type="button"
                             disabled={entryBusy || registrationFull}
-                            onClick={() => setJoinConfirmOpen(true)}
+                            onClick={() => {
+                              void playUiSound("next", "switcheroo");
+                              setJoinConfirmOpen(true);
+                            }}
                             className="w-full h-12 rounded-xl bg-[#FF4FA3] hover:bg-[#FF69B4] text-black font-black disabled:opacity-40"
                           >
                             {registrationFull
@@ -398,7 +404,10 @@ export default function TourneyLive() {
                             <div className="grid grid-cols-2 gap-2 mt-3">
                               <button
                                 type="button"
-                                onClick={() => setJoinConfirmOpen(false)}
+                                onClick={() => {
+                                  void playUiSound("back", "switcheroo");
+                                  setJoinConfirmOpen(false);
+                                }}
                                 className="h-10 rounded-lg border border-[#2A303B] bg-[#111720] text-xs font-black"
                               >
                                 BACK
@@ -407,6 +416,7 @@ export default function TourneyLive() {
                                 type="button"
                                 disabled={entryBusy}
                                 onClick={() => {
+                                  void playUiSound("confirm", "switcheroo");
                                   setJoinConfirmOpen(false);
                                   payEntry();
                                 }}
@@ -815,7 +825,12 @@ export default function TourneyLive() {
                           key={side}
                           type="button"
                           disabled={!team}
-                          onClick={() => team && setSelectedTeam(team)}
+                          onClick={() => {
+                            if (team) {
+                              void playUiSound("click", t.teamBuild === "switcheroo" ? "switcheroo" : "tourney");
+                              setSelectedTeam(team);
+                            }
+                          }}
                           className={
                             `w-full h-11 px-3 border-b border-[#202631] flex items-center gap-2 text-left transition-colors disabled:cursor-default ${match.winner === side
                               ? t.teamBuild === "switcheroo"
