@@ -122,12 +122,11 @@ export const Layout = () => {
     let alive = true;
     const apply = (row) => {
       if (!alive) return;
-      const switcherooPublished =
-        row?.teamBuild === "switcheroo" &&
+      const entryPublished =
         row?.status === "setup" &&
         row?.switcheroo?.setupStage === "published";
       const visibleStatus = ["review", "ready", "live", "completed"].includes(row?.status);
-      setLiveTourney(switcherooPublished || visibleStatus ? row : null);
+      setLiveTourney(entryPublished || visibleStatus ? row : null);
     };
     fetchTourney().then(apply);
     const off = subscribeTourney(apply);
