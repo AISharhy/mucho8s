@@ -263,11 +263,11 @@ const GuestDashboard = ({
               <span className="m8-pill">{season.season_name || "Season " + season.season_number}</span>
             </div>
             <h2 className="font-display text-4xl sm:text-5xl lg:text-[56px] leading-[0.98] font-black tracking-[-0.045em] max-w-3xl">
-              Your competitive hub
-              <span className="block text-magma mt-1">for every Mucho mode.</span>
+              La piattaforma privata
+              <span className="block text-magma mt-1">del Circle Mucho8s.</span>
             </h2>
-            <p className="text-sm sm:text-base text-[#9199A7] mt-5 max-w-xl leading-6">
-              Mucho8s and Mucho1v1 are live. MuchoTourney is coming next.
+            <p className="text-sm sm:text-base text-[#9199A7] mt-5 max-w-2xl leading-6">
+              Mucho8s è una piattaforma privata ed esclusiva, riservata ai membri del <strong className="text-white">Circle Mucho8s</strong>. Se non fai già parte del Circle, non inviare una richiesta di accesso. Grazie.
             </p>
 
             <div className="flex flex-wrap gap-2 mt-6">
