@@ -144,6 +144,24 @@ const buildPayPalPaymentUrl = (rawValue: unknown, amount: number) => {
   return url.toString();
 };
 
+const roundUpToFive = (value: number) =>
+  Math.max(5, Math.ceil(Math.max(0, value) / 5) * 5);
+
+const switcherooEconomy = (entryFeeRaw: unknown, playerCountRaw: unknown) => {
+  const entryFee = Math.max(1, Math.round(Number(entryFeeRaw || 1)));
+  const playerCount = Math.max(0, Math.round(Number(playerCountRaw || 0)));
+  const entryPot = entryFee * playerCount;
+  const baseGoal = roundUpToFive(entryPot * 0.5);
+  const firstMargin = roundUpToFive(baseGoal * 0.5);
+  return {
+    entryFee,
+    entryPot,
+    baseGoal,
+    firstMargin,
+    marginGrowth: 5,
+  };
+};
+
 const normalizeExpiredReview = async (supabase: any, row: any) => {
   const state = row?.state && typeof row.state === "object" ? { ...row.state } : null;
   if (!state || state.status !== "review") return row;
@@ -260,6 +278,201 @@ Deno.serve(async (req: Request) => {
         tourney: data.state,
         status: data.status,
         updatedAt: data.updated_at,
+      });
+    }
+
+    if (action === "request-entry-payment") {
+      const actor = await validatePlayer(req, supabase);
+      if (!actor) {
+        return json(req, { error: "A linked Discord player account is required" }, 401);
+      }
+
+      const { data: rawRow, error: stateError } = await supabase
+        .from("tourney_state")
+        .select("state,status,updated_at")
+        .eq("id", "current")
+        .single();
+
+      if (stateError) throw stateError;
+      const state = rawRow?.state && typeof rawRow.state === "object" ? rawRow.state : null;
+
+      if (!state || state.status !== "setup" || state.teamBuild !== "switcheroo") {
+        return json(req, { error: "Tournament entry payments are not open" }, 409);
+      }
+
+      const switcheroo =
+        state.switcheroo && typeof state.switcheroo === "object"
+          ? { ...state.switcheroo }
+          : {};
+
+      const pool = Array.isArray(switcheroo.pool) ? switcheroo.pool : [];
+      const participant = pool.find(
+        (player: any) => String(player?.id || "") === actor.playerId
+      );
+      if (!participant) {
+        return json(req, { error: "You are not in the Switcheroo tournament pool" }, 403);
+      }
+
+      const entryPaid = Array.isArray(switcheroo.entryPaid) ? switcheroo.entryPaid : [];
+      if (entryPaid.some((row: any) => String(row?.playerId || "") === actor.playerId)) {
+        return json(req, { error: "Tournament entry is already paid" }, 409);
+      }
+
+      const entryPendingPayments = Array.isArray(switcheroo.entryPendingPayments)
+        ? switcheroo.entryPendingPayments
+        : [];
+      const existing = entryPendingPayments.find(
+        (row: any) => String(row?.playerId || "") === actor.playerId
+      );
+      if (existing) {
+        return json(req, { error: "Your tournament entry payment is already waiting for Admin confirmation" }, 409);
+      }
+
+      const economy = switcherooEconomy(switcheroo.entryFee, pool.length);
+      const paymentUrl = buildPayPalPaymentUrl(switcheroo.paypalUrl, economy.entryFee);
+      const pending = {
+        id: crypto.randomUUID(),
+        playerId: actor.playerId,
+        name: actor.name,
+        amount: economy.entryFee,
+        requestedAt: new Date().toISOString(),
+        type: "entry",
+      };
+
+      const nextState = {
+        ...state,
+        switcheroo: {
+          ...switcheroo,
+          entryFee: economy.entryFee,
+          rerollBaseGoal: economy.baseGoal,
+          rerollGoal: economy.baseGoal,
+          rerollStep: economy.firstMargin,
+          rerollStepGrowth: economy.marginGrowth,
+          entryPendingPayments: [...entryPendingPayments, pending],
+        },
+      };
+
+      const { data: updated, error: updateError } = await supabase
+        .from("tourney_state")
+        .update({
+          state: nextState,
+          status: "setup",
+          updated_at: new Date().toISOString(),
+          updated_by: `player:${actor.playerId}:entry-request`,
+        })
+        .eq("id", "current")
+        .select("state,status,updated_at")
+        .single();
+
+      if (updateError) throw updateError;
+
+      return json(req, {
+        ok: true,
+        amount: economy.entryFee,
+        paymentId: pending.id,
+        paymentUrl,
+        tourney: updated.state,
+        status: updated.status,
+        updatedAt: updated.updated_at,
+      });
+    }
+
+    if (action === "review-entry-payment") {
+      const admin = await validateAdmin(req, supabase);
+      if (!admin) return json(req, { error: "Admin access required" }, 401);
+
+      const paymentId = String(body.paymentId || "").trim();
+      const decision = String(body.decision || "").trim().toLowerCase();
+      if (!paymentId || !["confirm", "reject"].includes(decision)) {
+        return json(req, { error: "Invalid tournament entry payment review" }, 400);
+      }
+
+      const { data: rawRow, error: stateError } = await supabase
+        .from("tourney_state")
+        .select("state,status,updated_at")
+        .eq("id", "current")
+        .single();
+
+      if (stateError) throw stateError;
+      const state = rawRow?.state && typeof rawRow.state === "object" ? rawRow.state : null;
+      if (!state || state.status !== "setup" || state.teamBuild !== "switcheroo") {
+        return json(req, { error: "Tournament entry is no longer open" }, 409);
+      }
+
+      const switcheroo =
+        state.switcheroo && typeof state.switcheroo === "object"
+          ? { ...state.switcheroo }
+          : {};
+
+      const pendingRows = Array.isArray(switcheroo.entryPendingPayments)
+        ? switcheroo.entryPendingPayments
+        : [];
+      const pending = pendingRows.find(
+        (row: any) => String(row?.id || "") === paymentId
+      );
+      if (!pending) {
+        return json(req, { error: "Pending tournament entry payment not found" }, 404);
+      }
+
+      const remainingPending = pendingRows.filter(
+        (row: any) => String(row?.id || "") !== paymentId
+      );
+
+      let entryPaid = Array.isArray(switcheroo.entryPaid)
+        ? [...switcheroo.entryPaid]
+        : [];
+
+      if (decision === "confirm") {
+        entryPaid = entryPaid.filter(
+          (row: any) => String(row?.playerId || "") !== String(pending.playerId || "")
+        );
+        entryPaid.push({
+          id: pending.id,
+          playerId: pending.playerId,
+          name: pending.name,
+          amount: pending.amount,
+          paidAt: new Date().toISOString(),
+          confirmedBy: admin.username,
+        });
+      }
+
+      const pool = Array.isArray(switcheroo.pool) ? switcheroo.pool : [];
+      const economy = switcherooEconomy(switcheroo.entryFee, pool.length);
+
+      const nextState = {
+        ...state,
+        switcheroo: {
+          ...switcheroo,
+          entryFee: economy.entryFee,
+          entryPaid,
+          entryPendingPayments: remainingPending,
+          rerollBaseGoal: economy.baseGoal,
+          rerollGoal: economy.baseGoal,
+          rerollStep: economy.firstMargin,
+          rerollStepGrowth: economy.marginGrowth,
+        },
+      };
+
+      const { data: updated, error: updateError } = await supabase
+        .from("tourney_state")
+        .update({
+          state: nextState,
+          status: "setup",
+          updated_at: new Date().toISOString(),
+          updated_by: `${admin.username}:entry-${decision}`,
+        })
+        .eq("id", "current")
+        .select("state,status,updated_at")
+        .single();
+
+      if (updateError) throw updateError;
+
+      return json(req, {
+        ok: true,
+        decision,
+        tourney: updated.state,
+        status: updated.status,
+        updatedAt: updated.updated_at,
       });
     }
 
@@ -501,8 +714,10 @@ Deno.serve(async (req: Request) => {
         const generation = Math.max(1, Number(switcheroo.generation || 1)) + 1;
         const teams = makeSwitcherooTeams(pool, state.format, generation);
         const reviewMinutes = Math.max(1, Number(switcheroo.reviewMinutes || 5));
-        const step = Math.max(1, Math.round(Number(switcheroo.rerollStep || 10)));
+        const step = Math.max(5, Math.round(Number(switcheroo.rerollStep || 10)));
+        const stepGrowth = Math.max(5, Math.round(Number(switcheroo.rerollStepGrowth || 5)));
         const nextGoal = goal + step;
+        const nextStep = step + stepGrowth;
 
         nextState = {
           ...state,
@@ -514,7 +729,8 @@ Deno.serve(async (req: Request) => {
             ...switcheroo,
             generation,
             rerollsUsed: nextUsed,
-            rerollStep: step,
+            rerollStep: nextStep,
+            rerollStepGrowth: stepGrowth,
             rerollGoal: nextGoal,
             reviewEndsAt: new Date(Date.now() + reviewMinutes * 60 * 1000).toISOString(),
             contributedTotal: 0,
@@ -526,7 +742,9 @@ Deno.serve(async (req: Request) => {
               {
                 generation: Number(switcheroo.generation || 1),
                 goal,
+                margin: step,
                 nextGoal,
+                nextMargin: nextStep,
                 total: nextTotal,
                 contributions,
                 completedAt: new Date().toISOString(),
