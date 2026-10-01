@@ -86,6 +86,15 @@ const normalizeMatch = (m) => ({
   merdaClearedIds: Array.isArray(m?.merdaClearedIds) ? m.merdaClearedIds.filter(Boolean) : [],
   map: m?.map || "",
   maps: Array.isArray(m?.maps) ? m.maps.filter(Boolean).slice(0, 5) : [],
+  mapResults: Array.isArray(m?.mapResults)
+    ? m.mapResults
+        .map((row) => ({
+          map: String(row?.map || "").trim(),
+          winner: String(row?.winner || "").trim().toUpperCase(),
+        }))
+        .filter((row) => row.map && ["A", "B"].includes(row.winner))
+        .slice(0, 5)
+    : [],
   mode: m?.mode || "",
   game: m?.game || "",
   eloChanges: m?.eloChanges && typeof m.eloChanges === "object" ? m.eloChanges : {},
