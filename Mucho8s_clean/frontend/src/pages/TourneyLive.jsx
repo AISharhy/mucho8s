@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Crown, Shield, Swords, Trophy, UsersRound, Clock3, Shuffle } from "lucide-react";
 import { toast } from "sonner";
 import { useData } from "@/context/DataContext";
-import { contributeTourney, fetchTourney, subscribeTourney } from "@/lib/tourneyLive";
+import { fetchTourney, requestTourneyPayment, subscribeTourney } from "@/lib/tourneyLive";
 
 const STORE = "mucho8s-tourney-admin-v1";
 
@@ -93,15 +93,18 @@ export default function TourneyLive() {
 
     setBusy(true);
     try {
-      const data = await contributeTourney(amount, discordSession.access_token);
+      const data = await requestTourneyPayment(amount, discordSession.access_token);
       if (data?.tourney) setT(data.tourney);
-      if (data?.rerolled) {
-        toast.success("Goal reached · Switcheroo re-spin activated");
-      } else {
-        toast.success(`+€${data?.acceptedAmount || amount} added to the re-roll fund`);
+
+      if (data?.paymentUrl) {
+        window.open(data.paymentUrl, "_blank", "noopener,noreferrer");
       }
+
+      toast.success(
+        `Pay €${data?.amount || amount} on PayPal · the bar updates after Admin confirms receipt`
+      );
     } catch (error) {
-      toast.error(error?.message || "Contribution failed");
+      toast.error(error?.message || "Unable to open PayPal payment");
     } finally {
       setBusy(false);
     }
@@ -215,7 +218,7 @@ export default function TourneyLive() {
                       ))}
                     </div>
                     <div className="text-[9px] text-muted-foreground mt-2 leading-4">
-                      Contribution is recorded for the Switcheroo test flow. No automatic payment is charged yet.
+                      PayPal opens in a new tab. Your payment stays pending until the tournament Admin confirms it was received.
                     </div>
                   </>
                 ) : (
