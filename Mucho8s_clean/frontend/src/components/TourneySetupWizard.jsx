@@ -158,6 +158,7 @@ export default function TourneySetupWizard({
 
   const isSwitcheroo = tournament.teamBuild === "switcheroo";
   const pink = isSwitcheroo;
+  const freeEntry = Boolean(tournament.switcheroo?.freeEntry);
 
   const steps = useMemo(
     () => [
@@ -186,7 +187,7 @@ export default function TourneySetupWizard({
   const canContinue = (() => {
     if (current.key === "identity") {
       if (!String(tournament.name || "").trim()) return false;
-      if (!String(tournament.switcheroo?.paypalUrl || "").trim()) return false;
+      if (!freeEntry && !String(tournament.switcheroo?.paypalUrl || "").trim()) return false;
     }
     return true;
   })();
@@ -393,6 +394,28 @@ export default function TourneySetupWizard({
                           </div>
                         </div>
 
+                        <div className="grid md:grid-cols-2 gap-3">
+                          <ChoiceCard
+                            active={!freeEntry}
+                            title="Paid entry"
+                            subtitle="Players confirm the entry and PayPal opens for the configured fee."
+                            icon={WalletCards}
+                            onClick={() => onPatchSwitcheroo({ freeEntry: false })}
+                          />
+                          <ChoiceCard
+                            active={freeEntry}
+                            title="Free Tourney"
+                            subtitle="No entry payment. Players only confirm participation."
+                            icon={Check}
+                            onClick={() =>
+                              onPatchSwitcheroo({
+                                freeEntry: true,
+                                registrationMode: "manual",
+                              })
+                            }
+                          />
+                        </div>
+
                         <div className="grid sm:grid-cols-2 gap-3">
                           <label>
                             <span className="text-[9px] tracking-[.14em] text-[#697181] font-black">
@@ -404,15 +427,15 @@ export default function TourneySetupWizard({
                               </span>
                               <input
                                 type="number"
-                                min="1"
+                                min="0"
                                 step="1"
-                                value={tournament.switcheroo?.entryFee || 5}
-                                disabled={paymentsLocked}
+                                value={freeEntry ? 0 : tournament.switcheroo?.entryFee || 5}
+                                disabled={paymentsLocked || freeEntry}
                                 onChange={(event) =>
                                   onPatchSwitcheroo({
                                     entryFee: Math.max(
-                                      1,
-                                      Number(event.target.value) || 1
+                                      0,
+                                      Number(event.target.value) || 0
                                     ),
                                     registrationMode: "manual",
                                   })
@@ -432,6 +455,7 @@ export default function TourneySetupWizard({
                           </div>
                         </div>
 
+                        {!freeEntry && (
                         <label className="block">
                           <span className="text-[9px] tracking-[.14em] text-[#697181] font-black">
                             PAYPAL LINK
@@ -448,6 +472,7 @@ export default function TourneySetupWizard({
                             className="mt-2 w-full h-12 rounded-xl bg-[#111720] border border-[#D5A33A]/25 px-4 text-sm"
                           />
                         </label>
+                        )}
                       </motion.div>
                     )}
 
@@ -464,6 +489,25 @@ export default function TourneySetupWizard({
                           <div className="text-[10px] text-muted-foreground mt-1">
                             Entry settings stay attached to the tournament type.
                           </div>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-3">
+                          <ChoiceCard
+                            active={!freeEntry}
+                            title="Paid entry"
+                            subtitle="Players confirm and pay the configured entry fee."
+                            icon={WalletCards}
+                            accent="pink"
+                            onClick={() => onPatchSwitcheroo({ freeEntry: false })}
+                          />
+                          <ChoiceCard
+                            active={freeEntry}
+                            title="Free Tourney"
+                            subtitle="No PayPal entry payment. Registration stays active with €0 entry."
+                            icon={Check}
+                            accent="pink"
+                            onClick={() => onPatchSwitcheroo({ freeEntry: true })}
+                          />
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-3">
@@ -505,15 +549,15 @@ export default function TourneySetupWizard({
                               </span>
                               <input
                                 type="number"
-                                min="1"
+                                min="0"
                                 step="1"
-                                value={tournament.switcheroo?.entryFee || 5}
-                                disabled={paymentsLocked}
+                                value={freeEntry ? 0 : tournament.switcheroo?.entryFee || 5}
+                                disabled={paymentsLocked || freeEntry}
                                 onChange={(event) =>
                                   onPatchSwitcheroo({
                                     entryFee: Math.max(
-                                      1,
-                                      Number(event.target.value) || 1
+                                      0,
+                                      Number(event.target.value) || 0
                                     ),
                                   })
                                 }
@@ -563,6 +607,7 @@ export default function TourneySetupWizard({
                           </div>
                         )}
 
+                        {!freeEntry && (
                         <label className="block">
                           <span className="text-[9px] tracking-[.14em] text-[#697181] font-black">
                             PAYPAL LINK
@@ -578,6 +623,7 @@ export default function TourneySetupWizard({
                             className="mt-2 w-full h-12 rounded-xl bg-[#111720] border border-[#FF4FA3]/25 px-4 text-sm"
                           />
                         </label>
+                        )}
                       </motion.div>
                     )}
                   </div>
@@ -786,7 +832,9 @@ export default function TourneySetupWizard({
                         ],
                         [
                           "Entry",
-                          `€${tournament.switcheroo?.entryFee || 5} / player`,
+                          freeEntry
+                            ? "FREE"
+                            : `€${tournament.switcheroo?.entryFee || 5} / player`,
                         ],
                         ["Game", tournament.game],
                         ["Format", tournament.format],
