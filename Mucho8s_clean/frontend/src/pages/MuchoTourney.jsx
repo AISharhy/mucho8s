@@ -15,7 +15,7 @@ import {
   Lock,
 } from "lucide-react";
 import { toast } from "sonner";
-import { fetchTourney, saveTourney, subscribeTourney } from "@/lib/tourneyLive";
+import { fetchTourney, reviewTourneyPayment, saveTourney, subscribeTourney } from "@/lib/tourneyLive";
 
 export const TOURNEY_STORE = "mucho8s-tourney-admin-v1";
 const STORE = TOURNEY_STORE;
@@ -31,6 +31,8 @@ const switcherooDefaults = {
   reviewEndsAt: null,
   contributedTotal: 0,
   contributions: [],
+  pendingPayments: [],
+  paypalUrl: "",
 };
 
 const blank = {
@@ -155,6 +157,7 @@ export default function MuchoTourney() {
   const [fx, setFx] = useState(null);
   const [editingRoster, setEditingRoster] = useState(null);
   const [now, setNow] = useState(Date.now());
+  const [paymentBusyId, setPaymentBusyId] = useState("");
 
   const fireFx = (type, data = {}) => setFx({ type, ...data, key: Date.now() });
 
@@ -405,6 +408,29 @@ export default function MuchoTourney() {
       sub: `REROLL ${nextUsed}/${t.switcheroo.maxRerolls}`,
       pool,
     });
+  };
+
+  const reviewPayment = async (paymentId, decision) => {
+    if (!paymentId || !admin?.sessionToken || paymentBusyId) return;
+    setPaymentBusyId(paymentId);
+    try {
+      const data = await reviewTourneyPayment(paymentId, decision, admin.sessionToken);
+      if (data?.tourney) setT(normalize(data.tourney));
+      if (data?.rerolled) {
+        fireFx("switcheroo", {
+          title: "RE-SWITCHEROO",
+          sub: "PAYPAL GOAL REACHED · NEW TEAMS GENERATED",
+          pool: data?.tourney?.switcheroo?.pool || [],
+        });
+        toast.success("Goal reached · Switcheroo re-spin started");
+      } else {
+        toast.success(decision === "confirm" ? "PayPal contribution confirmed" : "PayPal contribution rejected");
+      }
+    } catch (error) {
+      toast.error(error?.message || "Unable to review payment");
+    } finally {
+      setPaymentBusyId("");
+    }
   };
 
   const generate = () => {
@@ -718,6 +744,28 @@ export default function MuchoTourney() {
                   </select>
                 </label>
               </div>
+
+              <label className="block mt-3">
+                <span className="text-[9px] tracking-widest text-[#697181]">PAYPAL LINK</span>
+                <input
+                  value={t.switcheroo.paypalUrl || ""}
+                  onChange={(event) =>
+                    save({
+                      ...t,
+                      switcheroo: {
+                        ...t.switcheroo,
+                        paypalUrl: event.target.value,
+                      },
+                    })
+                  }
+                  disabled={t.status === "review"}
+                  placeholder="https://paypal.me/tuonome"
+                  className="mt-1 w-full h-10 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm disabled:opacity-40"
+                />
+                <div className="text-[9px] text-muted-foreground mt-1.5">
+                  Players are sent here to pay. The progress bar increases only after Admin confirms the payment.
+                </div>
+              </label>
             </div>
           )}
         </section>
@@ -853,6 +901,50 @@ export default function MuchoTourney() {
                             <strong>{row.name || "Player"}</strong>
                             <span className="text-[#D5A33A]">+€{row.amount}</span>
                           </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {(t.switcheroo.pendingPayments || []).length > 0 && (
+                    <div className="mt-4 pt-3 border-t border-[#222834]">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className="text-[9px] tracking-widest text-[#697181]">PAYPAL PAYMENTS TO VERIFY</div>
+                        <span className="font-mono text-[9px] text-[#D5A33A]">
+                          {t.switcheroo.pendingPayments.length} pending
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {t.switcheroo.pendingPayments.map((row) => (
+                          <div
+                            key={row.id}
+                            className="rounded-lg border border-[#2A303B] bg-[#111720] px-3 py-2 flex flex-col sm:flex-row sm:items-center gap-2"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="text-xs font-black truncate">{row.name || "Player"}</div>
+                              <div className="text-[10px] text-muted-foreground">
+                                Declared payment <span className="text-[#D5A33A] font-black">€{row.amount}</span>
+                              </div>
+                            </div>
+                            <div className="flex gap-1.5">
+                              <button
+                                type="button"
+                                disabled={paymentBusyId === row.id}
+                                onClick={() => reviewPayment(row.id, "reject")}
+                                className="h-8 px-3 rounded-lg border border-red-500/20 bg-red-500/[0.05] text-red-300 text-[9px] font-black disabled:opacity-40"
+                              >
+                                REJECT
+                              </button>
+                              <button
+                                type="button"
+                                disabled={paymentBusyId === row.id}
+                                onClick={() => reviewPayment(row.id, "confirm")}
+                                className="h-8 px-3 rounded-lg border border-emerald-500/25 bg-emerald-500/[0.07] text-emerald-300 text-[9px] font-black disabled:opacity-40"
+                              >
+                                CONFIRM PAID
+                              </button>
+                            </div>
+                          </div>
                         ))}
                       </div>
                     </div>
