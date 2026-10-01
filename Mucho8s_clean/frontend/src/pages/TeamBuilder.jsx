@@ -677,6 +677,68 @@ export default function TeamBuilder() {
     );
   };
 
+  const randomizeReviewTeams = () => {
+    if (!result?.teamA?.length || !result?.teamB?.length) return;
+
+    const currentSignature = [
+      result.teamA.map((player) => String(player.id)).sort().join(","),
+      result.teamB.map((player) => String(player.id)).sort().join(","),
+    ]
+      .sort()
+      .join("|");
+
+    const pool = [...result.teamA, ...result.teamB];
+    const teamSize = result.teamA.length;
+    let nextPool = [...pool];
+    let nextA = [];
+    let nextB = [];
+
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      nextPool = [...pool];
+      for (let index = nextPool.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [nextPool[index], nextPool[swapIndex]] = [nextPool[swapIndex], nextPool[index]];
+      }
+
+      nextA = nextPool.slice(0, teamSize);
+      nextB = nextPool.slice(teamSize);
+      const signature = [
+        nextA.map((player) => String(player.id)).sort().join(","),
+        nextB.map((player) => String(player.id)).sort().join(","),
+      ]
+        .sort()
+        .join("|");
+
+      if (signature !== currentSignature || pool.length <= 2) break;
+    }
+
+    const analysis = analyzeManualTeams(nextA, nextB, context.matches || []);
+    if (!analysis) {
+      toast.error("Unable to randomize these teams");
+      return;
+    }
+
+    const nextPairings = (analysis.pairings || []).map((pair, index) => {
+      const previous = moneyPairings[index] || {};
+      return {
+        playerAId: pair.playerA?.id || pair.playerAId || nextA[index]?.id || "",
+        playerBId: pair.playerB?.id || pair.playerBId || nextB[index]?.id || "",
+        amount: previous.amount ?? 5,
+        platform: previous.platform || "paypal",
+      };
+    });
+
+    setMoneyPairings(nextPairings);
+    setResult({
+      ...analysis,
+      teamMethod: "random",
+      draftCaptains: null,
+    });
+
+    void playUiSound("select", "mucho8s");
+    toast.success("Teams randomized");
+  };
+
   const updateReviewPairingOpponent = (rowIndex, nextPlayerBId) => {
     setMoneyPairings((prev) => {
       const current = prev[rowIndex];
@@ -1639,39 +1701,53 @@ export default function TeamBuilder() {
               <Metric label="Bravo Chem" value={String(result.chemistryB.score) + "%"} />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-              {[
-                ["Alpha", result.teamA, "text-magma", result?.draftCaptains?.A],
-                ["Bravo", result.teamB, "text-[#65D5D3]", result?.draftCaptains?.B],
-              ].map(([label, team, tone, draftCaptainId]) => (
-                <div key={label} className="rounded-xl border border-[#222834] bg-[#10151D] p-3">
-                  <div className={"text-[10px] uppercase tracking-widest font-black mb-2 " + tone}>
-                    {label}
+            <div className="relative">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {[
+                  ["Alpha", result.teamA, "text-magma", result?.draftCaptains?.A],
+                  ["Bravo", result.teamB, "text-[#65D5D3]", result?.draftCaptains?.B],
+                ].map(([label, team, tone, draftCaptainId]) => (
+                  <div key={label} className="rounded-xl border border-[#222834] bg-[#10151D] p-3">
+                    <div className={"text-[10px] uppercase tracking-widest font-black mb-2 " + tone}>
+                      {label}
+                    </div>
+                    <div className="space-y-1.5">
+                      {team.map((player) => (
+                        <div
+                          key={player.id}
+                          className={"min-h-[44px] rounded-lg border border-[#202631] bg-[#12161D] px-2.5 py-2 flex items-center gap-2 " + merdaSurfaceClass(player.merdaCount)}
+                        >
+                          <PlayerAvatar
+                            name={player.name}
+                            elo={player.currentElo}
+                            size={28}
+                            avatarUrl={playerAvatars[player.id]}
+                          />
+                          <span className="text-xs font-semibold truncate flex-1">{player.name}</span>
+                          <MerdaBadge count={player.merdaCount} compact />
+                          {draftCaptainId === player.id && <Crown size={11} className="text-[#D5A33A]" />}
+                          {player.id === matchCaptainId && (
+                            <span className="text-[9px] uppercase tracking-wider text-emerald-400">Creator</span>
+                          )}
+                          <span className="font-mono text-[10px] text-muted-foreground">{player.currentElo}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="space-y-1.5">
-                    {team.map((player) => (
-                      <div
-                        key={player.id}
-                        className={"min-h-[44px] rounded-lg border border-[#202631] bg-[#12161D] px-2.5 py-2 flex items-center gap-2 " + merdaSurfaceClass(player.merdaCount)}
-                      >
-                        <PlayerAvatar
-                          name={player.name}
-                          elo={player.currentElo}
-                          size={28}
-                          avatarUrl={playerAvatars[player.id]}
-                        />
-                        <span className="text-xs font-semibold truncate flex-1">{player.name}</span>
-                        <MerdaBadge count={player.merdaCount} compact />
-                        {draftCaptainId === player.id && <Crown size={11} className="text-[#D5A33A]" />}
-                        {player.id === matchCaptainId && (
-                          <span className="text-[9px] uppercase tracking-wider text-emerald-400">Creator</span>
-                        )}
-                        <span className="font-mono text-[10px] text-muted-foreground">{player.currentElo}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
+
+              <div className="flex justify-center lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 mt-3 lg:mt-0 z-10">
+                <button
+                  type="button"
+                  onClick={randomizeReviewTeams}
+                  className="group w-11 h-11 rounded-full border border-[#FF2A3B]/40 bg-[#0B0F15] text-[#FF5968] shadow-[0_0_0_4px_rgba(5,7,10,.9),0_10px_30px_rgba(255,42,59,.13)] flex items-center justify-center hover:bg-[#FF2A3B] hover:text-white hover:border-[#FF2A3B] transition-all active:scale-90"
+                  title="Randomize Alpha / Bravo"
+                  aria-label="Randomize Alpha and Bravo teams"
+                >
+                  <Shuffle size={18} className="transition-transform duration-300 group-hover:rotate-180" />
+                </button>
+              </div>
             </div>
 
             <details className="mt-3 rounded-xl border border-[#222834] bg-[#0B0F15] overflow-hidden group">
