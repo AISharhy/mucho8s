@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 160" role="img" aria-labelledby="title desc">
+  <title id="title">Mucho8s</title>
+  <desc id="desc">Minimal Mucho8s wordmark</desc>
+  <g font-family="Manrope,Arial,sans-serif" font-weight="900" font-size="118" letter-spacing="-7">
+    <text x="8" y="118" fill="#F6F7F9">MUCHO</text>
+    <text x="500" y="118" fill="#FF2A3B">8S</text>
+  </g>
+</svg>
