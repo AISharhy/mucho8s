@@ -2190,7 +2190,28 @@ export const DataProvider = ({ children }) => {
     const p = next.find((x) => x.id === id);
     if (!p) return false;
 
-    const currentElo = Math.max(MIN_ELO, Math.round(Number(draft?.currentElo) || BASE_ELO));
+    const currentWins = Math.max(0, Math.round(Number(p?.wins) || 0));
+    const currentLosses = Math.max(0, Math.round(Number(p?.losses) || 0));
+    const wins = Math.max(0, Math.round(Number(draft?.wins) || 0));
+    const losses = Math.max(0, Math.round(Number(draft?.losses) || 0));
+
+    const storedElo = Math.max(
+      MIN_ELO,
+      Math.round(Number(p?.currentElo) || BASE_ELO),
+    );
+    const requestedElo = Number(draft?.currentElo);
+    const explicitEloOverride =
+      Number.isFinite(requestedElo) &&
+      Math.round(requestedElo) !== storedElo;
+    const manualResultEloDelta =
+      (wins - currentWins) * 25 - (losses - currentLosses) * 15;
+    const currentElo = Math.max(
+      MIN_ELO,
+      explicitEloOverride
+        ? Math.round(requestedElo)
+        : storedElo + manualResultEloDelta,
+    );
+
     const startingElo = Math.max(
       MIN_ELO,
       Math.round(Number(draft?.startingElo) || Number(p.eloHistory?.[0]?.elo) || BASE_ELO),
@@ -2199,8 +2220,6 @@ export const DataProvider = ({ children }) => {
       currentElo,
       Math.round(Number(draft?.peakElo) || Number(p.peakElo) || currentElo),
     );
-    const wins = Math.max(0, Math.round(Number(draft?.wins) || 0));
-    const losses = Math.max(0, Math.round(Number(draft?.losses) || 0));
     const avgPlacement = Math.max(0, Number(draft?.avgPlacement) || 0);
     const currentStreak = Math.trunc(Number(draft?.currentStreak) || 0);
     const mvpCount = Math.max(0, Math.round(Number(draft?.mvpCount) || 0));
@@ -2286,6 +2305,8 @@ export const DataProvider = ({ children }) => {
         wins,
         losses,
         totalMatches: wins + losses,
+        manualResultEloDelta,
+        explicitEloOverride,
         currentStreak,
         mvpCount,
         merdaCount,
