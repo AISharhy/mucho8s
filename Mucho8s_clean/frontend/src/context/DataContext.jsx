@@ -50,6 +50,13 @@ const normalizePlayer = (p) => {
     currentStreak: Number(p?.currentStreak) || 0,
     mvpCount: Math.max(0, Number(p?.mvpCount) || 0),
     merdaCount: Math.max(0, Number(p?.merdaCount) || 0),
+    manualStatAdjustments:
+      p?.manualStatAdjustments && typeof p.manualStatAdjustments === "object"
+        ? {
+            wins: Math.round(Number(p.manualStatAdjustments.wins || 0)),
+            losses: Math.round(Number(p.manualStatAdjustments.losses || 0)),
+          }
+        : { wins: 0, losses: 0 },
     eloHistory: Array.isArray(p?.eloHistory) && p.eloHistory.length
       ? p.eloHistory
       : [{ match: 0, elo: cur }],
