@@ -84,7 +84,14 @@ const ChoiceCard = ({
   );
 };
 
-const Segmented = ({ value, options, onChange, accent = "gold", disabled = false }) => {
+const Segmented = ({
+  value,
+  options,
+  onChange,
+  accent = "gold",
+  disabled = false,
+  formatLabel,
+}) => {
   const pink = accent === "pink";
   return (
     <div className="grid grid-cols-3 gap-2">
@@ -105,7 +112,11 @@ const Segmented = ({ value, options, onChange, accent = "gold", disabled = false
                 : "border-[#252B36] bg-[#0D1219] text-[#AAB1BE] hover:border-[#3B4554]")
             }
           >
-            {typeof option === "number" ? `BO${option}` : String(option).toUpperCase()}
+            {formatLabel
+              ? formatLabel(option)
+              : typeof option === "number"
+                ? `BO${option}`
+                : String(option).toUpperCase()}
           </button>
         );
       })}
@@ -515,6 +526,7 @@ export default function TourneySetupWizard({
                           value={tournament.switcheroo?.maxTeams || 4}
                           options={[2, 4, 8]}
                           accent="pink"
+                          formatLabel={(maxTeams) => `${maxTeams} TEAMS`}
                           onChange={(maxTeams) => onPatchSwitcheroo({ maxTeams: Number(maxTeams) })}
                         />
                         <div className="text-[10px] text-muted-foreground mt-2">
