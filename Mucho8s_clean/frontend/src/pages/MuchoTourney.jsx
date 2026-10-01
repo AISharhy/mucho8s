@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { fetchTourney, reviewTourneyPayment, saveTourney, subscribeTourney } from "@/lib/tourneyLive";
 import SwitcherooWheel from "@/components/SwitcherooWheel";
+import SwitcherooDrawOverlay from "@/components/SwitcherooDrawOverlay";
 
 export const TOURNEY_STORE = "mucho8s-tourney-admin-v1";
 const STORE = TOURNEY_STORE;
@@ -160,6 +161,7 @@ export default function MuchoTourney() {
   const [editingRoster, setEditingRoster] = useState(null);
   const [now, setNow] = useState(Date.now());
   const [paymentBusyId, setPaymentBusyId] = useState("");
+  const [switcherooDraw, setSwitcherooDraw] = useState(null);
 
   const fireFx = (type, data = {}) => setFx({ type, ...data, key: Date.now() });
 
@@ -341,7 +343,7 @@ export default function MuchoTourney() {
     });
   };
 
-  const startSwitcheroo = () => {
+  const openSwitcherooDraw = () => {
     const pool = Array.isArray(t.switcheroo?.pool) ? t.switcheroo.pool : [];
     const rosterSize = rosterSizeFor(t.format);
 
@@ -359,8 +361,15 @@ export default function MuchoTourney() {
       return;
     }
 
-    const generation = 1;
-    const teams = makeSwitcherooTeams(pool, t.format, generation);
+    setSwitcherooDraw({
+      mode: "new",
+      generation: 1,
+      players: pool,
+      presetTeams: null,
+    });
+  };
+
+  const finalizeSwitcherooDraw = (teams) => {
     const reviewMinutes = Math.max(1, Number(t.switcheroo?.reviewMinutes || 5));
     const reviewEndsAt = new Date(Date.now() + reviewMinutes * 60 * 1000).toISOString();
     const baseGoal = Math.max(
@@ -378,7 +387,7 @@ export default function MuchoTourney() {
       switcheroo: {
         ...t.switcheroo,
         phase: "review",
-        generation,
+        generation: 1,
         reviewEndsAt,
         rerollBaseGoal: baseGoal,
         rerollGoal: baseGoal,
@@ -390,6 +399,7 @@ export default function MuchoTourney() {
       },
     });
 
+    setSwitcherooDraw(null);
     toast.success("Switcheroo complete · review phase started");
   };
 
@@ -400,11 +410,16 @@ export default function MuchoTourney() {
       const data = await reviewTourneyPayment(paymentId, decision, admin.sessionToken);
       if (data?.tourney) setT(normalize(data.tourney));
       if (data?.rerolled) {
-        fireFx("bracket", {
-          title: "RE-SWITCHEROO",
-          sub: `GOAL REACHED · NEXT TARGET €${Number(data?.tourney?.switcheroo?.rerollGoal || 0)}`,
+        const next = normalize(data.tourney);
+        setSwitcherooDraw({
+          mode: "reveal",
+          generation: Number(next?.switcheroo?.generation || 1),
+          players: next?.switcheroo?.pool || [],
+          presetTeams: next?.teams || [],
         });
-        toast.success("Goal reached · Switcheroo re-spin started");
+        toast.success(
+          `Goal reached · re-spin activated · next target €${Number(next?.switcheroo?.rerollGoal || 0)}`
+        );
       } else {
         toast.success(decision === "confirm" ? "PayPal contribution confirmed" : "PayPal contribution rejected");
       }
@@ -762,20 +777,30 @@ export default function MuchoTourney() {
               <div className="mt-4 rounded-2xl border border-[#252B36] bg-[#0B0F15] p-4">
                 <SwitcherooWheel
                   players={t.switcheroo.pool || []}
-                  disabled={t.status === "setup" && !switcherooPoolReady}
-                  onSpinComplete={t.status === "setup" ? startSwitcheroo : undefined}
-                  label={t.status === "setup" ? "SPIN" : "SPIN"}
+                  disabled={!switcherooPoolReady && t.status === "setup"}
+                  onActivate={() => {
+                    if (t.status === "setup") {
+                      openSwitcherooDraw();
+                      return;
+                    }
+                    if (t.teams?.length) {
+                      setSwitcherooDraw({
+                        mode: "reveal",
+                        generation: Number(t.switcheroo?.generation || 1),
+                        players: t.switcheroo?.pool || [],
+                        presetTeams: t.teams,
+                      });
+                    }
+                  }}
+                  label="SPIN"
                   hint={
                     t.status === "setup"
                       ? switcherooPoolReady
-                        ? "Click the wheel to create the teams"
-                        : `Select a valid ${t.format} pool, then spin`
-                      : t.status === "review"
-                        ? "Click anytime to replay the wheel animation"
-                        : "Switcheroo wheel"
+                        ? "Click to open Switcheroo fullscreen"
+                        : `Select a valid ${t.format} pool first`
+                      : "Click to replay this Switcheroo fullscreen"
                   }
                   sizeClass="w-[250px] h-[250px] sm:w-[300px] sm:h-[300px]"
-                  spinSignal={Number(t.switcheroo?.generation || 0)}
                 />
               </div>
 
@@ -1227,6 +1252,27 @@ export default function MuchoTourney() {
           </section>
         )}
       </div>
+
+      <AnimatePresence>
+        {switcherooDraw && (
+          <SwitcherooDrawOverlay
+            open
+            players={switcherooDraw.players}
+            format={t.format}
+            generation={switcherooDraw.generation}
+            presetTeams={switcherooDraw.presetTeams}
+            title={switcherooDraw.mode === "new" ? "SWITCHEROO DRAW" : "RE-SWITCHEROO"}
+            onClose={() => setSwitcherooDraw(null)}
+            onComplete={(teams) => {
+              if (switcherooDraw.mode === "new") {
+                finalizeSwitcherooDraw(teams);
+              } else {
+                setSwitcherooDraw(null);
+              }
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {fx && (
