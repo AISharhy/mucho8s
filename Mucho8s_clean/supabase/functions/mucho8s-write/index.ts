@@ -120,6 +120,15 @@ Deno.serve(async (req: Request) => {
         existingHistory.push({ match: wins + losses, elo: currentElo });
       }
 
+      const currentWins = Math.max(0, Math.round(Number(player?.wins || 0)));
+      const currentLosses = Math.max(0, Math.round(Number(player?.losses || 0)));
+      const existingAdjustments =
+        player?.manualStatAdjustments && typeof player.manualStatAdjustments === "object"
+          ? player.manualStatAdjustments
+          : {};
+      const manualWins = Math.round(Number(existingAdjustments?.wins || 0)) + (wins - currentWins);
+      const manualLosses = Math.round(Number(existingAdjustments?.losses || 0)) + (losses - currentLosses);
+
       Object.assign(player, {
         name: cleanName,
         currentElo,
@@ -132,18 +141,22 @@ Deno.serve(async (req: Request) => {
         mvpCount,
         merdaCount,
         eloHistory: existingHistory,
+        manualStatAdjustments: {
+          ...existingAdjustments,
+          wins: manualWins,
+          losses: manualLosses,
+        },
       });
 
       const version = Date.now();
       const { error: updateError } = await supabase
         .from("app_state")
-        .upsert({
-          id: "main",
+        .update({
           players,
-          matches,
           version,
           updated_at: new Date().toISOString(),
-        });
+        })
+        .eq("id", "main");
 
       if (updateError) throw updateError;
       return json({ ok: true, player, version });
@@ -153,19 +166,90 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Invalid state payload" }, 400);
     }
 
+    const { data: currentState, error: currentStateError } = await supabase
+      .from("app_state")
+      .select("players,matches")
+      .eq("id", "main")
+      .maybeSingle();
+    if (currentStateError) throw currentStateError;
+
+    const currentPlayers = Array.isArray(currentState?.players) ? currentState.players : [];
+    const currentMatches = Array.isArray(currentState?.matches) ? currentState.matches : [];
+    const currentById = new Map(
+      currentPlayers
+        .filter((player: any) => player?.id)
+        .map((player: any) => [String(player.id), player])
+    );
+
+    const matchesUnchanged =
+      JSON.stringify(body.matches) === JSON.stringify(currentMatches);
+
+    const mergedPlayers = body.players.map((incoming: any) => {
+      const id = String(incoming?.id || "");
+      const current = currentById.get(id);
+      if (!current) return incoming;
+
+      const existingAdjustments =
+        current?.manualStatAdjustments && typeof current.manualStatAdjustments === "object"
+          ? current.manualStatAdjustments
+          : {};
+      const next = {
+        ...incoming,
+        manualStatAdjustments: {
+          ...existingAdjustments,
+          ...(incoming?.manualStatAdjustments && typeof incoming.manualStatAdjustments === "object"
+            ? incoming.manualStatAdjustments
+            : {}),
+        },
+      };
+
+      // Older frontends submit the whole state when an Admin edits one player.
+      // Convert the visible W/L delta into a durable adjustment so future match
+      // replays do not erase the correction.
+      if (matchesUnchanged) {
+        const currentWins = Math.max(0, Math.round(Number(current?.wins || 0)));
+        const currentLosses = Math.max(0, Math.round(Number(current?.losses || 0)));
+        const nextWins = Math.max(0, Math.round(Number(incoming?.wins || 0)));
+        const nextLosses = Math.max(0, Math.round(Number(incoming?.losses || 0)));
+        next.manualStatAdjustments = {
+          ...next.manualStatAdjustments,
+          wins: Math.round(Number(existingAdjustments?.wins || 0)) + (nextWins - currentWins),
+          losses: Math.round(Number(existingAdjustments?.losses || 0)) + (nextLosses - currentLosses),
+        };
+      }
+
+      return next;
+    });
+
+    const version = Date.now();
+    const updatedAt = new Date().toISOString();
+
+    if (matchesUnchanged) {
+      const { error } = await supabase
+        .from("app_state")
+        .update({
+          players: mergedPlayers,
+          version,
+          updated_at: updatedAt,
+        })
+        .eq("id", "main");
+      if (error) throw error;
+      return json({ ok: true, version });
+    }
+
     const { error } = await supabase
       .from("app_state")
       .upsert({
         id: "main",
-        players: body.players,
+        players: mergedPlayers,
         matches: body.matches,
-        version: Date.now(),
-        updated_at: new Date().toISOString(),
+        version,
+        updated_at: updatedAt,
       });
 
     if (error) throw error;
 
-    return json({ ok: true });
+    return json({ ok: true, version });
   } catch (error) {
     console.error(error);
     return json({ error: "Cloud database update failed" }, 500);
