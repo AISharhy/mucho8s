@@ -621,6 +621,12 @@ export default function TourneyLive() {
 
   return (
     <div className="m8-page-stack gap-3 max-w-7xl mx-auto">
+      <TournamentTeamRosterModal
+        team={selectedTeam}
+        onClose={() => setSelectedTeam(null)}
+        switcheroo={t.teamBuild === "switcheroo"}
+      />
+
       {replayOpen && t?.teamBuild === "switcheroo" && (
         <SwitcherooDrawOverlay
           open
