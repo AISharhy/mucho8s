@@ -775,6 +775,7 @@ export default function MuchoTourney() {
                         : "Switcheroo wheel"
                   }
                   sizeClass="w-[250px] h-[250px] sm:w-[300px] sm:h-[300px]"
+                  spinSignal={Number(t.switcheroo?.generation || 0)}
                 />
               </div>
 
