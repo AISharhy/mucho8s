@@ -354,7 +354,7 @@ Deno.serve(async (req: Request) => {
       if (stateError) throw stateError;
       const state = rawRow?.state && typeof rawRow.state === "object" ? rawRow.state : null;
 
-      if (!state || state.status !== "setup" || state.teamBuild !== "switcheroo") {
+      if (!state || state.status !== "setup") {
         return json(req, { error: "Tournament entry payments are not open" }, 409);
       }
 
@@ -370,21 +370,35 @@ Deno.serve(async (req: Request) => {
         return json(req, { error: "Tournament registration is not open" }, 409);
       }
 
+      const isSwitcheroo = state.teamBuild === "switcheroo";
       const registrationMode =
-        String(switcheroo.registrationMode || "manual") === "open"
+        isSwitcheroo && String(switcheroo.registrationMode || "manual") === "open"
           ? "open"
           : "manual";
       const maxTeams = Math.min(8, Math.max(2, Number(switcheroo.maxTeams || 4)));
       const maxPlayers = rosterSizeFor(state.format) * maxTeams;
 
-      let pool = Array.isArray(switcheroo.pool) ? [...switcheroo.pool] : [];
+      let pool = isSwitcheroo
+        ? (Array.isArray(switcheroo.pool) ? [...switcheroo.pool] : [])
+        : Array.from(
+            new Map(
+              (Array.isArray(state.teams) ? state.teams : [])
+                .flatMap((team: any) => (Array.isArray(team?.roster) ? team.roster : []))
+                .filter((player: any) => player?.id)
+                .map((player: any) => [
+                  String(player.id),
+                  { id: player.id, name: player.name || "Player" },
+                ])
+            ).values()
+          );
+
       let participant = pool.find(
         (player: any) => String(player?.id || "") === actor.playerId
       );
 
       if (!participant) {
         if (registrationMode !== "open") {
-          return json(req, { error: "You are not in the Switcheroo tournament pool" }, 403);
+          return json(req, { error: "You are not registered in this tournament roster" }, 403);
         }
         if (pool.length >= maxPlayers) {
           return json(req, { error: "Tournament registration is full" }, 409);
@@ -424,6 +438,7 @@ Deno.serve(async (req: Request) => {
         requestedAt: new Date().toISOString(),
         type: "entry",
         openRegistration: registrationMode === "open",
+        tournamentType: isSwitcheroo ? "switcheroo" : "classic",
       };
 
       const nextState = {
@@ -432,7 +447,7 @@ Deno.serve(async (req: Request) => {
           ...switcheroo,
           registrationMode,
           maxTeams,
-          pool,
+          ...(isSwitcheroo ? { pool } : {}),
           entryFee: economy.entryFee,
           rerollBaseGoal: economy.baseGoal,
           rerollGoal: economy.baseGoal,
@@ -487,7 +502,7 @@ Deno.serve(async (req: Request) => {
 
       if (stateError) throw stateError;
       const state = rawRow?.state && typeof rawRow.state === "object" ? rawRow.state : null;
-      if (!state || state.status !== "setup" || state.teamBuild !== "switcheroo") {
+      if (!state || state.status !== "setup") {
         return json(req, { error: "Tournament entry is no longer open" }, 409);
       }
 
@@ -528,8 +543,23 @@ Deno.serve(async (req: Request) => {
         });
       }
 
-      let pool = Array.isArray(switcheroo.pool) ? [...switcheroo.pool] : [];
+      const isSwitcheroo = state.teamBuild === "switcheroo";
+      let pool = isSwitcheroo
+        ? (Array.isArray(switcheroo.pool) ? [...switcheroo.pool] : [])
+        : Array.from(
+            new Map(
+              (Array.isArray(state.teams) ? state.teams : [])
+                .flatMap((team: any) => (Array.isArray(team?.roster) ? team.roster : []))
+                .filter((player: any) => player?.id)
+                .map((player: any) => [
+                  String(player.id),
+                  { id: player.id, name: player.name || "Player" },
+                ])
+            ).values()
+          );
+
       if (
+        isSwitcheroo &&
         decision === "reject" &&
         pending.openRegistration &&
         !entryPaid.some(
@@ -548,7 +578,7 @@ Deno.serve(async (req: Request) => {
         ...state,
         switcheroo: {
           ...switcheroo,
-          pool,
+          ...(isSwitcheroo ? { pool } : {}),
           entryFee: economy.entryFee,
           entryPaid,
           entryPendingPayments: remainingPending,
