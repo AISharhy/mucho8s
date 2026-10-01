@@ -3,6 +3,7 @@ import { Crown, Shield, Swords, Trophy, UsersRound, Clock3, Shuffle } from "luci
 import { toast } from "sonner";
 import { useData } from "@/context/DataContext";
 import { fetchTourney, requestTourneyPayment, subscribeTourney } from "@/lib/tourneyLive";
+import SwitcherooWheel from "@/components/SwitcherooWheel";
 
 const STORE = "mucho8s-tourney-admin-v1";
 
@@ -55,8 +56,8 @@ export default function TourneyLive() {
   const goal = Math.max(1, Number(t?.switcheroo?.rerollGoal || 1));
   const total = Math.max(0, Number(t?.switcheroo?.contributedTotal || 0));
   const progress = Math.min(100, Math.round((total / goal) * 100));
-  const maxRerolls = Number(t?.switcheroo?.maxRerolls || 0);
   const rerollsUsed = Number(t?.switcheroo?.rerollsUsed || 0);
+  const rerollStep = Math.max(1, Number(t?.switcheroo?.rerollStep || 10));
 
   const participantIds = useMemo(
     () =>
@@ -72,8 +73,7 @@ export default function TourneyLive() {
     Boolean(discordSession?.access_token && discordPlayer?.id) &&
     participantIds.has(String(discordPlayer?.id || "")) &&
     t?.status === "review" &&
-    reviewRemaining > 0 &&
-    rerollsUsed < maxRerolls;
+    reviewRemaining > 0;
 
   useEffect(() => {
     if (t?.status !== "review" || reviewRemaining > 0) return;
@@ -155,6 +155,40 @@ export default function TourneyLive() {
           </div>
         </section>
 
+        {t?.teamBuild === "switcheroo" && (
+          <section className="m8-panel rounded-[22px] p-5 sm:p-6">
+            <div className="grid lg:grid-cols-[380px_1fr] gap-5 items-center">
+              <SwitcherooWheel
+                players={t.switcheroo?.pool || []}
+                label="SPIN"
+                hint={
+                  t.status === "review"
+                    ? "Click the wheel to replay the Switcheroo animation"
+                    : "Teams are locked · wheel remains available as the tournament element"
+                }
+                sizeClass="w-[260px] h-[260px] sm:w-[320px] sm:h-[320px]"
+              />
+              <div>
+                <div className="brand-kicker text-[#D5A33A]">Switcheroo wheel</div>
+                <h2 className="font-display text-2xl font-black mt-1">
+                  Click the wheel anytime
+                </h2>
+                <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
+                  The player names stay on the wheel. During review, reaching the current fund target
+                  triggers a completely new draw; if the timer reaches zero first, the current teams are final.
+                </p>
+                <div className="flex flex-wrap gap-2 mt-4 text-[10px] font-black">
+                  <span className="m8-pill">Generation {t.switcheroo?.generation || 1}</span>
+                  <span className="m8-pill">Re-spins {rerollsUsed}</span>
+                  <span className="m8-pill">
+                    Current target €{Number(t.switcheroo?.rerollGoal || 0)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         {t.status === "review" && (
           <section className="m8-panel rounded-[22px] p-5 sm:p-6">
             <div className="grid lg:grid-cols-[1fr_280px] gap-5">
@@ -165,8 +199,11 @@ export default function TourneyLive() {
                     €{total.toFixed(0)}
                     <span className="text-base text-muted-foreground"> / €{goal.toFixed(0)}</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground">
-                    Re-rolls {rerollsUsed}/{maxRerolls}
+                  <span className="text-[10px] text-muted-foreground text-right">
+                    <span className="block">Re-spins completed: {rerollsUsed}</span>
+                    <span className="block text-[#D5A33A] mt-0.5">
+                      Next target: €{goal + rerollStep}
+                    </span>
                   </span>
                 </div>
 
@@ -178,7 +215,7 @@ export default function TourneyLive() {
                 </div>
 
                 <div className="text-[11px] text-muted-foreground mt-2">
-                  If the goal is reached before the timer ends, all teams are automatically drawn again.
+                  If the goal is reached before the timer ends, all teams are drawn again and the next target increases by €{rerollStep}.
                 </div>
 
                 {(t.switcheroo?.contributions || []).length > 0 && (
@@ -227,9 +264,7 @@ export default function TourneyLive() {
                       ? "Connect Discord to contribute."
                       : !participantIds.has(String(discordPlayer?.id || ""))
                         ? "Only players in this tournament can contribute."
-                        : rerollsUsed >= maxRerolls
-                          ? "Maximum number of re-rolls reached."
-                          : "Contributions are closed."}
+                        : "Contributions are closed."}
                   </div>
                 )}
               </div>
@@ -293,6 +328,26 @@ export default function TourneyLive() {
           <Trophy size={42} className="text-[#D5A33A]" />
         </div>
       </section>
+
+      {t?.teamBuild === "switcheroo" && (
+        <section className="m8-panel rounded-[22px] p-5">
+          <div className="grid lg:grid-cols-[330px_1fr] gap-4 items-center">
+            <SwitcherooWheel
+              players={t.switcheroo?.pool || []}
+              label="SPIN"
+              hint="Switcheroo wheel · click to replay the animation"
+              sizeClass="w-[230px] h-[230px] sm:w-[280px] sm:h-[280px]"
+            />
+            <div>
+              <div className="brand-kicker text-[#D5A33A]">Switcheroo</div>
+              <h2 className="font-display text-xl font-black mt-1">Tournament wheel</h2>
+              <p className="text-xs text-muted-foreground mt-2">
+                Final Switcheroo generation {t.switcheroo?.generation || 1} · {rerollsUsed} re-spins completed.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="grid lg:grid-cols-[1fr_300px] gap-3">
         <div className="m8-panel rounded-[22px] p-5 overflow-x-auto">
