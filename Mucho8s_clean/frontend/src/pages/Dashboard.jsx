@@ -298,7 +298,7 @@ const GuestDashboard = ({
           <div className="hidden sm:flex justify-center lg:justify-end">
             <div className="dashboard-logo-stage is-minimal">
               <img
-                src={process.env.PUBLIC_URL + "/logo-mark.svg"}
+                src={process.env.PUBLIC_URL + "/logo-wordmark.svg"}
                 alt="MuchoMoney8s"
                 className="dashboard-logo-mark"
               />
