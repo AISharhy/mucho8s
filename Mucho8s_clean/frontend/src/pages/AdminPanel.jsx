@@ -412,10 +412,39 @@ export default function AdminPanel() {
   };
 
   const updatePlayerDraft = (id, field, value) => {
-    setEditing((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], [field]: value },
-    }));
+    setEditing((prev) => {
+      const current = prev[id] || {};
+      const next = { ...current, [field]: value };
+
+      if (field === "elo") {
+        next.eloManualOverride = true;
+      }
+
+      if (
+        (field === "wins" || field === "losses") &&
+        !current.eloManualOverride
+      ) {
+        const baseWins = Math.max(0, Number(current.originalWins ?? current.wins) || 0);
+        const baseLosses = Math.max(0, Number(current.originalLosses ?? current.losses) || 0);
+        const baseElo = Math.max(500, Number(current.originalElo ?? current.elo) || 500);
+        const nextWins = Math.max(0, Number(next.wins) || 0);
+        const nextLosses = Math.max(0, Number(next.losses) || 0);
+
+        next.elo = Math.max(
+          500,
+          Math.round(
+            baseElo +
+              (nextWins - baseWins) * 25 -
+              (nextLosses - baseLosses) * 15
+          )
+        );
+      }
+
+      return {
+        ...prev,
+        [id]: next,
+      };
+    });
   };
 
   const openPlayerEditor = (player, account) => {
@@ -427,6 +456,10 @@ export default function AdminPanel() {
       [player.id]: {
         name: player.name,
         elo: player.currentElo,
+        originalElo: player.currentElo,
+        originalWins: player.wins ?? 0,
+        originalLosses: player.losses ?? 0,
+        eloManualOverride: false,
         startingElo,
         peakElo: player.peakElo ?? player.currentElo,
         wins: player.wins ?? 0,
