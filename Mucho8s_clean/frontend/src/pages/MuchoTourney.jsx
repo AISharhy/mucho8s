@@ -1394,7 +1394,7 @@ export default function MuchoTourney() {
           </section>
           )}
           </>
-        ) : (
+        ) : t.status === "setup" && !t.setupConfigured && !t.teams.length ? null : (
           <section className="grid lg:grid-cols-[360px_1fr] gap-3">
             <div className="m8-panel rounded-[22px] p-5">
               <div className="flex items-center gap-2">
