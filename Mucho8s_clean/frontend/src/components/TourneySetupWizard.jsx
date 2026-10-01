@@ -14,8 +14,15 @@ import {
   Trophy,
   UsersRound,
   WalletCards,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
+import {
+  isUiSoundEnabled,
+  playUiSound,
+  setUiSoundEnabled,
+} from "@/lib/uiAudio";
 
 const GAME_OPTIONS = ["BO7", "BO6", "MW3", "CW", "BO2"];
 const FORMAT_OPTIONS = ["2v2", "3v3", "4v4"];
@@ -32,11 +39,15 @@ const ChoiceCard = ({
   disabled = false,
 }) => {
   const pink = accent === "pink";
+  const soundProduct = pink ? "switcheroo" : "tourney";
   return (
     <button
       type="button"
       disabled={disabled}
-      onClick={onClick}
+      onClick={() => {
+        void playUiSound("select", soundProduct);
+        onClick?.();
+      }}
       className={
         "relative min-h-[96px] rounded-2xl border p-4 text-left transition-all disabled:opacity-35 disabled:cursor-not-allowed " +
         (active
@@ -93,6 +104,7 @@ const Segmented = ({
   formatLabel,
 }) => {
   const pink = accent === "pink";
+  const soundProduct = pink ? "switcheroo" : "tourney";
   return (
     <div className="grid grid-cols-3 gap-2">
       {options.map((option) => {
@@ -102,7 +114,10 @@ const Segmented = ({
             key={option}
             type="button"
             disabled={disabled}
-            onClick={() => onChange(option)}
+            onClick={() => {
+              void playUiSound("select", soundProduct);
+              onChange(option);
+            }}
             className={
               "h-11 rounded-xl border text-xs font-black transition-all disabled:opacity-35 " +
               (active
@@ -137,6 +152,7 @@ export default function TourneySetupWizard({
 }) {
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
+  const [soundOn, setSoundOn] = useState(isUiSoundEnabled);
   const isSwitcheroo = tournament.teamBuild === "switcheroo";
   const accent = isSwitcheroo ? "pink" : "gold";
 
@@ -155,8 +171,14 @@ export default function TourneySetupWizard({
   const current = steps[step] || steps[0];
 
   const go = (next) => {
-    setDirection(next > step ? 1 : -1);
-    setStep(Math.max(0, Math.min(steps.length - 1, next)));
+    const clamped = Math.max(0, Math.min(steps.length - 1, next));
+    if (clamped === step) return;
+    setDirection(clamped > step ? 1 : -1);
+    void playUiSound(
+      clamped > step ? "next" : "back",
+      isSwitcheroo ? "switcheroo" : "tourney"
+    );
+    setStep(clamped);
   };
 
   const canContinue = (() => {
@@ -191,7 +213,21 @@ export default function TourneySetupWizard({
 
   return (
     <div className="w-full">
-      <div className="rounded-[26px] border border-[#252B36] bg-[#090E14] overflow-hidden shadow-[0_22px_70px_rgba(0,0,0,.28)]">
+      <div
+        className={
+          "relative rounded-[26px] border overflow-hidden shadow-[0_22px_70px_rgba(0,0,0,.28)] " +
+          (pink
+            ? "border-[#FF4FA3]/25 bg-[linear-gradient(135deg,#090E14_0%,#100A11_58%,#190A14_100%)]"
+            : "border-[#D5A33A]/20 bg-[linear-gradient(135deg,#090E14_0%,#0F0F0C_62%,#171208_100%)]")
+        }
+      >
+        <div
+          aria-hidden="true"
+          className={
+            "absolute -right-28 -top-28 w-80 h-80 rounded-full blur-3xl pointer-events-none " +
+            (pink ? "bg-[#FF4FA3]/[0.07]" : "bg-[#D5A33A]/[0.06]")
+          }
+        />
         <div className="px-4 sm:px-6 pt-5">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
@@ -207,15 +243,37 @@ export default function TourneySetupWizard({
                 Step {step + 1} of {steps.length}
               </div>
             </div>
-            {onClose ? (
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={onClose}
-                className="w-9 h-9 rounded-xl border border-[#2A303B] bg-[#111720] text-muted-foreground hover:text-white flex items-center justify-center"
+                onClick={() => {
+                  const next = setUiSoundEnabled(!soundOn);
+                  setSoundOn(next);
+                }}
+                className={
+                  "h-9 px-2.5 rounded-xl border bg-[#111720] text-[9px] font-black inline-flex items-center gap-1.5 " +
+                  (pink
+                    ? "border-[#FF4FA3]/25 text-[#FF9DCE]"
+                    : "border-[#D5A33A]/25 text-[#F4CE70]")
+                }
+                title={soundOn ? "UI sounds on" : "UI sounds off"}
               >
-                <X size={15} />
+                {soundOn ? <Volume2 size={13} /> : <VolumeX size={13} />}
+                <span className="hidden sm:inline">{soundOn ? "SOUND" : "MUTED"}</span>
               </button>
-            ) : null}
+              {onClose ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    void playUiSound("back", isSwitcheroo ? "switcheroo" : "tourney");
+                    onClose();
+                  }}
+                  className="w-9 h-9 rounded-xl border border-[#2A303B] bg-[#111720] text-muted-foreground hover:text-white flex items-center justify-center"
+                >
+                  <X size={15} />
+                </button>
+              ) : null}
+            </div>
           </div>
 
           <div className="mt-4 grid gap-1.5" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
@@ -297,7 +355,10 @@ export default function TourneySetupWizard({
                           <button
                             key={game}
                             type="button"
-                            onClick={() => onPatch({ game })}
+                            onClick={() => {
+                              void playUiSound("select", "tourney");
+                              onPatch({ game });
+                            }}
                             className={
                               "h-12 rounded-xl border font-black text-xs transition-all " +
                               (tournament.game === game
@@ -660,7 +721,13 @@ export default function TourneySetupWizard({
             <button
               type="button"
               disabled={!canContinue}
-              onClick={onFinish}
+              onClick={() => {
+                void playUiSound(
+                  "confirm",
+                  isSwitcheroo ? "switcheroo" : "tourney"
+                );
+                onFinish?.();
+              }}
               className={
                 "h-11 px-5 rounded-xl text-xs font-black inline-flex items-center gap-2 " +
                 (pink
