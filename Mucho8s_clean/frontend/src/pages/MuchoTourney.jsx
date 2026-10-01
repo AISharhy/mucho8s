@@ -310,7 +310,7 @@ export default function MuchoTourney() {
   };
 
   const toggleSwitcherooPlayer = (player) => {
-    if (t.status === "review" || t.status === "live") return;
+    if (t.status !== "setup") return;
     const pool = Array.isArray(t.switcheroo?.pool) ? t.switcheroo.pool : [];
     const exists = pool.some((row) => String(row.id) === String(player.id));
     const nextPool = exists
@@ -625,7 +625,7 @@ export default function MuchoTourney() {
                       patch({ [key]: value });
                     }
                   }}
-                  disabled={t.status === "live" || t.status === "completed" || t.status === "review"}
+                  disabled={t.status !== "setup"}
                   className="mt-1 w-full h-10 rounded-xl bg-[#151923] border border-[#2A303B] px-2 text-xs font-semibold disabled:opacity-40"
                 >
                   {options.map((option) => (
@@ -643,7 +643,7 @@ export default function MuchoTourney() {
                 <select
                   value={t.startMode}
                   onChange={(event) => patch({ startMode: event.target.value })}
-                  disabled={t.status === "live" || t.status === "completed" || t.status === "review"}
+                  disabled={t.status !== "setup"}
                   className="mt-1 w-full h-10 rounded-xl bg-[#151923] border border-[#2A303B] px-2 text-xs font-semibold disabled:opacity-40"
                 >
                   <option>Hardpoint</option>
@@ -672,7 +672,7 @@ export default function MuchoTourney() {
                         },
                       })
                     }
-                    disabled={t.status === "review"}
+                    disabled={t.status !== "setup"}
                     className="mt-1 w-full h-10 rounded-xl bg-[#151923] border border-[#2A303B] px-2 text-xs font-semibold disabled:opacity-40"
                   >
                     {[1, 3, 5, 10, 15].map((minutes) => (
@@ -704,7 +704,7 @@ export default function MuchoTourney() {
                           },
                         });
                       }}
-                      disabled={t.status === "review"}
+                      disabled={t.status !== "setup"}
                       className="w-full h-10 rounded-xl bg-[#151923] border border-[#2A303B] pl-7 pr-3 text-sm disabled:opacity-40"
                     />
                   </div>
@@ -734,7 +734,7 @@ export default function MuchoTourney() {
                       },
                     })
                   }
-                  disabled={t.status === "review"}
+                  disabled={t.status !== "setup"}
                   placeholder="https://paypal.me/tuonome"
                   className="mt-1 w-full h-10 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm disabled:opacity-40"
                 />
@@ -790,7 +790,7 @@ export default function MuchoTourney() {
                       key={player.id}
                       type="button"
                       onClick={() => toggleSwitcherooPlayer(player)}
-                      disabled={t.status === "review" || t.status === "live" || t.status === "completed"}
+                      disabled={t.status !== "setup"}
                       className={
                         "h-10 px-3 rounded-lg border text-left text-xs font-bold flex items-center justify-between transition-all disabled:cursor-not-allowed " +
                         (active
