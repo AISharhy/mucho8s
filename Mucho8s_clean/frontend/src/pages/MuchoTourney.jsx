@@ -15,7 +15,13 @@ import {
   Lock,
 } from "lucide-react";
 import { toast } from "sonner";
-import { fetchTourney, reviewTourneyPayment, saveTourney, subscribeTourney } from "@/lib/tourneyLive";
+import {
+  fetchTourney,
+  reviewTourneyEntryPayment,
+  reviewTourneyPayment,
+  saveTourney,
+  subscribeTourney,
+} from "@/lib/tourneyLive";
 import SwitcherooWheel from "@/components/SwitcherooWheel";
 import SwitcherooDrawOverlay from "@/components/SwitcherooDrawOverlay";
 
@@ -25,9 +31,13 @@ const STORE = TOURNEY_STORE;
 const switcherooDefaults = {
   pool: [],
   reviewMinutes: 5,
+  entryFee: 5,
+  entryPaid: [],
+  entryPendingPayments: [],
   rerollBaseGoal: 20,
   rerollGoal: 20,
   rerollStep: 10,
+  rerollStepGrowth: 5,
   rerollsUsed: 0,
   generation: 0,
   phase: "idle",
@@ -146,6 +156,24 @@ const makeBracket = (teams) => {
   return rounds;
 };
 
+const roundUpToFive = (value) =>
+  Math.max(5, Math.ceil(Math.max(0, Number(value) || 0) / 5) * 5);
+
+const switcherooEconomyFor = (entryFee, playerCount) => {
+  const fee = Math.max(1, Math.round(Number(entryFee) || 1));
+  const count = Math.max(0, Number(playerCount) || 0);
+  const entryPot = fee * count;
+  const baseGoal = roundUpToFive(entryPot * 0.5);
+  const firstMargin = roundUpToFive(baseGoal * 0.5);
+  return {
+    entryFee: fee,
+    entryPot,
+    baseGoal,
+    firstMargin,
+    marginGrowth: 5,
+  };
+};
+
 const formatClock = (milliseconds) => {
   const seconds = Math.max(0, Math.ceil(milliseconds / 1000));
   const minutes = Math.floor(seconds / 60);
@@ -161,6 +189,7 @@ export default function MuchoTourney() {
   const [editingRoster, setEditingRoster] = useState(null);
   const [now, setNow] = useState(Date.now());
   const [paymentBusyId, setPaymentBusyId] = useState("");
+  const [entryPaymentBusyId, setEntryPaymentBusyId] = useState("");
   const [switcherooDraw, setSwitcherooDraw] = useState(null);
 
   const fireFx = (type, data = {}) => setFx({ type, ...data, key: Date.now() });
@@ -247,10 +276,24 @@ export default function MuchoTourney() {
 
   const switcherooRosterSize = rosterSizeFor(t.format);
   const switcherooPoolSize = Array.isArray(t.switcheroo?.pool) ? t.switcheroo.pool.length : 0;
+  const switcherooEconomy = switcherooEconomyFor(
+    t.switcheroo?.entryFee || 5,
+    switcherooPoolSize
+  );
+  const entryPaidIds = new Set(
+    (t.switcheroo?.entryPaid || []).map((row) => String(row?.playerId || ""))
+  );
+  const entryPendingIds = new Set(
+    (t.switcheroo?.entryPendingPayments || []).map((row) => String(row?.playerId || ""))
+  );
+  const allEntryPaid =
+    switcherooPoolSize > 0 &&
+    (t.switcheroo?.pool || []).every((player) => entryPaidIds.has(String(player.id)));
   const switcherooPoolReady =
     switcherooPoolSize >= switcherooRosterSize * 2 &&
     switcherooPoolSize % switcherooRosterSize === 0 &&
-    switcherooPoolSize / switcherooRosterSize <= 8;
+    switcherooPoolSize / switcherooRosterSize <= 8 &&
+    allEntryPaid;
 
   const addTeam = () => {
     const name = teamName.trim();
@@ -330,10 +373,16 @@ export default function MuchoTourney() {
         pool: nextPool,
         phase: "idle",
         reviewEndsAt: null,
-        rerollGoal: Math.max(
-          1,
-          Number(t.switcheroo?.rerollBaseGoal || t.switcheroo?.rerollGoal || 20)
+        entryPaid: (t.switcheroo?.entryPaid || []).filter((row) =>
+          nextPool.some((player) => String(player.id) === String(row.playerId))
         ),
+        entryPendingPayments: (t.switcheroo?.entryPendingPayments || []).filter((row) =>
+          nextPool.some((player) => String(player.id) === String(row.playerId))
+        ),
+        rerollBaseGoal: switcherooEconomyFor(t.switcheroo?.entryFee || 5, nextPool.length).baseGoal,
+        rerollGoal: switcherooEconomyFor(t.switcheroo?.entryFee || 5, nextPool.length).baseGoal,
+        rerollStep: switcherooEconomyFor(t.switcheroo?.entryFee || 5, nextPool.length).firstMargin,
+        rerollStepGrowth: 5,
         contributedTotal: 0,
         contributions: [],
         pendingPayments: [],
@@ -355,6 +404,12 @@ export default function MuchoTourney() {
       toast.error(`Player count must be divisible by ${rosterSize} for ${t.format}`);
       return;
     }
+    const unpaid = pool.filter((player) => !entryPaidIds.has(String(player.id)));
+    if (unpaid.length) {
+      toast.error(`Entry fee not confirmed for ${unpaid.length} player${unpaid.length === 1 ? "" : "s"}`);
+      return;
+    }
+
     const teamCount = pool.length / rosterSize;
     if (teamCount > 8) {
       toast.error("Switcheroo supports a maximum of 8 teams");
@@ -372,9 +427,9 @@ export default function MuchoTourney() {
   const finalizeSwitcherooDraw = (teams) => {
     const reviewMinutes = Math.max(1, Number(t.switcheroo?.reviewMinutes || 5));
     const reviewEndsAt = new Date(Date.now() + reviewMinutes * 60 * 1000).toISOString();
-    const baseGoal = Math.max(
-      1,
-      Number(t.switcheroo?.rerollBaseGoal || t.switcheroo?.rerollGoal || 20)
+    const economy = switcherooEconomyFor(
+      t.switcheroo?.entryFee || 5,
+      (t.switcheroo?.pool || []).length
     );
 
     save({
@@ -389,9 +444,10 @@ export default function MuchoTourney() {
         phase: "review",
         generation: 1,
         reviewEndsAt,
-        rerollBaseGoal: baseGoal,
-        rerollGoal: baseGoal,
-        rerollStep: 10,
+        rerollBaseGoal: economy.baseGoal,
+        rerollGoal: economy.baseGoal,
+        rerollStep: economy.firstMargin,
+        rerollStepGrowth: economy.marginGrowth,
         contributedTotal: 0,
         contributions: [],
         pendingPayments: [],
@@ -401,6 +457,24 @@ export default function MuchoTourney() {
 
     setSwitcherooDraw(null);
     toast.success("Switcheroo complete · review phase started");
+  };
+
+  const reviewEntryPayment = async (paymentId, decision) => {
+    if (!paymentId || !admin?.sessionToken || entryPaymentBusyId) return;
+    setEntryPaymentBusyId(paymentId);
+    try {
+      const data = await reviewTourneyEntryPayment(paymentId, decision, admin.sessionToken);
+      if (data?.tourney) setT(normalize(data.tourney));
+      toast.success(
+        decision === "confirm"
+          ? "Tournament entry payment confirmed"
+          : "Tournament entry payment rejected"
+      );
+    } catch (error) {
+      toast.error(error?.message || "Unable to review tournament entry payment");
+    } finally {
+      setEntryPaymentBusyId("");
+    }
   };
 
   const reviewPayment = async (paymentId, decision) => {
