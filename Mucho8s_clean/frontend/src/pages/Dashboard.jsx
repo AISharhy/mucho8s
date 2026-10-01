@@ -296,16 +296,12 @@ const GuestDashboard = ({
           </div>
 
           <div className="hidden sm:flex justify-center lg:justify-end">
-            <div className="dashboard-logo-stage">
-              <div className="dashboard-logo-orbit" />
+            <div className="dashboard-logo-stage is-minimal">
               <img
                 src={process.env.PUBLIC_URL + "/logo-mark.svg"}
                 alt="MuchoMoney8s"
                 className="dashboard-logo-mark"
               />
-              <div className="dashboard-logo-wordmark">
-                <span>MUCHO</span><strong>MONEY</strong><span>8s</span>
-              </div>
             </div>
           </div>
         </div>
