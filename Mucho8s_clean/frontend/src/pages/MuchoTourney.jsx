@@ -1112,6 +1112,16 @@ export default function MuchoTourney() {
             </section>
           )}
 
+          {switcherooSetupStage === "players" && t.status === "setup" ? (
+            <TournamentPlayerPicker
+              players={players || []}
+              selected={t.switcheroo?.pool || []}
+              paidIds={entryPaidIds}
+              pendingIds={entryPendingIds}
+              entryFee={Number(t.switcheroo?.entryFee || 5)}
+              onChange={setSwitcherooPool}
+            />
+          ) : (
           <section className="grid lg:grid-cols-[430px_1fr] gap-3">
             <div className="m8-panel rounded-[22px] p-5">
               <div className="flex items-center justify-between gap-3">
@@ -1374,6 +1384,7 @@ export default function MuchoTourney() {
               </section>
             </div>
           </section>
+          )}
           </>
         ) : (
           <section className="grid lg:grid-cols-[360px_1fr] gap-3">
