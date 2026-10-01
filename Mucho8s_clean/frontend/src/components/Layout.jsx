@@ -549,6 +549,17 @@ export const Layout = () => {
 
             <div className="m8-discord-onboarding-kicker">Discord connected</div>
 
+            <div className="mt-4 mb-5 rounded-xl border border-red-500/30 bg-red-500/[0.07] px-4 py-3 text-left">
+              <div className="text-[10px] font-black uppercase tracking-[0.16em] text-red-400">
+                Private Circle Only
+              </div>
+              <p className="mt-1.5 text-sm leading-relaxed text-[#C9CED7]">
+                Mucho8s è una piattaforma privata ed esclusiva, riservata ai membri del
+                <strong className="text-white"> Circle Mucho8s</strong>. Se non fai già parte del Circle,
+                non inviare una richiesta di accesso. Grazie.
+              </p>
+            </div>
+
             {playerRequestStatus === "pending" ? (
               <>
                 <h2>Request sent</h2>
