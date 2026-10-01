@@ -119,7 +119,7 @@ export default function SwitcherooWheel({
   useEffect(() => {
     if (lastSignalRef.current === spinSignal) return;
     lastSignalRef.current = spinSignal;
-    if (Number(spinSignal || 0) > 1) runSpin(false);
+    if (Number(spinSignal || 0) > 0) runSpin(false);
     // The wheel intentionally reacts only to generation changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spinSignal]);
