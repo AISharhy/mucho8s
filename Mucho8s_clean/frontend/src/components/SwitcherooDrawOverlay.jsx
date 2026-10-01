@@ -70,6 +70,7 @@ export default function SwitcherooDrawOverlay({
   presetTeams = null,
   onComplete,
   onProgress,
+  onSpinStart,
   onClose,
   title = "SWITCHEROO",
 }) {
@@ -198,6 +199,12 @@ export default function SwitcherooDrawOverlay({
     const targetMod = ((360 - middle) % 360 + 360) % 360;
     const delta = (targetMod - currentMod + 360) % 360;
     const turns = 6 + randomIndex(3);
+
+    onSpinStart?.({
+      drawIndex: drawIndex + 1,
+      player: picked,
+      targetTeamIndex: teamIndex,
+    });
 
     setTargetTeamIndex(teamIndex);
     setPhase("spinning");
