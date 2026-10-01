@@ -782,10 +782,13 @@ Deno.serve(async (req: Request) => {
 
     return json(req, { error: "Unknown action" }, 400);
   } catch (error) {
-    return json(
-      req,
-      { error: error instanceof Error ? error.message : "Unexpected error" },
-      500
-    );
+    const message =
+      error instanceof Error
+        ? error.message
+        : typeof error === "object" && error && "message" in error
+          ? String((error as { message?: unknown }).message || "Unexpected error")
+          : String(error || "Unexpected error");
+
+    return json(req, { error: message }, 500);
   }
 });
