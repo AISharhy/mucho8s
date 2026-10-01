@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { Crown, Shield, Swords, Trophy, UsersRound, Clock3, Shuffle } from "lucide-react";
 import { toast } from "sonner";
 import { useData } from "@/context/DataContext";
@@ -31,7 +32,7 @@ const formatClock = (milliseconds) => {
 };
 
 export default function TourneyLive() {
-  const { discordSession, discordPlayer } = useData();
+  const { discordSession, discordPlayer, isAdmin } = useData();
   const [t, setT] = useState(read);
   const [now, setNow] = useState(Date.now());
   const [busy, setBusy] = useState(false);
@@ -230,7 +231,15 @@ export default function TourneyLive() {
                 </div>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-wrap justify-end gap-2">
+                {isAdmin && (
+                  <Link
+                    to="/tourney"
+                    className="h-[54px] px-4 rounded-xl border border-[#FF4FA3]/30 bg-[#FF4FA3]/10 text-[#FFB7D9] text-[10px] font-black inline-flex items-center justify-center"
+                  >
+                    MANAGE TOURNAMENT
+                  </Link>
+                )}
                 <div className="rounded-xl border border-[#FF4FA3]/20 bg-[#FF4FA3]/[0.05] px-3 py-2 text-right">
                   <div className="text-[8px] tracking-widest text-[#697181]">ENTRY POT</div>
                   <div className="font-mono text-lg font-black text-[#FF9DCE]">€{totalPot}</div>
@@ -514,6 +523,15 @@ export default function TourneyLive() {
               </div>
             </div>
 
+            <div className="flex items-center gap-2">
+              {isAdmin && (
+                <Link
+                  to="/tourney"
+                  className="h-12 px-4 rounded-xl border border-[#FF4FA3]/25 bg-[#FF4FA3]/[0.06] text-[#FFB7D9] text-[9px] font-black inline-flex items-center"
+                >
+                  MANAGE
+                </Link>
+              )}
             {t.status === "review" ? (
               <div className="h-12 px-4 rounded-xl border border-[#FF4FA3]/25 bg-[#FF4FA3]/[0.06] flex items-center gap-2">
                 <Clock3 size={17} className={reviewRemaining <= 30000 ? "text-magma" : "text-[#FF4FA3]"} />
@@ -527,6 +545,7 @@ export default function TourneyLive() {
                 LOCKED
               </div>
             )}
+            </div>
           </div>
         </section>
 
@@ -738,10 +757,25 @@ export default function TourneyLive() {
               <span className="m8-pill">BO{t.bestOf}</span>
             </div>
           </div>
-          <Trophy
-            size={42}
-            className={t.teamBuild === "switcheroo" ? "text-[#FF4FA3]" : "text-[#D5A33A]"}
-          />
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Link
+                to="/tourney"
+                className={
+                  "h-10 px-3 rounded-xl border text-[9px] font-black inline-flex items-center " +
+                  (t.teamBuild === "switcheroo"
+                    ? "border-[#FF4FA3]/25 bg-[#FF4FA3]/[0.06] text-[#FFB7D9]"
+                    : "border-[#D5A33A]/25 bg-[#D5A33A]/[0.06] text-[#F4CE70]")
+                }
+              >
+                MANAGE
+              </Link>
+            )}
+            <Trophy
+              size={42}
+              className={t.teamBuild === "switcheroo" ? "text-[#FF4FA3]" : "text-[#D5A33A]"}
+            />
+          </div>
         </div>
       </section>
 
