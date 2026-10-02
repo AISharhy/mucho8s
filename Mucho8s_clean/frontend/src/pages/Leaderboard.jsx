@@ -22,7 +22,9 @@ const COLUMNS = [
   { key: "totalPoints", label: "Elo", sortable: true },
   { key: "matchWins", label: "Record", sortable: true },
   { key: "winRate", label: "Win %", sortable: true },
-  { key: "earnings", label: "Money", sortable: true },
+  { key: "moneyWon", label: "Won", sortable: true },
+  { key: "moneyLost", label: "Lost", sortable: true },
+  { key: "earnings", label: "Net", sortable: true },
   { key: "currentStreak", label: "Streak", sortable: true },
   { key: "mvpCount", label: "MVP", sortable: true },
 ];
@@ -197,6 +199,8 @@ export default function Leaderboard() {
     const value = (p) => {
       if (sortKey === "matchWins") return p.matchWins;
       if (sortKey === "winRate") return p.winRate;
+      if (sortKey === "moneyWon") return p.moneyWon;
+      if (sortKey === "moneyLost") return p.moneyLost;
       if (sortKey === "earnings") return p.earnings;
       if (sortKey === "currentStreak") return Math.abs(Number(p.currentStreak || 0));
       return Number(p[sortKey] || 0);
@@ -237,7 +241,9 @@ export default function Leaderboard() {
       "Elo",
       "Record",
       "Win %",
-      "Earnings",
+      "Won",
+      "Lost",
+      "Net",
       "Streak",
       "MVP",
     ];
@@ -249,6 +255,8 @@ export default function Leaderboard() {
       p.totalPoints,
       `${p.matchWins}-${p.matchLosses}`,
       p.winRate.toFixed(1),
+      p.moneyWon,
+      p.moneyLost,
       p.earnings,
       p.currentStreak > 0
         ? `W${p.currentStreak}`
@@ -449,14 +457,16 @@ export default function Leaderboard() {
                       {p.winRate.toFixed(1)}%
                     </td>
 
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2 whitespace-nowrap font-mono text-[10px] font-black">
-                        <span className="text-emerald-400" title="Won">WON +{euro(p.moneyWon)}</span>
-                        <span className="text-red-400" title="Lost">LOST -{euro(p.moneyLost)}</span>
-                        <span className={p.earnings >= 0 ? "text-emerald-400" : "text-red-400"} title="Net earnings">
-                          NET {p.earnings >= 0 ? "+" : "-"}{euro(Math.abs(p.earnings))}
-                        </span>
-                      </div>
+                    <td className="px-4 py-3 whitespace-nowrap font-mono text-[11px] font-black text-emerald-400">
+                      +{euro(p.moneyWon)}
+                    </td>
+
+                    <td className="px-4 py-3 whitespace-nowrap font-mono text-[11px] font-black text-red-400">
+                      -{euro(p.moneyLost)}
+                    </td>
+
+                    <td className={`px-4 py-3 whitespace-nowrap font-mono text-[11px] font-black ${p.earnings >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                      {p.earnings >= 0 ? "+" : "-"}{euro(Math.abs(p.earnings))}
                     </td>
 
                     <td className="px-4 py-3">
