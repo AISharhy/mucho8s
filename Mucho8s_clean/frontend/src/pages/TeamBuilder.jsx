@@ -11,6 +11,7 @@ import {
   analyzeManualTeams,
   draftTeamsByPriority,
 } from "@/lib/chemistry";
+import { mergeMatchHistory, computeMatchmakingRatings } from "@/lib/matchmakingHistory";
 import { buildRivalries } from "@/lib/rivalries";
 import {
   ArrowLeft,
@@ -166,6 +167,7 @@ export default function TeamBuilder() {
     discordSession,
     signInWithDiscord,
     dashboardData,
+    competitionData,
     isAdmin,
     createLiveMatch,
   } = useData();
@@ -215,6 +217,19 @@ export default function TeamBuilder() {
     );
   const setupValid = Boolean(game && matchMode && mapPoolConfigured && manualMapSelectionValid);
 
+  const matchmakingHistory = useMemo(
+    () => mergeMatchHistory(matches, competitionData?.archives || []),
+    [matches, competitionData?.archives]
+  );
+  const historicalContext = useMemo(
+    () => computeContextStats(matchmakingHistory, { game: game || "ALL", mode: matchMode || "ALL" }),
+    [matchmakingHistory, game, matchMode]
+  );
+  const hiddenRatings = useMemo(
+    () => computeMatchmakingRatings(historicalContext.matches),
+    [historicalContext.matches]
+  );
+
   const context = useMemo(
     () => computeContextStats(matches, { game: game || "ALL", mode: matchMode || "ALL" }),
     [matches, game, matchMode]
@@ -238,8 +253,12 @@ export default function TeamBuilder() {
           ? playerForContext(player, context.stats || {})
           : player;
     });
+    players.forEach((player) => {
+      const hidden = hiddenRatings[player.id];
+      if (hidden?.played) map[player.id] = { ...map[player.id], matchmakingRating: hidden.rating };
+    });
     return map;
-  }, [players, game, matchMode, context.stats]);
+  }, [players, game, matchMode, context.stats, hiddenRatings]);
 
   const selectedPlayers = useMemo(
     () => selected.map((id) => contextualPlayerMap[id]).filter(Boolean),
@@ -333,7 +352,7 @@ export default function TeamBuilder() {
       let wins = 0;
       let losses = 0;
 
-      (context.matches || []).forEach((match) => {
+      (historicalContext.matches || []).forEach((match) => {
         const sideA = (match.teamA || []).map(String).sort();
         const sideB = (match.teamB || []).map(String).sort();
         const same = (left, right) =>
@@ -351,7 +370,7 @@ export default function TeamBuilder() {
       return { wins, losses, played: wins + losses };
     };
 
-    const rivalries = buildRivalries(context.matches || [], challenges || [])
+    const rivalries = buildRivalries(historicalContext.matches || [], challenges || [])
       .filter((row) =>
         (teamAIds.has(String(row.playerAId)) && teamBIds.has(String(row.playerBId))) ||
         (teamAIds.has(String(row.playerBId)) && teamBIds.has(String(row.playerAId)))
@@ -364,7 +383,7 @@ export default function TeamBuilder() {
       rivalries,
       avgEloGap: Math.abs(averageElo(result.teamA) - averageElo(result.teamB)),
     };
-  }, [result, context.matches, challenges]);
+  }, [result, historicalContext.matches, challenges]);
 
   const clearDraftProgress = () => {
     setDraftTeamA([]);
@@ -607,7 +626,7 @@ export default function TeamBuilder() {
       .map((playerId) => contextualPlayerMap[playerId])
       .filter(Boolean);
 
-    const analysis = analyzeManualTeams(teamAPlayers, teamBPlayers, context.matches);
+    const analysis = analyzeManualTeams(teamAPlayers, teamBPlayers, historicalContext.matches);
     void lockResult(
       analysis
         ? {
@@ -712,7 +731,7 @@ export default function TeamBuilder() {
       if (signature !== currentSignature || pool.length <= 2) break;
     }
 
-    const analysis = analyzeManualTeams(nextA, nextB, context.matches || []);
+    const analysis = analyzeManualTeams(nextA, nextB, historicalContext.matches || []);
     if (!analysis) {
       toast.error("Unable to randomize these teams");
       return;
@@ -831,7 +850,7 @@ export default function TeamBuilder() {
         toast.error(`Assign exactly ${perTeam} players to Alpha and ${perTeam} to Bravo`);
         return;
       }
-      void lockResult(analyzeManualTeams(manualTeamA, manualTeamB, context.matches));
+      void lockResult(analyzeManualTeams(manualTeamA, manualTeamB, historicalContext.matches));
       return;
     }
 
@@ -841,7 +860,7 @@ export default function TeamBuilder() {
     }
 
     void lockResult(
-      draftTeamsByPriority(selectedPlayers, context.matches, autoPriority)
+      draftTeamsByPriority(selectedPlayers, historicalContext.matches, autoPriority)
     );
   };
 

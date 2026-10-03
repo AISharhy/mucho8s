@@ -51,6 +51,7 @@ export const winRate = (p) =>
 
 // Composite player rating driven by main KPIs
 export const playerRating = (p) => {
+  if (Number.isFinite(p?.matchmakingRating)) return p.matchmakingRating;
   const contextual = Number(p?.contextWinRate);
   const wr = Number.isFinite(contextual) ? contextual : winRate(p); // 0-100
   return WEIGHTS.peak * p.peakElo + WEIGHTS.current * p.currentElo + WEIGHTS.winRate * (wr * 15);
