@@ -718,6 +718,19 @@ const syncMoneyPairings = async (
   return synced;
 };
 
+const canReviewReport = (report: any, playerId: string) => {
+  if (!playerId || report.status !== "pending") return false;
+  const teamA = Array.isArray(report.team_a) ? report.team_a.map(String) : [];
+  const teamB = Array.isArray(report.team_b) ? report.team_b.map(String) : [];
+  const reporterId = String(report.reporter_player_id || "");
+  // A participating admin still needs an opponent; a neutral admin report
+  // may be reviewed by either team. Never allow self-confirmation.
+  if (playerId === reporterId) return false;
+  if (teamA.includes(reporterId)) return teamB.includes(playerId);
+  if (teamB.includes(reporterId)) return teamA.includes(playerId);
+  return Boolean(report.reporter_is_admin && [...teamA, ...teamB].includes(playerId));
+};
+
 const finalizeReport = async (supabase: any, report: any, verifierAccountId: string | null, verifierPlayerId: string | null) => {
   if (report.status === "completed") return report;
 
@@ -1500,10 +1513,12 @@ Deno.serve(async (req: Request) => {
     if (!report) return json({ error: "Match report not found" }, 404);
 
     if (action === "confirm") {
-      if (!isAdmin) return json({ error: "Only Admin can confirm match results" }, 403);
+      if (!isAdmin && !canReviewReport(report, String(account?.player_id || ""))) {
+        return json({ error: "A player from the opposite team must confirm this result" }, 403);
+      }
       if (report.status !== "pending") return json({ error: "This result is no longer awaiting confirmation" }, 409);
 
-      const completed = await finalizeReport(supabase, report, user?.id || null, null);
+      const completed = await finalizeReport(supabase, report, user?.id || null, isAdmin ? null : String(account.player_id));
       return json({ ok: true, report: completed, locked: true });
     }
 
@@ -1511,18 +1526,7 @@ Deno.serve(async (req: Request) => {
       if (!account?.player_id) return json({ error: "Login with a linked Discord account first" }, 401);
       if (report.status !== "pending") return json({ error: "This result is no longer awaiting confirmation" }, 409);
 
-      const teamA = Array.isArray(report.team_a) ? report.team_a.map(String) : [];
-      const teamB = Array.isArray(report.team_b) ? report.team_b.map(String) : [];
-      const reporterId = String(report.reporter_player_id || "");
-      const eligible = report.reporter_is_admin
-        ? [...teamA, ...teamB]
-        : teamA.includes(reporterId)
-          ? teamB
-          : teamB.includes(reporterId)
-            ? teamA
-            : [];
-
-      if (!eligible.includes(String(account.player_id))) {
+      if (!canReviewReport(report, String(account.player_id))) {
         return json({ error: "A player from the opposite team must review this result" }, 403);
       }
 

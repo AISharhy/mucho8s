@@ -22,6 +22,7 @@ export default function MatchResultCenter({ teamPlayerIds = null, reportId = "",
     playerMap,
     discordPlayer,
     isAdmin,
+    confirmMatchReport,
     disputeMatchReport,
     adminResolveMatchReport,
   } = useData();
@@ -59,21 +60,32 @@ export default function MatchResultCenter({ teamPlayerIds = null, reportId = "",
 
   if (!reports.length) return null;
 
-  const eligibleDisputer = (report) => {
+  const eligibleReviewer = (report) => {
     if (!discordPlayer?.id || report.status !== "pending") return false;
 
     const teamA = Array.isArray(report.team_a) ? report.team_a.map(String) : [];
     const teamB = Array.isArray(report.team_b) ? report.team_b.map(String) : [];
     const reporterId = String(report.reporter_player_id || "");
 
-    if (report.reporter_is_admin) {
-      return [...teamA, ...teamB].includes(discordPlayer.id);
-    }
-
-    if (teamA.includes(reporterId)) return teamB.includes(discordPlayer.id);
-    if (teamB.includes(reporterId)) return teamA.includes(discordPlayer.id);
+    const playerId = String(discordPlayer.id);
+    if (playerId === reporterId) return false;
+    if (teamA.includes(reporterId)) return teamB.includes(playerId);
+    if (teamB.includes(reporterId)) return teamA.includes(playerId);
+    if (report.reporter_is_admin) return [...teamA, ...teamB].includes(playerId);
 
     return false;
+  };
+
+  const confirm = async (report) => {
+    setBusy(`confirm:${report.id}`);
+    try {
+      const result = await confirmMatchReport(report.id);
+      if (!result) return;
+      toast.success("Result confirmed — Elo & stats updated");
+      onResolved?.(result, "confirm");
+    } finally {
+      setBusy("");
+    }
   };
 
   const dispute = async (report) => {
@@ -126,7 +138,7 @@ export default function MatchResultCenter({ teamPlayerIds = null, reportId = "",
         const teamB = Array.isArray(report.team_b) ? report.team_b : [];
         const mvp = report.mvp_id ? safePlayerMap[report.mvp_id] : null;
         const merda = report.merda_id ? safePlayerMap[report.merda_id] : null;
-        const canReview = eligibleDisputer(report);
+        const canReview = eligibleReviewer(report);
         const winnerName = report.winner === "A" ? "Alpha" : "Bravo";
 
         return (
@@ -164,7 +176,7 @@ export default function MatchResultCenter({ teamPlayerIds = null, reportId = "",
                     </div>
                   </div>
 
-                  <div className="hidden sm:block text-[10px] uppercase tracking-[0.2em] text-[#596170]">VS</div>
+                  <div className="text-center text-2xl font-black font-mono text-white">{Number(report.score_a || 0)} – {Number(report.score_b || 0)}</div>
 
                   <div className="sm:text-right">
                     <div className={`font-display font-bold ${report.winner === "B" ? "text-[#D5A33A]" : ""}`}>Bravo</div>
@@ -176,15 +188,25 @@ export default function MatchResultCenter({ teamPlayerIds = null, reportId = "",
 
                 <div className="mt-3 rounded-lg bg-[#0F1218] border border-[#222834] px-3 py-2 text-xs flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <span className="text-muted-foreground">Match Captain · </span>
+                    <span className="text-muted-foreground">Reported by · </span>
                     <span className="font-bold">
                       👑 {safePlayerMap[report.reporter_player_id]?.name || (report.reporter_is_admin ? "Admin" : "Player")}
                     </span>
                   </div>
                   <span className="text-muted-foreground">
-                    Verification · Admin only
+                    Verification · Opposing team
                   </span>
                 </div>
+
+                {Array.isArray(report.map_results) && report.map_results.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {report.map_results.map((row, index) => (
+                      <span key={`${row.map}:${index}`} className="rounded-lg border border-[#222834] px-2.5 py-1.5 text-xs">
+                        {row.map} · <strong>{row.winner === "A" ? "Alpha" : "Bravo"}</strong>
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 {Array.isArray(report.pairings) && report.pairings.length > 0 && (
                   <div className="mt-3 rounded-xl bg-[#0F1218] border border-[#222834] p-3">
@@ -240,6 +262,16 @@ export default function MatchResultCenter({ teamPlayerIds = null, reportId = "",
               <div className="lg:w-64 shrink-0">
                 {canReview && disputeId !== report.id && !isAdmin && (
                   <Button
+                    onClick={() => confirm(report)}
+                    disabled={Boolean(busy)}
+                    className="w-full h-11 mb-2 bg-emerald-500 text-black hover:bg-emerald-400"
+                  >
+                    <Check size={15} className="mr-1.5" /> Confirm result
+                  </Button>
+                )}
+
+                {canReview && disputeId !== report.id && !isAdmin && (
+                  <Button
                     onClick={() => setDisputeId(report.id)}
                     disabled={Boolean(busy)}
                     className="w-full h-11 bg-red-500/10 border border-red-500/25 text-red-300 hover:bg-red-500/15"
@@ -279,9 +311,9 @@ export default function MatchResultCenter({ teamPlayerIds = null, reportId = "",
                   </div>
                 )}
 
-                {report.status === "pending" && !isAdmin && (
+                {report.status === "pending" && !isAdmin && !canReview && (
                   <div className="rounded-xl bg-[#151923] border border-[#242A35] p-3 text-xs text-muted-foreground text-center">
-                    Waiting for Admin verification
+                    Waiting for an opponent to confirm
                   </div>
                 )}
 

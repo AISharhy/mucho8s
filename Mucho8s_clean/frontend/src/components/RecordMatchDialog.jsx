@@ -468,7 +468,7 @@ export const RecordMatchDialog = ({
           ? "Result submitted — Mucho8s rematch is now live"
           : withRechall
             ? "Result submitted — Mucho8s rematch could not be created"
-            : "Mucho8s submitted — waiting for Admin verification"
+            : "Mucho8s submitted — waiting for an opponent to confirm"
       );
       onReported?.(report, rechallLiveMatch);
     }
