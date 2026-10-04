@@ -85,7 +85,7 @@ const normalizeMatch = (m) => ({
   merdaId: m?.merdaId || (Array.isArray(m?.merdaIds) ? m.merdaIds[0] : undefined),
   merdaClearedIds: Array.isArray(m?.merdaClearedIds) ? m.merdaClearedIds.filter(Boolean) : [],
   map: m?.map || "",
-  maps: Array.isArray(m?.maps) ? m.maps.filter(Boolean).slice(0, 5) : [],
+  maps: Array.isArray(m?.maps) ? m.maps.filter(Boolean).slice(0, 7) : [],
   mapResults: Array.isArray(m?.mapResults)
     ? m.mapResults
         .map((row) => ({
@@ -93,7 +93,7 @@ const normalizeMatch = (m) => ({
           winner: String(row?.winner || "").trim().toUpperCase(),
         }))
         .filter((row) => row.map && ["A", "B"].includes(row.winner))
-        .slice(0, 5)
+        .slice(0, 7)
     : [],
   mode: m?.mode || "",
   game: m?.game || "",

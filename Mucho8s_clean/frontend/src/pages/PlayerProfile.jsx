@@ -12,6 +12,7 @@ import {
   trophyNextTier,
 } from "@/lib/trophyRules";
 import { PlayerAvatar, EloBadge, Last10, MerdaBadge, RankArtwork, RankProgress } from "@/components/shared";
+import PlayerMapStats from "@/components/PlayerMapStats";
 import ModeBadge, { isDirectMucho1v1 } from "@/components/ModeBadge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -1913,6 +1914,7 @@ export default function PlayerProfile() {
 
           {profileTab === "stats" && (
             <div className="m8-profile-detail-grid" data-testid="profile-detailed-stats">
+              <PlayerMapStats key={id} matches={playerMatches} playerId={id} />
               <section className="m8-profile-compact-panel">
                 <div className="m8-profile-panel-title">Performance</div>
                 <div className="m8-profile-detail-stat-grid">
