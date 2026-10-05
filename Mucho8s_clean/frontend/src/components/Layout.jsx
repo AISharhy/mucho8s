@@ -51,7 +51,6 @@ class PageErrorBoundary extends Component {
 
 const TOP_NAV = [
   { to: "/play", label: "Play" },
-  { to: "/wallet", label: "Wallet" },
   { to: "/matches", label: "Matches" },
   { to: "/ranking", label: "Leaderboard" },
   { to: "/rank-guide", label: "Rank System" },
@@ -1038,6 +1037,19 @@ export const Layout = () => {
                       >
                         <UserCircle size={15} />
                         <span>Profile</span>
+                      </Link>
+                    )}
+
+                    {discordPlayer && (
+                      <Link
+                        to="/wallet"
+                        role="menuitem"
+                        className="m8-topbar-account-menu-item"
+                        onClick={() => setAccountOpen(false)}
+                        data-testid="account-wallet-link"
+                      >
+                        <WalletCards size={15} />
+                        <span>Wallet</span>
                       </Link>
                     )}
 

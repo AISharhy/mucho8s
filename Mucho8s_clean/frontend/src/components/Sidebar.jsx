@@ -16,19 +16,11 @@ import {
   Landmark,
   Newspaper,
   GalleryVerticalEnd,
-  WalletCards,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { tierOf } from "@/lib/elo";
 
 const MAIN_NAV = [
-  {
-    to: "/wallet",
-    label: "Wallet",
-    icon: WalletCards,
-    testid: "nav-wallet-link",
-    activeIcon: "text-emerald-400",
-  },
   {
     to: "/",
     label: "Dashboard",
