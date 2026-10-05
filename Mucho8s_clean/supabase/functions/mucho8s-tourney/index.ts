@@ -33,15 +33,25 @@ const validateAdmin = async (req: Request, supabase: any) => {
   const token = (req.headers.get("x-admin-session") || "").trim();
   if (!token) return null;
   const tokenHash = await sha(token);
-  const { data: session } = await supabase
-    .from("admin_sessions")
-    .select("username,expires_at,revoked_at")
-    .eq("token_hash", tokenHash)
-    .maybeSingle();
-
-  if (!session || session.revoked_at || new Date(session.expires_at).getTime() <= Date.now()) {
-    return null;
-  }
+  const uaHash = await sha(req.headers.get("user-agent") || "unknown");
+  const { data: session, error } = await supabase.from("admin_sessions")
+    .select("username,account_id,user_agent_hash,expires_at,revoked_at")
+    .eq("token_hash", tokenHash).maybeSingle();
+  if (error || !session || session.revoked_at) return null;
+  const expiry = new Date(session.expires_at).getTime();
+  if (!Number.isFinite(expiry) || expiry <= Date.now()) return null;
+  if (!session.account_id || session.user_agent_hash !== uaHash) return null;
+  const { data: credential, error: credentialError } = await supabase.from("admin_credentials")
+    .select("is_active,required_account_id").eq("username", session.username).maybeSingle();
+  if (credentialError || !credential?.is_active ||
+      credential.required_account_id !== session.account_id) return null;
+  const { data: account, error: accountError } = await supabase.from("player_accounts")
+    .select("player_id").eq("id", session.account_id).maybeSingle();
+  if (accountError || !account?.player_id) return null;
+  const { data: access, error: accessError } = await supabase.from("admin_access")
+    .select("username,is_active").eq("player_id", account.player_id)
+    .eq("is_active", true).maybeSingle();
+  if (accessError || !access?.is_active || access.username !== session.username) return null;
   return session;
 };
 
