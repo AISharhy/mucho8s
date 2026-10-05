@@ -1,0 +1,45 @@
+-- Execute as a database owner. Everything is rolled back, including test balances.
+begin;
+do $$
+declare a uuid; r jsonb; r2 jsonb; k uuid:=gen_random_uuid(); wid uuid; base integer; failed boolean;
+begin
+  if has_table_privilege('anon','public.mucho_wallets','SELECT') or has_table_privilege('authenticated','public.mucho_wallet_requests','INSERT') or has_function_privilege('authenticated','public.mucho_wallet_request(uuid,uuid,text,text,integer,text)','EXECUTE') then raise exception 'Client permissions must be denied'; end if;
+  if exists(select 1 from pg_class where oid in ('public.mucho_wallets'::regclass,'public.mucho_wallet_requests'::regclass,'public.mucho_wallet_transactions'::regclass) and not relrowsecurity) then raise exception 'RLS must be enabled'; end if;
+  select id into a from public.player_accounts where player_id is not null limit 1;
+  if a is null then raise exception 'An approved account is required for the rollback test'; end if;
+  select coalesce(balance_cents,0) into base from public.mucho_wallets where account_id=a;
+  base:=coalesce(base,0);
+  r:=public.mucho_wallet_request(a,k,'deposit','paypal',2000,'Wallet test');
+  r2:=public.mucho_wallet_request(a,k,'deposit','paypal',2000,'Wallet test');
+  if r->>'id'<>r2->>'id' then raise exception 'Duplicate request created'; end if;
+  failed:=false;
+  begin perform public.mucho_wallet_request(a,k,'deposit','paypal',2100,'Wallet test'); exception when others then failed:=true; end;
+  if not failed then raise exception 'Mismatched retry must fail'; end if;
+  perform public.mucho_wallet_review((r->>'id')::uuid,'completed','test-admin');
+  perform public.mucho_wallet_review((r->>'id')::uuid,'completed','test-admin');
+  if (select balance_cents from public.mucho_wallets where account_id=a)<>base+2000 then raise exception 'Double credit or incorrect deposit'; end if;
+  if (select count(*) from public.mucho_wallet_transactions where request_id=(r->>'id')::uuid)<>1 then raise exception 'Duplicate ledger entries'; end if;
+  r:=public.mucho_wallet_request(a,gen_random_uuid(),'withdrawal','revolut',500,'@WalletTest');wid:=(r->>'id')::uuid;
+  if (select reserved_cents from public.mucho_wallets where account_id=a)<500 then raise exception 'Withdrawal was not reserved'; end if;
+  failed:=false;
+  begin perform public.mucho_wallet_review(wid,'cancelled','other-user',gen_random_uuid()); exception when others then failed:=true; end;
+  if not failed then raise exception 'Other account can cancel request'; end if;
+  perform public.mucho_wallet_review(wid,'cancelled',a::text,a);
+  if (select balance_cents from public.mucho_wallets where account_id=a)<>base+2000 then raise exception 'Cancellation changed total balance'; end if;
+  r:=public.mucho_wallet_request(a,gen_random_uuid(),'withdrawal','revolut',500,'@WalletTest');
+  perform public.mucho_wallet_review((r->>'id')::uuid,'completed','test-admin');
+  perform public.mucho_wallet_review((r->>'id')::uuid,'completed','test-admin');
+  if (select balance_cents from public.mucho_wallets where account_id=a)<>base+1500 then raise exception 'Incorrect withdrawal debit'; end if;
+  r:=public.mucho_wallet_request(a,gen_random_uuid(),'withdrawal','paypal',500,'Wallet test');
+  perform public.mucho_wallet_review((r->>'id')::uuid,'rejected','test-admin');
+  if (select balance_cents from public.mucho_wallets where account_id=a)<>base+1500 then raise exception 'Rejection changed total balance'; end if;
+  failed:=false;
+  begin perform public.mucho_wallet_request(a,gen_random_uuid(),'withdrawal','revolut',100000,'@WalletTest'); exception when others then failed:=true; end;
+  if not failed then raise exception 'Overspending must fail'; end if;
+  failed:=false;
+  begin perform public.mucho_wallet_request(a,gen_random_uuid(),'deposit','paypal',0,'Wallet test'); exception when others then failed:=true; end;
+  if not failed then raise exception 'Invalid amount must fail'; end if;
+end;
+$$;
+select 'PASS: idempotency, credits, holds, cancellation ownership, withdrawal, rejection, overspending, amount validation, RLS and grants' as wallet_tests;
+rollback;
