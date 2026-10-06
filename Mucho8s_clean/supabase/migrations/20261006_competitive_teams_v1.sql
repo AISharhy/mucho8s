@@ -37,5 +37,7 @@ alter table public.competitive_teams enable row level security;
 alter table public.competitive_team_members enable row level security;
 revoke all on table public.competitive_teams from anon, authenticated;
 revoke all on table public.competitive_team_members from anon, authenticated;
+grant select, insert, update, delete on table public.competitive_teams to service_role;
+grant select, insert, update, delete on table public.competitive_team_members to service_role;
 
 -- Reads and writes are mediated by the mucho8s-teams Edge Function.
