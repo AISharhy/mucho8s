@@ -71,7 +71,7 @@ const TITLES = {
   "/bacheca": "Bacheca",
   "/bacheca/hall-of-fame": "Hall of Fame",
   "/bacheca/rivalries": "Rivalries",
-  "/bacheca/records": "Records",
+  "/bacheca/records": "Records",\n  "/teams": "Teams",
   "/rivalries": "Bacheca",
   "/leaderboard": "Ranking",
   "/statistics": "Ranking",
