@@ -8,7 +8,7 @@ import CompetitionEventAnimator from "@/components/CompetitionEventAnimator";
 import AnalyticsRouteTracker from "@/components/AnalyticsRouteTracker";
 import RiveStage from "@/components/RiveStage";
 import Dashboard from "@/pages/Dashboard";
-import Players from "@/pages/Players";
+import Players from "@/pages/Players";\nimport Teams from "@/pages/Teams";\nimport TeamProfile from "@/pages/TeamProfile";
 import Play from "@/pages/Play";
 import PlayerProfile from "@/pages/PlayerProfile";
 import Matches from "@/pages/Matches";
@@ -115,7 +115,7 @@ function App() {
               <Route path="news" element={<News />} />
               <Route path="play" element={<Play />} />
               <Route path="players" element={<Players />} />
-              <Route path="players/:id" element={<PlayerProfile />} />
+              <Route path="players/:id" element={<PlayerProfile />} />\n              <Route path="teams" element={<Teams />} />\n              <Route path="teams/:id" element={<TeamProfile />} />
               <Route path="live/:id" element={<Live />} />
               <Route path="team-builder" element={<TeamBuilder />} />
               <Route path="balancer" element={<TeamBuilder />} />
