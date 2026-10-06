@@ -49,6 +49,22 @@ export const createTeam = async ({ name, tag, description, logoUrl }) => {
   return data.team;
 };
 
+export const updateTeam = async (teamId, { name, tag, description, logoUrl }) => {
+  const data = await callTeams(
+    { action: "update", teamId, name, tag, description, logoUrl },
+    { auth: true },
+  );
+  return data.team;
+};
+
+export const deleteTeam = async (teamId, confirmName) => {
+  const data = await callTeams(
+    { action: "delete", teamId, confirmName },
+    { auth: true },
+  );
+  return data;
+};
+
 export const addTeamMember = async (teamId, playerId) => {
   const data = await callTeams(
     { action: "add-member", teamId, playerId },
