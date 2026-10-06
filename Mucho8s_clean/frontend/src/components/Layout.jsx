@@ -55,7 +55,6 @@ const TOP_NAV = [
   { to: "/ranking", label: "Leaderboard" },
   { to: "/rank-guide", label: "Rank System" },
   { to: "/bacheca", label: "Bacheca" },
-  { to: "/teams", label: "Teams" },
   { to: "/news", label: "News" },
 ];
 
@@ -73,7 +72,6 @@ const TITLES = {
   "/bacheca/hall-of-fame": "Hall of Fame",
   "/bacheca/rivalries": "Rivalries",
   "/bacheca/records": "Records",
-  "/teams": "Teams",
   "/rivalries": "Bacheca",
   "/leaderboard": "Ranking",
   "/statistics": "Ranking",
