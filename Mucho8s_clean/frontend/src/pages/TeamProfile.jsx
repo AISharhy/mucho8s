@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Crown, Plus, Shield, Trash2, Users } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, Crown, Pencil, Plus, Save, Shield, Trash2, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar, RankBadge } from "@/components/shared";
-import { addTeamMember, getTeam, removeTeamMember } from "@/lib/teams";
+import { addTeamMember, deleteTeam, getTeam, removeTeamMember, updateTeam } from "@/lib/teams";
 
 const TeamLogo = ({ team }) => (
   team?.logo_url ? (
@@ -22,11 +22,19 @@ const TeamLogo = ({ team }) => (
 
 export default function TeamProfile() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { players, playerMap, playerAvatars, discordPlayer } = useData();
   const [team, setTeam] = useState(null);
   const [loading, setLoading] = useState(true);
   const [memberToAdd, setMemberToAdd] = useState("");
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    tag: "",
+    description: "",
+    logoUrl: "",
+  });
 
   const load = async () => {
     setLoading(true);
@@ -91,6 +99,49 @@ export default function TeamProfile() {
     }
   };
 
+  const startEditing = () => {
+    setEditForm({
+      name: team.name || "",
+      tag: team.tag || "",
+      description: team.description || "",
+      logoUrl: team.logo_url || "",
+    });
+    setEditing(true);
+  };
+
+  const saveTeam = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    try {
+      const next = await updateTeam(team.id, editForm);
+      setTeam(next);
+      setEditing(false);
+      toast.success("Team updated");
+    } catch (error) {
+      toast.error(error.message || "Unable to update team");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const destroyTeam = async () => {
+    const confirmation = window.prompt(
+      `Type "${team.name}" to permanently delete this team.`
+    );
+    if (confirmation === null) return;
+
+    setBusy(true);
+    try {
+      await deleteTeam(team.id, confirmation);
+      toast.success("Team deleted");
+      navigate("/teams", { replace: true });
+    } catch (error) {
+      toast.error(error.message || "Unable to delete team");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (loading) {
     return <div className="m8-panel rounded-2xl p-8 text-center text-sm text-muted-foreground">Loading team...</div>;
   }
@@ -105,7 +156,6 @@ export default function TeamProfile() {
     );
   }
 
-  const captain = playerMap?.[team.captain_player_id];
 
   return (
     <div className="m8-page-stack">
@@ -129,18 +179,113 @@ export default function TeamProfile() {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-2 min-w-[220px]">
-            <div className="rounded-xl border border-[#222834] bg-[#0F1218] p-3">
-              <div className="text-[9px] uppercase tracking-widest text-[#697181]">Roster</div>
-              <div className="font-mono text-xl font-black mt-1">{team.members?.length || 0}/8</div>
-            </div>
-            <div className="rounded-xl border border-[#222834] bg-[#0F1218] p-3">
-              <div className="text-[9px] uppercase tracking-widest text-[#697181]">Avg Elo</div>
-              <div className="font-mono text-xl font-black mt-1">{averageElo || "—"}</div>
+          <div className="min-w-[220px] space-y-2">
+            {team.canManage && (
+              <div className="flex gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={editing ? () => setEditing(false) : startEditing}
+                  disabled={busy}
+                  className="h-9 px-3 rounded-xl border border-[#2A303B] bg-[#11161E] text-xs font-black inline-flex items-center gap-2 hover:border-[#424A58] disabled:opacity-40"
+                  data-testid="team-edit-button"
+                >
+                  {editing ? <X size={14} /> : <Pencil size={14} />}
+                  {editing ? "Cancel" : "Edit"}
+                </button>
+                <button
+                  type="button"
+                  onClick={destroyTeam}
+                  disabled={busy}
+                  className="h-9 px-3 rounded-xl border border-red-500/25 bg-red-500/[0.06] text-red-400 text-xs font-black inline-flex items-center gap-2 hover:bg-red-500/[0.12] disabled:opacity-40"
+                  data-testid="team-delete-button"
+                >
+                  <Trash2 size={14} />
+                  Delete
+                </button>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-xl border border-[#222834] bg-[#0F1218] p-3">
+                <div className="text-[9px] uppercase tracking-widest text-[#697181]">Roster</div>
+                <div className="font-mono text-xl font-black mt-1">{team.members?.length || 0}/8</div>
+              </div>
+              <div className="rounded-xl border border-[#222834] bg-[#0F1218] p-3">
+                <div className="text-[9px] uppercase tracking-widest text-[#697181]">Avg Elo</div>
+                <div className="font-mono text-xl font-black mt-1">{averageElo || "—"}</div>
+              </div>
             </div>
           </div>
         </div>
       </section>
+
+      {team.canManage && editing && (
+        <form onSubmit={saveTeam} className="m8-panel rounded-2xl p-4 sm:p-5">
+          <div className="brand-kicker mb-1">Team Settings</div>
+          <h2 className="font-display text-xl font-black">Edit team</h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+            <label className="space-y-1.5">
+              <span className="text-xs font-bold text-[#AAB1BE]">Team name</span>
+              <input
+                value={editForm.name}
+                onChange={(event) => setEditForm((prev) => ({ ...prev, name: event.target.value }))}
+                maxLength={32}
+                required
+                className="w-full h-10 rounded-xl border border-[#242A35] bg-[#0F1218] px-3 text-sm text-white outline-none focus:border-magma/60"
+                data-testid="team-edit-name"
+              />
+            </label>
+
+            <label className="space-y-1.5">
+              <span className="text-xs font-bold text-[#AAB1BE]">Tag</span>
+              <input
+                value={editForm.tag}
+                onChange={(event) => setEditForm((prev) => ({ ...prev, tag: event.target.value.toUpperCase() }))}
+                maxLength={6}
+                required
+                className="w-full h-10 rounded-xl border border-[#242A35] bg-[#0F1218] px-3 text-sm text-white uppercase outline-none focus:border-magma/60"
+                data-testid="team-edit-tag"
+              />
+            </label>
+
+            <label className="space-y-1.5 md:col-span-2">
+              <span className="text-xs font-bold text-[#AAB1BE]">Description</span>
+              <textarea
+                value={editForm.description}
+                onChange={(event) => setEditForm((prev) => ({ ...prev, description: event.target.value }))}
+                maxLength={240}
+                rows={3}
+                className="w-full rounded-xl border border-[#242A35] bg-[#0F1218] px-3 py-2.5 text-sm text-white outline-none focus:border-magma/60 resize-none"
+                data-testid="team-edit-description"
+              />
+            </label>
+
+            <label className="space-y-1.5 md:col-span-2">
+              <span className="text-xs font-bold text-[#AAB1BE]">Logo URL</span>
+              <input
+                value={editForm.logoUrl}
+                onChange={(event) => setEditForm((prev) => ({ ...prev, logoUrl: event.target.value }))}
+                placeholder="https://..."
+                className="w-full h-10 rounded-xl border border-[#242A35] bg-[#0F1218] px-3 text-sm text-white outline-none focus:border-magma/60"
+                data-testid="team-edit-logo"
+              />
+            </label>
+          </div>
+
+          <div className="flex justify-end mt-4">
+            <button
+              type="submit"
+              disabled={busy}
+              className="h-10 px-4 rounded-xl bg-magma text-white text-sm font-black inline-flex items-center gap-2 disabled:opacity-40"
+              data-testid="team-save-button"
+            >
+              <Save size={15} />
+              {busy ? "Saving..." : "Save changes"}
+            </button>
+          </div>
+        </form>
+      )}
 
       {team.canManage && (
         <section className="m8-panel rounded-2xl p-4 sm:p-5">
