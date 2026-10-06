@@ -11,7 +11,9 @@ const callTeams = async (payload, { auth = false } = {}) => {
     apikey: KEY,
   };
 
-  if (auth || supabaseAuth) {
+  if (auth && !supabaseAuth) throw new Error("Login with Discord first.");
+
+  if (supabaseAuth) {
     const { data } = await supabaseAuth.auth.getSession();
     const token = data?.session?.access_token;
     if (auth && !token) throw new Error("Login with Discord first.");
