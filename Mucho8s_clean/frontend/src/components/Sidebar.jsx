@@ -75,6 +75,13 @@ const COMPETITION_NAV = [
     activeIcon: "text-[#D5A33A]",
   },
   {
+    to: "/teams",
+    label: "Teams",
+    icon: Shield,
+    testid: "nav-teams-link",
+    activeIcon: "text-magma",
+  },
+  {
     to: "/rank-guide",
     label: "Rank System",
     icon: BookOpen,
