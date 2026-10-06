@@ -262,6 +262,61 @@ Deno.serve(async (req: Request) => {
       return json(req, { error: "Only the team captain can manage this roster" }, 403);
     }
 
+    if (action === "update") {
+      let name = "";
+      let tag = "";
+      let description = "";
+      let logoUrl = null;
+
+      try {
+        name = cleanName(body?.name);
+        tag = cleanTag(body?.tag);
+        description = cleanDescription(body?.description);
+        logoUrl = cleanLogoUrl(body?.logoUrl);
+      } catch (error) {
+        return json(req, { error: String(error).replace(/^Error:\s*/, "") }, 400);
+      }
+
+      const { data: updated, error: updateError } = await supabase
+        .from("competitive_teams")
+        .update({
+          name,
+          tag,
+          description,
+          logo_url: logoUrl,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", team.id)
+        .select("id,name,tag,description,logo_url,owner_account_id,captain_player_id,created_at,updated_at")
+        .single();
+
+      if (updateError) {
+        if (String(updateError.code) === "23505") {
+          return json(req, { error: "Team name or tag is already in use" }, 409);
+        }
+        throw updateError;
+      }
+
+      const members = await membersFor(supabase, [team.id]);
+      return json(req, { ok: true, team: publicTeam(updated, members, true) });
+    }
+
+    if (action === "delete") {
+      const confirmName = String(body?.confirmName || "").trim();
+      if (confirmName !== team.name) {
+        return json(req, { error: "Type the exact team name to confirm deletion" }, 400);
+      }
+
+      const { error: deleteTeamError } = await supabase
+        .from("competitive_teams")
+        .delete()
+        .eq("id", team.id)
+        .eq("owner_account_id", account.id);
+
+      if (deleteTeamError) throw deleteTeamError;
+      return json(req, { ok: true, deletedTeamId: team.id });
+    }
+
     if (action === "add-member") {
       const playerId = String(body?.playerId || "").trim();
       if (!playerId) return json(req, { error: "Player is required" }, 400);
