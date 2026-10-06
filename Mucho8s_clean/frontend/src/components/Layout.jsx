@@ -55,6 +55,7 @@ const TOP_NAV = [
   { to: "/ranking", label: "Leaderboard" },
   { to: "/rank-guide", label: "Rank System" },
   { to: "/bacheca", label: "Bacheca" },
+  { to: "/teams", label: "Teams" },
   { to: "/news", label: "News" },
 ];
 
