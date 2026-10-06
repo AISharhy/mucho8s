@@ -63,6 +63,7 @@ const TITLES = {
   "/play": "Play",
   "/wallet": "Wallet",
   "/players": "Players",
+  "/teams": "Team",
   "/team-builder": "Team Builder",
   "/balancer": "Team Builder",
   "/draft": "Team Builder",
@@ -526,6 +527,8 @@ export const Layout = () => {
           ? "Bacheca"
           : loc.pathname.startsWith("/players/")
           ? "Player Profile"
+          : loc.pathname.startsWith("/teams/")
+            ? "Team"
           : loc.pathname.startsWith("/challenges/")
             ? "Mucho1v1"
             : "MuchoMoney8s");
@@ -1037,6 +1040,19 @@ export const Layout = () => {
                       >
                         <UserCircle size={15} />
                         <span>Profile</span>
+                      </Link>
+                    )}
+
+                    {discordPlayer && (
+                      <Link
+                        to="/teams"
+                        role="menuitem"
+                        className="m8-topbar-account-menu-item"
+                        onClick={() => setAccountOpen(false)}
+                        data-testid="account-team-link"
+                      >
+                        <Shield size={15} />
+                        <span>Team</span>
                       </Link>
                     )}
 
