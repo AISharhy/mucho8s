@@ -327,8 +327,8 @@ const storedDuration = (minutes) => {
   return remaining ? `${hours}h ${String(remaining).padStart(2, "0")}m` : `${hours}h`;
 };
 
-export default function Matches() {
-  const [searchParams, setSearchParams] = useSearchParams();
+export default function Matches({ finderMode = false }) {
+  const [searchParams] = useSearchParams();
   const {
     matches,
     publicChallenges,
@@ -353,8 +353,7 @@ export default function Matches() {
   const [editData, setEditData] = useState(null);
   const [verificationReportId, setVerificationReportId] = useState("");
   const [liveNow, setLiveNow] = useState(Date.now());
-  const requestedView = searchParams.get("view");
-  const [view, setView] = useState(requestedView === "history" ? "history" : "live");
+  const view = finderMode ? "live" : "history";
   const [query, setQuery] = useState("");
   const [winnerFilter, setWinnerFilter] = useState("all");
   const [gameFilter, setGameFilter] = useState("ALL");
@@ -364,13 +363,6 @@ export default function Matches() {
     const timer = setInterval(() => setLiveNow(Date.now()), 30000);
     return () => clearInterval(timer);
   }, []);
-
-  useEffect(() => {
-    const nextView = searchParams.get("view");
-    if (nextView === "history" || nextView === "live") {
-      setView(nextView);
-    }
-  }, [searchParams]);
 
   const liveChallenges = useMemo(
     () =>
@@ -1140,57 +1132,25 @@ export default function Matches() {
       <section className="m8-panel rounded-2xl p-5 sm:p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <div className="brand-kicker mb-1">Match Center</div>
+            <div className="brand-kicker mb-1">{finderMode ? "Active Matches" : "Match Center"}</div>
             <h2 className="font-display text-3xl font-black tracking-[-0.03em]">
-              Match History
+              {finderMode ? "Match Finder" : "Match History"}
             </h2>
             <p className="text-sm text-[#7F8795] mt-1">
-              Mucho8s and Mucho1v1 stay visually separated in one verified timeline.
+              {finderMode
+                ? "Matches found from Play, live rooms and results waiting for verification appear here."
+                : "Verified Mucho8s and Mucho1v1 results stay together in one timeline."}
             </p>
           </div>
 
-          <div className="inline-flex self-start lg:self-auto rounded-xl border border-[#222834] bg-[#0F1218] p-1">
-            <button
-              type="button"
-              onClick={() => {
-                setView("live");
-                setSearchParams((prev) => {
-                  const next = new URLSearchParams(prev);
-                  next.set("view", "live");
-                  next.delete("match");
-                  return next;
-                });
-              }}
-              className={`h-9 px-4 rounded-lg text-sm font-bold transition-all ${
-                view === "live"
-                  ? "bg-white text-black"
-                  : "text-[#8D95A4] hover:text-white"
-              }`}
-            >
-              Live{liveCount > 0 ? ` · ${liveCount}` : ""}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setView("history");
-                setSearchParams((prev) => {
-                  const next = new URLSearchParams(prev);
-                  next.set("view", "history");
-                  return next;
-                });
-              }}
-              className={`h-9 px-4 rounded-lg text-sm font-bold transition-all ${
-                view === "history"
-                  ? "bg-white text-black"
-                  : "text-[#8D95A4] hover:text-white"
-              }`}
-            >
-              History
-            </button>
-          </div>
+          {finderMode && liveCount > 0 && (
+            <div className="h-10 px-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-400 inline-flex items-center text-xs font-black uppercase tracking-wider self-start lg:self-auto">
+              Active · {liveCount}
+            </div>
+          )}
         </div>
 
-        {view === "history" && (
+        {!finderMode && (
           <div className="flex flex-col gap-3 mt-5 pt-4 border-t border-[#1D222C]">
             <div className="flex flex-wrap items-center gap-2">
               {[
@@ -1218,52 +1178,52 @@ export default function Matches() {
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="relative flex-1 max-w-md">
-              <Search
-                size={18}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-              />
-              <Input
-                data-testid="matches-search-input"
-                placeholder="Search player, game or mode..."
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                className="pl-10 bg-[#0F1218] border-[#222834] h-11 rounded-xl"
-              />
-            </div>
+              <div className="relative flex-1 max-w-md">
+                <Search
+                  size={18}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                  data-testid="matches-search-input"
+                  placeholder="Search player, game or mode..."
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  className="pl-10 bg-[#0F1218] border-[#222834] h-11 rounded-xl"
+                />
+              </div>
 
-            <select
-              value={gameFilter}
-              onChange={(event) => setGameFilter(event.target.value)}
-              className="h-11 w-full sm:w-auto rounded-xl bg-[#0F1218] border border-[#222834] text-[#C8CED8] font-semibold px-3 text-sm"
-            >
-              <option value="ALL">All Games</option>
-              {GAMES.map((item) => (
-                <option key={item} value={item}>{item}</option>
-              ))}
-            </select>
+              <select
+                value={gameFilter}
+                onChange={(event) => setGameFilter(event.target.value)}
+                className="h-11 w-full sm:w-auto rounded-xl bg-[#0F1218] border border-[#222834] text-[#C8CED8] font-semibold px-3 text-sm"
+              >
+                <option value="ALL">All Games</option>
+                {GAMES.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <Filter size={16} className="text-muted-foreground" />
-              {[
-                { key: "all", label: "All" },
-                { key: "A", label: "Alpha" },
-                { key: "B", label: "Bravo" },
-              ].map((filter) => (
-                <button
-                  key={filter.key}
-                  aria-pressed={winnerFilter === filter.key}
-                  onClick={() => setWinnerFilter(filter.key)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
-                    winnerFilter === filter.key
-                      ? "bg-magma text-white border-magma"
-                      : "bg-[#0F1218] text-[#8D95A4] border-[#222834] hover:text-white"
-                  }`}
-                >
-                  {filter.label}
-                </button>
-              ))}
-            </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Filter size={16} className="text-muted-foreground" />
+                {[
+                  { key: "all", label: "All" },
+                  { key: "A", label: "Alpha" },
+                  { key: "B", label: "Bravo" },
+                ].map((filter) => (
+                  <button
+                    key={filter.key}
+                    aria-pressed={winnerFilter === filter.key}
+                    onClick={() => setWinnerFilter(filter.key)}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                      winnerFilter === filter.key
+                        ? "bg-magma text-white border-magma"
+                        : "bg-[#0F1218] text-[#8D95A4] border-[#222834] hover:text-white"
+                    }`}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -1274,8 +1234,8 @@ export default function Matches() {
           {liveCount === 0 ? (
             <EmptyState
               icon={Gamepad2}
-              title="No live matches"
-              description="Pending and in-progress matches will appear here."
+              title="No active matches"
+              description="When a match is found or goes live from Play, it will appear here."
             />
           ) : (
             <>
