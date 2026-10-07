@@ -51,8 +51,8 @@ class PageErrorBoundary extends Component {
 
 const TOP_NAV = [
   { to: "/play", label: "Play" },
-  { to: "/matchfinder", label: "Match Finder" },
-  { to: "/matches", label: "Matches" },
+  { to: "/matchfinder", label: "Live Match" },
+  { to: "/matches", label: "History" },
   { to: "/ranking", label: "Leaderboard" },
   { to: "/rank-guide", label: "Rank System" },
   { to: "/bacheca", label: "Bacheca" },
@@ -62,14 +62,14 @@ const TOP_NAV = [
 const TITLES = {
   "/": "Dashboard",
   "/play": "Play",
-  "/matchfinder": "Match Finder",
+  "/matchfinder": "Live Match",
   "/wallet": "Wallet",
   "/players": "Players",
   "/teams": "Team",
   "/team-builder": "Team Builder",
   "/balancer": "Team Builder",
   "/draft": "Team Builder",
-  "/matches": "Matches",
+  "/matches": "History",
   "/ranking": "Ranking",
   "/bacheca": "Bacheca",
   "/bacheca/hall-of-fame": "Hall of Fame",
