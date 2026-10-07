@@ -1132,13 +1132,13 @@ export default function Matches({ finderMode = false }) {
       <section className="m8-panel rounded-2xl p-5 sm:p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <div className="brand-kicker mb-1">{finderMode ? "Active Matches" : "Match Center"}</div>
+            <div className="brand-kicker mb-1">{finderMode ? "Live" : "Match Archive"}</div>
             <h2 className="font-display text-3xl font-black tracking-[-0.03em]">
-              {finderMode ? "Match Finder" : "Match History"}
+              {finderMode ? "Live Match" : "History"}
             </h2>
             <p className="text-sm text-[#7F8795] mt-1">
               {finderMode
-                ? "Matches found from Play, live rooms and results waiting for verification appear here."
+                ? "Matches found from Play, active rooms and results waiting for verification appear here."
                 : "Verified Mucho8s and Mucho1v1 results stay together in one timeline."}
             </p>
           </div>
