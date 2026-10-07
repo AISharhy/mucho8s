@@ -46,14 +46,14 @@ const MAIN_NAV = [
   },
   {
     to: "/matchfinder",
-    label: "Match Finder",
+    label: "Live Match",
     icon: Search,
     testid: "nav-matchfinder-link",
     activeIcon: "text-magma",
   },
   {
     to: "/matches",
-    label: "Matches",
+    label: "History",
     icon: Swords,
     testid: "nav-matches-link",
     activeIcon: "text-[#8E98FF]",
