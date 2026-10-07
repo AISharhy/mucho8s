@@ -16,6 +16,7 @@ import {
   Landmark,
   Newspaper,
   GalleryVerticalEnd,
+  Search,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { tierOf } from "@/lib/elo";
@@ -41,6 +42,13 @@ const MAIN_NAV = [
     label: "Play",
     icon: Gamepad2,
     testid: "nav-play-link",
+    activeIcon: "text-magma",
+  },
+  {
+    to: "/matchfinder",
+    label: "Match Finder",
+    icon: Search,
+    testid: "nav-matchfinder-link",
     activeIcon: "text-magma",
   },
   {
