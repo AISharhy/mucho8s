@@ -52,8 +52,7 @@ class PageErrorBoundary extends Component {
 const TOP_NAV = [
   { to: "/news", label: "Hub" },
   { to: "/play", label: "Play" },
-  { to: "/matchfinder", label: "Live Match" },
-  { to: "/matches", label: "History" },
+  { to: "/matchfinder", label: "Matches" },
   { to: "/ranking", label: "Leaderboard" },
   { to: "/rank-guide", label: "Rank System" },
   { to: "/bacheca", label: "Bacheca" },
@@ -63,14 +62,14 @@ const TITLES = {
   "/": "Dashboard",
   "/play": "Play",
   "/news": "Hub",
-  "/matchfinder": "Live Match",
+  "/matchfinder": "Matches",
   "/wallet": "Wallet",
   "/players": "Players",
   "/teams": "Team",
   "/team-builder": "Team Builder",
   "/balancer": "Team Builder",
   "/draft": "Team Builder",
-  "/matches": "History",
+  "/matches": "Matches",
   "/ranking": "Ranking",
   "/bacheca": "Bacheca",
   "/bacheca/hall-of-fame": "Hall of Fame",
@@ -805,7 +804,7 @@ export const Layout = () => {
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={({ isActive }) => `m8-topbar-link ${isActive ? "is-active" : ""}`}
+                className={({ isActive }) => `m8-topbar-link ${(isActive || (item.to === "/matchfinder" && loc.pathname.startsWith("/matches"))) ? "is-active" : ""}`}
               >
                 {item.label}
               </NavLink>
