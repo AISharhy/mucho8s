@@ -52,7 +52,7 @@ const MAX_RESULT_DELTA = 45;
 
 const COMPETITIVE_MAP_POOLS: Record<string, Record<string, string[]>> = {
   BO7: {
-    "Search & Destroy": ["Den", "Frequency", "Gridlock", "Raid", "Scar", "Standoff", "Hacienda"],
+    "Search & Destroy": ["Den", "Frequency", "Gridlock", "Raid", "Scar", "Standoff", "Hacienda", "Fringe"],
     Hardpoint: ["Colossus", "Den", "Gridlock", "Frequency", "Scar", "Hacienda"],
   },
   BO6: {
@@ -89,6 +89,14 @@ const competitiveMapPool = (game: string, mode: string, format: string) => {
   }
   if (game === "CW" && ["Search & Destroy","CDL Mix"].includes(mode) && format === "2v2") {
     pool = pool.filter((map) => map !== "Miami");
+  }
+
+  if (game === "BO7" && ["Search & Destroy", "CDL Mix"].includes(mode)) {
+    if (format === "4v4") {
+      pool = pool.filter((map) => map !== "Standoff");
+    } else if (["2v2", "3v3"].includes(format)) {
+      pool = pool.filter((map) => map !== "Fringe");
+    }
   }
 
   return [...new Set(pool)];
