@@ -64,7 +64,7 @@ const formatNewsDate = (value) => {
 };
 
 export default function News() {
-  const { competitionData, newsPosts } = useData();
+  const { competitionData, newsPosts, matches, playerMap } = useData();
   const [activeIndex, setActiveIndex] = useState(0);
   const current = competitionData?.current || {};
 
@@ -90,6 +90,33 @@ export default function News() {
     return dynamic.length ? dynamic : STATIC_NEWS;
   }, [newsPosts]);
 
+  const communityFeed = useMemo(() => {
+    const announcements = (Array.isArray(newsPosts) ? newsPosts : []).map((post) => ({
+      id: `post-${post.id}`,
+      type: "announcement",
+      title: post.title,
+      summary: post.summary,
+      category: post.category || "Circle update",
+      date: post.created_at,
+    }));
+    const results = (Array.isArray(matches) ? matches : []).map((match) => {
+      const winner = String(match.winner || match.winnerTeam || "").toUpperCase();
+      const teamA = (Array.isArray(match.teamA) ? match.teamA : []).map((id) => playerMap?.[id]?.name || id).join(", ");
+      const teamB = (Array.isArray(match.teamB) ? match.teamB : []).map((id) => playerMap?.[id]?.name || id).join(", ");
+      return {
+        id: `match-${match.id}`,
+        type: "match",
+        category: "Verified match",
+        title: `${teamA || "Team A"} vs ${teamB || "Team B"}`,
+        summary: [match.game, match.mode, winner && `Winner: Team ${winner}`].filter(Boolean).join(" · "),
+        date: match.date || match.created_at,
+      };
+    });
+    return [...announcements, ...results]
+      .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
+      .slice(0, 30);
+  }, [newsPosts, matches, playerMap]);
+
   const activePost = NEWS[activeIndex] || NEWS[0];
   const ActiveIcon = activePost.icon;
 
@@ -113,6 +140,32 @@ export default function News() {
 
   return (
     <div className="m8-page-stack max-w-6xl mx-auto">
+      <section className="m8-panel rounded-[24px] p-5 sm:p-7" aria-label="Community feed">
+        <div className="flex items-center justify-between gap-4 mb-5">
+          <div>
+            <div className="brand-kicker mb-1">Circle Mucho8s</div>
+            <h1 className="font-display text-3xl sm:text-4xl font-black tracking-tight">Hub</h1>
+            <p className="text-sm text-muted-foreground mt-2">Community feed · Verified matches, player activity and Circle updates.</p>
+          </div>
+          <Newspaper size={25} className="text-magma shrink-0" />
+        </div>
+        <div className="space-y-3">
+          {communityFeed.length === 0 ? (
+            <div className="rounded-2xl border border-[#252B36] p-6 text-sm text-muted-foreground">
+              No community activity yet. Verified match results and Circle announcements will appear here.
+            </div>
+          ) : communityFeed.map((item) => (
+            <article key={item.id} className="rounded-2xl border border-[#252B36] bg-[#11161F] p-4 sm:p-5">
+              <div className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-widest text-[#D5A33A]">
+                <span>{item.category}</span>
+                <span className="text-muted-foreground">{item.date ? formatNewsDate(item.date) : ""}</span>
+              </div>
+              <h2 className="font-display text-lg font-bold mt-2">{item.title}</h2>
+              <p className="text-sm text-muted-foreground mt-2">{item.summary}</p>
+            </article>
+          ))}
+        </div>
+      </section>
       <section className="m8-news-ticker" aria-label="Latest updates">
         <div className="m8-news-live-label">
           <span className="m8-live-dot" />
@@ -148,11 +201,11 @@ export default function News() {
             <div className="flex items-center gap-3">
               <Newspaper size={25} className="text-magma m8-news-title-icon" />
               <h1 className="font-display text-3xl sm:text-4xl font-black tracking-[-0.04em]">
-                News & Updates
+                Platform Updates
               </h1>
             </div>
             <p className="text-sm text-muted-foreground mt-3 max-w-2xl leading-relaxed">
-              Season announcements, competitive changes and important platform updates.
+              Official announcements, competitive changes and platform updates from the Circle.
             </p>
           </div>
 
