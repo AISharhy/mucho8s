@@ -40,7 +40,7 @@ const MATCH_MODES = ["Hardpoint", "Search & Destroy", "CDL Mix"];
 
 const COMPETITIVE_MAP_POOLS = {
   BO7: {
-    "Search & Destroy": ["Den", "Frequency", "Gridlock", "Raid", "Scar", "Standoff", "Hacienda"],
+    "Search & Destroy": ["Den", "Frequency", "Gridlock", "Raid", "Scar", "Standoff", "Hacienda", "Fringe"],
     Hardpoint: ["Colossus", "Den", "Gridlock", "Frequency", "Scar", "Hacienda"],
   },
   BO6: {
@@ -82,6 +82,14 @@ const competitiveMapPool = (game, mode, format = "") => {
   }
   if (game === "CW" && ["Search & Destroy", "CDL Mix"].includes(mode) && format === "2v2") {
     pool = pool.filter((map) => map !== "Miami");
+  }
+
+  if (game === "BO7" && ["Search & Destroy", "CDL Mix"].includes(mode)) {
+    if (format === "4v4") {
+      pool = pool.filter((map) => map !== "Standoff");
+    } else if (["2v2", "3v3"].includes(format)) {
+      pool = pool.filter((map) => map !== "Fringe");
+    }
   }
 
   return [...new Set(pool)];
