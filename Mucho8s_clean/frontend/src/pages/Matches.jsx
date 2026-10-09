@@ -1129,6 +1129,14 @@ export default function Matches({ finderMode = false }) {
 
   return (
     <div className="m8-page-stack">
+      <nav aria-label="Matches views" className="flex items-center gap-2 rounded-xl border border-[#242B36] bg-[#10141B] p-1.5 w-fit">
+        <Link to="/matchfinder" aria-current={finderMode ? "page" : undefined} className={`rounded-lg px-5 py-2.5 text-sm font-bold transition-colors ${finderMode ? "bg-[#FF2A3B] text-white" : "text-[#939DAD] hover:text-white hover:bg-white/5"}`}>
+          Live Match
+        </Link>
+        <Link to="/matches" aria-current={!finderMode ? "page" : undefined} className={`rounded-lg px-5 py-2.5 text-sm font-bold transition-colors ${!finderMode ? "bg-[#FF2A3B] text-white" : "text-[#939DAD] hover:text-white hover:bg-white/5"}`}>
+          History
+        </Link>
+      </nav>
       <section className="m8-panel rounded-2xl p-5 sm:p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
