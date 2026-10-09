@@ -46,17 +46,10 @@ const MAIN_NAV = [
   },
   {
     to: "/matchfinder",
-    label: "Live Match",
-    icon: Search,
+    label: "Matches",
+    icon: Swords,
     testid: "nav-matchfinder-link",
     activeIcon: "text-magma",
-  },
-  {
-    to: "/matches",
-    label: "History",
-    icon: Swords,
-    testid: "nav-matches-link",
-    activeIcon: "text-[#8E98FF]",
   },
   {
     to: "/players",
@@ -107,6 +100,8 @@ const ALL_NAV = [
 
 const NavItem = ({ item, onNavigate, badge = 0 }) => {
   const Icon = item.icon;
+  const loc = useLocation();
+  const matchesActive = item.to === "/matchfinder" && loc.pathname.startsWith("/matches");
 
   return (
     <NavLink
@@ -116,7 +111,7 @@ const NavItem = ({ item, onNavigate, badge = 0 }) => {
       onClick={onNavigate}
       className={({ isActive }) =>
         `group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all border ${
-          isActive
+          (isActive || matchesActive)
             ? "bg-white/[0.045] text-white border-[#343B48] shadow-[inset_3px_0_0_#FF2A3B]"
             : "text-[#8D95A4] hover:text-white hover:bg-white/[0.03] border-transparent hover:border-white/[0.05]"
         }`
@@ -126,16 +121,16 @@ const NavItem = ({ item, onNavigate, badge = 0 }) => {
         <>
           <span
             className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-              isActive
+              (isActive || matchesActive)
                 ? "bg-white/[0.055]"
                 : "bg-transparent group-hover:bg-white/[0.035]"
             }`}
           >
             <Icon
               size={17}
-              strokeWidth={isActive ? 2.2 : 1.8}
+              strokeWidth={(isActive || matchesActive) ? 2.2 : 1.8}
               className={`shrink-0 transition-colors ${
-                isActive ? item.activeIcon || "text-white" : "text-[#7E8796] group-hover:text-white"
+                (isActive || matchesActive) ? item.activeIcon || "text-white" : "text-[#7E8796] group-hover:text-white"
               }`}
             />
           </span>
@@ -288,7 +283,9 @@ export const Sidebar = () => (
 export const MobileNav = () => {
   const [open, setOpen] = useState(false);
   const loc = useLocation();
-  const current = ALL_NAV.find((item) =>
+  const current = loc.pathname.startsWith("/matches")
+    ? MAIN_NAV.find((item) => item.to === "/matchfinder")
+    : ALL_NAV.find((item) =>
     item.end ? loc.pathname === "/" : loc.pathname.startsWith(item.to) && item.to !== "/"
   );
   const aliasLabel =
