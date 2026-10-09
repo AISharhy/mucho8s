@@ -32,7 +32,7 @@ const MAIN_NAV = [
   },
   {
     to: "/news",
-    label: "News",
+    label: "Hub",
     icon: Newspaper,
     testid: "nav-news-link",
     activeIcon: "text-[#D5A33A]",
