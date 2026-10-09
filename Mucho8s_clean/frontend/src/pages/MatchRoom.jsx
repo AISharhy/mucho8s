@@ -651,7 +651,7 @@ export default function MatchRoom() {
         defaultMode={match.mode || undefined}
         onReported={() => {
           setReportOpen(false);
-          navigate("/matches");
+          navigate("/matchfinder");
         }}
       />
     </div>
