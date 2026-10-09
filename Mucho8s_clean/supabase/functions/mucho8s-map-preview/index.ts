@@ -46,7 +46,7 @@ const GAME_META: Record<string, { label: string; aliases: string[]; headingIds: 
 };
 
 const ALLOWED_MAPS: Record<string, string[]> = {
-  BO7: ["Den", "Frequency", "Gridlock", "Raid", "Scar", "Standoff", "Hacienda", "Colossus"],
+  BO7: ["Den", "Frequency", "Gridlock", "Raid", "Scar", "Standoff", "Hacienda", "Fringe", "Colossus"],
   BO6: ["Protocol", "Rewind", "Skyline", "Vault", "Hacienda", "Firing Range", "Fringe", "Red Card"],
   MW3: ["Highrise", "Invasion", "Karachi", "Rio", "6 Star", "Scrapyard", "Sub Base", "Vista"],
   VG: ["Tuscan", "Berlin", "Bocage", "USS Texas", "Demyansk", "Gavutu"],
