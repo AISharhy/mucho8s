@@ -14,7 +14,6 @@ import {
   Swords,
   BookOpen,
   Landmark,
-  Newspaper,
   GalleryVerticalEnd,
   Search,
 } from "lucide-react";
@@ -22,13 +21,6 @@ import { useData } from "@/context/DataContext";
 import { tierOf } from "@/lib/elo";
 
 const MAIN_NAV = [
-  {
-    to: "/news",
-    label: "Hub",
-    icon: Newspaper,
-    testid: "nav-news-link",
-    activeIcon: "text-[#D5A33A]",
-  },
   {
     to: "/",
     label: "Dashboard",
