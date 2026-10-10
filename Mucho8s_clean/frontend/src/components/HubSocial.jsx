@@ -37,6 +37,8 @@ export default function HubSocial() {
   const [notifications, setNotifications] = useState([]);
   const [body, setBody] = useState("");
   const [media, setMedia] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+  const [imageUrls, setImageUrls] = useState({});
   const [pollText, setPollText] = useState("");
   const [commentDrafts, setCommentDrafts] = useState({});
   const [busy, setBusy] = useState(false);
@@ -47,10 +49,7 @@ export default function HubSocial() {
 
   const refresh = async (uid) => {
     if (!supabaseAuth || !uid) return;
-    const accounts = await supabaseAuth.from("player_accounts").select("id").eq("id",uid).limit(1);
-    // Player accounts are not directly selectable; membership is determined by a
-    // safe RLS-limited query on the hub_posts table and verified during writes.
-    void accounts;
+
     const names = ["hub_posts","hub_comments","hub_likes","hub_polls","hub_poll_options","hub_votes","hub_notifications"];
     const queries = names.map(n => {
       let q = supabaseAuth.from(n).select("*");
@@ -63,8 +62,15 @@ export default function HubSocial() {
       setMember(false);
       return;
     }
-    setMember(true);
+    const {data:verified,error:membershipError}=await supabaseAuth.rpc("hub_member_status");
+    setMember(!membershipError && verified===true);
     [setPosts,setComments,setLikes,setPolls,setOptions,setVotes,setNotifications].forEach((setter,i)=>setter(results[i].data || []));
+    const images=(results[0].data||[]).filter(p=>p.media_kind==="image"&&p.media_url);
+    const signed=await Promise.all(images.map(async p=>{
+      const {data}=await supabaseAuth.storage.from("hub-media").createSignedUrl(p.media_url,3600);
+      return [p.id,data?.signedUrl];
+    }));
+    setImageUrls(Object.fromEntries(signed.filter(row=>row[1])));
   };
 
   useEffect(() => {
@@ -91,10 +97,21 @@ export default function HubSocial() {
   };
   const check = (result) => {if(result.error)throw result.error;return result.data;};
   const publish=()=>run(async()=>{
-    if(!body.trim()&&!media.trim())throw Error("Write a post or add a Twitch clip");
+    if(!body.trim()&&!media.trim()&&!imageFile)throw Error("Write a post or attach media");
+    if(imageFile&&media.trim())throw Error("Choose either an image or a Twitch clip");
     if(media.trim()&&!twitchId(media.trim()))throw Error("Use a valid https:// Twitch channel or clip URL");
+    if(pollMode) {
+      const lines=pollText.split("\\n").map(v=>v.trim()).filter(Boolean);
+      if(lines.length<2||lines.length>6||lines.some(v=>v.length>120))throw Error("Poll requires 2–6 options of max 120 characters");
+    }
+    let imageKey=null;
+    if(imageFile){
+      if(!["image/jpeg","image/png","image/webp"].includes(imageFile.type)||imageFile.size>5242880)throw Error("Only JPG, PNG or WebP up to 5 MB");
+      imageKey=user.id+"/"+crypto.randomUUID()+"."+({"image/jpeg":"jpg","image/png":"png","image/webp":"webp"}[imageFile.type]);
+      check(await supabaseAuth.storage.from("hub-media").upload(imageKey,imageFile,{contentType:imageFile.type,upsert:false}));
+    }
     const post=check(await supabaseAuth.from("hub_posts").insert({
-      author_id:user.id,body:body.trim(),media_url:media.trim()||null,media_kind:media.trim()?"twitch":null
+      author_id:user.id,body:body.trim(),media_url:imageKey||media.trim()||null,media_kind:imageKey?"image":media.trim()?"twitch":null
     }).select("id").single());
     const labels=pollText.split("\n").map(v=>v.trim()).filter(Boolean);
     if(pollMode) {
@@ -102,7 +119,7 @@ export default function HubSocial() {
       const poll=check(await supabaseAuth.from("hub_polls").insert({post_id:post.id,expires_at:new Date(Date.now()+86400000).toISOString()}).select("id").single());
       check(await supabaseAuth.from("hub_poll_options").insert(labels.map((label,position)=>({poll_id:poll.id,label,position}))));
     }
-    setBody("");setMedia("");setPollText("");setPollMode(false);toast.success("Published");
+    setBody("");setMedia("");setImageFile(null);setPollText("");setPollMode(false);toast.success("Published");
   });
   const like=(post)=>run(async()=>{
     const liked=likes.some(l=>l.post_id===post.id&&l.user_id===user.id);
@@ -156,6 +173,9 @@ export default function HubSocial() {
     <div className={panel}>
       <textarea className={field} value={body} maxLength={2000} rows={3} onChange={e=>setBody(e.target.value)} placeholder="Share something with the Circle..." />
       <input className={field+" mt-2"} value={media} maxLength={500} onChange={e=>setMedia(e.target.value)} placeholder="Optional Twitch clip or channel HTTPS URL" />
+      <label className="block text-xs text-muted-foreground mt-2">Image (JPG, PNG, WebP · max 5 MB)
+        <input type="file" aria-label="Upload image" accept="image/jpeg,image/png,image/webp" className="block mt-2 text-xs" onChange={e=>setImageFile(e.target.files?.[0]||null)}/>
+      </label>
       <div className="flex items-center justify-between mt-3 gap-2">
         <button className={button} onClick={()=>setPollMode(v=>!v)}><BarChart3 size={15} className="inline mr-1"/>Poll</button>
         <button className={button+" bg-magma text-white"} disabled={busy||!member} onClick={publish}><Send size={15} className="inline mr-1"/>Publish</button>
@@ -182,6 +202,7 @@ export default function HubSocial() {
           {post.author_id===user.id?<button aria-label="Delete post" disabled={busy} onClick={()=>remove(post)}><Trash2 size={16}/></button>:<button aria-label="Report post" disabled={busy} onClick={()=>report(post)}><Flag size={16}/></button>}
         </div>
         {post.body&&<p className="whitespace-pre-wrap break-words mt-3 text-sm">{post.body}</p>}
+        {post.media_kind==="image"&&imageUrls[post.id]&&<img className="rounded-xl mt-3 max-h-[480px] max-w-full object-contain" src={imageUrls[post.id]} alt="Community post attachment" loading="lazy"/>}
         {embed&&<div className="mt-3 aspect-video overflow-hidden rounded-xl"><iframe title="Twitch media" src={embed} allowFullScreen allow="autoplay; fullscreen" referrerPolicy="strict-origin-when-cross-origin" className="w-full h-full" /></div>}
         {poll&&<div className="mt-3 space-y-2">
           <p className="text-xs text-muted-foreground">Poll · {totalVotes} votes · {new Date(poll.expires_at)>new Date()?"Open":"Closed"}</p>
