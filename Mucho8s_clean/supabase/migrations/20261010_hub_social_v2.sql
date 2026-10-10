@@ -124,29 +124,26 @@ create policy hub_media_upload on storage.objects for insert to authenticated
 create policy hub_media_delete on storage.objects for delete to authenticated
  using(bucket_id='hub-media' and hub_private.is_member() and (storage.foldername(name))[1]=(select auth.uid())::text);
 
--- Server-owned notifications. Clients have no insert permission.
+-- Notifications: server-owned triggers, write access withheld from clients.
 create or replace function hub_private.notify_interaction()
-returns trigger language plpgsql security definer set search_path='' as $$
-declare owner_id uuid;
+returns trigger language plpgsql security definer set search_path='' as $function$
+declare owner_id uuid; actor_id uuid; notification_kind text;
 begin
- select author_id into owner_id from public.hub_posts where id=new.post_id;
- if owner_id is not null and owner_id<>case when tg_table_name='hub_likes' then new.user_id else new.author_id end then
+ select p.author_id into owner_id from public.hub_posts p where p.id=new.post_id;
+ if tg_table_name='hub_likes' then actor_id:=new.user_id; notification_kind:='like';
+ else actor_id:=new.author_id; notification_kind:='comment'; end if;
+ if owner_id is not null and owner_id<>actor_id then
   insert into public.hub_notifications(recipient_id,actor_id,post_id,kind)
-  values(owner_id,
-   case when tg_table_name='hub_likes' then new.user_id else new.author_id end,
-   new.post_id,
-   case when tg_table_name='hub_likes' then 'like' else 'comment' end);
+  values(owner_id,actor_id,new.post_id,notification_kind);
  end if;
  return new;
 end;
-$$;
+$function$;
 revoke all on function hub_private.notify_interaction() from public,anon,authenticated;
 drop trigger if exists hub_notify_like on public.hub_likes;
 create trigger hub_notify_like after insert on public.hub_likes for each row execute function hub_private.notify_interaction();
 drop trigger if exists hub_notify_comment on public.hub_comments;
 create trigger hub_notify_comment after insert on public.hub_comments for each row execute function hub_private.notify_interaction();
-
--- Prevent changing notification owners or attributes through UPDATE.
 revoke update on public.hub_notifications from authenticated;
 grant update(is_read) on public.hub_notifications to authenticated;
 
