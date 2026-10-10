@@ -10,6 +10,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
+import HubCommunity from "@/components/HubCommunity";
 
 const STATIC_NEWS = [
   {
@@ -140,32 +141,7 @@ export default function News() {
 
   return (
     <div className="m8-page-stack max-w-6xl mx-auto">
-      <section className="m8-panel rounded-[24px] p-5 sm:p-7" aria-label="Community feed">
-        <div className="flex items-center justify-between gap-4 mb-5">
-          <div>
-            <div className="brand-kicker mb-1">Circle Mucho8s</div>
-            <h1 className="font-display text-3xl sm:text-4xl font-black tracking-tight">Hub</h1>
-            <p className="text-sm text-muted-foreground mt-2">Community feed · Verified matches, player activity and Circle updates.</p>
-          </div>
-          <Newspaper size={25} className="text-magma shrink-0" />
-        </div>
-        <div className="space-y-3">
-          {communityFeed.length === 0 ? (
-            <div className="rounded-2xl border border-[#252B36] p-6 text-sm text-muted-foreground">
-              No community activity yet. Verified match results and Circle announcements will appear here.
-            </div>
-          ) : communityFeed.map((item) => (
-            <article key={item.id} className="rounded-2xl border border-[#252B36] bg-[#11161F] p-4 sm:p-5">
-              <div className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-widest text-[#D5A33A]">
-                <span>{item.category}</span>
-                <span className="text-muted-foreground">{item.date ? formatNewsDate(item.date) : ""}</span>
-              </div>
-              <h2 className="font-display text-lg font-bold mt-2">{item.title}</h2>
-              <p className="text-sm text-muted-foreground mt-2">{item.summary}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+      <HubCommunity />
       <section className="m8-news-ticker" aria-label="Latest updates">
         <div className="m8-news-live-label">
           <span className="m8-live-dot" />
