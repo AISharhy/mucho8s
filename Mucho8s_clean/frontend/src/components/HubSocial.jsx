@@ -101,7 +101,7 @@ export default function HubSocial() {
     if(imageFile&&media.trim())throw Error("Choose either an image or a Twitch clip");
     if(media.trim()&&!twitchId(media.trim()))throw Error("Use a valid https:// Twitch channel or clip URL");
     if(pollMode) {
-      const lines=pollText.split("\\n").map(v=>v.trim()).filter(Boolean);
+      const lines=pollText.split(/\r?\n/).map(v=>v.trim()).filter(Boolean);
       if(lines.length<2||lines.length>6||lines.some(v=>v.length>120))throw Error("Poll requires 2–6 options of max 120 characters");
     }
     let imageKey=null;
