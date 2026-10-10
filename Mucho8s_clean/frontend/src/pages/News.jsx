@@ -65,7 +65,7 @@ const formatNewsDate = (value) => {
 };
 
 export default function News() {
-  const { competitionData, newsPosts, matches, playerMap } = useData();
+  const { competitionData, newsPosts } = useData();
   const [activeIndex, setActiveIndex] = useState(0);
   const current = competitionData?.current || {};
 
@@ -90,33 +90,6 @@ export default function News() {
 
     return dynamic.length ? dynamic : STATIC_NEWS;
   }, [newsPosts]);
-
-  const communityFeed = useMemo(() => {
-    const announcements = (Array.isArray(newsPosts) ? newsPosts : []).map((post) => ({
-      id: `post-${post.id}`,
-      type: "announcement",
-      title: post.title,
-      summary: post.summary,
-      category: post.category || "Circle update",
-      date: post.created_at,
-    }));
-    const results = (Array.isArray(matches) ? matches : []).map((match) => {
-      const winner = String(match.winner || match.winnerTeam || "").toUpperCase();
-      const teamA = (Array.isArray(match.teamA) ? match.teamA : []).map((id) => playerMap?.[id]?.name || id).join(", ");
-      const teamB = (Array.isArray(match.teamB) ? match.teamB : []).map((id) => playerMap?.[id]?.name || id).join(", ");
-      return {
-        id: `match-${match.id}`,
-        type: "match",
-        category: "Verified match",
-        title: `${teamA || "Team A"} vs ${teamB || "Team B"}`,
-        summary: [match.game, match.mode, winner && `Winner: Team ${winner}`].filter(Boolean).join(" · "),
-        date: match.date || match.created_at,
-      };
-    });
-    return [...announcements, ...results]
-      .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
-      .slice(0, 30);
-  }, [newsPosts, matches, playerMap]);
 
   const activePost = NEWS[activeIndex] || NEWS[0];
   const ActiveIcon = activePost.icon;
