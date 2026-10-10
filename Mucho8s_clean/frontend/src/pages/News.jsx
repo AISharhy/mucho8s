@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import HubCommunity from "@/components/HubCommunity";
+import HubSocial from "@/components/HubSocial";
 
 const STATIC_NEWS = [
   {
@@ -115,6 +116,7 @@ export default function News() {
   return (
     <div className="m8-page-stack max-w-6xl mx-auto">
       <HubCommunity />
+      <HubSocial />
       <section className="m8-news-ticker" aria-label="Latest updates">
         <div className="m8-news-live-label">
           <span className="m8-live-dot" />
