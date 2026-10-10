@@ -153,3 +153,11 @@ create trigger hub_notify_comment after insert on public.hub_comments for each r
 -- Prevent changing notification owners or attributes through UPDATE.
 revoke update on public.hub_notifications from authenticated;
 grant update(is_read) on public.hub_notifications to authenticated;
+
+-- Narrow membership probe; does not expose account records.
+create or replace function public.hub_member_status()
+returns boolean language sql stable security definer set search_path='' as $$
+  select exists(select 1 from public.player_accounts a where a.id=(select auth.uid()) and a.player_id is not null)
+$$;
+revoke all on function public.hub_member_status() from public,anon;
+grant execute on function public.hub_member_status() to authenticated;
