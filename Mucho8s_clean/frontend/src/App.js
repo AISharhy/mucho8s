@@ -27,7 +27,6 @@ import RivalryDetail from "@/pages/RivalryDetail";
 import BachecaLayout from "@/pages/BachecaLayout";
 import HallOfFame from "@/pages/HallOfFame";
 import Records from "@/pages/Records";
-import News from "@/pages/News";
 import Live from "@/pages/Live";
 import RiveUpgradeTest from "@/pages/RiveUpgradeTest";
 import MuchoTourney from "@/pages/MuchoTourney";
@@ -115,7 +114,6 @@ function App() {
           <Routes>
             <Route element={<Layout />}>
               <Route index element={<Dashboard />} />
-              <Route path="news" element={<News />} />
               <Route path="play" element={<Play />} />
               <Route path="matchfinder" element={<MatchFinder />} />
               <Route path="players" element={<Players />} />
