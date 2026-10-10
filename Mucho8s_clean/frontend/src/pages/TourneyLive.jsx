@@ -13,6 +13,7 @@ import {
 import SwitcherooWheel from "@/components/SwitcherooWheel";
 import SwitcherooDrawOverlay from "@/components/SwitcherooDrawOverlay";
 import TournamentTeamRosterModal from "@/components/TournamentTeamRosterModal";
+import TourneyOverview2 from "@/components/TourneyOverview2";
 import { playUiSound } from "@/lib/uiAudio";
 
 const STORE = "mucho8s-tourney-admin-v1";
@@ -920,6 +921,7 @@ export default function TourneyLive() {
 
   return (
     <div className="m8-page-stack gap-3 max-w-7xl mx-auto">
+      <TourneyOverview2 tournament={t} admin={isAdmin} onTeamOpen={setSelectedTeam} />
       <TournamentTeamRosterModal
         team={selectedTeam}
         onClose={() => setSelectedTeam(null)}
