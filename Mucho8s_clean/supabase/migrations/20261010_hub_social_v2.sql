@@ -116,3 +116,40 @@ create policy hub_notifications_read on public.hub_notifications for select to a
 create policy hub_notifications_update on public.hub_notifications for update to authenticated using (hub_private.is_member() and recipient_id=(select auth.uid())) with check (recipient_id=(select auth.uid()));
 -- Never allow arbitrary image hosts or javascript links via user-supplied URLs in UI.
 -- Admin pinning and moderation intentionally require server-side admin session validation.
+
+-- Private media bucket. Uploads must be owned and signed URLs expire.
+insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
+values ('hub-media','hub-media',false,5242880,array['image/jpeg','image/png','image/webp'])
+on conflict (id) do nothing;
+create policy hub_media_select on storage.objects for select to authenticated
+ using (bucket_id='hub-media' and hub_private.is_member());
+create policy hub_media_upload on storage.objects for insert to authenticated
+ with check(bucket_id='hub-media' and hub_private.is_member() and (storage.foldername(name))[1]=(select auth.uid())::text);
+create policy hub_media_delete on storage.objects for delete to authenticated
+ using(bucket_id='hub-media' and hub_private.is_member() and (storage.foldername(name))[1]=(select auth.uid())::text);
+
+-- Server-owned notifications. Clients have no insert permission.
+create or replace function hub_private.notify_interaction()
+returns trigger language plpgsql security definer set search_path='' as $$
+declare owner_id uuid;
+begin
+ select author_id into owner_id from public.hub_posts where id=new.post_id;
+ if owner_id is not null and owner_id<>case when tg_table_name='hub_likes' then new.user_id else new.author_id end then
+  insert into public.hub_notifications(recipient_id,actor_id,post_id,kind)
+  values(owner_id,
+   case when tg_table_name='hub_likes' then new.user_id else new.author_id end,
+   new.post_id,
+   case when tg_table_name='hub_likes' then 'like' else 'comment' end);
+ end if;
+ return new;
+end;
+$$;
+revoke all on function hub_private.notify_interaction() from public,anon,authenticated;
+drop trigger if exists hub_notify_like on public.hub_likes;
+create trigger hub_notify_like after insert on public.hub_likes for each row execute function hub_private.notify_interaction();
+drop trigger if exists hub_notify_comment on public.hub_comments;
+create trigger hub_notify_comment after insert on public.hub_comments for each row execute function hub_private.notify_interaction();
+
+-- Prevent changing notification owners or attributes through UPDATE.
+revoke update on public.hub_notifications from authenticated;
+grant update(is_read) on public.hub_notifications to authenticated;
