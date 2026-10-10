@@ -67,10 +67,6 @@ create table if not exists public.hub_notifications (
 create index if not exists hub_posts_latest_idx on public.hub_posts(created_at desc) where not hidden;
 create index if not exists hub_comments_post_idx on public.hub_comments(post_id,created_at);
 create index if not exists hub_notifications_recipient_idx on public.hub_notifications(recipient_id,created_at desc);
-create or replace function public.hub_is_member() returns boolean
- language sql stable security invoker set search_path=public as $$
- select exists(select 1 from public.player_accounts a where a.id=(select auth.uid()) and a.player_id is not null)
- $$;
 -- player_accounts is intentionally not directly readable by clients, so use a narrow
 -- security-definer helper in a non-exposed schema for membership verification.
 create schema if not exists hub_private;
