@@ -1003,11 +1003,20 @@ Deno.serve(async (req: Request) => {
         const validManualRotation =
           requestedMaps.length === bestOf &&
           (bestOf === 7 || uniqueMaps.length === bestOf) &&
-          requestedMaps.every((map,index) => {
+          requestedMaps.every((map, index) => {
             if (mode !== "CDL Mix") return pool.includes(map);
+            // Validate the slot against its own mode, not the combined CDL pool.
+            // Older clients may omit mapModes: infer the alternating rotation
+            // from the first slot, while still rejecting malformed sequences.
             const requestedModes = Array.isArray(body?.mapModes) ? body.mapModes : [];
-            const slotMode = requestedModes[index];
-            return ["Hardpoint","Search & Destroy"].includes(slotMode) && competitiveMapPool(game,slotMode,format).includes(map);
+            const firstMode = ["Hardpoint", "Search & Destroy"].includes(requestedModes[0])
+              ? requestedModes[0]
+              : "Hardpoint";
+            const expectedMode = index % 2 === 0
+              ? firstMode
+              : firstMode === "Hardpoint" ? "Search & Destroy" : "Hardpoint";
+            const slotMode = requestedModes.length ? requestedModes[index] : expectedMode;
+            return slotMode === expectedMode && competitiveMapPool(game, expectedMode, format).includes(map);
           });
 
         if (!validManualRotation) {
