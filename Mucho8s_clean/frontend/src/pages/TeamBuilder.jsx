@@ -821,9 +821,9 @@ export default function TeamBuilder() {
       mode: matchMode,
       format: formatForCount(result.teamA.length + result.teamB.length),
       bestOf,
-      maps: mapMode === "manual"
-        ? manualMaps
-        : buildRandomRotation(game, matchMode, formatForCount(result.teamA.length + result.teamB.length), bestOf, mixStartMode, recentComparableMaps),
+      // Let the server generate Random rotations: sending client-generated maps
+      // incorrectly makes the backend validate them as a manual rotation.
+      maps: mapMode === "manual" ? manualMaps : [],
       mapModes: matchMode === "CDL Mix" ? mixRotationModes(bestOf, mixStartMode) : undefined,
       pairings,
     });
