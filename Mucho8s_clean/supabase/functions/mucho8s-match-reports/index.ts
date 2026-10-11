@@ -1020,7 +1020,13 @@ Deno.serve(async (req: Request) => {
           });
 
         if (!validManualRotation) {
-          return json({ error: "Manual map rotation is invalid for this game/mode/format" }, 400);
+          return json({
+            error: requestedMaps.length !== bestOf
+              ? `Expected ${bestOf} maps, received ${requestedMaps.length}`
+              : (bestOf !== 7 && uniqueMaps.length !== bestOf)
+                ? "This series contains duplicate maps"
+                : `Invalid map or slot for ${game} / ${mode} / ${format}. Check the selected map pool and HP/S&D slot order.`,
+          }, 400);
         }
         seriesMaps = requestedMaps;
       } else {
@@ -1069,13 +1075,38 @@ Deno.serve(async (req: Request) => {
           }
         });
 
-        seriesMaps = drawSeriesMaps(
-          game,
-          mode,
-          format,
-          bestOf,
-          [...historyById.values()],
-        );
+        if (mode === "CDL Mix") {
+          // Draw each CDL slot from its own competitive pool, preserving the
+          // selected HP/S&D starting mode and avoiding repeats where possible.
+          const requestedModes = Array.isArray(body?.mapModes) ? body.mapModes : [];
+          const firstMode = requestedModes[0] === "Search & Destroy" ? "Search & Destroy" : "Hardpoint";
+          const used = new Set<string>();
+          const previousMaps = new Set(
+            [...historyById.values()]
+              .filter((match: any) => match?.game === game && match?.mode === mode)
+              .sort((a: any, b: any) => new Date(b?.date || 0).getTime() - new Date(a?.date || 0).getTime())[0]?.maps || []
+          );
+          seriesMaps = Array.from({ length: bestOf }, (_, index) => {
+            const slotMode = index % 2 === 0
+              ? firstMode
+              : firstMode === "Hardpoint" ? "Search & Destroy" : "Hardpoint";
+            const pool = competitiveMapPool(game, slotMode, format);
+            const fresh = pool.filter((map) => !used.has(map) && !previousMaps.has(map));
+            const unique = pool.filter((map) => !used.has(map));
+            const candidates = fresh.length ? fresh : unique.length ? unique : pool;
+            const choice = candidates[Math.floor(secureRandom() * candidates.length)] || "";
+            if (choice) used.add(choice);
+            return choice;
+          });
+        } else {
+          seriesMaps = drawSeriesMaps(
+            game,
+            mode,
+            format,
+            bestOf,
+            [...historyById.values()],
+          );
+        }
       }
 
       if (teamA.length < 2 || teamA.length > 4 || teamA.length !== teamB.length) {
