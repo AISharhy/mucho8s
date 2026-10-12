@@ -8,6 +8,7 @@ import {
   WalletCards,
   Link2Off,
   Trophy,
+  ShieldCheck,
   Clock3,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
@@ -225,13 +226,14 @@ export default function Play() {
               Choose your mode
             </h1>
             <p className="text-sm text-[#7F8795] mt-2">
-              Mucho8s and Mucho1v1 are live now. MuchoTourney is already in development.
+              Choose Mucho8s for manual lobbies or Mucho Ranked for competitive 4v4 without money.
             </p>
           </div>
 
           <div className="m8-play-mode-tabs" aria-label="Play modes">
             <span className="m8-play-mode-tab is-8s"><Swords size={12} /> Mucho8s</span>
             <span className="m8-play-mode-tab is-1v1"><Landmark size={12} /> Mucho1v1</span>
+            <span className="m8-play-mode-tab" style={{color:"#60A5FA",borderColor:"#2563EB55"}}><ShieldCheck size={12} /> Mucho Ranked</span>
             <span className="m8-play-mode-tab is-tourney"><Trophy size={12} /> MuchoTourney · Soon</span>
           </div>
         </div>
@@ -521,6 +523,20 @@ export default function Play() {
               </div>
             )}
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-[22px] border border-blue-500/30 bg-gradient-to-br from-blue-500/[0.14] via-[#111926] to-[#0B1018] p-6 sm:p-8 relative overflow-hidden" data-testid="play-ranked-card">
+        <div className="relative z-10 flex flex-col sm:flex-row gap-6 sm:items-center sm:justify-between">
+          <div className="max-w-2xl">
+            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Competitive 4v4 · No money</div>
+            <h2 className="font-display font-black text-2xl sm:text-3xl mt-2">Mucho Ranked</h2>
+            <p className="text-sm text-[#9BA9BE] mt-2">Entra in coda, trova altri sette giocatori e gioca con il Captain Draft. Elo e leaderboard condivisi con Mucho8s, senza puntate.</p>
+            <div className="flex flex-wrap gap-2 mt-4"><span className="m8-pill">4v4 Ranked</span><span className="m8-pill">Captain Draft</span><span className="m8-pill">Shared Elo</span></div>
+          </div>
+          <button type="button" onClick={()=>navigate("/ranked")} className="shrink-0 min-w-[185px] h-12 px-5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-black flex items-center justify-center gap-3" data-testid="open-mucho-ranked">
+            <ShieldCheck size={18}/> PLAY RANKED <ArrowRight size={17}/>
+          </button>
         </div>
       </section>
 
