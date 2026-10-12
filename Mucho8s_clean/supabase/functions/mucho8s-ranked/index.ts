@@ -11,7 +11,7 @@ const json = (req: Request, value: unknown, status = 200) => {
   }});
 };
 const fail = (req:Request,message:string,status=400)=>json(req,{error:message},status);
-const validMode=(value:unknown)=>["snd","hp","mixed"].includes(String(value));
+const validMode=(value:unknown)=>String(value)==="hp";
 
 Deno.serve(async (req:Request)=>{
  if(req.method==="OPTIONS") return json(req,{ok:true});
@@ -50,7 +50,7 @@ Deno.serve(async (req:Request)=>{
   }
   if(action==="join"){
     if(active)return fail(req,"Finish your current Ranked lobby first",409);
-    const mode=String(body.mode||"snd");
+    const mode=String(body.mode||"hp");
     if(!validMode(mode))return fail(req,"Invalid playlist");
     const {data:previous,error:queueError}=await db.from("ranked_queue")
        .select("account_id,mode").eq("account_id",account.id).maybeSingle();
@@ -111,7 +111,7 @@ Deno.serve(async (req:Request)=>{
     players=rows||[];
   }
   const {data:finalQueue}=await db.from("ranked_queue").select("mode,joined_at").eq("account_id",account.id).maybeSingle();
-  const {count}=await db.from("ranked_queue").select("*",{head:true,count:"exact"}).eq("mode",finalQueue?.mode||lobby?.mode||"snd");
+  const {count}=await db.from("ranked_queue").select("*",{head:true,count:"exact"}).eq("mode",finalQueue?.mode||lobby?.mode||"hp");
   return json(req,{ok:true,queue:finalQueue,lobby,member,players,queuedPlayers:count||0,playerId:account.player_id});
  }catch(error){console.error("ranked",error);return fail(req,"Ranked service unavailable",500);}
 });
