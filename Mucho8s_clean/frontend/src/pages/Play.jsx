@@ -234,7 +234,7 @@ export default function Play() {
             <span className="m8-play-mode-tab is-8s"><Swords size={12} /> Mucho8s</span>
             <span className="m8-play-mode-tab is-1v1"><Landmark size={12} /> Mucho1v1</span>
             <span className="m8-play-mode-tab" style={{color:"#60A5FA",borderColor:"#2563EB55"}}><ShieldCheck size={12} /> Mucho Ranked</span>
-            <span className="m8-play-mode-tab is-tourney"><Trophy size={12} /> MuchoTourney · Soon</span>
+            <span className="m8-play-mode-tab is-tourney"><Trophy size={12} /> MuchoTourney</span>
           </div>
         </div>
       </section>
@@ -555,15 +555,9 @@ export default function Play() {
             </div>
           </div>
           <div className="relative z-10 mt-auto pt-6">
-            {isAdmin ? (
-              <button type="button" onClick={() => navigate("/tourney")} className="m8-play-cta w-full !bg-[#D5A33A] hover:!bg-[#E2B752] !text-[#11151B]" data-testid="open-muchotourney-admin">
-                <span className="inline-flex items-center gap-2"><Trophy size={17}/> OPEN TOURNEY</span><ArrowRight size={18}/>
-              </button>
-            ) : (
-              <div className="m8-play-cta w-full !bg-[#222018] !text-[#C8A967] border border-[#D5A33A]/25 cursor-not-allowed">
-                <span className="inline-flex items-center gap-2"><Clock3 size={17}/> COMING SOON</span><Trophy size={18}/>
-              </div>
-            )}
+            <button type="button" onClick={() => navigate("/tourney")} className="m8-play-cta w-full !bg-[#D5A33A] hover:!bg-[#E2B752] !text-[#11151B]" data-testid="open-muchotourney">
+              <span className="inline-flex items-center gap-2"><Trophy size={17}/> OPEN TOURNEY</span><ArrowRight size={18}/>
+            </button>
           </div>
         </div>
       </section>
