@@ -214,10 +214,31 @@ export default function Statistics() {
     };
   }, [matches, publicChallenges, competitionData, playerMap]);
 
+  // Map analytics only use recorded, finalized match data; no estimated kills or damage.
+  const mapPerformance = useMemo(() => {
+    const rows = new Map();
+    (matches || []).filter(m => (game === "ALL" || m.game === game) && ["A","B"].includes(m.winner) && !m.disputed && !m.cancelled).forEach(match => {
+      const names = Array.isArray(match.maps) ? match.maps : (match.map ? [match.map] : match.mapName ? [match.mapName] : []);
+      const unique = [...new Set(names.map(item => typeof item === "string" ? item : item?.name || item?.map).filter(Boolean))];
+      unique.forEach(name => {
+        const entry = rows.get(name) || { name, matches: 0, alphaWins: 0, bravoWins: 0 };
+        entry.matches += 1;
+        if(match.winner === "A")entry.alphaWins += 1;
+        if(match.winner === "B")entry.bravoWins += 1;
+        rows.set(name,entry);
+      });
+    });
+    return [...rows.values()].sort((a,b) => b.matches - a.matches || a.name.localeCompare(b.name));
+  }, [matches,game]);
+
   const games = ["ALL", ...GAMES];
 
   return (
     <div className="space-y-6">
+      <section className="m8-panel rounded-2xl p-5" data-testid="analytics-map-breakdown">
+        <div className="flex justify-between items-start gap-4 flex-wrap"><div><h3 className="font-display text-lg font-black">Map Analytics</h3><p className="text-xs text-muted-foreground mt-1">Matches by recorded map, using final results only. No invented performance data.</p></div><span className="text-xs font-mono text-[#D5A33A]">{mapPerformance.length} MAPS</span></div>
+        {mapPerformance.length ? <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-4">{mapPerformance.map(row => <div key={row.name} className="rounded-xl border border-[#252B36] bg-[#111720] p-3"><div className="flex justify-between gap-2"><span className="text-sm font-bold">{row.name}</span><span className="text-xs text-muted-foreground">{row.matches} matches</span></div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#282F3B] flex"><div style={{width:`${100*row.alphaWins/row.matches}%`}} className="bg-red-500"/><div style={{width:`${100*row.bravoWins/row.matches}%`}} className="bg-blue-500"/></div><div className="flex justify-between mt-2 text-[11px] text-muted-foreground"><span>Alpha {row.alphaWins}</span><span>Bravo {row.bravoWins}</span></div></div>)}</div> : <p className="text-sm text-muted-foreground mt-4">No finalized matches with recorded maps for this filter.</p>}
+      </section>
       {/* Game filter */}
       <div className="m8-panel rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
