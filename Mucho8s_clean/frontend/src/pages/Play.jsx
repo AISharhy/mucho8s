@@ -540,7 +540,8 @@ export default function Play() {
               <StepRow number="3" title="Play & report" text="Confirm the match result and update the shared Elo." />
             </div>
           </div>
-          <div className="relative z-10 mt-auto pt-6">
+          <div className="relative z-10 mt-auto pt-6 space-y-2">
+            <button type="button" data-testid="simulate-ranked" onClick={() => navigate("/ranked?demo=1")} className="w-full rounded-xl border border-blue-400/35 bg-blue-500/10 py-2.5 text-xs font-black text-blue-300 hover:bg-blue-500/20">SIMULA RANKED · 8 BOT</button>
             <button type="button" onClick={() => navigate("/ranked")} className="m8-play-cta w-full !bg-blue-600 hover:!bg-blue-500 !text-white" data-testid="open-mucho-ranked">
               <span className="inline-flex items-center gap-2"><ShieldCheck size={17}/> PLAY RANKED</span><ArrowRight size={18}/>
             </button>
@@ -558,7 +559,8 @@ export default function Play() {
               <StepRow number="3" title="Champions" text="Track standings, progress and tournament history." />
             </div>
           </div>
-          <div className="relative z-10 mt-auto pt-6">
+          <div className="relative z-10 mt-auto pt-6 space-y-2">
+            <button type="button" data-testid="simulate-tourney-play" onClick={() => navigate("/tourney?demo=1")} className="w-full rounded-xl border border-[#D5A33A]/35 bg-[#D5A33A]/10 py-2.5 text-xs font-black text-[#D5A33A] hover:bg-[#D5A33A]/20">SIMULA TORNEO · 8 BOT</button>
             <button type="button" onClick={() => navigate("/tourney")} className="m8-play-cta w-full !bg-[#D5A33A] hover:!bg-[#E2B752] !text-[#11151B]" data-testid="open-muchotourney">
               <span className="inline-flex items-center gap-2"><Trophy size={17}/> OPEN TOURNEY</span><ArrowRight size={18}/>
             </button>
