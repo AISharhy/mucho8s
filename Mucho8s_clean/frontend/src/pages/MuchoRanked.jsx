@@ -1,5 +1,5 @@
 import React,{useCallback,useEffect,useRef,useState} from "react";
-import {Link} from "react-router-dom";
+import {Link,useLocation,useNavigate} from "react-router-dom";
 import {ShieldCheck,Users,Trophy,Gamepad2,RefreshCw} from "lucide-react";
 import {useData} from "@/context/DataContext";
 import {tierOf} from "@/lib/elo";
@@ -10,7 +10,9 @@ import RankedDemo from "@/components/RankedDemo";
 
 export default function MuchoRanked(){
  const {discordPlayer,discordSession,signInWithDiscord,playerMap,players=[]}=useData();
- const [demoMode,setDemoMode]=useState(false);
+ const location=useLocation();
+ const navigate=useNavigate();
+ const demoMode=new URLSearchParams(location.search).get("demo")==="1";
  const [state,setState]=useState(null),[busy,setBusy]=useState(false),[error,setError]=useState(""),[lobbyCodeInput,setLobbyCodeInput]=useState("");
  const refresh=useCallback(async()=>{if(!discordPlayer?.id||!discordSession)return;try{const s=await rankedRequest("status");setState(s);setError("");}catch(e){setError(e.message)}},[discordPlayer?.id,discordSession]);
  useEffect(()=>{refresh();if(!discordPlayer?.id||!discordSession)return;const interval=setInterval(refresh,4000);return()=>clearInterval(interval)},[refresh,discordPlayer?.id,discordSession]);
@@ -41,11 +43,11 @@ export default function MuchoRanked(){
  return <div className="m8-page-stack" data-testid="mucho-ranked-page">
   <section className="m8-panel p-6 md:p-9 rounded-[24px] border border-blue-500/20 bg-gradient-to-br from-blue-500/[0.12] via-[#101720] to-[#0B1018]">
     <div className="text-xs uppercase tracking-[0.2em] text-blue-400 font-black">MUCHO RANKED · 4V4</div>
-    <div className="flex flex-wrap items-center justify-between gap-4 mt-3"><h1 className="font-display font-black text-4xl">Play Ranked</h1><button type="button" data-testid="ranked-demo-start" className="rounded-xl border border-blue-400/40 bg-blue-500/10 hover:bg-blue-500/20 px-5 py-3 text-blue-200 font-black text-sm" onClick={()=>setDemoMode(s=>!s)}>{demoMode?"CHIUDI DEMO":"SIMULA RANKED · 8 BOT"}</button></div>
+    <div className="flex flex-wrap items-center justify-between gap-4 mt-3"><h1 className="font-display font-black text-4xl">Play Ranked</h1></div>
     <p className="text-sm text-[#9CA6B6] mt-3">Hardpoint BO1 · 4v4 · One shared Mucho8s Elo · No stakes, no earnings.</p>
     <div className="mt-5 flex flex-wrap gap-3"><span className="text-xs rounded-full border border-blue-500/30 text-blue-300 px-3 py-1.5">Same Elo & Ranking</span><span className="text-xs rounded-full border border-white/10 px-3 py-1.5">Discord verified players</span><span className="text-xs rounded-full border border-white/10 px-3 py-1.5">8-player ready check</span></div>
   </section>
-  {demoMode?<RankedDemo onClose={()=>setDemoMode(false)}/>:<div className="grid lg:grid-cols-[1.6fr_1fr] gap-5">
+  {demoMode?<RankedDemo onClose={()=>navigate("/ranked")}/>:<div className="grid lg:grid-cols-[1.6fr_1fr] gap-5">
   <section className="m8-panel p-6 rounded-[22px]">
    <div className="flex items-center gap-2"><Gamepad2 className="text-blue-400" size={20}/><h2 className="font-bold text-xl">Matchmaking</h2></div>
    {!discordSession?<button onClick={signInWithDiscord} className="mt-6 rounded-xl bg-[#5865F2] px-5 py-3 font-bold">Connect Discord</button>:
