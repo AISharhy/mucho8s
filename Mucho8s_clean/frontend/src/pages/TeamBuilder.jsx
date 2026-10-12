@@ -1050,7 +1050,7 @@ export default function TeamBuilder({ onCreated = null }) {
                 >
                   <option value="">Choose game...</option>
                   {GAMES.map((item) => (
-                    <option key={item} value={item}>{item === "Hardpoint" ? "HP" : item === "Search & Destroy" ? "SND" : "Mix"}</option>
+                    <option key={item} value={item}>{item}</option>
                   ))}
                 </select>
               </label>
