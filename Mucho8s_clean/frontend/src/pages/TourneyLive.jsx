@@ -252,7 +252,7 @@ export default function TourneyLive() {
             <div className="flex flex-wrap gap-2">
               {isAdmin && (
                 <Link
-                  to="/tourney"
+                  to="/tourney/manage"
                   className="h-[54px] px-4 rounded-xl border border-[#D5A33A]/30 bg-[#D5A33A]/10 text-[#F4CE70] text-[10px] font-black inline-flex items-center justify-center"
                 >
                   MANAGE TOURNAMENT
@@ -430,7 +430,7 @@ export default function TourneyLive() {
               <div className="flex flex-wrap justify-end gap-2">
                 {isAdmin && (
                   <Link
-                    to="/tourney"
+                    to="/tourney/manage"
                     className="h-[54px] px-4 rounded-xl border border-[#FF4FA3]/30 bg-[#FF4FA3]/10 text-[#FFB7D9] text-[10px] font-black inline-flex items-center justify-center"
                   >
                     MANAGE TOURNAMENT
@@ -741,7 +741,7 @@ export default function TourneyLive() {
             <div className="flex items-center gap-2">
               {isAdmin && (
                 <Link
-                  to="/tourney"
+                  to="/tourney/manage"
                   className="h-12 px-4 rounded-xl border border-[#FF4FA3]/25 bg-[#FF4FA3]/[0.06] text-[#FFB7D9] text-[9px] font-black inline-flex items-center"
                 >
                   MANAGE
@@ -976,7 +976,7 @@ export default function TourneyLive() {
           <div className="flex items-center gap-2">
             {isAdmin && (
               <Link
-                to="/tourney"
+                to="/tourney/manage"
                 className={
                   "h-10 px-3 rounded-xl border text-[9px] font-black inline-flex items-center " +
                   (t.teamBuild === "switcheroo"
