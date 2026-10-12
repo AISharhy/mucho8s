@@ -1050,7 +1050,7 @@ export default function TeamBuilder({ onCreated = null }) {
                 >
                   <option value="">Choose game...</option>
                   {GAMES.map((item) => (
-                    <option key={item} value={item}>{item}</option>
+                    <option key={item} value={item}>{item === "Hardpoint" ? "HP" : item === "Search & Destroy" ? "SND" : "Mix"}</option>
                   ))}
                 </select>
               </label>
@@ -1088,7 +1088,7 @@ export default function TeamBuilder({ onCreated = null }) {
 
               {matchMode === "CDL Mix" && (
                 <div className="sm:col-span-2 rounded-xl border border-[#2A303B] bg-[#10151D] p-3" data-testid="wizard-custom-cdl-modes">
-                  <div className="text-xs font-bold mb-2">CDL · Personalizza la rotazione</div>
+                  <div className="text-xs font-bold mb-2">Mix · Personalizza la rotazione</div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {selectedMixModes.map((slotMode, index) => (
                       <label key={index}>
@@ -1144,7 +1144,7 @@ export default function TeamBuilder({ onCreated = null }) {
                 {mapMode === "random" ? (
                   <div className="text-[11px] text-muted-foreground mt-2">
                     {matchMode === "CDL Mix"
-                      ? `CDL rotation: ${selectedMixModes.map((mode) => mode === "Hardpoint" ? "HP" : "S&D").join(" → ")}. Each slot draws a map from its own competitive pool.`
+                      ? `Mix rotation: ${selectedMixModes.map((mode) => mode === "Hardpoint" ? "HP" : "S&D").join(" → ")}. Each slot draws a map from its own competitive pool.`
                       : `The system will draw ${bestOf} unique maps from the competitive pool when the match goes live.`}
                   </div>
                 ) : (
@@ -1652,7 +1652,7 @@ export default function TeamBuilder({ onCreated = null }) {
 
               <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-black">
                 <span className="m8-pill">{game}</span>
-                <span className="m8-pill">{matchMode}</span>
+                <span className="m8-pill">{matchMode === "Hardpoint" ? "HP" : matchMode === "Search & Destroy" ? "SND" : "Mix"}</span>
                 <span className="m8-pill">BO{bestOf}</span>
                 <span className="m8-pill">{formatForCount(result.teamA.length + result.teamB.length)}</span>
               </div>
@@ -1681,7 +1681,7 @@ export default function TeamBuilder({ onCreated = null }) {
               ) : (
                 <div className="text-[11px] text-muted-foreground">
                   {matchMode === "CDL Mix"
-                    ? `CDL Mix: ${selectedMixModes.map((mode) => mode === "Hardpoint" ? "HP" : "S&D").join(" → ")}. Maps are drawn from the correct mode pool.`
+                    ? `Mix: ${selectedMixModes.map((mode) => mode === "Hardpoint" ? "HP" : "S&D").join(" → ")}. Maps are drawn from the correct mode pool.`
                     : `${bestOf} unique maps will be drawn automatically from the competitive pool when you confirm.`}
                 </div>
               )}
