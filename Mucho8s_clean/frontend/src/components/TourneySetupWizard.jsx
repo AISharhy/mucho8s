@@ -722,7 +722,7 @@ export default function TourneySetupWizard({
                           <ChoiceCard
                             key={mode}
                             active={tournament.mode === mode}
-                            title={mode}
+                            title={mode === "Hardpoint" ? "HP" : mode === "Search & Destroy" ? "SND" : "Mix"}
                             subtitle={
                               mode === "CDL Mix"
                                 ? "Alternating HP / S&D"
@@ -870,7 +870,7 @@ export default function TourneySetupWizard({
                         ],
                         ["Game", tournament.game],
                         ["Format", tournament.format],
-                        ["Mode", tournament.mode],
+                        ["Mode", tournament.mode === "Hardpoint" ? "HP" : tournament.mode === "Search & Destroy" ? "SND" : "Mix"],
                         ...(tournament.mode === "CDL Mix"
                           ? [["Mix starts", tournament.startMode]]
                           : []),
