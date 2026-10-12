@@ -1049,7 +1049,7 @@ export default function TeamBuilder() {
 
               {matchMode === "CDL Mix" && (
                 <label>
-                  <span className="text-[10px] uppercase tracking-widest text-[#697181]">Starting Mode</span>
+                  <span className="text-[10px] uppercase tracking-widest text-[#697181]">Scegli la modalità iniziale</span>
                   <select
                     value={mixStartMode}
                     onChange={(event) => {
@@ -1060,8 +1060,8 @@ export default function TeamBuilder() {
                     className="mt-1 w-full h-11 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm font-semibold"
                     data-testid="wizard-mix-start-mode"
                   >
-                    <option value="Hardpoint">HP Start · HP → S&D → HP</option>
-                    <option value="Search & Destroy">S&D Start · S&D → HP → S&D</option>
+                    <option value="Hardpoint">Hardpoint (HP)</option>
+                    <option value="Search & Destroy">Search & Destroy (S&D)</option>
                   </select>
                 </label>
               )}
