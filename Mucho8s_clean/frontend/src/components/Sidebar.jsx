@@ -5,6 +5,7 @@ import {
   LayoutGrid,
   Users,
   Gamepad2,
+  ShieldCheck,
   Trophy,
   Menu,
   X,
@@ -35,6 +36,13 @@ const MAIN_NAV = [
     icon: Gamepad2,
     testid: "nav-play-link",
     activeIcon: "text-magma",
+  },
+  {
+    to: "/ranked",
+    label: "Mucho Ranked",
+    icon: ShieldCheck,
+    testid: "nav-ranked-link",
+    activeIcon: "text-blue-400",
   },
   {
     to: "/matchfinder",

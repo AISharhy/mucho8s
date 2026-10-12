@@ -12,6 +12,7 @@ import Players from "@/pages/Players";
 import Teams from "@/pages/Teams";
 import TeamProfile from "@/pages/TeamProfile";
 import Play from "@/pages/Play";
+import MuchoRanked from "@/pages/MuchoRanked";
 import MatchFinder from "@/pages/MatchFinder";
 import PlayerProfile from "@/pages/PlayerProfile";
 import Matches from "@/pages/Matches";
@@ -115,6 +116,7 @@ function App() {
             <Route element={<Layout />}>
               <Route index element={<Dashboard />} />
               <Route path="play" element={<Play />} />
+              <Route path="ranked" element={<MuchoRanked />} />
               <Route path="matchfinder" element={<MatchFinder />} />
               <Route path="players" element={<Players />} />
               <Route path="players/:id" element={<PlayerProfile />} />
