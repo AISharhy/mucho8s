@@ -7,7 +7,7 @@ export default function PlayDemos({kind,onClose}){
  const is8=kind==="8s",color=is8?"#FF2A3B":"#34D399";
  const [step,setStep]=useState(0),[teamA,setTeamA]=useState([]),[teamB,setTeamB]=useState([]),[mode,setMode]=useState("Hardpoint"),[map,setMap]=useState("Den"),[bo,setBo]=useState(3),[challenger,setChallenger]=useState("Sysma"),[stake,setStake]=useState(5),[platform,setPlatform]=useState("paypal"),[winner,setWinner]=useState("");
  const advance=()=>{void playUiSound("next",is8?"mucho8s":"mucho1v1");setStep(v=>v+1)};
- const assign=(player,side)=>{setTeamA(v=>v.filter(p=>p!==player));setTeamB(v=>v.filter(p=>p!==player));(side==="A"?setTeamA:setTeamB)(v=>[...v,player]);void playUiSound("select",is8?"mucho8s":"mucho1v1")};
+ const assign=(player,side)=>{setTeamA(v=>v.filter(p=>p!==player));setTeamB(v=>v.filter(p=>p!==player));(side==="A"?setTeamA:setTeamB)(v=>v.includes(player)?v:[...v,player]);void playUiSound("select",is8?"mucho8s":"mucho1v1")};
  const action=(label,fn,disabled=false)=><button className={styles.cta} style={{background:color,color:is8?"white":"#03130E"}} disabled={disabled} onClick={fn}>{label}</button>;
  return <div className="fixed inset-0 z-[250] bg-[#040810]/90 backdrop-blur-lg overflow-y-auto p-3 sm:p-8" role="dialog" aria-modal="true" aria-label={is8?"Simula Mucho8s":"Simula Mucho1v1"} data-testid={is8?"demo-8s":"demo-1v1"}>
   <div className="max-w-4xl mx-auto rounded-3xl border bg-[#0D131C] p-5 sm:p-8 space-y-6" style={{borderColor:color+"88"}}>
