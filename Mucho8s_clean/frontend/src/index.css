@@ -1490,9 +1490,14 @@ textarea:focus-visible {
     z-index: 1;
 }
 
-.m8-play-mode-card.is-8s .m8-play-step:hover {
-    border-color: rgba(255,42,59,.34);
-    background: rgba(255,42,59,.035);
+.m8-play-mode-card .m8-play-step {
+    transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
+}
+
+.m8-play-mode-card .m8-play-step:hover {
+    border-color: color-mix(in srgb, var(--mode-accent) 42%, #29323E);
+    background: color-mix(in srgb, var(--mode-accent) 5%, #0B1017);
+    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--mode-accent) 65%, transparent);
 }
 
 .m8-play-control-panel {
