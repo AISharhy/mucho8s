@@ -524,74 +524,44 @@ export default function Play() {
             )}
           </div>
         </div>
-      </section>
 
-      <section className="rounded-[22px] border border-blue-500/30 bg-gradient-to-br from-blue-500/[0.14] via-[#111926] to-[#0B1018] p-6 sm:p-8 relative overflow-hidden" data-testid="play-ranked-card">
-        <div className="relative z-10 flex flex-col sm:flex-row gap-6 sm:items-center sm:justify-between">
-          <div className="max-w-2xl">
-            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Competitive 4v4 · No money</div>
-            <h2 className="font-display font-black text-2xl sm:text-3xl mt-2">Mucho Ranked</h2>
-            <p className="text-sm text-[#9BA9BE] mt-2">Entra in coda, trova altri sette giocatori e gioca con il Captain Draft. Elo e leaderboard condivisi con Mucho8s, senza puntate.</p>
-            <div className="flex flex-wrap gap-2 mt-4"><span className="m8-pill">4v4 Ranked</span><span className="m8-pill">BO1 Hardpoint</span><span className="m8-pill">Shared Elo</span></div>
+        <div className="m8-play-mode-card relative overflow-hidden !border-blue-500/40 bg-gradient-to-br from-[#12223F] via-[#101823] to-[#0C1019]" data-testid="play-ranked-card">
+          <div className="m8-play-card-grid" aria-hidden="true" />
+          <div className="m8-play-card-emblem text-blue-500/15" aria-hidden="true"><ShieldCheck size={150} /></div>
+          <div className="relative z-10">
+            <ModeHeader kicker="Competitive 4v4 · Free" title="MuchoRanked" description="Hardpoint BO1. Eight players, one shared Mucho8s Elo, no money." icon={ShieldCheck} accent="#3B82F6" />
+            <div className="m8-play-step-stack">
+              <StepRow number="1" title="Find your lobby" text="Join the 4v4 Hardpoint BO1 matchmaking queue." />
+              <StepRow number="2" title="Captain & lobby code" text="The captain shares the lobby code with all players." />
+              <StepRow number="3" title="Play & report" text="Confirm the match result and update the shared Elo." />
+            </div>
           </div>
-          <button type="button" onClick={()=>navigate("/ranked")} className="shrink-0 min-w-[185px] h-12 px-5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-black flex items-center justify-center gap-3" data-testid="open-mucho-ranked">
-            <ShieldCheck size={18}/> PLAY RANKED <ArrowRight size={17}/>
-          </button>
+          <div className="relative z-10 mt-auto pt-6">
+            <button type="button" onClick={() => navigate("/ranked")} className="m8-play-cta w-full !bg-blue-600 hover:!bg-blue-500 !text-white" data-testid="open-mucho-ranked">
+              <span className="inline-flex items-center gap-2"><ShieldCheck size={17}/> PLAY RANKED</span><ArrowRight size={18}/>
+            </button>
+          </div>
         </div>
-      </section>
 
-      <section className="m8-play-tourney-wrap">
-        <div
-          className="m8-play-tourney-card"
-          data-testid="play-tournaments-coming-soon"
-        >
-          <div className="m8-play-tourney-grid" aria-hidden="true" />
-          <div className="m8-play-tourney-stage" aria-hidden="true"><Trophy size={165} /></div>
-          <div className="relative z-10 h-full flex flex-col">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="brand-kicker">Competition Events</div>
-                  <span className="h-6 px-2 rounded-lg border border-[#D5A33A]/20 bg-[#D5A33A]/[0.06] text-[#D5A33A] inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-[0.14em]">
-                    <Clock3 size={10} />
-                    Coming Soon
-                  </span>
-                </div>
-                <h2 className="font-display text-2xl sm:text-[28px] font-black tracking-[-0.035em]">
-                  MuchoTourney
-                </h2>
-                <p className="text-sm text-[#7F8795] mt-2 max-w-md">
-                  Join organized events with team registration, brackets, match progression and tournament history.
-                </p>
-              </div>
-
-              <div className="m8-play-mode-icon is-tourney">
-                <Trophy size={19} className="text-[#D5A33A]" />
-              </div>
+        <div className="m8-play-mode-card relative overflow-hidden !border-amber-500/40 bg-gradient-to-br from-[#29200E] via-[#181611] to-[#0D1118]" data-testid="play-tournaments-coming-soon">
+          <div className="m8-play-card-grid" aria-hidden="true" />
+          <div className="m8-play-card-emblem text-amber-500/15" aria-hidden="true"><Trophy size={150} /></div>
+          <div className="relative z-10">
+            <ModeHeader kicker="Competition Events" title="MuchoTourney" description="Organized competitive events with tournament brackets and progression." icon={Trophy} accent="#D5A33A" />
+            <div className="m8-play-step-stack">
+              <StepRow number="1" title="Tournament lobby" text="Register players and organize teams." />
+              <StepRow number="2" title="Brackets" text="Follow matches and tournament results." />
+              <StepRow number="3" title="Champions" text="Track standings, progress and tournament history." />
             </div>
-
-            <div className="mt-auto pt-5 flex flex-wrap items-center gap-2">
-              <span className="m8-pill">Brackets</span>
-              <span className="m8-pill">Teams</span>
-              <span className="m8-pill">Live Progression</span>
-              <span className="m8-pill">History</span>
-            </div>
-
+          </div>
+          <div className="relative z-10 mt-auto pt-6">
             {isAdmin ? (
-              <button
-                type="button"
-                onClick={() => {
-                  void playUiSound("next", "tourney");
-                  navigate("/tourney");
-                }}
-                className="m8-play-tourney-soon group cursor-pointer hover:border-[#D5A33A]/45 hover:bg-[#D5A33A]/[0.07] transition-all"
-                data-testid="open-muchotourney-admin"
-              >
-                <span className="text-[#D5A33A] group-hover:text-white transition-colors">OPEN ADMIN TEST</span>
+              <button type="button" onClick={() => navigate("/tourney")} className="m8-play-cta w-full !bg-[#D5A33A] hover:!bg-[#E2B752] !text-[#11151B]" data-testid="open-muchotourney-admin">
+                <span className="inline-flex items-center gap-2"><Trophy size={17}/> OPEN TOURNEY</span><ArrowRight size={18}/>
               </button>
             ) : (
-              <div className="m8-play-tourney-soon">
-                <span>Coming Soon</span>
+              <div className="m8-play-cta w-full !bg-[#222018] !text-[#C8A967] border border-[#D5A33A]/25 cursor-not-allowed">
+                <span className="inline-flex items-center gap-2"><Clock3 size={17}/> COMING SOON</span><Trophy size={18}/>
               </div>
             )}
           </div>
