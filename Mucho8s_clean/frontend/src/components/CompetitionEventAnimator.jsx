@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useData } from "@/context/DataContext";
 import { tierOf } from "@/lib/elo";
-import { RankArtwork } from "@/components/shared";
+import { PlayerAvatar, RankArtwork } from "@/components/shared";
 
 const family = (elo) => String(tierOf(elo)?.id || "iron").split("-")[0];
 const rankOrder = ["iron", "bronze", "silver", "gold", "platinum", "diamond", "masters"];
@@ -104,7 +104,7 @@ const eventCopy = (event) => {
 };
 
 export default function CompetitionEventAnimator() {
-  const { discordPlayer, matches, competitionData, playerMap } = useData();
+  const { discordPlayer, matches, competitionData, playerMap, playerAvatars } = useData();
   const [queue, setQueue] = useState([]);
   const [active, setActive] = useState(null);
   const hydrated = useRef(false);
@@ -249,9 +249,19 @@ export default function CompetitionEventAnimator() {
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                 <motion.div initial={{scale:2.5,opacity:0}} animate={{scale:1,opacity:1}} transition={{delay:.4,duration:.45}} className="text-xs font-black tracking-[.5em] text-white/50">MATCH FOUND</motion.div>
                 <div className="mt-8 flex items-center gap-8 sm:gap-16">
-                  <motion.div initial={{x:-120,opacity:0}} animate={{x:0,opacity:1}} transition={{delay:.55}} className="text-3xl sm:text-5xl font-black text-white">{active.teamA || "TEAM ALPHA"}</motion.div>
+                  <motion.div initial={{x:-120,opacity:0}} animate={{x:0,opacity:1}} transition={{delay:.55}} className="flex max-w-[42vw] flex-wrap justify-center gap-2 sm:gap-3" aria-label="Team A Discord avatars">
+                    {(Array.isArray(active.teamAIds) && active.teamAIds.length ? active.teamAIds : [null]).map((id,index) => {
+                      const player = id != null ? playerMap?.[id] : null;
+                      return <div key={id ?? index} className="rounded-xl border border-white/20 bg-black/40 p-1 shadow-xl"><PlayerAvatar name={player?.name || "?"} elo={player?.currentElo} avatarUrl={id != null ? playerAvatars?.[id] : null} size={64} /></div>;
+                    })}
+                  </motion.div>
                   <motion.div animate={{scale:[.5,1.5,1],rotate:[-20,8,0]}} transition={{delay:.7,duration:.5}} className="text-5xl">⚔️</motion.div>
-                  <motion.div initial={{x:120,opacity:0}} animate={{x:0,opacity:1}} transition={{delay:.55}} className="text-3xl sm:text-5xl font-black text-white">{active.teamB || "TEAM BRAVO"}</motion.div>
+                  <motion.div initial={{x:120,opacity:0}} animate={{x:0,opacity:1}} transition={{delay:.55}} className="flex max-w-[42vw] flex-wrap justify-center gap-2 sm:gap-3" aria-label="Team B Discord avatars">
+                    {(Array.isArray(active.teamBIds) && active.teamBIds.length ? active.teamBIds : [null]).map((id,index) => {
+                      const player = id != null ? playerMap?.[id] : null;
+                      return <div key={id ?? index} className="rounded-xl border border-white/20 bg-black/40 p-1 shadow-xl"><PlayerAvatar name={player?.name || "?"} elo={player?.currentElo} avatarUrl={id != null ? playerAvatars?.[id] : null} size={64} /></div>;
+                    })}
+                  </motion.div>
                 </div>
                 <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:1}} className="mt-8 font-mono text-sm font-bold tracking-[.18em] text-white/45">{active.meta || "BO5 • BLACK OPS 7 • MONEY CHALL €5"}</motion.div>
               </div>
