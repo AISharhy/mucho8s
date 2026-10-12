@@ -27,9 +27,17 @@ Deno.serve(async (req:Request)=>{
   const {data:verified,error:authError}=await db.auth.getUser(token);
   if(authError||!verified.user)return fail(req,"Invalid session",401);
   const {data:account,error:accountError}=await db.from("player_accounts")
-    .select("id,player_id,player_request_status").eq("id",verified.user.id).maybeSingle();
+    .select("id,player_id,player_request_status,created_at").eq("id",verified.user.id).maybeSingle();
   if(accountError)throw accountError;
   if(!account?.player_id)return fail(req,"Linked player required",403);
+  // Accounts linked before the approval workflow launched remain eligible.
+  // New members must have explicit Circle approval; never trust client metadata.
+  const legacyCutoff=Date.parse("2026-09-28T18:00:00Z");
+  const joinedAt=Date.parse(String(account.created_at||""));
+  const isLegacyMember=account.player_request_status==null &&
+    Number.isFinite(joinedAt) && joinedAt<legacyCutoff;
+  if(account.player_request_status!=="approved"&&!isLegacyMember)
+    return fail(req,"Circle Mucho8s approval required",403);
   const {data:app,error:appError}=await db.from("app_state").select("players").eq("id","main").maybeSingle();
   if(appError)throw appError;
   if(!(Array.isArray(app?.players)&&app.players.some((p:any)=>String(p?.id)===account.player_id)))return fail(req,"Player not found",403);
