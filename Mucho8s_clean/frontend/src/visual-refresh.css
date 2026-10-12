@@ -1,0 +1,79 @@
+/* Mucho8s — premium esports visual refresh. Presentation only. */
+:root {
+  --m8-panel: #111824;
+  --m8-panel-soft: #0b121d;
+  --m8-panel-raised: #192232;
+  --m8-line: #2a3445;
+  --m8-line-strong: #40516a;
+  --m8-text-soft: #a5b2c4;
+}
+html { background-color: #080c14; }
+body {
+  background:
+    radial-gradient(ellipse 70rem 35rem at 94% -10%, rgba(58,115,235,.10), transparent 68%),
+    radial-gradient(ellipse 42rem 34rem at 3% 18%, rgba(255,42,59,.085), transparent 72%),
+    #080c14;
+}
+::selection { background: rgba(255,42,59,.38); color: #fff; }
+.page-shell { max-width: 1560px; }
+.m8-panel, .card-surface {
+  border-color: rgba(119,144,184,.20);
+  background: linear-gradient(155deg, rgba(29,39,55,.96), rgba(13,19,30,.97));
+  box-shadow: 0 16px 46px rgba(0,0,0,.23), inset 0 1px rgba(255,255,255,.035);
+}
+.m8-panel, .card-surface, .m8-stat-card, .m8-rank-spotlight, .interactive-row {
+  transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease, background-color .2s ease;
+}
+.card-surface:hover, .interactive-row:hover {
+  border-color: rgba(132,166,217,.40);
+  box-shadow: 0 21px 55px rgba(0,0,0,.33);
+}
+.m8-hero, .brand-card {
+  border-color: rgba(121,146,190,.30);
+  background:
+    radial-gradient(ellipse at 91% 9%, rgba(50,115,245,.15), transparent 54%),
+    linear-gradient(115deg, rgba(255,42,59,.10), transparent 40%),
+    linear-gradient(145deg,#1b2332,#0c111b 72%);
+  box-shadow: 0 30px 85px rgba(0,0,0,.29), inset 0 1px rgba(255,255,255,.07);
+}
+.m8-hero-rank {
+  border-color: color-mix(in srgb, var(--profile-rank-color, #477ee8) 32%, #263345);
+  background:
+    radial-gradient(ellipse at 90% 12%, color-mix(in srgb, var(--profile-rank-color, #477ee8) 17%, transparent), transparent 56%),
+    linear-gradient(145deg, #192333, #0d121c 75%);
+}
+.m8-stat-card {
+  background: linear-gradient(140deg,rgba(32,43,62,.95),rgba(13,20,31,.97));
+  border-color: rgba(117,142,184,.24);
+  box-shadow: inset 0 1px rgba(255,255,255,.04);
+}
+.m8-section-title, .font-display { letter-spacing: -.025em; }
+.m8-section-title { color: #f3f7ff; }
+.brand-kicker, .brand-section-title { color: #a9bad1; }
+.panel-muted, .m8-panel-quiet {
+  background: rgba(11,17,27,.88);
+  border-color: rgba(113,137,176,.20);
+}
+.m8-pill {
+  border-color: rgba(123,149,191,.30);
+  background: rgba(14,22,35,.82);
+  color: #c1cde0;
+}
+.m8-action-primary {
+  box-shadow: 0 11px 30px rgba(255,42,59,.22);
+}
+.m8-action-primary:hover { box-shadow: 0 14px 38px rgba(255,42,59,.33); }
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid #80a8ff;
+  outline-offset: 3px;
+}
+@media (hover:hover) and (prefers-reduced-motion:no-preference) {
+  .m8-stat-card:hover { transform: translateY(-2px); border-color: rgba(126,162,222,.43); }
+}
+@media (prefers-reduced-motion:reduce) {
+  .m8-panel,.card-surface,.m8-stat-card,.interactive-row { transition: none !important; }
+}
+@media (max-width:640px) {
+  .page-shell { width: 100%; }
+  .m8-hero, .brand-card { box-shadow: 0 18px 42px rgba(0,0,0,.2); }
+}

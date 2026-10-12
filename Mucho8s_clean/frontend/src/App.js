@@ -1,4 +1,5 @@
 import "@/App.css";
+import "@/visual-refresh.css";
 import React, { useEffect, useState } from "react";
 import { HashRouter, Routes, Route, Link, Navigate } from "react-router-dom";
 import { DataProvider } from "@/context/DataContext";
