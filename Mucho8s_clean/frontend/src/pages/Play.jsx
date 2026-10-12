@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { playUiSound } from "@/lib/uiAudio";
+import PlayDemos from "@/components/PlayDemos";
 
 const StepRow = ({ number, title, text, children }) => (
   <div className="m8-play-step">
@@ -110,6 +111,7 @@ export default function Play() {
     createChallenge,
   } = useData();
 
+  const [demoKind, setDemoKind] = useState(null);
   const [query, setQuery] = useState("");
   const [targetId, setTargetId] = useState("");
   const [amount, setAmount] = useState("5");
@@ -278,7 +280,8 @@ export default function Play() {
             </div>
           </div>
 
-          <div className="relative z-10 mt-auto pt-6">
+          <div className="relative z-10 mt-auto pt-6 space-y-2">
+            <button type="button" data-testid="simulate-mucho8s" onClick={()=>{setDemoKind("8s");void playUiSound("select","mucho8s")}} className="w-full rounded-xl border border-red-400/35 bg-red-500/10 py-2.5 text-xs font-black text-red-300 hover:bg-red-500/20">SIMULA 8S · 8 BOT</button>
             <button
               type="button"
               onClick={() => void openMucho8s()}
@@ -498,7 +501,8 @@ export default function Play() {
             </div>
           )}
 
-          <div className="relative z-10 mt-auto pt-4">
+          <div className="relative z-10 mt-auto pt-4 space-y-2">
+            <button type="button" data-testid="simulate-mucho1v1" onClick={()=>{setDemoKind("1v1");void playUiSound("select","mucho1v1")}} className="w-full rounded-xl border border-emerald-400/35 bg-emerald-500/10 py-2.5 text-xs font-black text-emerald-300 hover:bg-emerald-500/20">SIMULA 1V1 · DEMO</button>
             <Button
               onClick={sendQuickChallenge}
               disabled={Boolean(sending) || (Boolean(discordSession && discordPlayer) && !canSend)}
@@ -561,6 +565,7 @@ export default function Play() {
           </div>
         </div>
       </section>
+      {demoKind&&<PlayDemos kind={demoKind} onClose={()=>setDemoKind(null)}/>}
     </div>
   );
 }
