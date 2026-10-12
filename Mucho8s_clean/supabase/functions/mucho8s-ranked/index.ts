@@ -42,7 +42,7 @@ Deno.serve(async (req:Request)=>{
   for(const member of membership||[]){
     const {data:lobby,error}=await db.from("ranked_lobbies").select("*").eq("id",member.lobby_id).maybeSingle();
     if(error)throw error;
-    if(lobby&&["ready","live","disputed"].includes(lobby.status)){active=lobby;currentMember=member;break;}
+    if(lobby&&["ready","vote","live","disputed"].includes(lobby.status)){active=lobby;currentMember=member;break;}
   }
   if(active&&active.status==="ready"&&new Date(active.ready_deadline).getTime()<Date.now()){
     await db.from("ranked_lobbies").update({status:"cancelled"}).eq("id",active.id).eq("status","ready");
@@ -70,8 +70,14 @@ Deno.serve(async (req:Request)=>{
     const {data:members,error:membersError}=await db.from("ranked_lobby_players").select("ready").eq("lobby_id",active.id);
     if(membersError)throw membersError;
     if(members?.length===8&&members.every((m:any)=>m.ready===true)){
-      await db.from("ranked_lobbies").update({status:"live"}).eq("id",active.id).eq("status","ready");
+      await db.from("ranked_lobbies").update({status:"vote"}).eq("id",active.id).eq("status","ready");
     }
+  } else if(action==="vote-map"){
+    if(!active||active.status!=="vote")return fail(req,"Map voting is not active",409);
+    const selected=String(body.map||"");
+    if(!["Colossus","Den","Gridlock","Frequency","Scar","Hacienda"].includes(selected))return fail(req,"Invalid Hardpoint map",400);
+    const {error}=await db.rpc("ranked_cast_map_vote",{p_lobby_id:active.id,p_account_id:account.id,p_map:selected});
+    if(error)return fail(req,"Unable to submit map vote",409);
   } else if(action==="set-lobby-code"){
     if(!active||active.status!=="live")return fail(req,"The match must be live before setting the lobby code",409);
     const code=String(body.code||"").trim().toUpperCase();
@@ -108,17 +114,21 @@ Deno.serve(async (req:Request)=>{
   for(const entry of activeMembers||[]){
     const {data:row,error}=await db.from("ranked_lobbies").select("*").eq("id",entry.lobby_id).maybeSingle();
     if(error)throw error;
-    if(row&&["ready","live","disputed"].includes(row.status)){
+    if(row&&["ready","vote","live","disputed"].includes(row.status)){
       lobby=row;member=entry;break;
     }
   }
+  let mapVotes:any[]=[];
   if(lobby){
+    const {data:voteRows,error:voteError}=await db.from("ranked_map_votes").select("account_id,map_name").eq("lobby_id",lobby.id);
+    if(voteError)throw voteError;
+    mapVotes=voteRows||[];
     const {data:rows,error}=await db.from("ranked_lobby_players").select("player_id,ready,report").eq("lobby_id",lobby.id);
     if(error)throw error;
     players=rows||[];
   }
   const {data:finalQueue}=await db.from("ranked_queue").select("mode,joined_at").eq("account_id",account.id).maybeSingle();
   const {count}=await db.from("ranked_queue").select("*",{head:true,count:"exact"}).eq("mode",finalQueue?.mode||lobby?.mode||"hp");
-  return json(req,{ok:true,queue:finalQueue,lobby,member,players,queuedPlayers:count||0,playerId:account.player_id});
+  return json(req,{ok:true,queue:finalQueue,lobby,member,players,mapVotes:mapVotes.map(v=>({map_name:v.map_name})),voted:mapVotes.some(v=>v.account_id===account.id),queuedPlayers:count||0,playerId:account.player_id});
  }catch(error){console.error("ranked",error);return fail(req,"Ranked service unavailable",500);}
 });
