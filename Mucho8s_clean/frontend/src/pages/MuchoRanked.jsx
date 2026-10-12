@@ -30,7 +30,7 @@ export default function MuchoRanked(){
    !discordPlayer?<p className="mt-6 text-amber-300">Your Discord account must be linked to an approved player profile.</p>:
    lobby?<div className="mt-5">
       <div className="text-blue-300 font-bold text-lg">{lobby.status==="ready"?"MATCH FOUND · READY CHECK":lobby.status==="live"?"MATCH LIVE":"RESULT DISPUTED"}</div>
-      <p className="text-xs text-muted-foreground mt-1">Hardpoint BO1 · {lobby.status==="ready"?"Confirm before the 90-second deadline":"Submit a result after the match"}</p>
+      <p className="text-xs text-muted-foreground mt-1">Hardpoint BO1 · {lobby.map_name ? `${lobby.map_name} · ` : ""}{lobby.status==="ready"?"Confirm before the 90-second deadline":"Submit a result after the match"}</p>
       {lobby.status!=="ready"&&<div className="mt-5 rounded-2xl border border-blue-400/40 bg-gradient-to-b from-blue-600/20 to-[#0b1426] px-5 py-7 text-center" data-testid="ranked-lobby-code">
         <div className="text-xs font-black tracking-[0.24em] uppercase text-blue-300">Lobby code · Join the captain</div>
         {lobby.lobby_code?<div className="mt-4 text-3xl sm:text-5xl font-black font-mono tracking-[0.15em] break-all select-all text-white" data-testid="ranked-lobby-code-value">{lobby.lobby_code}</div>:<div className="mt-4 text-lg text-white/70">Waiting for captain to enter the lobby code</div>}
