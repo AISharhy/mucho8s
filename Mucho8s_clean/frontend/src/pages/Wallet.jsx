@@ -103,7 +103,7 @@ export default function Wallet() {
 
   return <div className="space-y-6 max-w-6xl mx-auto" data-testid="wallet-page">
     <header className="flex flex-wrap items-start justify-between gap-4">
-      <div><div className="brand-kicker text-emerald-400 mb-2">MUCHO WALLET</div><h1 className="font-display text-3xl sm:text-4xl font-black tracking-tight flex items-center gap-3"><WalletCards className="text-emerald-400"/>Il tuo wallet</h1><p className="text-sm text-muted-foreground mt-2">Saldo, richieste e movimenti in un unico posto.</p></div>
+      <div><div className="brand-kicker text-emerald-400 mb-2">MUCHO WALLET</div><h1 className="font-display text-3xl sm:text-4xl font-black tracking-tight flex items-center gap-3"><WalletCards className="text-emerald-400"/>Il tuo wallet <span className="inline-block rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-1 text-[10px] tracking-widest text-amber-300">DEMO</span></h1><p className="text-sm text-muted-foreground mt-2">Ambiente di prova con saldo virtuale. Nessun deposito, prelievo o trasferimento di denaro reale.</p></div>
       <span className="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-amber-400/25 bg-amber-400/10 text-amber-200 text-xs font-bold"><FlaskConical size={15}/>MODALITÀ PROVA</span>
     </header>
     <div className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] p-4 text-sm text-amber-100 flex gap-3"><FlaskConical size={20} className="shrink-0 mt-0.5"/><p><strong>Il saldo è virtuale.</strong> PayPal e Revolut sono metodi di prova: ricariche e prelievi simulano il flusso con conferma admin. Non inviare denaro. Le chall continuano a usare il loro pagamento attuale.</p></div>
