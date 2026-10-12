@@ -1,5 +1,3 @@
-import { MIN_ELO, WIN_DELTA, LOSS_DELTA, MVP_BONUS } from "./elo";
-
 /**
  * Ranked and Mucho8s have ONE rating, ONE rank and ONE leaderboard.
  * Money is never considered in Ranked Elo or match results.
@@ -20,10 +18,8 @@ export function makeRankedMatch({ id, mode, teamA, teamB, winner, date = new Dat
   };
 }
 
-/** Matches the base +25/-15 and every-third-win MVP bonus of existing 8s. */
-export function rankedResultForPlayer({ elo, won, nextWinStreak = 0 }) {
-  if (!Number.isFinite(Number(elo))) throw new Error("Invalid Elo");
-  const mvp = won && nextWinStreak >= 3 && nextWinStreak % 3 === 0;
-  const delta = won ? WIN_DELTA + (mvp ? MVP_BONUS : 0) : -LOSS_DELTA;
-  return { delta, elo: Math.max(MIN_ELO, Math.round(Number(elo)) + delta), mvp };
-}
+/**
+ * Ranked matches must be committed through the existing Mucho8s match-result
+ * pipeline (applyEffects/recomputeAwardState), never a separate Elo ledger.
+ * This keeps all existing dynamic Elo, MVP, streak and rank rules identical.
+ */
