@@ -3,7 +3,6 @@ import {Link,useLocation,useNavigate} from 'react-router-dom';
 import {ShieldCheck,Trophy} from 'lucide-react';
 import {useData} from '@/context/DataContext';
 import {rankedRequest} from '@/lib/rankedApi';
-import {rankedModeLabel} from '@/lib/rankedFlow';
 import {toast} from 'sonner';
 import {playUiSound} from '@/lib/uiAudio';
 import RankedDemo from '@/components/RankedDemo';
