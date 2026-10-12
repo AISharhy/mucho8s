@@ -4,6 +4,8 @@ import {MemoryRouter} from 'react-router-dom';
 import PlayDemos from './PlayDemos';
 import RankedDemo from './RankedDemo';
 import TourneyDemo from './TourneyDemo';
+import MatchRoom from '@/pages/MatchRoom';
+import {SimulationDataProvider} from '@/context/DataContext';
 jest.mock('@/lib/uiAudio',()=>({playUiSound:jest.fn(),isUiSoundEnabled:()=>false,setUiSoundEnabled:jest.fn()}));
 jest.mock('@/lib/tourneyLive',()=>({fetchTourney:jest.fn(()=>{throw Error('Simulation must not fetch real tournament')}),subscribeTourney:jest.fn(()=>{throw Error('Simulation must not subscribe to real tournament')}),saveTourney:jest.fn(()=>{throw Error('Simulation must not save real tournament')}),requestTourneyEntryPayment:jest.fn(()=>{throw Error('Real payment called')}),requestTourneyPayment:jest.fn(()=>{throw Error('Real payment called')})}));
 jest.mock('@/components/MapPreviewCard',()=>function Preview({mapName}){return <span>{mapName}</span>});
@@ -55,4 +57,11 @@ test.each([2,3,4])('manual builder enforces complete teams of %s players and sup
  expect(container.textContent).toContain('Lobby condivisa');
  expect(container.textContent).toContain(`${size}v${size}`);
  expect(global.fetch).not.toHaveBeenCalled();
+});
+
+test('an admin playing in a shared room can confirm their own readiness',async()=>{
+ const ids=['one','two','three','four'],players=ids.map(id=>({id,name:id,currentElo:1000}));
+ const value={players,playerMap:Object.fromEntries(players.map(p=>[p.id,p])),playerAvatars:{},matches:[],challenges:[],liveMatches:[{id:'room',match_id:'match',team_a:ids.slice(0,2),team_b:ids.slice(2),maps:['Den','Raid','Scar'],game:'BO7',mode:'Search & Destroy',captain_player_id:'one',created_at:new Date().toISOString(),lobby_code:'PLAYER_CODE',ready_player_ids:[]}],matchReports:[],discordPlayer:players[0],isAdmin:true,setLiveRoomCode:async()=>true,setLiveRoomReady:async()=>true,requestCancelLiveMatch:async()=>true,cancelLiveMatch:async()=>true,listLiveMatchMessages:async()=>[],sendLiveMatchMessage:async()=>null};
+ await render(<SimulationDataProvider value={value}><MatchRoom matchId="room"/></SimulationDataProvider>);
+ const ready=[...container.querySelectorAll('button')].find(b=>b.textContent==='Sono pronto');expect(ready).toBeTruthy();expect(ready.disabled).toBe(false);
 });
