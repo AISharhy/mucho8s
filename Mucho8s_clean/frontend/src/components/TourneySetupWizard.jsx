@@ -390,7 +390,7 @@ export default function TourneySetupWizard({
                             TOURNAMENT ENTRY
                           </div>
                           <div className="text-[10px] text-muted-foreground mt-1">
-                            Classic MuchoTourney uses the players assigned to team rosters. Once published, each roster player confirms the entry and pays before the bracket can start.
+                            Choose rosters yourself, or publish open registration and assign registered players to teams.
                           </div>
                         </div>
 
@@ -418,12 +418,28 @@ export default function TourneySetupWizard({
                             onClick={() =>
                               onPatchSwitcheroo({
                                 freeEntry: true,
-                                registrationMode: "manual",
+                                
                               })
                             }
                           />
                         </div>
 
+                        <div className="grid md:grid-cols-2 gap-3">
+                          <ChoiceCard active={(tournament.switcheroo?.registrationMode || "manual") === "manual"}
+                            title="Invite / select players" subtitle="Choose team rosters before publishing."
+                            icon={LockKeyhole} onClick={() => onPatchSwitcheroo({ registrationMode: "manual" })} />
+                          <ChoiceCard active={tournament.switcheroo?.registrationMode === "open"}
+                            title="Open registration" subtitle="Publish and let players join themselves."
+                            icon={Globe2} onClick={() => onPatchSwitcheroo({ registrationMode: "open" })} />
+                        </div>
+                        {tournament.switcheroo?.registrationMode === "open" && (
+                          <div>
+                            <div className="text-[9px] tracking-[.14em] text-[#697181] font-black mb-2">TOURNAMENT CAPACITY</div>
+                            <Segmented value={tournament.switcheroo?.maxTeams || 4} options={[2, 4, 8]}
+                              formatLabel={(maxTeams) => `${maxTeams} TEAMS`}
+                              onChange={(maxTeams) => onPatchSwitcheroo({ maxTeams: Number(maxTeams) })} />
+                          </div>
+                        )}
                         <div className="grid sm:grid-cols-2 gap-3">
                           <label>
                             <span className="text-[9px] tracking-[.14em] text-[#697181] font-black">
@@ -445,7 +461,7 @@ export default function TourneySetupWizard({
                                       0,
                                       Number(event.target.value) || 0
                                     ),
-                                    registrationMode: "manual",
+                                    
                                   })
                                 }
                                 className="w-full h-12 rounded-xl bg-[#111720] border border-[#D5A33A]/25 pl-9 pr-3 text-sm font-black disabled:opacity-35"
@@ -473,7 +489,7 @@ export default function TourneySetupWizard({
                             onChange={(event) =>
                               onPatchSwitcheroo({
                                 paypalUrl: event.target.value,
-                                registrationMode: "manual",
+                                
                               })
                             }
                             placeholder="https://paypal.me/tuonome"
