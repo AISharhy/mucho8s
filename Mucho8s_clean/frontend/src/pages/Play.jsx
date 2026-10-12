@@ -266,8 +266,8 @@ export default function Play() {
 
               <StepRow
                 number="2"
-                title="Choose team method"
-                text="Auto Balance, Captain Draft or Manual. Build the matchup your way."
+                title="Build manual teams"
+                text="Assign players directly to Alpha and Bravo."
               />
 
               <StepRow
@@ -532,7 +532,7 @@ export default function Play() {
             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Competitive 4v4 · No money</div>
             <h2 className="font-display font-black text-2xl sm:text-3xl mt-2">Mucho Ranked</h2>
             <p className="text-sm text-[#9BA9BE] mt-2">Entra in coda, trova altri sette giocatori e gioca con il Captain Draft. Elo e leaderboard condivisi con Mucho8s, senza puntate.</p>
-            <div className="flex flex-wrap gap-2 mt-4"><span className="m8-pill">4v4 Ranked</span><span className="m8-pill">Captain Draft</span><span className="m8-pill">Shared Elo</span></div>
+            <div className="flex flex-wrap gap-2 mt-4"><span className="m8-pill">4v4 Ranked</span><span className="m8-pill">BO1 Hardpoint</span><span className="m8-pill">Shared Elo</span></div>
           </div>
           <button type="button" onClick={()=>navigate("/ranked")} className="shrink-0 min-w-[185px] h-12 px-5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-black flex items-center justify-center gap-3" data-testid="open-mucho-ranked">
             <ShieldCheck size={18}/> PLAY RANKED <ArrowRight size={17}/>
