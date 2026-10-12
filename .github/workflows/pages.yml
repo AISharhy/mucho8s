@@ -42,14 +42,18 @@ jobs:
         env:
           CI: true
 
-      - name: Prepara animazione Rive rank-up
+      - name: Prepara animazione Rive rank-up (opzionale)
         run: |
           mkdir -p public/animations
-          curl --fail --location --retry 3 --retry-delay 2 \
+          file="public/animations/game-badge-upgrade.riv"
+          if curl --fail --location --retry 2 --retry-delay 2 --connect-timeout 8 --max-time 35 \
             "https://public.rive.app/community/runtime-files/11488-21971-game-badge-upgrade-animation.riv" \
-            --output public/animations/game-badge-upgrade.riv
-          test "$(head -c 4 public/animations/game-badge-upgrade.riv)" = "RIVE"
-          ls -lh public/animations/game-badge-upgrade.riv
+            --output "$file" && [ "$(head -c 4 "$file")" = "RIVE" ]; then
+            echo "Animazione Rive caricata"
+          else
+            rm -f "$file"
+            echo "::warning::Animazione Rive non disponibile. Proseguo con la grafica di fallback."
+          fi
 
       - name: Compila sito
         run: npm run build
