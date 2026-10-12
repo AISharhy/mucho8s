@@ -33,9 +33,9 @@ const formatClock = (milliseconds) => {
   return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
 };
 
-export default function TourneyLive() {
+export default function TourneyLive({ simulation = null }) {
   const { discordSession, discordPlayer, isAdmin } = useData();
-  const [t, setT] = useState(read);
+  const [t, setT] = useState(() => simulation?.tournament || read());
   const [now, setNow] = useState(Date.now());
   const [busy, setBusy] = useState(false);
   const [entryBusy, setEntryBusy] = useState(false);
@@ -44,6 +44,7 @@ export default function TourneyLive() {
   const [joinConfirmOpen, setJoinConfirmOpen] = useState(false);
 
   useEffect(() => {
+    if (simulation) { setT(simulation.tournament); return undefined; }
     let alive = true;
     fetchTourney().then((remote) => {
       if (alive && remote) setT(remote);
@@ -55,7 +56,7 @@ export default function TourneyLive() {
       alive = false;
       off();
     };
-  }, []);
+  }, [simulation]);
 
   useEffect(() => {
     if (t?.status !== "review") return undefined;
@@ -149,11 +150,11 @@ export default function TourneyLive() {
     reviewRemaining > 0;
 
   useEffect(() => {
-    if (t?.status !== "review" || reviewRemaining > 0) return;
+    if (simulation || t?.status !== "review" || reviewRemaining > 0) return;
     fetchTourney().then((remote) => {
       if (remote) setT(remote);
     });
-  }, [reviewRemaining, t?.status]);
+  }, [reviewRemaining, t?.status, simulation]);
 
   const payEntry = async () => {
     if (entryBusy) return;
@@ -172,9 +173,9 @@ export default function TourneyLive() {
 
     setEntryBusy(true);
     try {
-      const data = await requestTourneyEntryPayment(discordSession.access_token);
+      const data = simulation ? await simulation.enter?.(t) : await requestTourneyEntryPayment(discordSession.access_token);
       if (data?.tourney) setT(data.tourney);
-      if (data?.paymentUrl) {
+      if (!simulation && data?.paymentUrl) {
         window.open(data.paymentUrl, "_blank", "noopener,noreferrer");
       }
       toast.success(
@@ -201,10 +202,10 @@ export default function TourneyLive() {
 
     setBusy(true);
     try {
-      const data = await requestTourneyPayment(amount, discordSession.access_token);
+      const data = simulation ? await simulation.contribute?.(t, amount) : await requestTourneyPayment(amount, discordSession.access_token);
       if (data?.tourney) setT(data.tourney);
 
-      if (data?.paymentUrl) {
+      if (!simulation && data?.paymentUrl) {
         window.open(data.paymentUrl, "_blank", "noopener,noreferrer");
       }
 

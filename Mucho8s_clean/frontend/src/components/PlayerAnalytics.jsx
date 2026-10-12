@@ -1,0 +1,27 @@
+import React,{useMemo,useState} from 'react';
+import {ResponsiveContainer,LineChart,Line,XAxis,YAxis,Tooltip} from "recharts";
+import {Link} from 'react-router-dom';
+import {confirmedPlayerMatches,playerAnalytics,isConfirmedMatch} from '@/lib/playerAnalytics';
+import PlayerMapStats from '@/components/PlayerMapStats';
+export default function PlayerAnalytics({playerId,matches,players,playerMap}){
+ const [season,setSeason]=useState('all'),[game,setGame]=useState('all'),[comparison,setComparison]=useState('');
+ const confirmed=useMemo(()=>(matches||[]).filter(isConfirmedMatch),[matches]);
+ const filtered=useMemo(()=>confirmedPlayerMatches(confirmed,playerId,{season,game}),[confirmed,playerId,season,game]);
+ const stats=useMemo(()=>playerAnalytics(filtered,playerId),[filtered,playerId]);
+ const opponent=useMemo(()=>comparison?playerAnalytics(confirmedPlayerMatches(confirmed,comparison,{season,game}),comparison):null,[confirmed,comparison,season,game]);
+ const eloPoints=[...filtered].reverse().filter(m=>Number.isFinite(Number(m.eloAfter?.[playerId]))).map(m=>({date:new Date(m.date).toLocaleDateString('it-IT'),elo:Number(m.eloAfter[playerId])}));
+ const seasons=[...new Set(confirmed.map(m=>m.season ?? m.seasonNumber).filter(v=>v!==undefined&&v!==null))].sort((a,b)=>b-a);
+ const games=[...new Set(confirmed.map(m=>m.game).filter(Boolean))];
+ const select='rounded-lg border border-white/15 bg-[#10151D] px-3 py-2 text-sm';
+ return <section className="m8-profile-compact-panel space-y-4" style={{gridColumn:'1 / -1'}} data-testid="player-analytics-v2">
+  <div className="flex flex-wrap justify-between gap-3"><div><div className="brand-kicker text-magma">PLAYER ANALYTICS 2.0</div><h3 className="font-black text-xl">Risultati confermati</h3></div><div className="flex flex-wrap gap-2"><select aria-label="Stagione analytics" className={select} value={season} onChange={e=>setSeason(e.target.value)}><option value="all">Tutte le stagioni</option>{seasons.map(v=><option key={v} value={v}>Season {v}</option>)}</select><select aria-label="Gioco analytics" className={select} value={game} onChange={e=>setGame(e.target.value)}><option value="all">Tutti i giochi</option>{games.map(v=><option key={v}>{v}</option>)}</select></div></div>
+  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">{[['Win rate',stats.played?`${stats.winRate}%`:'—'],['Match',stats.played],['MVP registrati',stats.mvp],['Streak',stats.streak>0?`${stats.streak}W`:`${Math.abs(stats.streak)}L`]].map(([label,value])=><div key={label} className="rounded-xl border border-white/10 p-3"><div className="text-xs text-slate-400">{label}</div><strong className="text-xl">{value}</strong></div>)}</div>
+  <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="text-left text-slate-400"><th>Modalità</th><th>Match</th><th>Vittorie</th><th>Win rate</th></tr></thead><tbody>{stats.modes.map(m=><tr key={m.mode} className="border-t border-white/10"><td className="py-2">{m.mode}</td><td>{m.played}</td><td>{m.wins}</td><td>{Math.round(m.wins/m.played*100)}%</td></tr>)}</tbody></table></div>
+  {eloPoints.length>0&&<div><h4 className="font-bold">Elo registrato · filtri selezionati</h4><p className="text-xs text-slate-400 mt-1">Snapshot alla conferma del risultato team, prima di eventuali extra Money Chall.</p><div className="h-52 mt-3"><ResponsiveContainer width="100%" height="100%"><LineChart data={eloPoints}><XAxis dataKey="date"/><YAxis domain={["auto","auto"]}/><Tooltip/><Line type="monotone" dataKey="elo" stroke="#FF2A3B" dot={false}/></LineChart></ResponsiveContainer></div></div>}
+  <PlayerMapStats matches={filtered} playerId={playerId}/>
+  <div className="flex flex-wrap items-center gap-3"><h4 className="font-bold">Confronta giocatori</h4><select className={select} aria-label="Confronta giocatore" value={comparison} onChange={e=>setComparison(e.target.value)}><option value="">Scegli un giocatore</option>{players.filter(p=>String(p.id)!==String(playerId)).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+  {opponent&&<div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="text-left"><th>Statistica</th><th>{playerMap[playerId]?.name}</th><th>{playerMap[comparison]?.name}</th></tr></thead><tbody>{[['Match','played'],['Vittorie','wins'],['Sconfitte','losses'],['Win rate %','winRate'],['MVP','mvp'],['Serie vittorie massima','bestWinStreak'],['Serie sconfitte massima','bestLossStreak']].map(([label,key])=><tr className="border-t border-white/10" key={key}><td className="py-2">{label}</td><td>{stats[key]}</td><td>{opponent[key]}</td></tr>)}</tbody></table></div>}
+  <div><h4 className="font-bold mb-2">Ultimi 10 match</h4>{stats.last10.map(m=><Link key={m.id} to={`/matches?match=${m.id}`} className="flex justify-between gap-2 py-2 border-t border-white/10 text-xs"><span>{new Date(m.date).toLocaleDateString('it-IT')} · {m.game} · {m.mode}</span><span className={m.won?'text-emerald-300':'text-red-300'}>{m.won?'WIN':'LOSS'}</span></Link>)}{!stats.played&&<p className="text-sm text-slate-400">Nessun risultato confermato con questi filtri.</p>}</div>
+  <div><h4 className="font-bold mb-2">Rivalità · filtri selezionati</h4>{stats.rivals.slice(0,5).map(r=><Link className="flex justify-between text-xs py-2 border-t border-white/10" to={`/players/${r.id}`} key={r.id}><span>{playerMap[r.id]?.name||r.id}</span><span>{r.wins}W · {r.played-r.wins}L · {r.played} incontri</span></Link>)}</div>
+ </section>;
+}

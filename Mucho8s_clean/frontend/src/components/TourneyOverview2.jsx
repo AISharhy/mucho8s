@@ -1,4 +1,6 @@
 import React, { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { useData } from "@/context/DataContext";
 import { CalendarDays, Trophy, UsersRound, GitBranch, Radio, History, ShieldCheck, Swords } from "lucide-react";
 
 const panel = "rounded-2xl border border-[#D5A33A]/20 bg-[#11161E] p-4 sm:p-5";
@@ -8,6 +10,8 @@ const rosterPlayers = team => Array.isArray(team?.roster) ? team.roster : [];
 /** Read-only tournament dashboard: official operations continue through existing authenticated endpoints. */
 export default function TourneyOverview2({ tournament, onTeamOpen, admin = false }) {
   const [tab, setTab] = useState("overview");
+  const [opening,setOpening]=useState("");
+  const {openTournamentRoom,isSimulation}=useData();
   const rounds = Array.isArray(tournament?.bracket) ? tournament.bracket : [];
   const teams = Array.isArray(tournament?.teams) ? tournament.teams : [];
   const matches = rounds.flatMap((round, roundIndex) =>
@@ -61,10 +65,10 @@ export default function TourneyOverview2({ tournament, onTeamOpen, admin = false
     </div>}
     {tab==="live"&&<div className={panel}>
       <h2 className="font-display text-xl font-black">Tournament Match Rooms</h2>
-      <p className="text-xs text-muted-foreground mt-1">Scheduled fixtures. Ready Check and Map Veto will only become actionable after server-side match authorization is enabled.</p>
+      <p className="text-xs text-muted-foreground mt-1">Ready Check, codice lobby, chat e report nella Match Room condivisa. Le squadre avanzano dopo la conferma definitiva.</p>
       <div className="space-y-2 mt-4">{active.map(m=><div key={m.id||`${m.roundIndex}-${m.matchIndex}`} className="rounded-xl border border-[#343B48] p-4 flex flex-wrap items-center justify-between gap-3">
         <div><div className="text-[10px] text-[#D5A33A]">ROUND {m.roundIndex+1} · MATCH {m.matchIndex+1}</div><div className="font-bold mt-1">{m.a?.name} <span className="text-muted-foreground">VS</span> {m.b?.name}</div></div>
-        <span className="text-xs border border-[#D5A33A]/30 rounded-lg px-3 py-2 text-[#F4CE70]">Awaiting match</span>
+        {m.liveMatchId?<Link to={`/matches/live/${m.liveMatchId}`} className="text-xs border border-[#D5A33A]/30 rounded-lg px-3 py-2 text-[#F4CE70]">Apri Match Room →</Link>:admin&&!isSimulation?<button disabled={Boolean(opening)} onClick={async()=>{setOpening(m.id);try{const room=await openTournamentRoom(m.id);if(room)window.location.hash=`/matches/live/${room.id}`;}finally{setOpening("");}}} className="text-xs border border-[#D5A33A]/30 rounded-lg px-3 py-2 text-[#F4CE70]">{opening===m.id?'Apertura…':'Apri Match Room'}</button>:<span className="text-xs text-slate-400">In attesa dell’admin</span>}
       </div>)}{!active.length&&<p className="text-sm text-muted-foreground">No pending match rooms yet.</p>}</div>
     </div>}
     {tab==="history"&&<div className={panel}>

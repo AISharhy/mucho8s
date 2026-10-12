@@ -736,7 +736,7 @@ const canReviewReport = (report: any, playerId: string) => {
   return Boolean(report.reporter_is_admin && [...teamA, ...teamB].includes(playerId));
 };
 
-const finalizeReport = async (supabase: any, report: any, verifierAccountId: string | null, verifierPlayerId: string | null) => {
+const finalizeReport = async (supabase: any, report: any, verifierAccountId: string | null, verifierPlayerId: string | null, claimToken: string, attempt = 0) => {
   if (report.status === "completed") return report;
 
   const { data: state, error: stateError } = await supabase
@@ -755,7 +755,7 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
 
   const { data: liveTiming, error: liveTimingError } = await supabase
     .from("live_team_matches")
-    .select("created_at,closed_at")
+    .select("created_at,closed_at,club_a_id,club_b_id,tourney_fixture_id,tourney_key,tourney_name,tourney_final")
     .eq("match_id", report.match_id)
     .maybeSingle();
 
@@ -792,6 +792,7 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
     const missing = [...teamA, ...teamB].filter((id) => !byId[id]);
     if (missing.length) throw new Error("One or more players in this report no longer exist");
 
+    const eloBefore = Object.fromEntries([...teamA,...teamB].map(id=>[id,Number(byId[id].currentElo)]));
     const winners = report.winner === "A" ? teamA : teamB;
     const losers = report.winner === "A" ? teamB : teamA;
     const mvpBountyStoppedIds = losers.filter((id) => {
@@ -816,7 +817,18 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       mvpBountyBonus,
     );
 
+    const { data: rankedLobby } = await supabase.from("ranked_lobbies").select("id").eq("report_id", report.id).maybeSingle();
     const match = {
+      tourneyFixtureId: liveTiming?.tourney_fixture_id || null,
+      tourneyKey: liveTiming?.tourney_key || null,
+      tournamentName: liveTiming?.tourney_name || null,
+      tourneyFinal: Boolean(liveTiming?.tourney_final),
+      clubAId: liveTiming?.club_a_id || null,
+      clubBId: liveTiming?.club_b_id || null,
+      ranked: Boolean(rankedLobby),
+      source: liveTiming?.tourney_fixture_id ? "mucho-tourney" : rankedLobby ? "mucho-ranked" : "mucho8s",
+      format: `${teamA.length}v${teamB.length}`,
+      bestOf: Math.max(1, Array.isArray(report.maps) ? report.maps.length : 1),
       id: report.match_id,
       date: report.played_at || report.created_at || verifiedAt,
       durationMinutes: liveDurationMinutes,
@@ -847,6 +859,8 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       pairings: Array.isArray(report.pairings) ? report.pairings : [],
       season: Math.max(0, Number(report.season_number ?? 1)),
       eloChanges,
+      eloBefore,
+      eloAfter: {},
       resultStatus: "locked",
       locked: true,
       verifiedAt,
@@ -862,6 +876,7 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
     const finalizedMatch = nextMatches.find(
       (item: any) => String(item?.id) === String(report.match_id)
     );
+    if (finalizedMatch) finalizedMatch.eloAfter = Object.fromEntries([...teamA,...teamB].map(id=>[id,Number(byId[id].currentElo)]));
     awardedMvpIds = Array.isArray(finalizedMatch?.mvpIds)
       ? finalizedMatch.mvpIds.map(String)
       : (finalizedMatch?.mvpId ? [String(finalizedMatch.mvpId)] : []);
@@ -869,17 +884,15 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       ? finalizedMatch.merdaIds.map(String)
       : (finalizedMatch?.merdaId ? [String(finalizedMatch.merdaId)] : []);
 
-    const { error: updateError } = await supabase
-      .from("app_state")
-      .update({
-        players: Object.values(byId),
-        matches: nextMatches,
-        version: Date.now(),
-        updated_at: verifiedAt,
-      })
-      .eq("id", "main");
-
+    const { data: savedState, error: updateError } = await supabase.rpc("commit_match_state", {
+      p_report_id: report.id, p_token: claimToken, p_version: state.version,
+      p_players: Object.values(byId), p_matches: nextMatches,
+    });
     if (updateError) throw updateError;
+    if (!savedState) {
+      if (attempt >= 4) throw new Error("Concurrent result update; please retry confirmation");
+      return finalizeReport(supabase, report, verifierAccountId, verifierPlayerId, claimToken, attempt + 1);
+    }
 
   }
 
@@ -908,10 +921,17 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
       dispute_note: null,
     })
     .eq("id", report.id)
+    .eq("finalize_token", claimToken)
     .select("*")
     .single();
 
   if (completeError) throw completeError;
+
+  // A report closes the shared room only after final verification.
+  const { error: closeError } = await supabase.from("live_team_matches")
+    .update({ status: "closed", closed_at: verifiedAt })
+    .eq("match_id", report.match_id).eq("status", "live");
+  if (closeError) throw closeError;
 
   await supabase.from("admin_audit_log").insert({
     action: "match.result_locked",
@@ -927,6 +947,15 @@ const finalizeReport = async (supabase: any, report: any, verifierAccountId: str
   });
 
   return completed;
+};
+
+const verifyReport = async (supabase: any, report: any, verifierAccountId: string | null, verifierPlayerId: string | null, allowDisputed: boolean) => {
+  const { data: claim, error } = await supabase.rpc("claim_match_report", {p_id:report.id,p_allow_disputed:allowDisputed});
+  if (error || !claim) throw error || new Error("Unable to claim report");
+  try { return await finalizeReport(supabase, report, verifierAccountId, verifierPlayerId, claim); }
+  finally {
+    await supabase.from("team_match_reports").update({finalize_token:null,finalize_started_at:null}).eq("id",report.id).eq("finalize_token",claim);
+  }
 };
 
 Deno.serve(async (req: Request) => {
@@ -948,13 +977,38 @@ Deno.serve(async (req: Request) => {
     if (action === "list-live") {
       const { data, error } = await supabase
         .from("live_team_matches")
-        .select("id,match_id,team_a,team_b,game,mode,format,maps,captain_player_id,status,created_at,cancel_requested_at,cancel_requested_by_player_id,pairings")
+        .select("id,match_id,team_a,team_b,game,mode,format,maps,captain_player_id,status,created_at,cancel_requested_at,cancel_requested_by_player_id,pairings,lobby_code,ready_player_ids,tourney_fixture_id,tourney_key,tourney_name,tourney_final")
         .eq("status", "live")
         .order("created_at", { ascending: false })
         .limit(12);
 
       if (error) throw error;
       return json({ ok: true, liveMatches: data || [] });
+    }
+
+    if (action === "tourney-room") {
+      if (!isAdmin) return json({error:"Only Admin can open tournament rooms"},403);
+      const {data:tr,error:trError}=await supabase.from("tourney_state").select("state,updated_at").eq("id","current").single();
+      if (trError) throw trError;
+      const t=tr.state, fixture=(t.bracket||[]).flat().find((m:any)=>m.id===body.fixtureId);
+      if (!fixture?.a || !fixture?.b || fixture.winner) return json({error:"Fixture unavailable"},409);
+      const final=(t.bracket[t.bracket.length-1]||[]).some((m:any)=>m.id===fixture.id);
+      const bo=Number(final?t.finalBestOf:t.bestOf)||3;
+      let maps:string[]=[];
+      if (t.mode==="CDL Mix") {
+        const first=t.startMode==="Search & Destroy"?"Search & Destroy":"Hardpoint";
+        for(let i=0;i<bo;i++){
+          const mode=i%2?(first==="Hardpoint"?"Search & Destroy":"Hardpoint"):first;
+          const pool=competitiveMapPool(t.game,mode,t.format);
+          const fresh=pool.filter((m:string)=>!maps.includes(m));
+          const draw=fresh.length?fresh:pool;
+          if (!draw.length) return json({error:"No maps for tournament mode"},409);
+          maps.push(draw[Math.floor(secureRandom()*draw.length)]);
+        }
+      } else { maps=drawSeriesMaps(t.game,t.mode,t.format,bo); }
+      const {data,error}=await supabase.rpc("tourney_open_room",{p_fixture_id:fixture.id,p_maps:maps,p_account_id:user?.id||null,p_updated_at:tr.updated_at});
+      if (error) return json({error:error.message},409);
+      return json(data);
     }
 
     if (action === "create-live") {
@@ -1244,6 +1298,16 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, message: data });
     }
 
+    if (action === "set-room-code" || action === "set-room-ready") {
+      if (!account?.player_id) return json({ error: "Linked player required" }, 403);
+      const { data, error } = await supabase.rpc("live_room_action", {
+        p_id: String(body.id || ""), p_player_id: String(account.player_id),
+        p_action: action, p_code: String(body.code || ""),
+      });
+      if (error) return json({ error: error.message }, 409);
+      return json({ ok: true, liveMatch: data });
+    }
+
     if (action === "request-cancel-live") {
       const liveId = String(body?.id || "").trim();
       if (!liveId) return json({ error: "Live match id is required" }, 400);
@@ -1456,9 +1520,12 @@ Deno.serve(async (req: Request) => {
         if (!liveRow || liveRow.status !== "live") {
           return json({ error: "This live match is no longer active" }, 409);
         }
-        if (!isAdmin && (!user?.id || liveRow.creator_account_id !== user.id)) {
-          return json({ error: "Only the match creator or Admin can report this live match" }, 403);
+        if (!isAdmin && ![...(liveRow.team_a || []), ...(liveRow.team_b || [])].map(String).includes(String(account?.player_id || ""))) {
+          return json({ error: "Only lobby participants or Admin can report this match" }, 403);
         }
+        const { data: previousReport } = await supabase.from("team_match_reports")
+          .select("id").eq("match_id", liveRow.match_id).maybeSingle();
+        if (previousReport) return json({ error: "A result has already been reported; confirm or dispute the existing report" }, 409);
 
         const sameA = JSON.stringify((liveRow.team_a || []).map(String)) === JSON.stringify(teamA);
         const sameB = JSON.stringify((liveRow.team_b || []).map(String)) === JSON.stringify(teamB);
@@ -1467,6 +1534,10 @@ Deno.serve(async (req: Request) => {
         }
 
         liveMatch = liveRow;
+        if (liveRow.tourney_fixture_id) {
+          const required=Math.ceil((liveRow.maps||[]).length/2);
+          if (Math.max(scoreA,scoreB)!==required || Math.min(scoreA,scoreB)>=required) return json({error:"Invalid tournament series score"},400);
+        }
 
         if (mapResults.length) {
           const scheduledMaps = Array.isArray(liveRow.maps) ? liveRow.maps.map(String).slice(0, 7) : [];
@@ -1520,13 +1591,7 @@ Deno.serve(async (req: Request) => {
 
       if (error) throw error;
 
-      if (liveMatch?.id) {
-        await supabase
-          .from("live_team_matches")
-          .update({ status: "closed", closed_at: new Date().toISOString() })
-          .eq("id", liveMatch.id)
-          .eq("status", "live");
-      }
+      // Keep the room Live while the opponent or Admin verifies the report.
 
       await supabase.from("admin_audit_log").insert({
         action: "match.result_reported",
@@ -1561,14 +1626,16 @@ Deno.serve(async (req: Request) => {
       if (!isAdmin && !canReviewReport(report, String(account?.player_id || ""))) {
         return json({ error: "A player from the opposite team must confirm this result" }, 403);
       }
+      if (report.finalize_token) return json({error:"Confirmation already in progress"},409);
       if (report.status !== "pending") return json({ error: "This result is no longer awaiting confirmation" }, 409);
 
-      const completed = await finalizeReport(supabase, report, user?.id || null, isAdmin ? null : String(account.player_id));
+      const completed = await verifyReport(supabase, report, user?.id || null, isAdmin ? null : String(account.player_id), isAdmin);
       return json({ ok: true, report: completed, locked: true });
     }
 
     if (action === "dispute") {
       if (!account?.player_id) return json({ error: "Login with a linked Discord account first" }, 401);
+      if (report.finalize_token) return json({error:"Confirmation already in progress"},409);
       if (report.status !== "pending") return json({ error: "This result is no longer awaiting confirmation" }, 409);
 
       if (!canReviewReport(report, String(account.player_id))) {
@@ -1596,13 +1663,14 @@ Deno.serve(async (req: Request) => {
 
     if (action === "admin-resolve") {
       if (!isAdmin) return json({ error: "Admin access required" }, 403);
+      if (report.finalize_token) return json({error:"Confirmation already in progress"},409);
       if (!["pending", "disputed"].includes(report.status)) {
         return json({ error: "This report is already locked or cancelled" }, 409);
       }
 
       const decision = String(body?.decision || "").toLowerCase();
       if (decision === "confirm") {
-        const completed = await finalizeReport(supabase, report, null, null);
+        const completed = await verifyReport(supabase, report, null, null, true);
         return json({ ok: true, report: completed, locked: true });
       }
       if (decision === "cancel") {

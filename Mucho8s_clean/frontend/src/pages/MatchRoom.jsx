@@ -14,6 +14,7 @@ import { useData } from "@/context/DataContext";
 import { PlayerAvatar, MerdaBadge, merdaSurfaceClass } from "@/components/shared";
 import ModeBadge from "@/components/ModeBadge";
 import MapPreviewCard from "@/components/MapPreviewCard";
+import MatchResultCenter from "@/components/MatchResultCenter";
 import LiveMatchChat from "@/components/LiveMatchChat";
 import { analyzeManualTeams } from "@/lib/chemistry";
 import { buildRivalries } from "@/lib/rivalries";
@@ -115,11 +116,15 @@ const TeamPanel = ({
   </div>
 );
 
-export default function MatchRoom() {
-  const { id } = useParams();
+export default function MatchRoom({ matchId = null }) {
+  const params = useParams();
+  const id = matchId || params.id;
   const navigate = useNavigate();
   const {
     liveMatches,
+    matchReports,
+    setLiveRoomCode,
+    setLiveRoomReady,
     matches,
     challenges,
     discordPlayer,
@@ -133,6 +138,7 @@ export default function MatchRoom() {
   const [now, setNow] = useState(Date.now());
   const [reportOpen, setReportOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [roomCode, setRoomCode] = useState("");
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 30000);
@@ -250,12 +256,14 @@ export default function MatchRoom() {
   const teamA = Array.isArray(match.team_a) ? match.team_a : [];
   const teamB = Array.isArray(match.team_b) ? match.team_b : [];
   const seriesMaps = Array.isArray(match.maps) ? match.maps.filter(Boolean).slice(0, 7) : [];
-  const seriesBestOf = seriesMaps.length >= 7 ? 7 : seriesMaps.length >= 5 ? 5 : 3;
+  const seriesBestOf = [1,3,5,7].includes(seriesMaps.length) ? seriesMaps.length : 3;
+  const roomMode = match.tourney_fixture_id ? "tourney" : match.maps?.length === 1 && match.pairings?.length === 0 ? "ranked" : "mucho8s";
   const captainId = String(match.captain_player_id || "");
   const isCaptain =
     Boolean(discordPlayer?.id) &&
     String(discordPlayer.id) === captainId;
-  const canReport = isAdmin || isCaptain;
+  const pendingReport = (matchReports || []).find(r => String(r.match_id) === String(match.match_id) && ["pending", "disputed"].includes(r.status));
+  const canReport = !pendingReport && (isAdmin || [...teamA, ...teamB].map(String).includes(String(discordPlayer?.id || "")));
   const canChat =
     isAdmin ||
     (Boolean(discordPlayer?.id) &&
@@ -311,7 +319,7 @@ export default function MatchRoom() {
 
   return (
     <div className="m8-page-stack gap-3">
-      <section className="m8-panel m8-mode-zone is-mucho8s rounded-[22px] p-4">
+      <section className="m8-panel m8-mode-zone rounded-[22px] p-4">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
           <div className="min-w-0">
             <Link
@@ -322,7 +330,7 @@ export default function MatchRoom() {
             </Link>
 
             <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
-              <ModeBadge mode="mucho8s" compact />
+              <ModeBadge mode={roomMode} compact />
               <span className="h-7 px-2.5 rounded-lg border border-emerald-500/25 bg-emerald-500/[0.08] text-emerald-400 inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 <Timer size={12} />
@@ -334,7 +342,7 @@ export default function MatchRoom() {
             </div>
 
             <h1 className="font-display text-2xl sm:text-3xl font-black tracking-[-0.04em] mt-2">
-              Mucho8s Room
+              {match.tourney_name || (roomMode === "ranked" ? "MuchoRanked" : "Mucho8s")} Room
             </h1>
 
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[11px] text-muted-foreground">
@@ -416,7 +424,15 @@ export default function MatchRoom() {
         </div>
       </section>
 
-      {[3, 5, 7].includes(seriesMaps.length) && (
+      {!pendingReport && <section className="m8-panel rounded-2xl p-4">
+        <div className="brand-kicker">Lobby condivisa · Ready Check</div>
+        {match.lobby_code ? <button className="font-mono text-2xl font-black mt-2 select-all" onClick={async () => { try { await navigator.clipboard.writeText(match.lobby_code); toast.success("Codice copiato"); } catch { toast.error("Seleziona il codice per copiarlo"); } }}>{match.lobby_code} · Copia</button> : <p className="text-sm text-slate-400 mt-2">In attesa del codice del capitano</p>}
+        {isCaptain && <form className="flex gap-2 mt-3" onSubmit={async e => { e.preventDefault(); setBusy(true); await setLiveRoomCode(match.id, roomCode); setBusy(false); }}><input aria-label="Codice lobby" required pattern="[A-Z0-9_-]{3,32}" maxLength={32} value={roomCode} onChange={e=>setRoomCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g,""))} placeholder="Codice lobby reale" className="min-w-0 flex-1 rounded-lg bg-black/30 border border-white/10 px-3 py-2"/><Button disabled={busy} type="submit">Pubblica</Button></form>}
+        <div className="flex flex-wrap gap-2 mt-3">{[...teamA,...teamB].map(pid=><span key={pid} className={`text-xs rounded-lg border px-2 py-1 ${(match.ready_player_ids||[]).includes(String(pid))?"border-emerald-400/30 text-emerald-300":"border-white/10 text-slate-400"}`}>{playerMap[pid]?.name || pid} {(match.ready_player_ids||[]).includes(String(pid))?"✓":"· in attesa"}</span>)}</div>
+        {canChat && !isAdmin && <Button className="mt-3" disabled={busy || !match.lobby_code || (match.ready_player_ids||[]).includes(String(discordPlayer?.id))} onClick={async()=>{setBusy(true);await setLiveRoomReady(match.id);setBusy(false);}}>Sono pronto</Button>}
+      </section>}
+
+      {[1, 3, 5, 7].includes(seriesMaps.length) && (
         <section className="m8-panel rounded-[22px] p-3">
           <div className="flex items-center justify-between gap-3 mb-2">
             <div>
@@ -472,7 +488,7 @@ export default function MatchRoom() {
         <TeamPanel
           label="Bravo"
           ids={teamB}
-          accent="#D5A33A"
+          accent="#3B82F6"
           captainId={captainId}
           playerMap={playerMap}
           playerAvatars={playerAvatars}
@@ -614,11 +630,13 @@ export default function MatchRoom() {
         </details>
       )}
 
-      {!canReport && (
+      {pendingReport && <MatchResultCenter reportId={pendingReport.id} hideHeader />}
+
+      {!canReport && !pendingReport && (
         <section className="rounded-xl border border-[#222834] bg-[#0F1218] px-3 py-2.5 flex items-start gap-3">
           <ShieldCheck size={16} className="text-[#697181] mt-0.5 shrink-0" />
           <div className="text-xs text-muted-foreground">
-            Only the Mucho8s captain or an Admin can report the final result.
+            Lobby participants and Admin can report the final result.
           </div>
         </section>
       )}
@@ -651,7 +669,8 @@ export default function MatchRoom() {
         defaultMode={match.mode || undefined}
         onReported={() => {
           setReportOpen(false);
-          navigate("/matchfinder");
+          // Remain in this Live room until final confirmation.
+          toast.success("Report inviato: partita Live in attesa di conferma");
         }}
       />
     </div>

@@ -4,7 +4,8 @@ import { ArrowLeft, Crown, Pencil, Plus, Save, Shield, Trash2, Users, X } from "
 import { toast } from "sonner";
 import { useData } from "@/context/DataContext";
 import { PlayerAvatar, RankBadge } from "@/components/shared";
-import { addTeamMember, deleteTeam, getTeam, removeTeamMember, updateTeam } from "@/lib/teams";
+import ClubCompetition from "@/components/ClubCompetition";
+import { addTeamMember, deleteTeam, getTeam, removeTeamMember, updateTeam, setClubCaptain } from "@/lib/teams";
 
 const TeamLogo = ({ team }) => (
   team?.logo_url ? (
@@ -79,7 +80,7 @@ export default function TeamProfile() {
       const next = await addTeamMember(team.id, memberToAdd);
       setTeam(next);
       setMemberToAdd("");
-      toast.success("Player added to roster");
+      toast.success("Invito inviato: il giocatore deve accettare dalla pagina Clubs");
     } catch (error) {
       toast.error(error.message || "Unable to add player");
     } finally {
@@ -219,6 +220,8 @@ export default function TeamProfile() {
         </div>
       </section>
 
+      <ClubCompetition team={team} />
+
       {team.canManage && editing && (
         <form onSubmit={saveTeam} className="m8-panel rounded-2xl p-4 sm:p-5">
           <div className="brand-kicker mb-1">Team Settings</div>
@@ -293,7 +296,7 @@ export default function TeamProfile() {
             <div className="flex-1">
               <div className="brand-kicker mb-1">Captain Controls</div>
               <h2 className="font-display text-xl font-black">Manage roster</h2>
-              <p className="text-xs text-[#7F8795] mt-1">Add any active Mucho player. Maximum roster: 8.</p>
+              <p className="text-xs text-[#7F8795] mt-1">Invita giocatori con account collegato. Entrano nel roster solo dopo l’accettazione. Massimo 8.</p>
             </div>
 
             <div className="flex gap-2 w-full lg:w-auto">
@@ -318,12 +321,14 @@ export default function TeamProfile() {
                 data-testid="team-add-member"
               >
                 <Plus size={15} />
-                Add
+                Invita
               </button>
             </div>
           </div>
         </section>
       )}
+
+      {team.canManage && <section className="m8-panel rounded-2xl p-4"><div className="brand-kicker">Owner · Gestione capitano</div><select aria-label="Capitano club" value={team.captain_player_id} disabled={busy} className="mt-2 rounded-lg border border-white/15 bg-[#10151D] p-2 text-sm" onChange={async e=>{setBusy(true);try{await setClubCaptain(team.id,e.target.value);await load();toast.success("Capitano aggiornato");}catch(err){toast.error(err.message);}finally{setBusy(false);}}}>{(team.members||[]).map(m=><option key={m.player_id} value={m.player_id}>{playerMap[m.player_id]?.name||m.player_id}</option>)}</select></section>}
 
       <section>
         <div className="flex items-center justify-between mb-3">

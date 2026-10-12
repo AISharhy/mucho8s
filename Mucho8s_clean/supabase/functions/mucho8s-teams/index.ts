@@ -178,6 +178,40 @@ Deno.serve(async (req: Request) => {
     if (!user || !account?.id) return json(req, { error: "Login with Discord first" }, 401);
     if (!account.player_id) return json(req, { error: "Your Discord account must be linked to a player" }, 409);
 
+    if (action === "register-tourney") {
+      const { data, error } = await supabase.rpc("club_register_tourney", {p_account_id:account.id,p_club_id:body.teamId,p_roster:body.roster});
+      if (error) return json(req, {error:error.message},409);
+      return json(req,data);
+    }
+    if (["challenge", "accept-challenge", "decline-challenge"].includes(action)) {
+      const { data, error } = await supabase.rpc("club_challenge_action", { p_account_id: account.id, p_action: action, p_payload: body });
+      if (error) return json(req, { error: error.message }, 409);
+      return json(req, data);
+    }
+    if (action === "club-challenges") {
+      const { data: club, error: memberError } = await supabase.from("competitive_team_members").select("team_id").eq("player_id", account.player_id).maybeSingle();
+      if (memberError) throw memberError;
+      if (!club) return json(req, { ok: true, challenges: [] });
+      const { data, error } = await supabase.from("competitive_club_challenges").select("*").or(`club_a_id.eq.${club.team_id},club_b_id.eq.${club.team_id}`).order("created_at", { ascending: false }).limit(30);
+      if (error) throw error;
+      return json(req, { ok: true, challenges: data || [] });
+    }
+    if (action === "my-invites") {
+      const { data, error } = await supabase.from("competitive_team_invites")
+        .select("id,team_id,player_id,created_at,expires_at,competitive_teams(name,tag,logo_url)")
+        .eq("player_id", account.player_id).eq("status", "pending").gt("expires_at", new Date().toISOString());
+      if (error) throw error;
+      return json(req, { ok: true, invites: data || [] });
+    }
+    if (["accept-invite", "decline-invite", "set-captain"].includes(action)) {
+      const { data, error } = await supabase.rpc("club_invite_action", {
+        p_account_id: account.id, p_action: action === "accept-invite" ? "accept" : action === "decline-invite" ? "decline" : "set-captain",
+        p_team_id: body.teamId, p_player_id: body.playerId || null, p_invite_id: body.inviteId || null,
+      });
+      if (error) return json(req, { error: error.message }, 409);
+      return json(req, data);
+    }
+
     if (action === "create") {
       let name = "";
       let tag = "";
@@ -259,7 +293,7 @@ Deno.serve(async (req: Request) => {
     const team = await getTeamRow(supabase, teamId);
     if (!team) return json(req, { error: "Team not found" }, 404);
     if (team.owner_account_id !== account.id) {
-      return json(req, { error: "Only the team captain can manage this roster" }, 403);
+      return json(req, { error: "Only the club owner can manage this roster" }, 403);
     }
 
     if (action === "update") {
@@ -318,37 +352,15 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "add-member") {
-      const playerId = String(body?.playerId || "").trim();
-      if (!playerId) return json(req, { error: "Player is required" }, 400);
-      if (!(await playerExists(supabase, playerId))) return json(req, { error: "Player not found" }, 404);
-
-      const { count, error: countError } = await supabase
-        .from("competitive_team_members")
-        .select("*", { count: "exact", head: true })
-        .eq("team_id", team.id);
-      if (countError) throw countError;
-      if (Number(count || 0) >= 8) return json(req, { error: "Roster limit is 8 players" }, 409);
-
-      const { error: insertError } = await supabase
-        .from("competitive_team_members")
-        .insert({
-          team_id: team.id,
-          player_id: playerId,
-          role: "member",
-          joined_at: new Date().toISOString(),
-        });
-
-      if (insertError) {
-        if (String(insertError.code) === "23505") {
-          return json(req, { error: "That player already belongs to a team" }, 409);
-        }
-        throw insertError;
-      }
+      const { error } = await supabase.rpc("club_invite_action", {
+        p_account_id: account.id, p_action: "invite", p_team_id: team.id, p_player_id: String(body.playerId || ""),
+      });
+      if (error) return json(req, { error: error.message }, 409);
     } else if (action === "remove-member") {
       const playerId = String(body?.playerId || "").trim();
       if (!playerId) return json(req, { error: "Player is required" }, 400);
-      if (playerId === team.captain_player_id) {
-        return json(req, { error: "The captain cannot be removed from the roster" }, 409);
+      if (playerId === team.captain_player_id || playerId === account.player_id) {
+        return json(req, { error: "The captain and owner cannot be removed from the roster" }, 409);
       }
 
       const { error: deleteError } = await supabase

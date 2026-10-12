@@ -3,8 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { Crown, Plus, Shield, Users, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useData } from "@/context/DataContext";
+import { clubStats } from "@/lib/clubAnalytics";
 import { Input } from "@/components/ui/input";
-import { createTeam, listTeams } from "@/lib/teams";
+import { createTeam, listTeams, listMyClubInvites, respondClubInvite } from "@/lib/teams";
 
 const TeamMark = ({ team, size = 48 }) => (
   team?.logo_url ? (
@@ -26,9 +27,10 @@ const TeamMark = ({ team, size = 48 }) => (
 
 export default function Teams() {
   const navigate = useNavigate();
-  const { discordPlayer, playerMap } = useData();
+  const { discordPlayer, playerMap, matches, competitionData } = useData();
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [invites, setInvites] = useState([]);
   const [clubQuery, setClubQuery] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -53,6 +55,10 @@ export default function Teams() {
   useEffect(() => {
     void load();
   }, []);
+
+  useEffect(() => { if (discordPlayer) listMyClubInvites().then(setInvites).catch(e => toast.error(e.message)); else setInvites([]); }, [discordPlayer?.id]);
+
+  const clubStandings = useMemo(() => teams.map(t => ({...t, stats:clubStats([...(matches||[]),...(competitionData?.archives||[]).flatMap(a=>a.matches||a.snapshot?.matches||[])],t.id)})).filter(t=>t.stats.played>0).sort((a,b)=>b.stats.wins-a.stats.wins||b.stats.winRate-a.stats.winRate||a.name.localeCompare(b.name)),[teams,matches,competitionData?.archives]);
 
   const myTeam = useMemo(
     () => teams.find((team) =>
@@ -117,6 +123,10 @@ export default function Teams() {
           </div>
         </div>
       </section>
+
+      <section className="m8-panel rounded-2xl p-4"><h2 className="font-bold text-lg">Classifica club</h2><p className="text-xs text-slate-400 mt-1">Sfide tra club confermate · vittorie, poi win rate. Le partite precedenti senza identità club registrata sono escluse.</p>{clubStandings.length?<div className="overflow-x-auto"><table className="w-full text-sm mt-3"><thead><tr className="text-left text-slate-400"><th>Club</th><th>W</th><th>L</th><th>WR</th></tr></thead><tbody>{clubStandings.map((t,i)=><tr className="border-t border-white/10" key={t.id}><td className="py-2"><Link to={`/teams/${t.id}`}>{i+1}. [{t.tag}] {t.name}</Link></td><td>{t.stats.wins}</td><td>{t.stats.losses}</td><td>{t.stats.winRate}%</td></tr>)}</tbody></table></div>:<p className="text-xs text-slate-400 mt-4">Nessuna sfida club confermata.</p>}</section>
+
+      {invites.length > 0 && <section className="m8-panel rounded-2xl p-4"><h2 className="font-bold text-lg">Inviti club</h2>{invites.map(inv => <div key={inv.id} className="flex flex-wrap justify-between items-center gap-3 border-t border-white/10 py-3 mt-2"><span className="text-sm">[{inv.competitive_teams?.tag}] {inv.competitive_teams?.name}</span><div className="flex gap-2">{[true,false].map(accept=><button key={String(accept)} disabled={saving} className="rounded-lg border border-white/15 px-3 py-2 text-xs" onClick={async()=>{setSaving(true);try{await respondClubInvite(inv.team_id,inv.id,accept);setInvites(v=>v.filter(i=>i.id!==inv.id));await load();toast.success(accept?"Invito accettato":"Invito rifiutato");}catch(e){toast.error(e.message);}finally{setSaving(false);}}}>{accept?'Accetta':'Rifiuta'}</button>)}</div></div>)}</section>}
 
       {showCreate && !myTeam && (
         <form onSubmit={submit} className="m8-panel rounded-2xl p-5 sm:p-6">

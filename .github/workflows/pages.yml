@@ -37,6 +37,11 @@ jobs:
       - name: Verifica permessi e privacy
         run: node --test ../supabase/tests/*.cjs
 
+      - name: Verifica Ranked, analytics e simulazioni
+        run: npm test -- --watchAll=false --runInBand
+        env:
+          CI: true
+
       - name: Prepara animazione Rive rank-up
         run: |
           mkdir -p public/animations

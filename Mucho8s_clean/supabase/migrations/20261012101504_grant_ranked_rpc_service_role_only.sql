@@ -1,0 +1,1 @@
+grant execute on function public.ranked_find_match(text) to service_role; grant execute on function public.ranked_finalize(uuid) to service_role;

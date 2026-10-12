@@ -101,7 +101,7 @@ const mixRotationModes = (bestOf, startMode = "Hardpoint") => {
   return Array.from({length: [3,5,7].includes(Number(bestOf)) ? Number(bestOf) : 3}, (_, index) => index % 2 ? second : first);
 };
 
-const buildRandomRotation = (game, mode, format, bestOf, mixStartMode = "Hardpoint", recentMaps = []) => {
+export const buildRandomRotation = (game, mode, format, bestOf, mixStartMode = "Hardpoint", recentMaps = []) => {
   const count = [3,5,7].includes(Number(bestOf)) ? Number(bestOf) : 3;
   if (mode !== "CDL Mix") {
     const pool = competitiveMapPool(game, mode, format);
@@ -164,7 +164,7 @@ const Metric = ({ label, value, tone = "" }) => (
   </div>
 );
 
-export default function TeamBuilder() {
+export default function TeamBuilder({ onCreated = null }) {
   const navigate = useNavigate();
   const {
     players,
@@ -197,6 +197,7 @@ export default function TeamBuilder() {
   const [draftPickIndex, setDraftPickIndex] = useState(0);
   const [draftStarted, setDraftStarted] = useState(false);
   const [selected, setSelected] = useState([]);
+  const [manualTeamSize, setManualTeamSize] = useState(4);
   const [manualA, setManualA] = useState([]);
   const [manualB, setManualB] = useState([]);
   const [query, setQuery] = useState("");
@@ -206,9 +207,9 @@ export default function TeamBuilder() {
   const [soundOn, setSoundOn] = useState(isUiSoundEnabled);
 
   const selectedCount = selected.length;
-  const inferredFormat = formatForCount(selectedCount);
-  const validLobby = VALID_LOBBY_SIZES.includes(selectedCount);
-  const perTeam = validLobby ? selectedCount / 2 : 0;
+  const inferredFormat = teamMethod === "manual" ? `${manualTeamSize}v${manualTeamSize}` : formatForCount(selectedCount);
+  const validLobby = teamMethod === "manual" ? selectedCount === manualTeamSize * 2 : VALID_LOBBY_SIZES.includes(selectedCount);
+  const perTeam = teamMethod === "manual" ? manualTeamSize : validLobby ? selectedCount / 2 : 0;
   const nextSize = nextLobbySize(selectedCount);
   const mapPool = useMemo(
     () => competitiveMapPool(game, matchMode, inferredFormat || "4v4"),
@@ -502,7 +503,7 @@ export default function TeamBuilder() {
       }
 
       if (prev.length >= 8) {
-        toast.error("Maximum lobby size is 4v4");
+        toast.error(`Maximum lobby size is ${manualTeamSize}v${manualTeamSize}`);
         return prev;
       }
 
@@ -558,13 +559,13 @@ export default function TeamBuilder() {
       return;
     }
 
-    if (targetCount >= 4) {
+    if (targetCount >= manualTeamSize) {
       toast.error(side === "A" ? "Alpha is already full" : "Bravo is already full");
       return;
     }
 
     const alreadySelected = selected.includes(id);
-    if (!alreadySelected && selected.length >= 8) {
+    if (!alreadySelected && selected.length >= manualTeamSize * 2) {
       toast.error("Maximum lobby size is 4v4");
       return;
     }
@@ -837,7 +838,8 @@ export default function TeamBuilder() {
         ? `Mucho8s confirmed — manual BO${bestOf} rotation locked`
         : `Mucho8s confirmed — random BO${bestOf} maps generated`
     );
-    navigate(`/matches/live/${created.id}`);
+    if (onCreated) onCreated(created);
+    else navigate(`/matches/live/${created.id}`);
   };
 
   const generateTeams = () => {
@@ -989,6 +991,8 @@ export default function TeamBuilder() {
             );
           })}
         </div>
+
+        {wizardStep === 1 && <label className="block mb-4"><span className="text-xs font-bold text-slate-400">Formato lobby</span><select aria-label="Formato lobby manuale" value={manualTeamSize} onChange={e=>{setManualTeamSize(Number(e.target.value));setSelected([]);setManualA([]);setManualB([]);setResult(null);setManualMaps([]);}} className="block w-full rounded-xl border border-white/15 bg-[#10151D] p-3 mt-2 text-sm">{[2,3,4].map(n=><option key={n} value={n}>{n}v{n}</option>)}</select></label>}
 
         {wizardStep === 1 && (
           <div className="rounded-2xl border border-[#FF2A3B]/20 bg-[linear-gradient(135deg,#0D1117_0%,#120D11_64%,#1B0B10_100%)] p-4 sm:p-5 shadow-[0_18px_48px_rgba(255,42,59,.035)]">
@@ -1291,7 +1295,7 @@ export default function TeamBuilder() {
                     {inferredFormat}
                   </span>
                 )}
-                <span className="font-mono text-sm font-black text-[#D5A33A]">{selectedCount}/8</span>
+                <span className="font-mono text-sm font-black text-[#D5A33A]">{selectedCount}/{teamMethod === "manual" ? manualTeamSize * 2 : 8}</span>
               </div>
             </div>
 
@@ -1316,14 +1320,14 @@ export default function TeamBuilder() {
                     <section key={side} className={`rounded-xl border p-4 ${alpha ? "border-red-500/40 bg-[#0C111A]" : "border-blue-500/40 bg-[#0C111A]"}`}>
                       <div className="flex items-center justify-between gap-2 mb-3">
                         <h3 className={`font-display font-black text-base ${alpha ? "text-red-300" : "text-blue-300"}`}>TEAM {label}</h3>
-                        <span className={`rounded-lg px-2.5 py-1 text-xs font-black ${roster.length === 4 ? "bg-emerald-500/20 text-emerald-300" : "bg-[#202733] text-slate-400"}`}>
-                          {roster.length}/4 {roster.length === 4 ? "✓" : ""}
+                        <span className={`rounded-lg px-2.5 py-1 text-xs font-black ${roster.length === manualTeamSize ? "bg-emerald-500/20 text-emerald-300" : "bg-[#202733] text-slate-400"}`}>
+                          {roster.length}/{manualTeamSize} {roster.length === manualTeamSize ? "✓" : ""}
                         </span>
                       </div>
                       <div className="space-y-1.5 max-h-[390px] overflow-y-auto pr-1">
                         {filtered.map((player) => {
                           const assigned = roster.includes(player.id);
-                          const full = roster.length >= 4;
+                          const full = roster.length >= manualTeamSize;
                           return (
                             <button
                               key={player.id}
@@ -1580,6 +1584,7 @@ export default function TeamBuilder() {
                 <Button
                   type="button"
                   onClick={generateTeams}
+                  data-testid="manual-teams-confirm"
                   disabled={
                     !validLobby ||
                     (teamMethod === "manual" && (manualA.length !== perTeam || manualB.length !== perTeam))

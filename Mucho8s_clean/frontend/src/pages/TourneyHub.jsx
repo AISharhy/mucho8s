@@ -14,11 +14,12 @@ export default function TourneyHub() {
   const showDemo = new URLSearchParams(location.search).get("demo") === "1";
   const reload = async () => { setLoading(true); try { setTourney(await fetchTourney()); } finally { setLoading(false); } };
   useEffect(() => {
+    if (showDemo) { setLoading(false); return undefined; }
     let active = true;
     fetchTourney().then(t => { if (active) setTourney(t); }).finally(() => { if (active) setLoading(false); });
     const unsubscribe = subscribeTourney(t => { if (active && t) setTourney(t); });
     return () => { active = false; if (typeof unsubscribe === "function") unsubscribe(); };
-  }, []);
+  }, [showDemo]);
   const published = Boolean(tourney?.switcheroo?.setupStage === "published" || tourney?.status === "live" || tourney?.status === "completed" || tourney?.bracket?.length);
   const teamCount = tourney?.teams?.length || 0;
   return <div className="m8-page-stack max-w-7xl mx-auto" data-testid="tourney-hub">
@@ -28,7 +29,7 @@ export default function TourneyHub() {
     </section>
     
     {showDemo&&<TourneyDemo onClose={()=>navigate("/tourney")}/>}
-    <section className="m8-panel rounded-[22px] p-6">
+    {!showDemo && <section className="m8-panel rounded-[22px] p-6">
       <div className="flex items-center justify-between gap-4"><h2 className="font-display text-xl font-black flex items-center gap-2"><Trophy size={19} className="text-[#D5A33A]"/> Tournament Lobby</h2><button type="button" onClick={reload} aria-label="Aggiorna tornei" className="rounded-lg border border-white/15 p-2"><RefreshCw size={16} className={loading?"animate-spin":""}/></button></div>
       {loading?<p className="text-sm text-muted-foreground mt-6">Caricamento torneo…</p>:
         !published?<div className="rounded-xl border border-dashed border-[#D5A33A]/25 p-10 text-center mt-5"><Trophy className="text-[#D5A33A] mx-auto" size={34}/><h3 className="font-bold text-lg mt-4">Nessun torneo pubblicato</h3><p className="text-sm text-muted-foreground mt-2">I tornei compariranno qui quando saranno pubblicati.</p>{isAdmin&&<Link to="/tourney/manage" className="inline-flex gap-2 items-center mt-5 text-[#D5A33A] font-bold text-sm">Configura torneo <ArrowRight size={16}/></Link>}</div>:
@@ -38,6 +39,6 @@ export default function TourneyHub() {
           <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mt-3"><span className="inline-flex gap-1 items-center"><Swords size={15}/>{tourney.mode || "Competition"} · BO{tourney.bestOf || 3}</span><span className="inline-flex gap-1 items-center"><Users size={15}/>{teamCount} squadre</span></div>
           <Link to="/tourney/live" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#D5A33A] text-[#10151D] px-5 py-3 text-sm font-black">APRI TORNEO / ISCRIZIONI <ArrowRight size={17}/></Link>
         </div>}
-    </section>
+    </section>}
   </div>;
 }

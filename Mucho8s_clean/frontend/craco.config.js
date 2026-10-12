@@ -4,7 +4,7 @@ require("dotenv").config();
 
 // Check if we're in development/preview mode (not production build)
 // Craco sets NODE_ENV=development for start, NODE_ENV=production for build
-const isDevServer = process.env.NODE_ENV !== "production";
+const isDevServer = process.env.NODE_ENV === "development";
 
 // Environment variable overrides
 const config = {
@@ -95,6 +95,7 @@ if (isDevServer && process.env.DISABLE_EMERGENT_OVERLAY !== "true") {
 }
 
 let webpackConfig = {
+  jest: { configure: { moduleNameMapper: { "^@/(.*)$": "<rootDir>/src/$1", "^react-router-dom$": "<rootDir>/node_modules/react-router-dom/dist/index.js", "^react-router/dom$": "<rootDir>/node_modules/react-router/dist/development/dom-export.js", "^react-router$": "<rootDir>/node_modules/react-router/dist/development/index.js" } } },
   eslint: {
     configure: {
       extends: ["plugin:react-hooks/recommended"],

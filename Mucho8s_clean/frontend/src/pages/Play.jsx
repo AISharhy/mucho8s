@@ -98,10 +98,11 @@ const ModeHeader = ({ kicker, title, description, icon: Icon, accent }) => (
   </div>
 );
 
-export default function Play() {
+export default function Play({ onlyChallenge = false, onChallengeCreated = null }) {
   const navigate = useNavigate();
   const {
     players,
+    isSimulation,
     playerAvatars,
     playerProfiles,
     discordPlayer,
@@ -160,7 +161,7 @@ export default function Play() {
 
   const canSend = Boolean(
     target &&
-    selectedPaymentAvailable &&
+    (selectedPaymentAvailable || isSimulation) &&
     Number.isFinite(numericAmount) &&
     numericAmount > 0 &&
     ["paypal", "revolut"].includes(platform)
@@ -214,12 +215,13 @@ export default function Play() {
     if (!created) return;
 
     toast.success(`Mucho1v1 sent to ${target.name}`);
-    navigate(`/challenges/${created.id}`);
+    if (onChallengeCreated) onChallengeCreated(created);
+    else navigate(`/challenges/${created.id}`);
   };
 
   return (
     <div className="m8-page-stack">
-      <section className="m8-play-esports-hero">
+      {!onlyChallenge && <section className="m8-play-esports-hero">
         <div className="m8-play-hero-scan" aria-hidden="true" />
         <div className="brand-kicker mb-1 text-magma">Play</div>
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3">
@@ -239,10 +241,10 @@ export default function Play() {
             <span className="m8-play-mode-tab is-tourney"><Trophy size={12} /> MuchoTourney</span>
           </div>
         </div>
-      </section>
+      </section>}
 
-      <section className="m8-play-esports-grid">
-        <div
+      <section className={onlyChallenge ? "space-y-4" : "m8-play-esports-grid"}>
+        {!onlyChallenge && <div
           className="m8-play-mode-card is-8s"
           data-testid="play-8s-card"
         >
@@ -299,7 +301,7 @@ export default function Play() {
               <ArrowRight size={18} />
             </button>
           </div>
-        </div>
+        </div>}
 
         <div
           className="m8-play-mode-card is-1v1"
@@ -502,7 +504,7 @@ export default function Play() {
           )}
 
           <div className="relative z-10 mt-auto pt-4 space-y-2">
-            <button type="button" data-testid="simulate-mucho1v1" onClick={()=>{setDemoKind("1v1");void playUiSound("select","mucho1v1")}} className="w-full rounded-xl border border-emerald-400/35 bg-emerald-500/10 py-2.5 text-xs font-black text-emerald-300 hover:bg-emerald-500/20">SIMULA 1V1 · DEMO</button>
+            {!onlyChallenge && <button type="button" data-testid="simulate-mucho1v1" onClick={()=>{setDemoKind("1v1");void playUiSound("select","mucho1v1")}} className="w-full rounded-xl border border-emerald-400/35 bg-emerald-500/10 py-2.5 text-xs font-black text-emerald-300 hover:bg-emerald-500/20">SIMULA 1V1 · DEMO</button>}
             <Button
               onClick={sendQuickChallenge}
               disabled={Boolean(sending) || (Boolean(discordSession && discordPlayer) && !canSend)}
@@ -529,13 +531,13 @@ export default function Play() {
           </div>
         </div>
 
-        <div className="m8-play-mode-card is-ranked" data-testid="play-ranked-card">
+        {!onlyChallenge && <><div className="m8-play-mode-card is-ranked" data-testid="play-ranked-card">
           <div className="m8-play-card-grid" aria-hidden="true" />
           <div className="m8-play-card-emblem text-blue-500/15" aria-hidden="true"><ShieldCheck size={150} /></div>
           <div className="relative z-10">
-            <ModeHeader kicker="Competitive 4v4 · Free" title="MuchoRanked" description="Hardpoint BO1. Eight players, one shared Mucho8s Elo, no money." icon={ShieldCheck} accent="#3B82F6" />
+            <ModeHeader kicker="Competitive 4v4 · Free" title="MuchoRanked" description="Hardpoint o Search & Destroy BO1. Captain Draft, map vote e Ready Check in 2 minuti." icon={ShieldCheck} accent="#3B82F6" />
             <div className="m8-play-step-stack">
-              <StepRow number="1" title="Find your lobby" text="Join the 4v4 Hardpoint BO1 matchmaking queue." />
+              <StepRow number="1" title="Find your lobby" text="Scegli HP o S&D ed entra nella coda 4v4." />
               <StepRow number="2" title="Captain & lobby code" text="The captain shares the lobby code with all players." />
               <StepRow number="3" title="Play & report" text="Confirm the match result and update the shared Elo." />
             </div>
@@ -566,6 +568,7 @@ export default function Play() {
             </button>
           </div>
         </div>
+        </>}
       </section>
       {demoKind&&<PlayDemos kind={demoKind} onClose={()=>setDemoKind(null)}/>}
     </div>

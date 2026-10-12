@@ -1,0 +1,4 @@
+import {draftSide,rankedSeconds,RANKED_MAPS,validLobbyCode} from './rankedFlow';
+test('snake picks fill both captain rosters to 4/4',()=>{expect(Array.from({length:6},(_,i)=>draftSide(i))).toEqual(['A','B','B','A','A','B']);expect(draftSide(6)).toBeNull();});
+test('countdown uses server clock offset and elapsed time without adding saved time',()=>{const now=Date.parse('2026-10-12T12:00:00Z');expect(rankedSeconds('2026-10-12T12:02:00Z','2026-10-12T12:00:00Z',1000,46000)).toBe(75);expect(rankedSeconds('2026-10-12T12:02:00Z','2026-10-12T12:00:00Z',1000,130000)).toBe(0);expect(rankedSeconds(null,null,now)).toBe(0);});
+test('codes require captain input; S&D 4v4 pool contains Fringe and excludes Standoff',()=>{expect(validLobbyCode('')).toBe(false);expect(validLobbyCode('real_123')).toBe(true);expect(validLobbyCode('a b')).toBe(false);expect(RANKED_MAPS.snd).toContain('Fringe');expect(RANKED_MAPS.snd).not.toContain('Standoff');});

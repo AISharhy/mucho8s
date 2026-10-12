@@ -80,3 +80,13 @@ export const removeTeamMember = async (teamId, playerId) => {
   );
   return data.team;
 };
+
+export const listMyClubInvites = async () => (await callTeams({action:"my-invites"}, {auth:true})).invites || [];
+export const respondClubInvite = async (teamId, inviteId, accept) => callTeams({action:accept?"accept-invite":"decline-invite",teamId,inviteId}, {auth:true});
+export const setClubCaptain = async (teamId, playerId) => callTeams({action:"set-captain",teamId,playerId}, {auth:true});
+
+export const listClubChallenges = async () => (await callTeams({action:"club-challenges"},{auth:true})).challenges || [];
+export const createClubChallenge = async (payload) => callTeams({action:"challenge",...payload},{auth:true});
+export const respondClubChallenge = async (challengeId,accept) => callTeams({action:accept?"accept-challenge":"decline-challenge",challengeId},{auth:true});
+
+export const registerClubTournament = async (teamId,roster) => callTeams({action:"register-tourney",teamId,roster},{auth:true});

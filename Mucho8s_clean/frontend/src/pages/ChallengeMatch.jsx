@@ -47,12 +47,15 @@ const profileLinkFor = (profile, platform) => {
 };
 
 
-export default function ChallengeMatch() {
-  const { id } = useParams();
-  const navigate = useNavigate();
+export default function ChallengeMatch({ challengeId = null, onNavigate = null }) {
+  const params = useParams();
+  const id = challengeId || params.id;
+  const nativeNavigate = useNavigate();
+  const navigate = onNavigate || nativeNavigate;
   const redirectRef = useRef(false);
   const {
     challenges,
+    isSimulation,
     refreshChallenges,
     discordSession,
     discordAccount,
@@ -118,6 +121,7 @@ export default function ChallengeMatch() {
 
   useEffect(() => {
     if (
+      isSimulation ||
       !challenge ||
       !completedLost ||
       !payoutUrl ||
@@ -136,7 +140,7 @@ export default function ChallengeMatch() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [challenge, completedLost, payoutUrl]);
+  }, [challenge, completedLost, payoutUrl, isSimulation]);
 
   if (!discordSession || !discordPlayer) {
     return (
@@ -217,7 +221,7 @@ export default function ChallengeMatch() {
       challenge.reported_winner_player_id !== discordPlayer.id;
 
     let payoutTab = null;
-    if (loserAfterConfirm && payoutUrl) {
+    if (!isSimulation && loserAfterConfirm && payoutUrl) {
       payoutTab = window.open("about:blank", "_blank");
     }
 

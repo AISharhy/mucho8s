@@ -6,6 +6,7 @@ import { supabaseAuth, hasSupabaseAuth } from "@/lib/supabaseClient";
 
 const DataContext = createContext(null);
 export const useData = () => useContext(DataContext);
+export const SimulationDataProvider = ({ value, children }) => <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 
 const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "");
 const SUPABASE_URL = (process.env.REACT_APP_SUPABASE_URL || "").replace(/\/$/, "");
@@ -38,6 +39,7 @@ const makePlayer = (name, startElo = MIN_ELO) => {
 const normalizePlayer = (p) => {
   const cur = Math.max(MIN_ELO, Math.round(Number(p?.currentElo) || BASE_ELO));
   return {
+    ...p,
     id: p?.id || uid(),
     name: String(p?.name || "Unknown").trim() || "Unknown",
     currentElo: cur,
@@ -98,6 +100,8 @@ const normalizeMatch = (m) => ({
   mode: m?.mode || "",
   game: m?.game || "",
   eloChanges: m?.eloChanges && typeof m.eloChanges === "object" ? m.eloChanges : {},
+  eloBefore: m?.eloBefore || {},
+  eloAfter: m?.eloAfter || {},
   pairings: Array.isArray(m?.pairings) ? m.pairings : [],
   upsetApplied: Boolean(m?.upsetApplied),
   upsetEloDifference: Math.max(0, Number(m?.upsetEloDifference) || 0),
@@ -119,6 +123,16 @@ const normalizeMatch = (m) => ({
   captainAPlayerId: m?.captainAPlayerId || null,
   captainBPlayerId: m?.captainBPlayerId || null,
   reportId: m?.reportId || null,
+  ranked: Boolean(m?.ranked),
+  source: m?.source || "mucho8s",
+  clubAId: m?.clubAId || null,
+  clubBId: m?.clubBId || null,
+  tourneyFixtureId: m?.tourneyFixtureId || null,
+  tourneyKey: m?.tourneyKey || null,
+  tournamentName: m?.tournamentName || null,
+  tourneyFinal: Boolean(m?.tourneyFinal),
+  format: m?.format || "",
+  bestOf: Number(m?.bestOf) || 3,
 });
 
 const clonePlayers = (players) => players.map((p) => ({
@@ -1129,6 +1143,23 @@ export const DataProvider = ({ children }) => {
     }
 
     return data.liveMatch;
+  }, [matchReportRequest, refreshLiveMatches]);
+
+  const openTournamentRoom = useCallback(async (fixtureId) => {
+    const data = await matchReportRequest({action:"tourney-room",fixtureId});
+    if (!data?.liveMatch) return null;
+    await refreshLiveMatches();return data.liveMatch;
+  },[matchReportRequest,refreshLiveMatches]);
+
+  const setLiveRoomCode = useCallback(async (id, code) => {
+    const data = await matchReportRequest({ action: "set-room-code", id, code });
+    if (!data?.liveMatch) return false;
+    await refreshLiveMatches(); return true;
+  }, [matchReportRequest, refreshLiveMatches]);
+  const setLiveRoomReady = useCallback(async (id) => {
+    const data = await matchReportRequest({ action: "set-room-ready", id });
+    if (!data?.liveMatch) return false;
+    await refreshLiveMatches(); return true;
   }, [matchReportRequest, refreshLiveMatches]);
 
   const requestCancelLiveMatch = useCallback(async (id) => {
@@ -2509,6 +2540,9 @@ export const DataProvider = ({ children }) => {
     newsPosts,
     matchReports,
     liveMatches,
+    setLiveRoomCode,
+    setLiveRoomReady,
+    openTournamentRoom,
     dashboardData,
     competitionData,
     challengeNotificationCount,

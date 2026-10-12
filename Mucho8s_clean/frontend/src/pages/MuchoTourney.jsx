@@ -190,9 +190,9 @@ const formatClock = (milliseconds) => {
   return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
 };
 
-export default function MuchoTourney() {
-  const { isAdmin, admin, players } = useData();
-  const [t, setT] = useState(load);
+export default function MuchoTourney({ simulation = null }) {
+  const { isAdmin, admin, players, openTournamentRoom } = useData();
+  const [t, setT] = useState(() => simulation ? normalize(simulation.initial || {}) : load());
   const [teamName, setTeamName] = useState("");
   const [fx, setFx] = useState(null);
   const [editingRoster, setEditingRoster] = useState(null);
@@ -205,6 +205,7 @@ export default function MuchoTourney() {
   const fireFx = (type, data = {}) => setFx({ type, ...data, key: Date.now() });
 
   useEffect(() => {
+    if (simulation) return undefined;
     let alive = true;
     fetchTourney().then((remote) => {
       if (alive && remote && Object.keys(remote).length) setT(normalize(remote));
@@ -216,7 +217,7 @@ export default function MuchoTourney() {
       alive = false;
       off();
     };
-  }, []);
+  }, [simulation]);
 
   useEffect(() => {
     if (!fx) return undefined;
@@ -234,6 +235,7 @@ export default function MuchoTourney() {
   const save = (nextValue) => {
     const next = normalize(nextValue);
     setT(next);
+    if (simulation) { simulation.onSave?.(next); return; }
     localStorage.setItem(STORE, JSON.stringify(next));
     window.dispatchEvent(new CustomEvent("mucho:tourney-update", { detail: next }));
     if (admin?.sessionToken) {
@@ -925,6 +927,13 @@ export default function MuchoTourney() {
   };
 
   const report = (roundIndex, matchIndex, winner) => {
+    if (!simulation) {
+      const fixture=t.bracket?.[roundIndex]?.[matchIndex];
+      if (!fixture?.a || !fixture?.b || fixture.winner) return;
+      if (fixture.liveMatchId) { window.location.hash=`/matches/live/${fixture.liveMatchId}`;return; }
+      openTournamentRoom(fixture.id).then(room=>{if(room)window.location.hash=`/matches/live/${room.id}`;});
+      return;
+    }
     const bracket = t.bracket.map((round) => round.map((match) => ({ ...match })));
     const match = bracket[roundIndex][matchIndex];
     const series = roundIndex === bracket.length - 1 ? t.finalBestOf : t.bestOf;
@@ -1662,7 +1671,7 @@ export default function MuchoTourney() {
             <div className="m8-panel rounded-[22px] p-5 overflow-x-auto">
               <div className="flex items-center justify-between">
                 <h2 className="font-display font-black">Bracket</h2>
-                <span className="text-[10px] text-muted-foreground">Click winner to advance</span>
+                <span className="text-[10px] text-muted-foreground">{simulation ? "Click winner to advance" : "Apri Match Room · report e conferma"}</span>
               </div>
 
               {!t.bracket.length ? (
@@ -1732,7 +1741,7 @@ export default function MuchoTourney() {
                 <div className="brand-kicker text-[#D5A33A]">Switcheroo locked</div>
                 <h2 className="font-display font-black">Bracket</h2>
               </div>
-              <span className="text-[10px] text-muted-foreground">Click winner to advance</span>
+              <span className="text-[10px] text-muted-foreground">{simulation ? "Click winner to advance" : "Apri Match Room · report e conferma"}</span>
             </div>
             <div className="flex gap-6 min-w-[760px] mt-5">
               {t.bracket.map((round, roundIndex) => (
@@ -1787,7 +1796,7 @@ export default function MuchoTourney() {
             <div className="brand-kicker text-[#D5A33A] mt-3">MuchoTourney Champion</div>
             <div className="font-display text-3xl font-black mt-1">{t.champion.name}</div>
             <div className="text-xs text-muted-foreground mt-2">
-              Champion card / trophy hook ready for the final production flow.
+              Trofeo campione disponibile sul profilo dopo la conferma della finale.
             </div>
           </section>
         )}
