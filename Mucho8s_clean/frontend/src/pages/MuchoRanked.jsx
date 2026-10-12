@@ -8,7 +8,7 @@ import {toast} from "sonner";
 
 export default function MuchoRanked(){
  const {discordPlayer,discordSession,signInWithDiscord,playerMap,players=[]}=useData();
- const [state,setState]=useState(null),[busy,setBusy]=useState(false),[error,setError]=useState("");
+ const [state,setState]=useState(null),[busy,setBusy]=useState(false),[error,setError]=useState(""),[lobbyCodeInput,setLobbyCodeInput]=useState("");
  const refresh=useCallback(async()=>{if(!discordPlayer?.id||!discordSession)return;try{const s=await rankedRequest("status");setState(s);setError("");}catch(e){setError(e.message)}},[discordPlayer?.id,discordSession]);
  useEffect(()=>{refresh();if(!discordPlayer?.id||!discordSession)return;const interval=setInterval(refresh,4000);return()=>clearInterval(interval)},[refresh,discordPlayer?.id,discordSession]);
  const run=async(action,payload={})=>{setBusy(true);try{const result=await rankedRequest(action,payload);setState(result);setError("");}catch(e){toast.error(e.message);setError(e.message);}finally{setBusy(false)}};
@@ -31,6 +31,14 @@ export default function MuchoRanked(){
    lobby?<div className="mt-5">
       <div className="text-blue-300 font-bold text-lg">{lobby.status==="ready"?"MATCH FOUND · READY CHECK":lobby.status==="live"?"MATCH LIVE":"RESULT DISPUTED"}</div>
       <p className="text-xs text-muted-foreground mt-1">Hardpoint BO1 · {lobby.status==="ready"?"Confirm before the 90-second deadline":"Submit a result after the match"}</p>
+      {lobby.status!=="ready"&&<div className="mt-5 rounded-2xl border border-blue-400/40 bg-gradient-to-b from-blue-600/20 to-[#0b1426] px-5 py-7 text-center" data-testid="ranked-lobby-code">
+        <div className="text-xs font-black tracking-[0.24em] uppercase text-blue-300">Lobby code · Join the captain</div>
+        {lobby.lobby_code?<div className="mt-4 text-3xl sm:text-5xl font-black font-mono tracking-[0.15em] break-all select-all text-white" data-testid="ranked-lobby-code-value">{lobby.lobby_code}</div>:<div className="mt-4 text-lg text-white/70">Waiting for captain to enter the lobby code</div>}
+        {discordPlayer?.id===lobby.team_a?.[0]&&<form className="mt-5 max-w-sm mx-auto flex gap-2" onSubmit={e=>{e.preventDefault();run("set-lobby-code",{code:lobbyCodeInput});}}>
+          <input aria-label="Lobby code" maxLength={32} pattern="[A-Za-z0-9_-]{3,32}" required value={lobbyCodeInput} onChange={e=>setLobbyCodeInput(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g,""))} placeholder="Enter lobby code" className="min-w-0 flex-1 h-11 px-3 rounded-xl bg-[#101A2A] border border-blue-400/40 text-white font-mono"/>
+          <button type="submit" disabled={busy} className="rounded-xl bg-blue-600 hover:bg-blue-500 px-4 font-bold">Publish</button>
+        </form>}
+      </div>}
       <div className="grid sm:grid-cols-2 gap-3 mt-5">{[["ALPHA",lobby.team_a],["BRAVO",lobby.team_b]].map(([side,team])=><div key={side} className="rounded-xl bg-black/20 border border-white/10 p-4"><div className="font-black text-sm mb-3">{side}</div>{(team||[]).map(id=><div key={id} className="flex justify-between gap-2 text-sm py-1"><span>{label(id)}</span><span className="text-xs text-muted-foreground">{participants.find(p=>p.player_id===id)?.ready?"✓ Ready":lobby.status==="ready"?"Waiting":""}</span></div>)}</div>)}</div>
       {lobby.status==="ready"&&<button disabled={busy||member?.ready} onClick={()=>run("ready",{ready:true})} className="mt-5 rounded-xl px-5 py-3 bg-blue-600 disabled:opacity-50 font-bold">{member?.ready?"Ready confirmed":"I'M READY"}</button>}
       {["live","disputed"].includes(lobby.status)&&<div className="mt-5"><p className="text-sm text-muted-foreground mb-3">Report the winning team. All 8 players must confirm the same result before Elo changes.</p><div className="flex gap-2"><button disabled={busy} onClick={()=>run("report",{winner:"A"})} className="px-5 py-3 bg-blue-600 rounded-xl font-bold">Alpha won</button><button disabled={busy} onClick={()=>run("report",{winner:"B"})} className="px-5 py-3 bg-slate-700 rounded-xl font-bold">Bravo won</button></div>{member?.report&&<div className="text-xs text-muted-foreground mt-3">You reported {member.report}. Confirmations: {participants.filter(p=>p.report===member.report).length}/8</div>}{lobby.status==="disputed"&&<p className="mt-3 text-amber-300 text-xs">Conflicting reports. No Elo will be changed until all votes agree.</p>}</div>}
