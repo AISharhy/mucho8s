@@ -28,7 +28,7 @@ export default function MuchoRanked() {
         <div className="flex flex-wrap gap-2 mt-5 text-xs font-bold">
           <span className="rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-300 px-3 py-1.5">4v4</span>
           <span className="rounded-full border border-white/10 px-3 py-1.5 text-white/70">Solo queue · pianificata</span>
-          <span className="rounded-full border border-white/10 px-3 py-1.5 text-white/70">Zero entry fee</span>
+          <span className="rounded-full border border-white/10 px-3 py-1.5 text-white/70">No money · No stakes</span>
         </div>
       </section>
 
@@ -66,7 +66,7 @@ export default function MuchoRanked() {
           <div className="text-sm font-bold">{discordPlayer?.name || "Guest"}</div>
           <div className="mt-4 text-4xl font-black font-display">{eligible ? elo : "—"} <span className="text-sm text-muted-foreground">Elo 8s</span></div>
           <div className="text-xs text-muted-foreground mt-1">{eligible ? (tier?.name || "Unranked") : "Connect your player profile"}</div>
-          <div className="border-t border-white/10 mt-6 pt-5 flex items-start gap-3"><ShieldCheck size={19} className="text-emerald-400 shrink-0"/><p className="text-xs text-muted-foreground">L'Elo visualizzato appartiene al sistema Mucho8s esistente. Per la nuova Ranked è prevista una progressione separata, per evitare alterazioni dello storico.</p></div>
+          <div className="border-t border-white/10 mt-6 pt-5 flex items-start gap-3"><ShieldCheck size={19} className="text-emerald-400 shrink-0"/><p className="text-xs text-muted-foreground">L'Elo visualizzato è il tuo Elo unico Mucho8s. Mucho Ranked condivide lo stesso Elo, rank e leaderboard di Mucho8s. Le partite Ranked non prevedono puntate, pagamenti né earnings.</p></div>
           <div className="mt-5 flex gap-2 items-center text-xs text-muted-foreground"><Users size={16}/> {players.length} profili presenti nel database locale dell'app</div>
           <button type="button" aria-expanded={infoOpen} onClick={() => setInfoOpen(value => !value)} className="mt-5 text-xs font-bold text-blue-300 underline">{infoOpen ? "Hide" : "Show"} planned matchmaking rules</button>
           {infoOpen && <p className="mt-3 text-xs leading-6 text-muted-foreground">Una sola coda per giocatore. Otto partecipanti unici per lobby. Bilanciamento in base all'Elo. Ready Check di tutti gli otto giocatori. Risultati verificati prima della modifica dell'Elo. Nessun aggiornamento Elo eseguito dal browser.</p>}
