@@ -207,9 +207,9 @@ export default function TeamBuilder({ onCreated = null }) {
   const [soundOn, setSoundOn] = useState(isUiSoundEnabled);
 
   const selectedCount = selected.length;
-  const inferredFormat = teamMethod === "manual" ? `${manualTeamSize}v${manualTeamSize}` : formatForCount(selectedCount);
-  const validLobby = teamMethod === "manual" ? selectedCount === manualTeamSize * 2 : VALID_LOBBY_SIZES.includes(selectedCount);
-  const perTeam = teamMethod === "manual" ? manualTeamSize : validLobby ? selectedCount / 2 : 0;
+  const inferredFormat = `${manualTeamSize}v${manualTeamSize}`;
+  const validLobby = selectedCount === manualTeamSize * 2;
+  const perTeam = manualTeamSize;
   const nextSize = nextLobbySize(selectedCount);
   const mapPool = useMemo(
     () => competitiveMapPool(game, matchMode, inferredFormat || "4v4"),
@@ -502,7 +502,7 @@ export default function TeamBuilder({ onCreated = null }) {
         return prev.filter((item) => item !== id);
       }
 
-      if (prev.length >= 8) {
+      if (prev.length >= manualTeamSize * 2) {
         toast.error(`Maximum lobby size is ${manualTeamSize}v${manualTeamSize}`);
         return prev;
       }
@@ -566,7 +566,7 @@ export default function TeamBuilder({ onCreated = null }) {
 
     const alreadySelected = selected.includes(id);
     if (!alreadySelected && selected.length >= manualTeamSize * 2) {
-      toast.error("Maximum lobby size is 4v4");
+      toast.error(`Maximum lobby size is ${manualTeamSize}v${manualTeamSize}`);
       return;
     }
 
@@ -852,7 +852,7 @@ export default function TeamBuilder({ onCreated = null }) {
       return;
     }
     if (!validLobby) {
-      toast.error("Select exactly 4, 6 or 8 players");
+      toast.error(`Select exactly ${manualTeamSize * 2} players for ${inferredFormat}`);
       return;
     }
 
@@ -992,7 +992,42 @@ export default function TeamBuilder({ onCreated = null }) {
           })}
         </div>
 
-        {wizardStep === 1 && <label className="block mb-4"><span className="text-xs font-bold text-slate-400">Formato lobby</span><select aria-label="Formato lobby manuale" value={manualTeamSize} onChange={e=>{setManualTeamSize(Number(e.target.value));setSelected([]);setManualA([]);setManualB([]);setResult(null);setManualMaps([]);}} className="block w-full rounded-xl border border-white/15 bg-[#10151D] p-3 mt-2 text-sm">{[2,3,4].map(n=><option key={n} value={n}>{n}v{n}</option>)}</select></label>}
+        {wizardStep === 1 && (
+          <div className="mb-4 rounded-2xl border border-red-500/20 bg-[#10151D] p-4" data-testid="mucho8s-format-selector">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div>
+                <div className="text-xs font-bold text-slate-200">Formato Mucho8s</div>
+                <p className="text-[11px] text-slate-400 mt-1">Scegli quanti giocatori vuoi per squadra.</p>
+              </div>
+              <span className="font-mono text-xs text-red-300">{selectedCount}/{manualTeamSize * 2}</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2" role="group" aria-label="Formato Mucho8s">
+              {[2, 3, 4].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  aria-pressed={manualTeamSize === n}
+                  data-testid={`mucho8s-format-${n}v${n}`}
+                  onClick={() => {
+                    if (n === manualTeamSize) return;
+                    setManualTeamSize(n);
+                    setSelected([]);
+                    setManualA([]);
+                    setManualB([]);
+                    resetCaptainDraft();
+                    setResult(null);
+                    setManualMaps([]);
+                  }}
+                  className={`rounded-xl border px-3 py-3 text-sm font-black transition-colors ${manualTeamSize === n
+                    ? "border-red-400 bg-red-500/20 text-white shadow-[0_0_20px_rgba(255,42,59,.12)]"
+                    : "border-white/10 bg-white/[0.025] text-slate-400 hover:border-white/25 hover:text-white"}`}
+                >
+                  {n}v{n}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {wizardStep === 1 && (
           <div className="rounded-2xl border border-[#FF2A3B]/20 bg-[linear-gradient(135deg,#0D1117_0%,#120D11_64%,#1B0B10_100%)] p-4 sm:p-5 shadow-[0_18px_48px_rgba(255,42,59,.035)]">
