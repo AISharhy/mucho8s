@@ -1052,7 +1052,7 @@ export const Layout = () => {
                         data-testid="account-team-link"
                       >
                         <Shield size={15} />
-                        <span>Team</span>
+                        <span>Team</span><span className="ml-auto rounded border border-amber-400/25 bg-amber-400/10 px-1.5 py-0.5 text-[9px] font-black tracking-wide text-amber-300">BETA</span>
                       </Link>
                     )}
 
@@ -1065,7 +1065,7 @@ export const Layout = () => {
                         data-testid="account-wallet-link"
                       >
                         <WalletCards size={15} />
-                        <span>Wallet</span>
+                        <span>Wallet</span><span className="ml-auto rounded border border-amber-400/25 bg-amber-400/10 px-1.5 py-0.5 text-[9px] font-black tracking-wide text-amber-300">DEMO</span>
                       </Link>
                     )}
 
