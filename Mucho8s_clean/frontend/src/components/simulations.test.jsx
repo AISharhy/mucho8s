@@ -38,7 +38,7 @@ test('tournament demo mounts the original setup and never calls remote tournamen
 async function choose(selector,value){const node=container.querySelector(selector);expect(node).toBeTruthy();await act(async()=>{node.value=value;node.dispatchEvent(new Event('change',{bubbles:true}));});}
 test.each([2,3,4])('manual builder enforces complete teams of %s players and supports direct transfers',async(size)=>{
  await render(<PlayDemos kind="8s" onClose={()=>{}}/>);
- await choose('[aria-label="Formato lobby manuale"]',String(size));
+ await click(container.querySelector(`[data-testid="mucho8s-format-${size}v${size}"]`));
  await choose('[data-testid="wizard-game-select"]','BO7');
  await choose('[data-testid="wizard-mode-select"]','Search & Destroy');
  await click([...container.querySelectorAll('button')].find(b=>b.textContent.trim()==='Continue'));
