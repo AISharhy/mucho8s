@@ -1341,6 +1341,14 @@ textarea:focus-visible {
     --mode-accent: #34D399;
 }
 
+.m8-play-mode-card.is-ranked {
+    --mode-accent: #3B82F6;
+}
+
+.m8-play-mode-card.is-tourney {
+    --mode-accent: #D5A33A;
+}
+
 .m8-play-mode-card::before {
     content: "";
     position: absolute;
