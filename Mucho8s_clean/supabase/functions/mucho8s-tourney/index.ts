@@ -383,9 +383,7 @@ Deno.serve(async (req: Request) => {
 
       const isSwitcheroo = state.teamBuild === "switcheroo";
       const registrationMode =
-        isSwitcheroo && String(switcheroo.registrationMode || "manual") === "open"
-          ? "open"
-          : "manual";
+        String(switcheroo.registrationMode || "manual") === "open" ? "open" : "manual";
       const maxTeams = Math.min(8, Math.max(2, Number(switcheroo.maxTeams || 4)));
       const maxPlayers = rosterSizeFor(state.format) * maxTeams;
 
@@ -469,7 +467,7 @@ Deno.serve(async (req: Request) => {
             freeEntry: true,
             registrationMode,
             maxTeams,
-            ...(isSwitcheroo ? { pool } : {}),
+            pool,
             entryFee: 0,
             rerollBaseGoal: economy.baseGoal,
             rerollGoal: economy.baseGoal,
@@ -527,7 +525,7 @@ Deno.serve(async (req: Request) => {
           freeEntry: false,
           registrationMode,
           maxTeams,
-          ...(isSwitcheroo ? { pool } : {}),
+          pool,
           entryFee: economy.entryFee,
           rerollBaseGoal: economy.baseGoal,
           rerollGoal: economy.baseGoal,
@@ -659,7 +657,7 @@ Deno.serve(async (req: Request) => {
         ...state,
         switcheroo: {
           ...switcheroo,
-          ...(isSwitcheroo ? { pool } : {}),
+          pool,
           entryFee: economy.entryFee,
           entryPaid,
           entryPendingPayments: remainingPending,
