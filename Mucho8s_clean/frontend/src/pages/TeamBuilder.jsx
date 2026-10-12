@@ -1079,9 +1079,9 @@ export default function TeamBuilder({ onCreated = null }) {
                   className="mt-1 w-full h-11 rounded-xl bg-[#151923] border border-[#2A303B] px-3 text-sm font-semibold disabled:opacity-40"
                   data-testid="wizard-series-select"
                 >
-                  <option value={3}>BO3 · first to 2</option>
-                  <option value={5}>BO5 · first to 3</option>
-                  <option value={7}>BO7 · first to 4</option>
+                  <option value={3}>BO3</option>
+                  <option value={5}>BO5</option>
+                  <option value={7}>BO7</option>
                 </select>
               </label>
 
