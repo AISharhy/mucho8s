@@ -83,10 +83,10 @@ export default function Teams() {
             <div className="brand-kicker mb-1">Competitive Clubs</div>
             <div className="flex items-center gap-2">
               <Shield size={21} className="text-magma" />
-              <h1 className="font-display text-3xl sm:text-4xl font-black tracking-[-0.035em]">Teams</h1>
+              <h1 className="font-display text-3xl sm:text-4xl font-black tracking-[-0.035em]">Teams <span className="inline-block align-middle rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-1 text-[10px] tracking-widest text-amber-300">BETA</span></h1>
             </div>
             <p className="text-sm text-[#7F8795] mt-2 max-w-2xl">
-              Create a competitive team, build a roster and give your squad a public Mucho identity.
+              Create a competitive team, build a roster and give your squad a public Mucho identity. Team management is in beta: features may change.
             </p>
           </div>
 
