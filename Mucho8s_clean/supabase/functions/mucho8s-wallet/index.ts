@@ -37,7 +37,7 @@ Deno.serve(async (req: Request) => {
       if (!adminToken) return json({error:"Accesso admin richiesto"},403);
       const {data:session,error:sessionError} = await db.from("admin_sessions").select("username,account_id,user_agent_hash,expires_at,revoked_at").eq("token_hash",await hash(adminToken)).maybeSingle();
       if (sessionError) throw sessionError;
-      if (!session || session.revoked_at || session.account_id!==account.id || new Date(session.expires_at).getTime()<=Date.now() || session.user_agent_hash!==await hash(req.headers.get("user-agent") || "unknown")) return json({error:"Sessione admin non valida"},403);
+      if (!session || session.revoked_at || session.account_id!==account.id || (!Number.isFinite(Date.parse(session.expires_at)) || Date.parse(session.expires_at)<=Date.now()) || session.user_agent_hash!==await hash(req.headers.get("user-agent") || "unknown")) return json({error:"Sessione admin non valida"},403);
       const {data:credential,error:credentialError} = await db.from("admin_credentials").select("is_active,required_account_id").eq("username",session.username).maybeSingle();
       const {data:access,error:accessError} = await db.from("admin_access").select("username,is_active").eq("player_id",account.player_id).maybeSingle();
       if (credentialError || accessError) throw credentialError || accessError;

@@ -119,7 +119,8 @@ const validateSession = async (req: Request, supabase: any) => {
     .maybeSingle();
 
   if (error || !session || session.revoked_at) return null;
-  if (new Date(session.expires_at).getTime() <= Date.now()) return null;
+  const expiry = new Date(session.expires_at).getTime();
+  if (!Number.isFinite(expiry) || expiry <= Date.now()) return null;
   if (!constantTimeEqual(String(session.user_agent_hash || ""), uaHash)) return null;
 
   const { data: credential, error: credentialError } = await supabase
@@ -146,7 +147,7 @@ const validateSession = async (req: Request, supabase: any) => {
     .eq("is_active", true)
     .maybeSingle();
 
-  if (accessError || !access || access.username !== session.username) return null;
+  if (accessError || !access?.is_active || access.username !== session.username) return null;
 
   await supabase
     .from("admin_sessions")

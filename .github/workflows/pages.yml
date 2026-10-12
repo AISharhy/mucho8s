@@ -29,12 +29,13 @@ jobs:
       - name: Installa Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Installa dipendenze
-        run: |
-          npm install --legacy-peer-deps
-          npm install --legacy-peer-deps --no-save ajv@8.17.1 ajv-keywords@5.1.0
+        run: npm ci --legacy-peer-deps
+
+      - name: Verifica permessi e privacy
+        run: node --test ../supabase/tests/*.cjs
 
       - name: Prepara animazione Rive rank-up
         run: |

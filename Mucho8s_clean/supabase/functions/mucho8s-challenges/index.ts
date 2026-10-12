@@ -34,33 +34,29 @@ const sha256 = async (value: string) => {
 };
 
 const isAdminRequest = async (req: Request, supabase: any) => {
-  const token = String(req.headers.get("x-admin-session") || "").trim();
+  const token = (req.headers.get("x-admin-session") || "").trim();
   if (!token) return false;
-
   const tokenHash = await sha256(token);
   const uaHash = await sha256(req.headers.get("user-agent") || "unknown");
-
-  const { data: session, error } = await supabase
-    .from("admin_sessions")
+  const { data: session, error } = await supabase.from("admin_sessions")
     .select("username,account_id,user_agent_hash,expires_at,revoked_at")
-    .eq("token_hash", tokenHash)
-    .maybeSingle();
-
+    .eq("token_hash", tokenHash).maybeSingle();
   if (error || !session || session.revoked_at) return false;
-  if (new Date(session.expires_at).getTime() <= Date.now()) return false;
-  if (session.user_agent_hash !== uaHash) return false;
-
-  const { data: credential } = await supabase
-    .from("admin_credentials")
-    .select("is_active,required_account_id")
-    .eq("username", session.username)
-    .maybeSingle();
-
-  return Boolean(
-    credential?.is_active &&
-    credential?.required_account_id &&
-    credential.required_account_id === session.account_id
-  );
+  const expiry = new Date(session.expires_at).getTime();
+  if (!Number.isFinite(expiry) || expiry <= Date.now()) return false;
+  if (!session.account_id || session.user_agent_hash !== uaHash) return false;
+  const { data: credential, error: credentialError } = await supabase.from("admin_credentials")
+    .select("is_active,required_account_id").eq("username", session.username).maybeSingle();
+  if (credentialError || !credential?.is_active ||
+      credential.required_account_id !== session.account_id) return false;
+  const { data: account, error: accountError } = await supabase.from("player_accounts")
+    .select("player_id").eq("id", session.account_id).maybeSingle();
+  if (accountError || !account?.player_id) return false;
+  const { data: access, error: accessError } = await supabase.from("admin_access")
+    .select("username,is_active").eq("player_id", account.player_id)
+    .eq("is_active", true).maybeSingle();
+  if (accessError || !access?.is_active || access.username !== session.username) return false;
+  return true;
 };
 
 Deno.serve(async (req: Request) => {

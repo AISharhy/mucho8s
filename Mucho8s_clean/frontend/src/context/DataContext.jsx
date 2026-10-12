@@ -466,7 +466,9 @@ export const DataProvider = ({ children }) => {
     return result;
   }, [players]);
 
+  const avatarRequestSequence = useRef(0);
   const fetchPlayerAvatars = useCallback(async () => {
+    const requestSequence = ++avatarRequestSequence.current;
     if (!HAS_SUPABASE) {
       setPlayerAvatars({});
       return {};
@@ -477,11 +479,14 @@ export const DataProvider = ({ children }) => {
         method: "GET",
         headers: {
           apikey: SUPABASE_ANON_KEY,
+          ...(discordSession?.access_token ? { Authorization: `Bearer ${discordSession.access_token}` } : {}),
         },
+        cache: "no-store",
       });
 
       if (!res.ok) return null;
       const data = await res.json();
+      if (requestSequence !== avatarRequestSequence.current) return null;
       const avatars = data?.avatars && typeof data.avatars === "object" ? data.avatars : {};
       const profiles = data?.profiles && typeof data.profiles === "object" ? data.profiles : {};
       setPlayerAvatars(avatars);
@@ -490,13 +495,17 @@ export const DataProvider = ({ children }) => {
     } catch {
       return null;
     }
-  }, []);
+  }, [discordSession?.access_token]);
 
   useEffect(() => {
     if (!HAS_SUPABASE) return undefined;
+    setPlayerProfiles({});
     void fetchPlayerAvatars();
     const timer = setInterval(fetchPlayerAvatars, 15000);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      ++avatarRequestSequence.current;
+    };
   }, [fetchPlayerAvatars]);
 
   const fetchCompetitionData = useCallback(async () => {
