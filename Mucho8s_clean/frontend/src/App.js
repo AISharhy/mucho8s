@@ -31,6 +31,7 @@ import Records from "@/pages/Records";
 import Live from "@/pages/Live";
 import RiveUpgradeTest from "@/pages/RiveUpgradeTest";
 import MuchoTourney from "@/pages/MuchoTourney";
+import TourneyHub from "@/pages/TourneyHub";
 import TourneyLive from "@/pages/TourneyLive";
 import Wallet from "@/pages/Wallet";
 
@@ -145,7 +146,8 @@ function App() {
               <Route path="ranks" element={<RankGuide />} />
               <Route path="admin" element={<AdminPanel />} />
               <Route path="wallet" element={<Wallet />} />
-              <Route path="tourney" element={<MuchoTourney />} />
+              <Route path="tourney" element={<TourneyHub />} />
+              <Route path="tourney/manage" element={<MuchoTourney />} />
               <Route path="tourney/live" element={<TourneyLive />} />
               <Route path="rive-upgrade-test" element={<RiveUpgradeTest />} />
               <Route path="challenges" element={<ChallengeInbox />} />
