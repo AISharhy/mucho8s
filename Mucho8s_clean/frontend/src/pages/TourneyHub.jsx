@@ -3,11 +3,13 @@ import { Link } from "react-router-dom";
 import { Trophy, Plus, Swords, Users, ArrowRight, RefreshCw } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { fetchTourney, subscribeTourney } from "@/lib/tourneyLive";
+import TourneyDemo from "@/components/TourneyDemo";
 
 export default function TourneyHub() {
   const { isAdmin } = useData();
   const [tourney, setTourney] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showDemo, setShowDemo] = useState(false);
   const reload = async () => { setLoading(true); try { setTourney(await fetchTourney()); } finally { setLoading(false); } };
   useEffect(() => {
     let active = true;
@@ -22,6 +24,8 @@ export default function TourneyHub() {
       <div className="text-[10px] tracking-[.23em] font-black text-[#D5A33A]">COMPETITION EVENTS</div>
       <div className="mt-3 flex flex-wrap justify-between items-center gap-5"><div><h1 className="font-display text-4xl font-black">MuchoTourney</h1><p className="text-sm text-muted-foreground mt-3">Tutti i giocatori possono partecipare ai tornei quando le iscrizioni sono aperte. Solo gli amministratori possono crearli e gestirli.</p></div>{isAdmin&&<Link to="/tourney/manage" className="rounded-xl bg-[#D5A33A] text-[#11151B] px-5 py-3 font-black text-sm inline-flex items-center gap-2"><Plus size={17}/> CREATE / MANAGE TOURNAMENT</Link>}</div>
     </section>
+    <div className="flex flex-wrap items-center gap-3"><button type="button" data-testid="simulate-tourney" onClick={()=>setShowDemo(v=>!v)} className="rounded-xl border border-[#D5A33A]/40 bg-[#D5A33A]/10 hover:bg-[#D5A33A]/20 text-[#D5A33A] px-5 py-3 text-sm font-black">{showDemo?"CHIUDI SIMULAZIONE":"SIMULA TORNEO · 8 BOT"}</button><span className="text-xs text-muted-foreground">Aperto a tutti · senza pagamenti né dati reali</span></div>
+    {showDemo&&<TourneyDemo onClose={()=>setShowDemo(false)}/>}
     <section className="m8-panel rounded-[22px] p-6">
       <div className="flex items-center justify-between gap-4"><h2 className="font-display text-xl font-black flex items-center gap-2"><Trophy size={19} className="text-[#D5A33A]"/> Tournament Lobby</h2><button type="button" onClick={reload} aria-label="Aggiorna tornei" className="rounded-lg border border-white/15 p-2"><RefreshCw size={16} className={loading?"animate-spin":""}/></button></div>
       {loading?<p className="text-sm text-muted-foreground mt-6">Caricamento torneo…</p>:
