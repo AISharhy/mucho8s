@@ -97,7 +97,7 @@ export default function TourneyLive({ simulation = null }) {
       new Set(
         (t?.teamBuild === "switcheroo"
           ? t?.switcheroo?.pool || []
-          : classicRosterPlayers
+          : [...classicRosterPlayers, ...(t?.switcheroo?.pool || [])]
         )
           .map((player) => String(player?.id || ""))
           .filter(Boolean)
@@ -133,9 +133,7 @@ export default function TourneyLive({ simulation = null }) {
   const entryFee = freeEntry
     ? 0
     : Math.max(1, Number(t?.switcheroo?.entryFee ?? 5));
-  const openRegistration =
-    t?.teamBuild === "switcheroo" &&
-    t?.switcheroo?.registrationMode === "open";
+  const openRegistration = t?.switcheroo?.registrationMode === "open";
   const maxTeams = Math.min(8, Math.max(2, Number(t?.switcheroo?.maxTeams || 4)));
   const rosterSize = Math.max(
     1,
@@ -340,7 +338,7 @@ export default function TourneyLive({ simulation = null }) {
                     : "Tournament roster"}
             </h2>
 
-            {isTournamentPlayer && !entryPaid && !entryPending && (
+            {(isTournamentPlayer || (openRegistration && (t?.switcheroo?.pool || []).length < maxPlayers)) && !entryPaid && !entryPending && (
               <button
                 type="button"
                 disabled={entryBusy}
@@ -365,7 +363,7 @@ export default function TourneyLive({ simulation = null }) {
 
             {!isTournamentPlayer && (
               <p className="text-sm text-muted-foreground mt-4">
-                Only players assigned to a Classic MuchoTourney roster can confirm this entry.
+                {openRegistration ? "Open registration: join the player pool. The admin will assign your team before the bracket starts." : "Only players assigned to a Classic MuchoTourney roster can confirm this entry."}
               </p>
             )}
           </div>
