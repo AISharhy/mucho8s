@@ -1,17 +1,37 @@
-import React,{useCallback,useEffect,useState} from "react";
+import React,{useCallback,useEffect,useRef,useState} from "react";
 import {Link} from "react-router-dom";
 import {ShieldCheck,Users,Trophy,Gamepad2,RefreshCw} from "lucide-react";
 import {useData} from "@/context/DataContext";
 import {tierOf} from "@/lib/elo";
 import {rankedRequest} from "@/lib/rankedApi";
 import {toast} from "sonner";
+import {playUiSound} from "@/lib/uiAudio";
 
 export default function MuchoRanked(){
  const {discordPlayer,discordSession,signInWithDiscord,playerMap,players=[]}=useData();
  const [state,setState]=useState(null),[busy,setBusy]=useState(false),[error,setError]=useState(""),[lobbyCodeInput,setLobbyCodeInput]=useState("");
  const refresh=useCallback(async()=>{if(!discordPlayer?.id||!discordSession)return;try{const s=await rankedRequest("status");setState(s);setError("");}catch(e){setError(e.message)}},[discordPlayer?.id,discordSession]);
  useEffect(()=>{refresh();if(!discordPlayer?.id||!discordSession)return;const interval=setInterval(refresh,4000);return()=>clearInterval(interval)},[refresh,discordPlayer?.id,discordSession]);
- const run=async(action,payload={})=>{setBusy(true);try{const result=await rankedRequest(action,payload);setState(result);setError("");}catch(e){toast.error(e.message);setError(e.message);}finally{setBusy(false)}};
+ const run=async(action,payload={})=>{setBusy(true);try{const result=await rankedRequest(action,payload);setState(result);setError("");
+  const cues={join:"search",leave:"back",ready:"ready","set-lobby-code":"code",report:"confirm"};
+  if(cues[action]) void playUiSound(cues[action],"ranked");}catch(e){toast.error(e.message);setError(e.message);}finally{setBusy(false)}};
+ const previousStatus=useRef(null);
+ useEffect(()=>{
+   const lobby=state?.lobby, queue=state?.queue;
+   const next=lobby ? `${lobby.id}:${lobby.status}` : queue ? "queued" : "idle";
+   const previous=previousStatus.current;
+   if(previous && previous!==next){
+     if(lobby?.status==="ready" && !previous.startsWith(lobby.id+":")) void playUiSound("found","ranked");
+     else if(lobby?.status==="live" && previous.startsWith(lobby.id+":ready")) void playUiSound("confirm","ranked");
+   }
+   previousStatus.current=next;
+ },[state?.lobby?.id,state?.lobby?.status,state?.queue?.mode]);
+ const previousCode=useRef(null);
+ useEffect(()=>{
+   const current=state?.lobby?.lobby_code||null;
+   if(current && previousCode.current!==null && previousCode.current!==current) void playUiSound("code","ranked");
+   previousCode.current=current;
+ },[state?.lobby?.lobby_code]);
  const lobby=state?.lobby, queue=state?.queue, member=state?.member;
  const participants=state?.players||[];
  const myElo=Number(discordPlayer?.currentElo??1000);
