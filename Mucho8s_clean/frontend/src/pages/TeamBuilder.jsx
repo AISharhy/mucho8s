@@ -132,7 +132,6 @@ export const buildRandomRotation = (game, mode, format, bestOf, mixStartMode = "
   });
 };
 
-const VALID_LOBBY_SIZES = [4, 6, 8];
 const SNAKE_DRAFT_ORDER = ["A", "B", "B", "A"];
 
 const formatForCount = (count) => {
