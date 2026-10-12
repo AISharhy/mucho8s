@@ -1044,6 +1044,15 @@ Deno.serve(async (req: Request) => {
       const format = String(body?.format || "").trim();
       const bestOf = [3,5,7].includes(Number(body?.bestOf)) ? Number(body.bestOf) : 3;
       const pool = competitiveMapPool(game, mode, format);
+      const requestedModes = Array.isArray(body?.mapModes) ? body.mapModes : [];
+      const validModes = ["Hardpoint", "Search & Destroy"];
+      const defaultModes = Array.from({ length: bestOf }, (_, i) => i % 2 ? "Search & Destroy" : "Hardpoint");
+      const seriesModes: string[] = mode === "CDL Mix"
+        ? (requestedModes.length === bestOf && requestedModes.every((m: unknown) => validModes.includes(m as string)) ? requestedModes : defaultModes)
+        : Array.from({ length: bestOf }, () => mode);
+      if (mode === "CDL Mix" && requestedModes.length && (requestedModes.length !== bestOf || !requestedModes.every((m: unknown) => validModes.includes(m as string)))) {
+        return json({ error: "Invalid CDL per-map modes" }, 400);
+      }
       const requestedMaps = Array.isArray(body?.maps)
         ? body.maps.map((map: unknown) => String(map || "").trim()).filter(Boolean)
         : [];
@@ -1056,18 +1065,8 @@ Deno.serve(async (req: Request) => {
           (bestOf === 7 || uniqueMaps.length === bestOf) &&
           requestedMaps.every((map, index) => {
             if (mode !== "CDL Mix") return pool.includes(map);
-            // Validate the slot against its own mode, not the combined CDL pool.
-            // Older clients may omit mapModes: infer the alternating rotation
-            // from the first slot, while still rejecting malformed sequences.
-            const requestedModes = Array.isArray(body?.mapModes) ? body.mapModes : [];
-            const firstMode = ["Hardpoint", "Search & Destroy"].includes(requestedModes[0])
-              ? requestedModes[0]
-              : "Hardpoint";
-            const expectedMode = index % 2 === 0
-              ? firstMode
-              : firstMode === "Hardpoint" ? "Search & Destroy" : "Hardpoint";
-            const slotMode = requestedModes.length ? requestedModes[index] : expectedMode;
-            return slotMode === expectedMode && competitiveMapPool(game, expectedMode, format).includes(map);
+            // Validate against the selected mode for this specific map slot.
+            return competitiveMapPool(game, seriesModes[index], format).includes(map);
           });
 
         if (!validManualRotation) {
@@ -1129,8 +1128,6 @@ Deno.serve(async (req: Request) => {
         if (mode === "CDL Mix") {
           // Draw each CDL slot from its own competitive pool, preserving the
           // selected HP/S&D starting mode and avoiding repeats where possible.
-          const requestedModes = Array.isArray(body?.mapModes) ? body.mapModes : [];
-          const firstMode = requestedModes[0] === "Search & Destroy" ? "Search & Destroy" : "Hardpoint";
           const used = new Set<string>();
           const previousMaps = new Set(
             [...historyById.values()]
@@ -1138,9 +1135,7 @@ Deno.serve(async (req: Request) => {
               .sort((a: any, b: any) => new Date(b?.date || 0).getTime() - new Date(a?.date || 0).getTime())[0]?.maps || []
           );
           seriesMaps = Array.from({ length: bestOf }, (_, index) => {
-            const slotMode = index % 2 === 0
-              ? firstMode
-              : firstMode === "Hardpoint" ? "Search & Destroy" : "Hardpoint";
+            const slotMode = seriesModes[index];
             const pool = competitiveMapPool(game, slotMode, format);
             const fresh = pool.filter((map) => !used.has(map) && !previousMaps.has(map));
             const unique = pool.filter((map) => !used.has(map));
@@ -1223,6 +1218,7 @@ Deno.serve(async (req: Request) => {
         mode,
         format,
         maps: seriesMaps,
+        map_modes: seriesModes,
         pairings,
         captain_player_id: creatorPlayerId || null,
         creator_account_id: user?.id || null,
