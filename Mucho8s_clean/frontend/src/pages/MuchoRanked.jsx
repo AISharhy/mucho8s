@@ -1,77 +1,45 @@
-import React, { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { Gamepad2, ShieldCheck, Users, Trophy, ArrowRight, LockKeyhole } from "lucide-react";
-import { useData } from "@/context/DataContext";
-import { tierOf } from "@/lib/elo";
-
-const FORMAT_OPTIONS = [
-  { id: "snd", label: "Search & Destroy", detail: "BO7 · 4v4" },
-  { id: "hp", label: "Hardpoint", detail: "BO5 · 4v4" },
-  { id: "mixed", label: "Mixed", detail: "S&D / HP · 4v4" },
-];
-
-export default function MuchoRanked() {
-  const { discordPlayer, discordSession, signInWithDiscord, players = [] } = useData();
-  const [format, setFormat] = useState("snd");
-  const [infoOpen, setInfoOpen] = useState(false);
-  const current = useMemo(() => FORMAT_OPTIONS.find((item) => item.id === format), [format]);
-  const elo = Number(discordPlayer?.currentElo ?? 1000);
-  const tier = tierOf(elo);
-  const eligible = Boolean(discordSession && discordPlayer?.id);
-
-  return (
-    <div className="m8-page-stack" data-testid="mucho-ranked-page">
-      <section className="m8-panel rounded-[24px] p-6 md:p-9 border border-blue-500/20 bg-gradient-to-br from-blue-500/[0.10] via-[#101720] to-[#0B1018]">
-        <div className="text-xs uppercase tracking-[0.23em] font-black text-blue-400">Mucho Ranked · Development Preview</div>
-        <h1 className="font-display font-black text-4xl md:text-5xl mt-3">Play Ranked</h1>
-        <p className="text-sm text-[#A2ACBB] mt-3 max-w-2xl">Una coda competitiva 4v4 dedicata alla community: matchmaking bilanciato, Ready Check, lobby e progressione stagionale. Questa schermata è un'anteprima: la coda reale non è ancora attiva.</p>
-        <div className="flex flex-wrap gap-2 mt-5 text-xs font-bold">
-          <span className="rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-300 px-3 py-1.5">4v4</span>
-          <span className="rounded-full border border-white/10 px-3 py-1.5 text-white/70">Solo queue · pianificata</span>
-          <span className="rounded-full border border-white/10 px-3 py-1.5 text-white/70">No money · No stakes</span>
-        </div>
-      </section>
-
-      <div className="grid lg:grid-cols-[1.5fr_1fr] gap-5">
-        <section className="m8-panel rounded-[22px] p-6">
-          <div className="flex items-center gap-2 mb-5"><Gamepad2 size={20} className="text-blue-400" /><h2 className="font-display text-xl font-extrabold">Select playlist</h2></div>
-          <div role="group" aria-label="Ranked playlist" className="grid sm:grid-cols-3 gap-3">
-            {FORMAT_OPTIONS.map(item => (
-              <button key={item.id} type="button" aria-pressed={format === item.id} onClick={() => setFormat(item.id)}
-                className={`text-left p-4 rounded-xl border transition-colors ${format === item.id ? "border-blue-400/70 bg-blue-500/10" : "border-white/10 bg-black/10 hover:border-white/30"}`}>
-                <div className="text-sm font-extrabold">{item.label}</div>
-                <div className="text-xs text-muted-foreground mt-2">{item.detail}</div>
-              </button>
-            ))}
-          </div>
-          <div className="mt-5 rounded-xl bg-[#0A1019] border border-white/10 p-4">
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">Selected</div>
-            <div className="font-bold mt-1">{current.label} <span className="text-blue-400">· {current.detail}</span></div>
-            <p className="text-xs text-muted-foreground mt-2">Il sistema abbinerà otto giocatori e formerà due team da quattro in base all'Elo e ai vincoli di matchmaking. Nessun punteggio viene modificato in questa anteprima.</p>
-          </div>
-          {!discordSession ? (
-            <button type="button" onClick={signInWithDiscord} className="mt-5 w-full rounded-xl bg-[#5865F2] py-3 font-bold text-white">Connect Discord</button>
-          ) : !eligible ? (
-            <div className="mt-5 border border-amber-500/20 rounded-xl p-4 text-sm text-amber-200">Associa un profilo giocatore approvato per poter accedere alla futura coda Ranked.</div>
-          ) : (
-            <div className="mt-5 border border-blue-500/20 rounded-xl p-4 flex gap-3 items-start">
-              <LockKeyhole size={18} className="text-blue-400 shrink-0" />
-              <div><div className="font-bold text-sm">Matchmaking non ancora aperto</div><div className="text-xs text-muted-foreground mt-1">La coda sarà abilitata dopo la realizzazione delle regole server-side, delle lobby e del sistema di conferma match.</div></div>
-            </div>
-          )}
-          <Link className="mt-4 inline-flex items-center gap-2 text-sm text-blue-300 hover:text-blue-200 font-bold" to="/team-builder">Gioca nella modalità Mucho8s attuale <ArrowRight size={15}/></Link>
-        </section>
-        <section className="m8-panel rounded-[22px] p-6">
-          <div className="flex items-center gap-2 mb-5"><Trophy size={19} className="text-blue-400"/><h2 className="font-display text-xl font-extrabold">Your progression</h2></div>
-          <div className="text-sm font-bold">{discordPlayer?.name || "Guest"}</div>
-          <div className="mt-4 text-4xl font-black font-display">{eligible ? elo : "—"} <span className="text-sm text-muted-foreground">Elo 8s</span></div>
-          <div className="text-xs text-muted-foreground mt-1">{eligible ? (tier?.name || "Unranked") : "Connect your player profile"}</div>
-          <div className="border-t border-white/10 mt-6 pt-5 flex items-start gap-3"><ShieldCheck size={19} className="text-emerald-400 shrink-0"/><p className="text-xs text-muted-foreground">L'Elo visualizzato è il tuo Elo unico Mucho8s. Mucho Ranked condivide lo stesso Elo, rank e leaderboard di Mucho8s. Le partite Ranked non prevedono puntate, pagamenti né earnings.</p></div>
-          <div className="mt-5 flex gap-2 items-center text-xs text-muted-foreground"><Users size={16}/> {players.length} profili presenti nel database locale dell'app</div>
-          <button type="button" aria-expanded={infoOpen} onClick={() => setInfoOpen(value => !value)} className="mt-5 text-xs font-bold text-blue-300 underline">{infoOpen ? "Hide" : "Show"} planned matchmaking rules</button>
-          {infoOpen && <p className="mt-3 text-xs leading-6 text-muted-foreground">Una sola coda per giocatore. Otto partecipanti unici per lobby. Bilanciamento in base all'Elo. Ready Check di tutti gli otto giocatori. Risultati verificati prima della modifica dell'Elo. Nessun aggiornamento Elo eseguito dal browser.</p>}
-        </section>
-      </div>
-    </div>
-  );
+import React,{useCallback,useEffect,useState} from "react";
+import {Link} from "react-router-dom";
+import {ShieldCheck,Users,Trophy,Gamepad2,RefreshCw} from "lucide-react";
+import {useData} from "@/context/DataContext";
+import {tierOf} from "@/lib/elo";
+import {rankedRequest} from "@/lib/rankedApi";
+import {toast} from "sonner";
+const MODES=[{id:"snd",name:"Search & Destroy"},{id:"hp",name:"Hardpoint"},{id:"mixed",name:"Mixed CDL"}];
+export default function MuchoRanked(){
+ const {discordPlayer,discordSession,signInWithDiscord,playerMap,players=[]}=useData();
+ const [mode,setMode]=useState("snd"),[state,setState]=useState(null),[busy,setBusy]=useState(false),[error,setError]=useState("");
+ const refresh=useCallback(async()=>{if(!discordPlayer?.id||!discordSession)return;try{const s=await rankedRequest("status");setState(s);setError("");}catch(e){setError(e.message)}},[discordPlayer?.id,discordSession]);
+ useEffect(()=>{refresh();if(!discordPlayer?.id||!discordSession)return;const interval=setInterval(refresh,4000);return()=>clearInterval(interval)},[refresh,discordPlayer?.id,discordSession]);
+ const run=async(action,payload={})=>{setBusy(true);try{const result=await rankedRequest(action,payload);setState(result);setError("");}catch(e){toast.error(e.message);setError(e.message);}finally{setBusy(false)}};
+ const lobby=state?.lobby, queue=state?.queue, member=state?.member;
+ const participants=state?.players||[];
+ const myElo=Number(discordPlayer?.currentElo??1000);
+ const label=id=>playerMap?.[id]?.name||players.find(p=>p.id===id)?.name||id;
+ return <div className="m8-page-stack" data-testid="mucho-ranked-page">
+  <section className="m8-panel p-6 md:p-9 rounded-[24px] border border-blue-500/20 bg-gradient-to-br from-blue-500/[0.12] via-[#101720] to-[#0B1018]">
+    <div className="text-xs uppercase tracking-[0.2em] text-blue-400 font-black">MUCHO RANKED · 4V4</div>
+    <h1 className="font-display font-black text-4xl mt-3">Play Ranked</h1>
+    <p className="text-sm text-[#9CA6B6] mt-3">Automatic matchmaking · One shared Mucho8s Elo · No stakes, no earnings.</p>
+    <div className="mt-5 flex flex-wrap gap-3"><span className="text-xs rounded-full border border-blue-500/30 text-blue-300 px-3 py-1.5">Same Elo & Ranking</span><span className="text-xs rounded-full border border-white/10 px-3 py-1.5">Discord verified players</span><span className="text-xs rounded-full border border-white/10 px-3 py-1.5">8-player ready check</span></div>
+  </section>
+  <div className="grid lg:grid-cols-[1.6fr_1fr] gap-5">
+  <section className="m8-panel p-6 rounded-[22px]">
+   <div className="flex items-center gap-2"><Gamepad2 className="text-blue-400" size={20}/><h2 className="font-bold text-xl">Matchmaking</h2></div>
+   {!discordSession?<button onClick={signInWithDiscord} className="mt-6 rounded-xl bg-[#5865F2] px-5 py-3 font-bold">Connect Discord</button>:
+   !discordPlayer?<p className="mt-6 text-amber-300">Your Discord account must be linked to an approved player profile.</p>:
+   lobby?<div className="mt-5">
+      <div className="text-blue-300 font-bold text-lg">{lobby.status==="ready"?"MATCH FOUND · READY CHECK":lobby.status==="live"?"MATCH LIVE":"RESULT DISPUTED"}</div>
+      <p className="text-xs text-muted-foreground mt-1">{lobby.mode?.toUpperCase()} · {lobby.status==="ready"?"Confirm before the 90-second deadline":"Submit a result after the match"}</p>
+      <div className="grid sm:grid-cols-2 gap-3 mt-5">{[["ALPHA",lobby.team_a],["BRAVO",lobby.team_b]].map(([side,team])=><div key={side} className="rounded-xl bg-black/20 border border-white/10 p-4"><div className="font-black text-sm mb-3">{side}</div>{(team||[]).map(id=><div key={id} className="flex justify-between gap-2 text-sm py-1"><span>{label(id)}</span><span className="text-xs text-muted-foreground">{participants.find(p=>p.player_id===id)?.ready?"✓ Ready":lobby.status==="ready"?"Waiting":""}</span></div>)}</div>)}</div>
+      {lobby.status==="ready"&&<button disabled={busy||member?.ready} onClick={()=>run("ready",{ready:true})} className="mt-5 rounded-xl px-5 py-3 bg-blue-600 disabled:opacity-50 font-bold">{member?.ready?"Ready confirmed":"I'M READY"}</button>}
+      {["live","disputed"].includes(lobby.status)&&<div className="mt-5"><p className="text-sm text-muted-foreground mb-3">Report the winning team. All 8 players must confirm the same result before Elo changes.</p><div className="flex gap-2"><button disabled={busy} onClick={()=>run("report",{winner:"A"})} className="px-5 py-3 bg-blue-600 rounded-xl font-bold">Alpha won</button><button disabled={busy} onClick={()=>run("report",{winner:"B"})} className="px-5 py-3 bg-slate-700 rounded-xl font-bold">Bravo won</button></div>{member?.report&&<div className="text-xs text-muted-foreground mt-3">You reported {member.report}. Confirmations: {participants.filter(p=>p.report===member.report).length}/8</div>}{lobby.status==="disputed"&&<p className="mt-3 text-amber-300 text-xs">Conflicting reports. No Elo will be changed until all votes agree.</p>}</div>}
+   </div>:queue?<div className="mt-6"><div className="font-black text-xl text-blue-300">SEARCHING FOR MATCH...</div><p className="mt-2 text-sm text-muted-foreground">{state?.queuedPlayers||1}/8 queued in {queue.mode?.toUpperCase()} · keep this page open</p><button onClick={()=>run("leave")} disabled={busy} className="mt-5 px-5 py-3 border border-white/20 rounded-xl">Leave queue</button></div>:
+   <div className="mt-5"><div className="grid sm:grid-cols-3 gap-3">{MODES.map(item=><button key={item.id} disabled={busy} onClick={()=>setMode(item.id)} className={`rounded-xl border p-4 text-left text-sm font-bold ${mode===item.id?"border-blue-400 bg-blue-500/10":"border-white/10"}`}>{item.name}</button>)}</div><button disabled={busy} onClick={()=>run("join",{mode})} className="w-full mt-5 rounded-xl py-3 bg-blue-600 hover:bg-blue-500 font-black">FIND MATCH</button></div>}
+   {error&&<p role="alert" className="text-red-300 text-xs mt-4">{error}</p>}
+   {discordPlayer&&<button onClick={refresh} className="text-xs flex gap-2 items-center mt-5 text-blue-300"><RefreshCw size={14}/> Refresh status</button>}
+  </section>
+  <section className="m8-panel p-6 rounded-[22px]"><div className="flex gap-2 items-center"><Trophy size={20} className="text-blue-300"/><h2 className="text-xl font-bold">Your Elo</h2></div><div className="text-sm mt-5">{discordPlayer?.name||"Guest"}</div><div className="font-black text-4xl mt-2">{discordPlayer?myElo:"—"}</div><div className="text-xs text-muted-foreground">{discordPlayer?tierOf(myElo)?.name:"Connect Discord"}</div><p className="text-xs text-muted-foreground mt-6 leading-5"><ShieldCheck size={14} className="inline text-emerald-400 mr-1"/>Ranked uses the same Mucho8s rating, rank, achievements and leaderboard. Money is excluded.</p><div className="mt-5 text-xs text-muted-foreground flex gap-2 items-center"><Users size={15}/>{players.length} registered players</div><Link to="/ranking" className="mt-4 inline-block text-blue-300 text-sm font-bold">View leaderboard →</Link></section>
+  </div>
+ </div>;
 }
