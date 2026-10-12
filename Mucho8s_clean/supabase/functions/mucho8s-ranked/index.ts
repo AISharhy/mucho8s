@@ -72,6 +72,13 @@ Deno.serve(async (req:Request)=>{
     if(members?.length===8&&members.every((m:any)=>m.ready===true)){
       await db.from("ranked_lobbies").update({status:"live"}).eq("id",active.id).eq("status","ready");
     }
+  } else if(action==="set-lobby-code"){
+    if(!active||active.status!=="live")return fail(req,"The match must be live before setting the lobby code",409);
+    const code=String(body.code||"").trim().toUpperCase();
+    if(!/^[A-Z0-9_-]{3,32}$/.test(code))return fail(req,"Use 3–32 letters, numbers, _ or -",400);
+    if(account.player_id!==active.team_a?.[0])return fail(req,"Only the designated captain may set this code",403);
+    const {error}=await db.rpc("ranked_set_lobby_code",{p_lobby_id:active.id,p_account_id:account.id,p_code:code});
+    if(error)return fail(req,"Unable to update lobby code",409);
   } else if(action==="report"){
     if(!active||!["live","disputed"].includes(active.status))return fail(req,"No live match",409);
     if(!["A","B"].includes(body.winner))return fail(req,"Invalid winner");
