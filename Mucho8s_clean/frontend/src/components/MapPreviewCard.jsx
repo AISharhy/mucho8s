@@ -15,6 +15,14 @@ const fandomMapsPreview = (game, mapName) => {
   return `${SUPABASE_URL}/functions/v1/mucho8s-map-preview?${params.toString()}`;
 };
 
+const directPreview = (game, mapName) => {
+  // Fandom lists this BO7 image under its Fringe image category.
+  if (String(game).toUpperCase() === "BO7" && String(mapName).toLowerCase() === "fringe") {
+    return "https://callofduty.fandom.com/wiki/Special:Redirect/file/Fringe_Promo_BO7.jpg";
+  }
+  return "";
+};
+
 const readCached = (game, mapName) => {
   try {
     return localStorage.getItem(cacheKey(game, mapName)) || "";
@@ -46,15 +54,23 @@ export default function MapPreviewCard({
 
   const [source, setSource] = useState(() => readCached(game, mapName) || primarySource);
   const [loaded, setLoaded] = useState(false);
+  const [triedFallback, setTriedFallback] = useState(false);
 
   useEffect(() => {
     const cached = readCached(game, mapName);
     setLoaded(false);
-    setSource(cached || primarySource || "");
+    setTriedFallback(false);
+    setSource(cached || primarySource || directPreview(game, mapName) || "");
   }, [game, mapName, primarySource]);
 
   const handleError = () => {
     setLoaded(false);
+    const fallback = directPreview(game, mapName);
+    if (!triedFallback && fallback && source !== fallback) {
+      setTriedFallback(true);
+      setSource(fallback);
+      return;
+    }
     setSource("");
   };
 
