@@ -1305,84 +1305,56 @@ export default function TeamBuilder() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 max-h-[350px] overflow-y-auto pr-1">
-              {filtered.map((player) => {
-                const active = selected.includes(player.id);
-                const inAlpha = manualA.includes(player.id);
-                const inBravo = manualB.includes(player.id);
-
-                if (teamMethod === "manual") {
+            {teamMethod === "manual" ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  { side: "A", label: "ALPHA", roster: manualA, hue: "red" },
+                  { side: "B", label: "BRAVO", roster: manualB, hue: "blue" },
+                ].map(({ side, label, roster, hue }) => {
+                  const alpha = side === "A";
                   return (
-                    <div
-                      key={player.id}
-                      className={
-                        "min-h-[56px] rounded-xl border px-3 py-2 flex items-center gap-3 transition-all " +
-                        (inAlpha
-                          ? "border-magma/40 bg-magma/[0.06]"
-                          : inBravo
-                            ? "border-[#65D5D3]/40 bg-[#65D5D3]/[0.06]"
-                            : "border-[#222834] bg-[#10151D] hover:border-[#353D49]") +
-                        " " +
-                        merdaSurfaceClass(player.merdaCount)
-                      }
-                    >
-                      <PlayerAvatar
-                        name={player.name}
-                        elo={player.currentElo}
-                        size={30}
-                        avatarUrl={playerAvatars[player.id]}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="font-semibold text-sm truncate flex items-center gap-2">
-                          <span className="truncate">{player.name}</span>
-                          <MerdaBadge count={player.merdaCount} compact />
-                          {onlinePlayerIds.has(String(player.id)) && (
-                            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" title="Online" />
-                          )}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground">
-                          {player.currentElo} Elo
-                          {inAlpha ? " · Alpha" : inBravo ? " · Bravo" : ""}
-                          {onlinePlayerIds.has(String(player.id)) ? " · Online" : ""}
-                        </div>
+                    <section key={side} className={`rounded-xl border p-4 ${alpha ? "border-red-500/40 bg-[#0C111A]" : "border-blue-500/40 bg-[#0C111A]"}`}>
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <h3 className={`font-display font-black text-base ${alpha ? "text-red-300" : "text-blue-300"}`}>TEAM {label}</h3>
+                        <span className={`rounded-lg px-2.5 py-1 text-xs font-black ${roster.length === 4 ? "bg-emerald-500/20 text-emerald-300" : "bg-[#202733] text-slate-400"}`}>
+                          {roster.length}/4 {roster.length === 4 ? "✓" : ""}
+                        </span>
                       </div>
-
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => assignManualDirect(player.id, "A")}
-                          disabled={!inAlpha && manualA.length >= 4}
-                          className={
-                            "w-9 h-9 rounded-lg border text-[11px] font-black transition-all " +
-                            (inAlpha
-                              ? "border-magma bg-magma text-white shadow-[0_0_18px_rgba(255,42,59,.18)]"
-                              : "border-magma/30 bg-magma/[0.05] text-magma hover:bg-magma/[0.12]") +
-                            " disabled:opacity-20 disabled:cursor-not-allowed"
-                          }
-                          title={inAlpha ? "Remove from Alpha" : "Assign to Alpha"}
-                        >
-                          A
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => assignManualDirect(player.id, "B")}
-                          disabled={!inBravo && manualB.length >= 4}
-                          className={
-                            "w-9 h-9 rounded-lg border text-[11px] font-black transition-all " +
-                            (inBravo
-                              ? "border-[#65D5D3] bg-[#65D5D3] text-[#071012] shadow-[0_0_18px_rgba(101,213,211,.14)]"
-                              : "border-[#65D5D3]/30 bg-[#65D5D3]/[0.05] text-[#65D5D3] hover:bg-[#65D5D3]/[0.12]") +
-                            " disabled:opacity-20 disabled:cursor-not-allowed"
-                          }
-                          title={inBravo ? "Remove from Bravo" : "Assign to Bravo"}
-                        >
-                          B
-                        </button>
+                      <div className="space-y-1.5 max-h-[390px] overflow-y-auto pr-1">
+                        {filtered.map((player) => {
+                          const assigned = roster.includes(player.id);
+                          const full = roster.length >= 4;
+                          return (
+                            <button
+                              key={player.id}
+                              type="button"
+                              disabled={!assigned && full}
+                              onClick={() => {
+                                assignManualDirect(player.id, side);
+                                void playUiSound(assigned ? "back" : "select", "mucho8s");
+                              }}
+                              aria-pressed={assigned}
+                              title={assigned ? `Remove ${player.name} from ${label}` : `Assign ${player.name} to ${label}`}
+                              className={`w-full flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition-all disabled:opacity-35 disabled:cursor-not-allowed ${assigned ? (alpha ? "border-red-400/45 bg-red-500/20 text-red-100" : "border-blue-400/45 bg-blue-500/20 text-blue-100") : "border-transparent bg-[#1B222D] hover:border-white/20 hover:bg-[#252E3B]"}`}
+                            >
+                              <span className="min-w-0 flex items-center gap-2">
+                                <PlayerAvatar name={player.name} elo={player.currentElo} size={23} avatarUrl={playerAvatars[player.id]} />
+                                <span className="font-semibold truncate">{player.name} {assigned ? "✓" : "+"}</span>
+                              </span>
+                              <span className="shrink-0 font-mono text-[11px] text-slate-400">{player.currentElo} Elo</span>
+                            </button>
+                          );
+                        })}
+                        {filtered.length === 0 && <p className="text-xs text-slate-400 p-3">Nessun giocatore trovato.</p>}
                       </div>
-                    </div>
+                    </section>
                   );
-                }
-
+                })}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 max-h-[350px] overflow-y-auto pr-1">
+                {filtered.map((player) => {
+                  const active = selected.includes(player.id);
                 return (
                   <label
                     key={player.id}
@@ -1421,8 +1393,9 @@ export default function TeamBuilder() {
                     </div>
                   </label>
                 );
-              })}
-            </div>
+                })}
+              </div>
+            )}
 
             <div className="mt-3 rounded-xl border border-[#222834] bg-[#10151D] px-3 py-2.5 text-[11px] text-muted-foreground">
               {teamMethod === "manual" ? (
