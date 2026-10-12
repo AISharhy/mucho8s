@@ -502,7 +502,7 @@ export default function MuchoTourney({ simulation = null }) {
       toast.error("Add your PayPal link before publishing");
       return;
     }
-    if (!classicRostersComplete) {
+    if (switcherooRegistrationMode !== "open" && !classicRostersComplete) {
       toast.error(`Create at least 2 complete ${t.format} teams before publishing entry`);
       return;
     }
@@ -518,8 +518,9 @@ export default function MuchoTourney({ simulation = null }) {
       setupConfigured: true,
       switcheroo: {
         ...t.switcheroo,
-        registrationMode: "manual",
-        pool: [],
+        registrationMode: switcherooRegistrationMode,
+        maxTeams: switcherooMaxTeams,
+        pool: switcherooRegistrationMode === "open" ? (t.switcheroo?.pool || []) : [],
         setupStage: "published",
         phase: "published",
         publishedAt: t.switcheroo?.publishedAt || new Date().toISOString(),
@@ -1649,7 +1650,7 @@ export default function MuchoTourney({ simulation = null }) {
                   <button
                     type="button"
                     onClick={publishClassicEntry}
-                    disabled={!classicRostersComplete}
+                    disabled={switcherooRegistrationMode !== "open" && !classicRostersComplete}
                     className="mt-3 w-full h-11 rounded-xl bg-[#D5A33A] text-black font-black disabled:opacity-30"
                   >
                     PUBLISH ENTRY
