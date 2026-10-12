@@ -41,7 +41,7 @@ export default function MuchoRanked(){
  return <div className="m8-page-stack" data-testid="mucho-ranked-page">
   <section className="m8-panel p-6 md:p-9 rounded-[24px] border border-blue-500/20 bg-gradient-to-br from-blue-500/[0.12] via-[#101720] to-[#0B1018]">
     <div className="text-xs uppercase tracking-[0.2em] text-blue-400 font-black">MUCHO RANKED · 4V4</div>
-    <div className="flex flex-wrap items-center justify-between gap-4 mt-3"><h1 className="font-display font-black text-4xl">Play Ranked</h1><button type="button" data-testid="ranked-demo-start" className="rounded-xl border border-blue-400/40 bg-blue-500/10 hover:bg-blue-500/20 px-5 py-3 text-blue-200 font-black text-sm" onClick={()=>setDemoMode(s=>!s)}>{demoMode?"TORNA ALLA RANKED":"PROVA DEMO · 8 BOT"}</button></div>
+    <div className="flex flex-wrap items-center justify-between gap-4 mt-3"><h1 className="font-display font-black text-4xl">Play Ranked</h1><button type="button" data-testid="ranked-demo-start" className="rounded-xl border border-blue-400/40 bg-blue-500/10 hover:bg-blue-500/20 px-5 py-3 text-blue-200 font-black text-sm" onClick={()=>setDemoMode(s=>!s)}>{demoMode?"CHIUDI DEMO":"SIMULA RANKED · 8 BOT"}</button></div>
     <p className="text-sm text-[#9CA6B6] mt-3">Hardpoint BO1 · 4v4 · One shared Mucho8s Elo · No stakes, no earnings.</p>
     <div className="mt-5 flex flex-wrap gap-3"><span className="text-xs rounded-full border border-blue-500/30 text-blue-300 px-3 py-1.5">Same Elo & Ranking</span><span className="text-xs rounded-full border border-white/10 px-3 py-1.5">Discord verified players</span><span className="text-xs rounded-full border border-white/10 px-3 py-1.5">8-player ready check</span></div>
   </section>
