@@ -125,6 +125,19 @@ const palettes = {
     confirm: [660, 990, 1320],
     money: [880, 1320],
   },
+  ranked: {
+    click: [380, 570],
+    select: [460, 690],
+    back: [340, 255],
+    next: [420, 630],
+    confirm: [523, 659, 784],
+    search: [310, 465],
+    found: [440, 659, 880],
+    ready: [587, 784],
+    code: [494, 659, 988],
+    victory: [523, 659, 784, 1047],
+    defeat: [390, 310, 220],
+  },
   tourney: {
     click: [440, 660],
     select: [520, 780],
@@ -148,6 +161,15 @@ export const playUiSound = async (kind = "click", product = "tourney") => {
 
   const palette = palettes[product] || palettes.tourney;
   const notes = palette[kind] || palette.click;
+
+  if (kind === "found" || kind === "victory" || kind === "defeat") {
+    notes.forEach((frequency, index) => tone({
+      frequency, type: kind === "defeat" ? "triangle" : "sine",
+      gain: 0.021, start: index * 0.11, duration: 0.18,
+    }));
+    if (kind === "found") noiseTick({ gain: 0.013, start: 0.05 });
+    return;
+  }
 
   if (kind === "click") {
     noiseTick({ gain: 0.013 });
