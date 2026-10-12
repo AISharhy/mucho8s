@@ -43,6 +43,7 @@ Deno.serve(async (req:Request)=>{
   if(!(Array.isArray(app?.players)&&app.players.some((p:any)=>String(p?.id)===account.player_id)))return fail(req,"Player not found",403);
   const body=await req.json().catch(()=>({}));
   const action=String(body.action||"status");
+  if(action==="join" && body.mode!=="hp")return fail(req,"Ranked supports Hardpoint only",400);
   const {data:result,error}=await db.rpc("ranked_v2_action",{p_account_id:account.id,p_action:action,p_payload:body});
   if(error)return fail(req,error.message||"Ranked action failed",409);
   return json(req,result);
