@@ -525,7 +525,7 @@ export default function Play() {
           </div>
         </div>
 
-        <div className="m8-play-mode-card relative overflow-hidden !border-blue-500/40 bg-gradient-to-br from-[#12223F] via-[#101823] to-[#0C1019]" data-testid="play-ranked-card">
+        <div className="m8-play-mode-card is-ranked" data-testid="play-ranked-card">
           <div className="m8-play-card-grid" aria-hidden="true" />
           <div className="m8-play-card-emblem text-blue-500/15" aria-hidden="true"><ShieldCheck size={150} /></div>
           <div className="relative z-10">
@@ -543,7 +543,7 @@ export default function Play() {
           </div>
         </div>
 
-        <div className="m8-play-mode-card relative overflow-hidden !border-amber-500/40 bg-gradient-to-br from-[#29200E] via-[#181611] to-[#0D1118]" data-testid="play-tournaments-coming-soon">
+        <div className="m8-play-mode-card is-tourney" data-testid="play-tournaments-coming-soon">
           <div className="m8-play-card-grid" aria-hidden="true" />
           <div className="m8-play-card-emblem text-amber-500/15" aria-hidden="true"><Trophy size={150} /></div>
           <div className="relative z-10">
