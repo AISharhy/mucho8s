@@ -187,7 +187,7 @@ export default function TeamBuilder() {
   const [bestOf, setBestOf] = useState(3);
   const [mapMode, setMapMode] = useState("random");
   const [manualMaps, setManualMaps] = useState([]);
-  const [teamMethod, setTeamMethod] = useState("auto");
+  const [teamMethod, setTeamMethod] = useState("manual");
   const [autoPriority, setAutoPriority] = useState("mixed");
   const [draftCaptainMode, setDraftCaptainMode] = useState("auto");
   const [draftCaptainA, setDraftCaptainA] = useState("");
@@ -466,7 +466,7 @@ export default function TeamBuilder() {
     setBestOf(3);
     setMapMode("random");
     setManualMaps([]);
-    setTeamMethod("auto");
+    setTeamMethod("manual");
     setAutoPriority("mixed");
     setDraftCaptainMode("auto");
     resetLobby({ keepGame: false });
@@ -483,7 +483,8 @@ export default function TeamBuilder() {
   };
 
   const goWizardStep = (nextStep) => {
-    const next = Math.max(1, Math.min(4, Number(nextStep) || 1));
+    const bounded = Math.max(1, Math.min(4, Number(nextStep) || 1));
+    const next = bounded === 2 ? 3 : bounded;
     if (next === wizardStep) return;
     void playUiSound(next > wizardStep ? "next" : "back", "mucho8s");
     setWizardStep(next);
@@ -960,11 +961,10 @@ export default function TeamBuilder() {
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-2 py-4">
+        <div className="grid grid-cols-3 gap-2 py-4">
           {[
             [1, "Setup"],
-            [2, "Teams"],
-            [3, "Lobby"],
+            [3, "Manual Teams"],
             [4, "Review"],
           ].map(([step, label]) => {
             const active = wizardStep === step;
@@ -1137,7 +1137,7 @@ export default function TeamBuilder() {
             <div className="flex justify-end mt-5">
               <Button
                 type="button"
-                onClick={() => goWizardStep(2)}
+                onClick={() => goWizardStep(3)}
                 disabled={!setupValid}
                 className="h-11 px-5 bg-[#FF2A3B] hover:bg-[#FF4352] text-white font-black rounded-xl shadow-[0_10px_30px_rgba(255,42,59,.12)]"
               >
@@ -1148,7 +1148,7 @@ export default function TeamBuilder() {
           </div>
         )}
 
-        {wizardStep === 2 && (
+        {false && wizardStep === 2 && (
           <div className="rounded-2xl border border-[#FF2A3B]/20 bg-[linear-gradient(135deg,#0D1117_0%,#120D11_64%,#1B0B10_100%)] p-4 sm:p-5 shadow-[0_18px_48px_rgba(255,42,59,.035)]">
             <div className="flex items-center gap-3 mb-4">
               <span className="w-9 h-9 rounded-xl border border-[#FF2A3B]/45 bg-[#FF2A3B] text-white flex items-center justify-center font-black shadow-[0_0_24px_rgba(255,42,59,.16)]">2</span>
@@ -1584,7 +1584,7 @@ export default function TeamBuilder() {
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => goWizardStep(2)}
+                onClick={() => goWizardStep(1)}
                 className="h-10 px-3 border border-[#2A303B]"
               >
                 <ArrowLeft size={15} className="mr-1.5" />
