@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Crown, Plus, Shield, Users } from "lucide-react";
+import { Crown, Plus, Shield, Users, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useData } from "@/context/DataContext";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ export default function Teams() {
   const { discordPlayer, playerMap } = useData();
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [clubQuery, setClubQuery] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -60,6 +61,8 @@ export default function Teams() {
     [teams, discordPlayer?.id],
   );
 
+  const visibleTeams = useMemo(() => teams.filter(team => `${team.name || ""} ${team.tag || ""} ${team.description || ""}`.toLowerCase().includes(clubQuery.trim().toLowerCase())), [teams, clubQuery]);
+
   const submit = async (event) => {
     event.preventDefault();
     setSaving(true);
@@ -83,10 +86,10 @@ export default function Teams() {
             <div className="brand-kicker mb-1">Competitive Clubs</div>
             <div className="flex items-center gap-2">
               <Shield size={21} className="text-magma" />
-              <h1 className="font-display text-3xl sm:text-4xl font-black tracking-[-0.035em]">Teams <span className="inline-block align-middle rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-1 text-[10px] tracking-widest text-amber-300">BETA</span></h1>
+              <h1 className="font-display text-3xl sm:text-4xl font-black tracking-[-0.035em]">MuchoClubs <span className="inline-block align-middle rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-1 text-[10px] tracking-widest text-amber-300">BETA</span></h1>
             </div>
             <p className="text-sm text-[#7F8795] mt-2 max-w-2xl">
-              Create a competitive team, build a roster and give your squad a public Mucho identity. Team management is in beta: features may change.
+              Create a competitive club, manage its roster, and give your squad a public Mucho identity. Club membership uses the existing Teams system.
             </p>
           </div>
 
@@ -192,6 +195,8 @@ export default function Teams() {
         </form>
       )}
 
+      <div className="m8-panel rounded-2xl p-4 flex items-center gap-3"><Search size={17} className="text-[#7F8795] shrink-0" /><Input value={clubQuery} onChange={event => setClubQuery(event.target.value)} placeholder="Search clubs by name or tag..." aria-label="Search MuchoClubs" className="bg-[#0F1218] border-[#242A35]" /><span className="text-xs text-muted-foreground shrink-0">{visibleTeams.length} club</span></div>
+
       {loading ? (
         <div className="m8-panel rounded-2xl p-8 text-center text-sm text-muted-foreground">Loading teams...</div>
       ) : teams.length === 0 ? (
@@ -200,9 +205,11 @@ export default function Teams() {
           <h3 className="font-display text-xl font-bold">No teams yet</h3>
           <p className="text-sm text-muted-foreground mt-1">The first competitive club can be created now.</p>
         </div>
+      ) : visibleTeams.length === 0 ? (
+        <div className="m8-panel rounded-2xl p-8 text-center text-sm text-muted-foreground">No clubs match your search.</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3" data-testid="teams-grid">
-          {teams.map((team) => {
+          {visibleTeams.map((team) => {
             const captain = playerMap?.[team.captain_player_id];
             return (
               <Link
