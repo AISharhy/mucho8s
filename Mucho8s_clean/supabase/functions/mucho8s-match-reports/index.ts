@@ -53,7 +53,7 @@ const MAX_RESULT_DELTA = 45;
 const COMPETITIVE_MAP_POOLS: Record<string, Record<string, string[]>> = {
   BO7: {
     "Search & Destroy": ["Den", "Frequency", "Gridlock", "Raid", "Scar", "Standoff", "Hacienda", "Fringe"],
-    Hardpoint: ["Colossus", "Den", "Gridlock", "Frequency", "Scar", "Hacienda"],
+    Hardpoint: ["Den", "Gridlock", "Frequency", "Scar", "Hacienda"],
   },
   BO6: {
     "Search & Destroy": ["Protocol", "Rewind", "Skyline", "Vault", "Hacienda", "Firing Range", "Fringe"],
