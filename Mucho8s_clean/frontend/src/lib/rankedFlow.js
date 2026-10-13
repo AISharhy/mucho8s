@@ -1,6 +1,6 @@
 export const SNAKE_DRAFT = ['A', 'B', 'B', 'A', 'A', 'B'];
 export const RANKED_MAPS = {
- hp: ['Colossus', 'Den', 'Gridlock', 'Frequency', 'Scar', 'Hacienda'],
+ hp: ['Den', 'Gridlock', 'Frequency', 'Scar', 'Hacienda'],
  snd: ['Den', 'Frequency', 'Gridlock', 'Raid', 'Scar', 'Hacienda', 'Fringe'],
 };
 export const rankedModeLabel = mode => mode === 'snd' ? 'Search & Destroy' : 'Hardpoint';
