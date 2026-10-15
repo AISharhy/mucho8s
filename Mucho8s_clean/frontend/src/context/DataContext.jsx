@@ -14,7 +14,7 @@ const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY || "";
 const HAS_SUPABASE = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 const HAS_BACKEND = Boolean(BACKEND_URL);
 const STORAGE_MODE = HAS_SUPABASE ? "supabase" : HAS_BACKEND ? "backend" : "local";
-const POLL_MS = 3500;
+const POLL_MS = 30000;
 
 const makePlayer = (name, startElo = MIN_ELO) => {
   const elo = Math.max(MIN_ELO, Math.round(Number(startElo) || BASE_ELO));
@@ -462,7 +462,7 @@ export const DataProvider = ({ children }) => {
   useEffect(() => {
     if (STORAGE_MODE === "local") return;
     fetchState();
-    const timer = setInterval(fetchState, POLL_MS);
+    const timer = setInterval(() => { if (document.visibilityState === "visible") void fetchState(); }, POLL_MS);
     return () => clearInterval(timer);
   }, [fetchState]);
 
@@ -515,7 +515,7 @@ export const DataProvider = ({ children }) => {
     if (!HAS_SUPABASE) return undefined;
     setPlayerProfiles({});
     void fetchPlayerAvatars();
-    const timer = setInterval(fetchPlayerAvatars, 15000);
+    const timer = setInterval(() => { if (document.visibilityState === "visible") void fetchPlayerAvatars(); }, 180000);
     return () => {
       clearInterval(timer);
       ++avatarRequestSequence.current;
@@ -546,7 +546,7 @@ export const DataProvider = ({ children }) => {
   useEffect(() => {
     if (!HAS_SUPABASE) return undefined;
     void fetchCompetitionData();
-    const timer = setInterval(fetchCompetitionData, 60000);
+    const timer = setInterval(() => { if (document.visibilityState === "visible") void fetchCompetitionData(); }, 300000);
     return () => clearInterval(timer);
   }, [fetchCompetitionData]);
 
@@ -580,7 +580,7 @@ export const DataProvider = ({ children }) => {
   useEffect(() => {
     if (!HAS_SUPABASE) return undefined;
     void fetchDashboardData();
-    const timer = setInterval(fetchDashboardData, 15000);
+    const timer = setInterval(() => { if (document.visibilityState === "visible") void fetchDashboardData(); }, 60000);
     return () => clearInterval(timer);
   }, [fetchDashboardData]);
 
@@ -608,7 +608,7 @@ export const DataProvider = ({ children }) => {
   useEffect(() => {
     if (!HAS_SUPABASE) return undefined;
     void fetchPublicChallenges();
-    const timer = setInterval(fetchPublicChallenges, 30000);
+    const timer = setInterval(() => { if (document.visibilityState === "visible") void fetchPublicChallenges(); }, 120000);
     return () => clearInterval(timer);
   }, [fetchPublicChallenges]);
 
@@ -636,7 +636,7 @@ export const DataProvider = ({ children }) => {
   useEffect(() => {
     if (!HAS_SUPABASE) return undefined;
     void fetchNewsPosts();
-    const timer = setInterval(fetchNewsPosts, 30000);
+    const timer = setInterval(() => { if (document.visibilityState === "visible") void fetchNewsPosts(); }, 180000);
     return () => clearInterval(timer);
   }, [fetchNewsPosts]);
 
